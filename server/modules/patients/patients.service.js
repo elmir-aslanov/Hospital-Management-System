@@ -1,86 +1,139 @@
-import mongoose from 'mongoose';
 import Patient from '../../models/Patient.model.js';
-import User from '../../models/User.model.js';
 import ApiError from '../../utils/ApiError.js';
-import { getPagination, paginatedResponse } from '../../utils/pagination.js';
 
-export const createPatient = async (data) => {
-  const existing = await Patient.findOne({ userId: data.userId });
-  if (existing) throw new ApiError(409, 'Patient profile already exists for this user');
-  return Patient.create(data);
+const POPULATE_USER = 'fullName email phone';
+
+// ─── Create ──────────────────────────────────────────────────────────────────
+
+export const createPatient = async ({ userId, bloodGroup, allergies, chronicConditions, emergencyContact }) => {
+  const existing = await Patient.findOne({ userId });
+  if (existing) throw new ApiError(409, 'Patient profile already exists');
+
+  const patient = await Patient.create({ userId, bloodGroup, allergies, chronicConditions, emergencyContact });
+  return patient.populate('userId', POPULATE_USER);
 };
 
-export const getPatients = async (query) => {
-  const { skip, limit, page } = getPagination(query);
-  const [data, total] = await Promise.all([
-    Patient.find().populate('userId', 'fullName email phone').skip(skip).limit(limit).sort({ createdAt: -1 }),
+// ─── Read ─────────────────────────────────────────────────────────────────────
+
+export const getPatients = async ({ page = 1, limit = 10 } = {}) => {
+  const pg = Math.max(1, parseInt(page));
+  const lim = Math.min(100, Math.max(1, parseInt(limit)));
+  const skip = (pg - 1) * lim;
+
+  const [patients, total] = await Promise.all([
+    Patient.find()
+      .populate('userId', POPULATE_USER)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(lim),
     Patient.countDocuments(),
   ]);
-  return paginatedResponse(data, total, page, limit);
+
+  return { patients, total, page: pg, limit: lim };
 };
 
 export const getPatientById = async (id) => {
-  const patient = await Patient.findById(id).populate('userId', 'fullName email phone avatar');
+  const patient = await Patient.findById(id).populate('userId', POPULATE_USER);
   if (!patient) throw new ApiError(404, 'Patient not found');
   return patient;
 };
 
-export const updatePatient = async (id, updates) => {
-  const patient = await Patient.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+export const updatePatient = async (id, updateData) => {
+  const allowed = ['bloodGroup', 'allergies', 'chronicConditions', 'emergencyContact'];
+  const safe = {};
+  for (const key of allowed) {
+    if (updateData[key] !== undefined) safe[key] = updateData[key];
+  }
+
+  const patient = await Patient.findByIdAndUpdate(id, safe, { new: true, runValidators: true })
+    .populate('userId', POPULATE_USER);
   if (!patient) throw new ApiError(404, 'Patient not found');
   return patient;
 };
 
-/**
- * Search patients by name (on User.fullName), patientId, or medical condition.
- * Uses aggregation to allow cross-collection name search with correct pagination.
- */
-export const searchPatients = async ({ query, condition, page = 1, limit = 10 }) => {
-  const { skip, limit: lim, page: pg } = getPagination({ page, limit });
+// ─── Medical History ──────────────────────────────────────────────────────────
 
+export const addMedicalHistory = async (id, { condition, diagnosedAt, notes }) => {
+  const patient = await Patient.findById(id);
+  if (!patient) throw new ApiError(404, 'Patient not found');
+
+  patient.medicalHistory.push({ condition, diagnosedAt, notes });
+  await patient.save();
+  return patient.populate('userId', POPULATE_USER);
+};
+
+export const getMedicalHistory = async (id) => {
+  const patient = await Patient.findById(id).select('medicalHistory patientId');
+  if (!patient) throw new ApiError(404, 'Patient not found');
+
+  const sorted = [...patient.medicalHistory].sort(
+    (a, b) => new Date(b.diagnosedAt || 0) - new Date(a.diagnosedAt || 0)
+  );
+  return sorted;
+};
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+export const searchPatients = async ({ query, condition, page = 1, limit = 10 } = {}) => {
+  const pg = Math.max(1, parseInt(page));
+  const lim = Math.min(100, Math.max(1, parseInt(limit)));
+  const skip = (pg - 1) * lim;
+
+  // Build aggregation pipeline so we can filter on populated User.fullName
+  const pipeline = [];
+
+  // Join with users collection
+  pipeline.push({
+    $lookup: {
+      from: 'users',
+      localField: 'userId',
+      foreignField: '_id',
+      as: 'userId',
+    },
+  });
+  pipeline.push({ $unwind: '$userId' });
+
+  // Apply filters
   const matchStage = {};
+
+  if (query) {
+    const regex = new RegExp(query, 'i');
+    matchStage.$or = [
+      { 'userId.fullName': regex },
+      { patientId: regex },
+    ];
+  }
+
   if (condition) {
     matchStage['medicalHistory.condition'] = { $regex: condition, $options: 'i' };
   }
 
-  const pipeline = [
-    { $match: matchStage },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'userId',
-        foreignField: '_id',
-        as: 'userId',
-      },
-    },
-    { $unwind: '$userId' },
-  ];
+  if (Object.keys(matchStage).length) pipeline.push({ $match: matchStage });
 
-  // Filter by name or patientId after the join
-  if (query) {
-    pipeline.push({
-      $match: {
-        $or: [
-          { 'userId.fullName': { $regex: query, $options: 'i' } },
-          { patientId: { $regex: query, $options: 'i' } },
-        ],
-      },
-    });
-  }
-
+  // Count before slicing
   const countPipeline = [...pipeline, { $count: 'total' }];
   const dataPipeline = [
     ...pipeline,
     { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: lim },
+    // Clean up user fields returned
+    {
+      $project: {
+        patientId: 1, bloodGroup: 1, allergies: 1, chronicConditions: 1,
+        emergencyContact: 1, medicalHistory: 1, createdAt: 1, updatedAt: 1,
+        'userId._id': 1, 'userId.fullName': 1, 'userId.email': 1, 'userId.phone': 1,
+      },
+    },
   ];
 
-  const [countResult, data] = await Promise.all([
+  const [countResult, patients] = await Promise.all([
     Patient.aggregate(countPipeline),
     Patient.aggregate(dataPipeline),
   ]);
 
   const total = countResult[0]?.total ?? 0;
-  return paginatedResponse(data, total, pg, lim);
+  return { patients, total, page: pg, limit: lim };
 };
