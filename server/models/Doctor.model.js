@@ -1,0 +1,18 @@
+import mongoose from 'mongoose';
+
+const doctorSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    specialization: { type: String, required: true, trim: true },
+    licenseNumber: { type: String, required: true, unique: true, trim: true },
+    experience: { type: Number, default: 0, min: 0 }, // years
+    bio: { type: String, default: '' },
+    isAvailable: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+doctorSchema.index({ specialization: 1 });
+
+const Doctor = mongoose.model('Doctor', doctorSchema);
+export default Doctor;
