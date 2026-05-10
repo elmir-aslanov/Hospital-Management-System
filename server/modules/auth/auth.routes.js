@@ -8,8 +8,8 @@ import { authLimiter } from '../../middleware/rateLimiter.middleware.js';
 const router = Router();
 
 router.post('/register', authLimiter, validateRegister, validate, authController.register);
-router.post('/login', authLimiter, validateLogin, validate, authController.login);
-router.post('/logout', authenticate, authController.logout);
+router.post('/login',    authLimiter, validateLogin,    validate, authController.login);
+router.post('/logout',   authenticate, authController.logout);
 router.post('/refresh-token', authController.refreshToken);
 
 export default router;
