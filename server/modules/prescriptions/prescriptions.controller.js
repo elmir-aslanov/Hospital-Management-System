@@ -12,7 +12,7 @@ const resolveDoctorId = async (userId) => {
 
 export const createPrescription = asyncHandler(async (req, res) => {
   const doctorId = await resolveDoctorId(req.user.id);
-  const prescription = await prescriptionsService.createPrescription(req.body, doctorId);
+  const prescription = await prescriptionsService.createPrescription(req.body, doctorId, req);
   res.status(201).json(new ApiResponse(201, prescription, 'Prescription created'));
 });
 
