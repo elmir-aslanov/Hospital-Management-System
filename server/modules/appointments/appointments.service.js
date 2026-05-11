@@ -1,73 +1,160 @@
 import Appointment from '../../models/Appointment.model.js';
+import Patient from '../../models/Patient.model.js';
+import Doctor from '../../models/Doctor.model.js';
+import WorkSchedule from '../../models/WorkSchedule.model.js';
 import ApiError from '../../utils/ApiError.js';
-import { getPagination, paginatedResponse } from '../../utils/pagination.js';
-import { APPOINTMENT_STATUS } from '../../config/constants.js';
+import { APPOINTMENT_STATUS, APPOINTMENT_TRANSITIONS } from '../../config/constants.js';
 
-const detectConflict = async (doctorId, date, startTime, endTime, excludeId = null) => {
-  const dateStart = new Date(date);
-  dateStart.setHours(0, 0, 0, 0);
-  const dateEnd = new Date(dateStart.getTime() + 86400000);
+// ─── Population helpers ───────────────────────────────────────────────────────
 
-  const query = {
-    doctorId,
-    date: { $gte: dateStart, $lt: dateEnd },
-    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.NO_SHOW] },
-    $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
-  };
+const populateAppointment = (query) =>
+  query
+    .populate({ path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } })
+    .populate({ path: 'doctorId',  populate: { path: 'userId', select: 'fullName' }, select: 'userId specialization' });
 
-  if (excludeId) query._id = { $ne: excludeId };
+// ─── Pagination helper ────────────────────────────────────────────────────────
 
-  const conflict = await Appointment.findOne(query);
-  if (conflict) throw new ApiError(409, 'This time slot is already booked');
+const paginate = (page = 1, limit = 10) => {
+  const pg  = Math.max(1, parseInt(page));
+  const lim = Math.min(100, Math.max(1, parseInt(limit)));
+  return { pg, lim, skip: (pg - 1) * lim };
 };
 
-export const createAppointment = async (data) => {
-  await detectConflict(data.doctorId, data.date, data.startTime, data.endTime);
-  return Appointment.create(data);
-};
+// ─── Create ───────────────────────────────────────────────────────────────────
 
-export const getAppointments = async (query) => {
-  const { skip, limit, page } = getPagination(query);
-  const filter = {};
-  if (query.doctorId) filter.doctorId = query.doctorId;
-  if (query.patientId) filter.patientId = query.patientId;
-  if (query.status) filter.status = query.status;
-  if (query.date) {
-    const d = new Date(query.date);
-    filter.date = { $gte: d, $lt: new Date(d.getTime() + 86400000) };
+export const createAppointment = async ({ patientId, doctorId, date, startTime, endTime, reason }) => {
+  // Step 1 & 2 — verify patient and doctor exist
+  const [patient, doctor] = await Promise.all([
+    Patient.findById(patientId),
+    Doctor.findById(doctorId),
+  ]);
+  if (!patient) throw new ApiError(404, 'Patient not found');
+  if (!doctor)  throw new ApiError(404, 'Doctor not found');
+
+  // Step 3 — check work schedule
+  const apptDate  = new Date(date);
+  const dayOfWeek = apptDate.getDay();
+  const schedule  = await WorkSchedule.findOne({ doctorId, dayOfWeek });
+
+  if (!schedule || schedule.isOff) {
+    throw new ApiError(400, 'Doctor is not available on this day');
+  }
+  if (startTime < schedule.startTime || endTime > schedule.endTime) {
+    throw new ApiError(400, `Time is outside doctor working hours (${schedule.startTime}–${schedule.endTime})`);
   }
 
-  const [data, total] = await Promise.all([
-    Appointment.find(filter)
-      .populate('patientId', 'patientId')
-      .populate('doctorId', 'specialization')
-      .skip(skip).limit(limit).sort({ date: 1, startTime: 1 }),
+  // Step 4 — conflict detection
+  const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
+  const dayEnd   = new Date(date); dayEnd.setHours(23, 59, 59, 999);
+
+  const conflict = await Appointment.findOne({
+    doctorId,
+    date: { $gte: dayStart, $lte: dayEnd },
+    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.MISSED] },
+    $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
+  });
+  if (conflict) throw new ApiError(409, 'This time slot is already booked');
+
+  // Step 5 — create
+  const appointment = await Appointment.create({ patientId, doctorId, date: apptDate, startTime, endTime, reason });
+  return populateAppointment(Appointment.findById(appointment._id));
+};
+
+// ─── Read ─────────────────────────────────────────────────────────────────────
+
+export const getAppointments = async ({ status, doctorId, patientId, date, page, limit } = {}) => {
+  const { pg, lim, skip } = paginate(page, limit);
+
+  const filter = {};
+  if (status)    filter.status    = status;
+  if (doctorId)  filter.doctorId  = doctorId;
+  if (patientId) filter.patientId = patientId;
+  if (date) {
+    const d = new Date(date);
+    const start = new Date(d); start.setHours(0, 0, 0, 0);
+    const end   = new Date(d); end.setHours(23, 59, 59, 999);
+    filter.date = { $gte: start, $lte: end };
+  }
+
+  const [appointments, total] = await Promise.all([
+    populateAppointment(Appointment.find(filter)).sort({ date: -1, startTime: 1 }).skip(skip).limit(lim),
     Appointment.countDocuments(filter),
   ]);
 
-  return paginatedResponse(data, total, page, limit);
+  return { appointments, total, page: pg, limit: lim };
 };
 
 export const getAppointmentById = async (id) => {
-  const appt = await Appointment.findById(id)
-    .populate('patientId')
-    .populate('doctorId');
-  if (!appt) throw new ApiError(404, 'Appointment not found');
-  return appt;
+  const appointment = await populateAppointment(Appointment.findById(id));
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+  return appointment;
 };
 
-export const updateAppointmentStatus = async (id, status) => {
-  const appt = await Appointment.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
-  if (!appt) throw new ApiError(404, 'Appointment not found');
-  return appt;
+export const getPatientAppointments = async (patientId, { status, page, limit } = {}) => {
+  const { pg, lim, skip } = paginate(page, limit);
+  const filter = { patientId };
+  if (status) filter.status = status;
+
+  const [appointments, total] = await Promise.all([
+    populateAppointment(Appointment.find(filter)).sort({ date: -1 }).skip(skip).limit(lim),
+    Appointment.countDocuments(filter),
+  ]);
+
+  return { appointments, total, page: pg, limit: lim };
 };
 
-export const cancelAppointment = async (id) => {
-  const appt = await Appointment.findByIdAndUpdate(
-    id,
-    { status: APPOINTMENT_STATUS.CANCELLED },
-    { new: true }
-  );
-  if (!appt) throw new ApiError(404, 'Appointment not found');
-  return appt;
+export const getDoctorAppointments = async (doctorId, { date, status, page, limit } = {}) => {
+  const { pg, lim, skip } = paginate(page, limit);
+  const filter = { doctorId };
+  if (status) filter.status = status;
+  if (date) {
+    const d     = new Date(date);
+    const start = new Date(d); start.setHours(0, 0, 0, 0);
+    const end   = new Date(d); end.setHours(23, 59, 59, 999);
+    filter.date = { $gte: start, $lte: end };
+  }
+
+  const [appointments, total] = await Promise.all([
+    populateAppointment(Appointment.find(filter)).sort({ date: 1, startTime: 1 }).skip(skip).limit(lim),
+    Appointment.countDocuments(filter),
+  ]);
+
+  return { appointments, total, page: pg, limit: lim };
+};
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+export const updateAppointmentStatus = async (appointmentId, status, userId) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+
+  const allowed = APPOINTMENT_TRANSITIONS[appointment.status] || [];
+  if (!allowed.includes(status)) {
+    throw new ApiError(
+      400,
+      `Invalid status transition: '${appointment.status}' → '${status}'. Allowed: [${allowed.join(', ') || 'none'}]`
+    );
+  }
+
+  appointment.status = status;
+  if (status === APPOINTMENT_STATUS.CANCELLED) appointment.cancelledBy = userId;
+  await appointment.save();
+
+  return populateAppointment(Appointment.findById(appointment._id));
+};
+
+export const cancelAppointment = async (appointmentId, userId, cancelReason) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+
+  if ([APPOINTMENT_STATUS.COMPLETED, APPOINTMENT_STATUS.CANCELLED].includes(appointment.status)) {
+    throw new ApiError(400, `Cannot cancel an appointment with status '${appointment.status}'`);
+  }
+
+  appointment.status       = APPOINTMENT_STATUS.CANCELLED;
+  appointment.cancelledBy  = userId;
+  appointment.cancelReason = cancelReason || '';
+  await appointment.save();
+
+  return populateAppointment(Appointment.findById(appointment._id));
 };
