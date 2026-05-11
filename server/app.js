@@ -19,6 +19,8 @@ import prescriptionRoutes from './modules/prescriptions/prescriptions.routes.js'
 import dischargeRoutes    from './modules/discharge/discharge.routes.js';
 import searchRoutes       from './modules/search/search.routes.js';
 import notificationRoutes from './modules/notifications/notifications.routes.js';
+import vitalsRoutes       from './modules/vitals/vitals.routes.js';
+import auditRoutes        from './modules/audit/audit.routes.js';
 
 const app = express();
 
@@ -50,6 +52,8 @@ app.use(`${API}/prescriptions`, prescriptionRoutes);
 app.use(`${API}/discharge`,     dischargeRoutes);
 app.use(`${API}/search`,        searchRoutes);
 app.use(`${API}/notifications`, notificationRoutes);
+app.use(`${API}/vitals`,        vitalsRoutes);
+app.use(`${API}/audit`,         auditRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

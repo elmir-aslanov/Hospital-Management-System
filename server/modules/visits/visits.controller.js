@@ -11,7 +11,7 @@ const resolveDoctorId = async (userId) => {
 };
 
 export const createVisit = asyncHandler(async (req, res) => {
-  const visit = await visitsService.createVisit(req.body);
+  const visit = await visitsService.createVisit(req.body, req);
   res.status(201).json(new ApiResponse(201, visit, 'Visit created'));
 });
 
@@ -27,7 +27,7 @@ export const updateVisit = asyncHandler(async (req, res) => {
 
 export const closeVisit = asyncHandler(async (req, res) => {
   const doctorId = await resolveDoctorId(req.user.id);
-  const visit = await visitsService.closeVisit(req.params.id, doctorId);
+  const visit = await visitsService.closeVisit(req.params.id, doctorId, req);
   res.status(200).json(new ApiResponse(200, visit, 'Visit closed'));
 });
 

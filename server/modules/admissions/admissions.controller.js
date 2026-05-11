@@ -3,7 +3,7 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import * as admissionsService from './admissions.service.js';
 
 export const admitPatient = asyncHandler(async (req, res) => {
-  const admission = await admissionsService.admitPatient(req.body, req.user.id);
+  const admission = await admissionsService.admitPatient(req.body, req.user.id, req);
   res.status(201).json(new ApiResponse(201, admission, 'Patient admitted successfully'));
 });
 
@@ -18,7 +18,7 @@ export const getAdmissionById = asyncHandler(async (req, res) => {
 });
 
 export const dischargePatient = asyncHandler(async (req, res) => {
-  const admission = await admissionsService.dischargePatient(req.params.id, req.body);
+  const admission = await admissionsService.dischargePatient(req.params.id, req.body, req.user.id, req);
   res.status(200).json(new ApiResponse(200, admission, 'Patient discharged successfully'));
 });
 
