@@ -1,9 +1,10 @@
 import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 
 let io;
 
-export const initSocket = (httpServer) => {
+const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
       origin: process.env.CLIENT_URL,
@@ -12,25 +13,36 @@ export const initSocket = (httpServer) => {
     },
   });
 
-  io.on('connection', (socket) => {
-    const { userId } = socket.handshake.query;
+  // JWT auth middleware for every socket connection
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Authentication required'));
 
-    if (userId) {
-      // Each user joins their own private room for targeted notifications
-      socket.join(`user:${userId}`);
-      logger.info(`Socket connected — user:${userId}`);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      socket.userId = decoded.userId;
+      socket.role   = decoded.role;
+      next();
+    } catch {
+      next(new Error('Invalid token'));
     }
+  });
+
+  io.on('connection', (socket) => {
+    socket.join(`user:${socket.userId}`);
+    logger.info(`Socket connected — user:${socket.userId} joined room user:${socket.userId}`);
 
     socket.on('disconnect', () => {
-      logger.info(`Socket disconnected — user:${userId}`);
+      logger.info(`Socket disconnected — user:${socket.userId}`);
     });
   });
 
   return io;
 };
 
-// Call this anywhere in the codebase to emit events to a specific user
-export const getIO = () => {
+const getIO = () => {
   if (!io) throw new Error('Socket.io not initialized');
   return io;
 };
+
+export { initSocket, getIO };
