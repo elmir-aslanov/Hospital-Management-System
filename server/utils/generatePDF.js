@@ -1,55 +1,111 @@
 import PDFDocument from 'pdfkit';
 
+const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+
+const section = (doc, title) => {
+  doc.moveDown(0.5)
+    .fontSize(11)
+    .fillColor('#1a1a2e')
+    .font('Helvetica-Bold')
+    .text(title.toUpperCase())
+    .moveTo(doc.x, doc.y)
+    .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+    .strokeColor('#cccccc')
+    .lineWidth(0.5)
+    .stroke()
+    .moveDown(0.3)
+    .font('Helvetica')
+    .fillColor('#333333')
+    .fontSize(10);
+};
+
+const row = (doc, label, value) => {
+  doc.font('Helvetica-Bold').text(`${label}: `, { continued: true })
+    .font('Helvetica').text(value || 'N/A');
+};
+
 /**
  * Generate a discharge summary PDF.
- * @param {object} data - DischargeSummary document (populated)
+ * @param {object} data
  * @returns {Promise<Buffer>}
  */
 export const createDischargePDF = (data) =>
   new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const chunks = [];
 
     doc.on('data', (chunk) => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    // Header
-    doc.fontSize(20).text('Hospital Management System', { align: 'center' });
-    doc.fontSize(14).text('Discharge Summary', { align: 'center' });
-    doc.moveDown();
+    // ── Header ────────────────────────────────────────────────────────────────
+    doc.fontSize(20).font('Helvetica-Bold').fillColor('#1a1a2e')
+      .text('HOSPITAL MANAGEMENT SYSTEM', { align: 'center' });
+    doc.fontSize(13).font('Helvetica').fillColor('#555555')
+      .text('DISCHARGE SUMMARY', { align: 'center' });
+    doc.moveDown(0.3)
+      .moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y)
+      .strokeColor('#1a1a2e').lineWidth(1.5).stroke()
+      .moveDown(0.5);
 
-    // Patient info section
-    doc.fontSize(12).text(`Patient ID: ${data.patientId}`);
-    doc.text(`Admission Date: ${data.admissionDate?.toDateString?.() ?? data.admissionDate}`);
-    doc.text(`Discharge Date: ${data.dischargeDate?.toDateString?.() ?? data.dischargeDate}`);
-    doc.moveDown();
+    // ── Patient Information ───────────────────────────────────────────────────
+    section(doc, 'Patient Information');
+    row(doc, 'Patient Name', data.patientName);
+    row(doc, 'Patient ID',   data.patientId);
+    row(doc, 'Blood Group',  data.bloodGroup);
 
-    // Diagnosis
-    doc.fontSize(13).text('Final Diagnosis', { underline: true });
-    doc.fontSize(11).text(data.finalDiagnosis || 'N/A');
-    doc.moveDown();
+    // ── Attending Physician ───────────────────────────────────────────────────
+    section(doc, 'Attending Physician');
+    row(doc, 'Doctor Name',     data.doctorName);
+    row(doc, 'Specialization',  data.doctorSpecialization);
 
-    // Treatment summary
-    doc.fontSize(13).text('Treatment Summary', { underline: true });
-    doc.fontSize(11).text(data.treatmentSummary || 'N/A');
-    doc.moveDown();
+    // ── Admission Details ─────────────────────────────────────────────────────
+    section(doc, 'Admission Details');
+    row(doc, 'Admission Date',  fmt(data.admissionDate));
+    row(doc, 'Discharge Date',  fmt(data.dischargeDate));
 
-    // Discharge medications
-    doc.fontSize(13).text('Discharge Medications', { underline: true });
+    // ── Diagnosis & Treatment ─────────────────────────────────────────────────
+    section(doc, 'Diagnosis & Treatment');
+    row(doc, 'Final Diagnosis', data.finalDiagnosis);
+    doc.moveDown(0.3);
+    doc.font('Helvetica-Bold').text('Treatment Summary:', { underline: false });
+    doc.font('Helvetica').text(data.treatmentSummary || 'N/A');
+
+    // ── Discharge Medications ─────────────────────────────────────────────────
+    section(doc, 'Discharge Medications');
     if (data.dischargeMedications?.length) {
-      data.dischargeMedications.forEach((med, i) => {
-        doc.fontSize(11).text(`${i + 1}. ${med.name} — ${med.dosage}, ${med.frequency}`);
+      // Table header
+      const col = { name: 50, dosage: 220, inst: 340 };
+      doc.font('Helvetica-Bold').fontSize(9)
+        .text('Medication',   col.name, doc.y, { width: 160, continued: false });
+      const headerY = doc.y - doc.currentLineHeight();
+      doc.text('Dosage',       col.dosage, headerY, { width: 110 });
+      doc.text('Instructions', col.inst,   headerY, { width: 190 });
+      doc.moveDown(0.2).font('Helvetica').fontSize(9);
+
+      data.dischargeMedications.forEach((med) => {
+        const rowY = doc.y;
+        doc.text(med.name || '—',         col.name,  rowY, { width: 160 });
+        doc.text(med.dosage || '—',       col.dosage, rowY, { width: 110 });
+        doc.text(med.instructions || '—', col.inst,   rowY, { width: 190 });
+        doc.moveDown(0.2);
       });
     } else {
-      doc.fontSize(11).text('None');
+      doc.text('No discharge medications.');
     }
-    doc.moveDown();
 
-    // Follow-up
-    doc.fontSize(13).text('Follow-Up', { underline: true });
-    doc.fontSize(11).text(`Date: ${data.followUpDate?.toDateString?.() ?? 'N/A'}`);
-    doc.text(`Instructions: ${data.followUpInstructions || 'N/A'}`);
+    // ── Follow-Up ─────────────────────────────────────────────────────────────
+    section(doc, 'Follow-Up');
+    row(doc, 'Follow-Up Date',         fmt(data.followUpDate));
+    row(doc, 'Follow-Up Instructions', data.followUpInstructions);
+
+    // ── Footer ────────────────────────────────────────────────────────────────
+    doc.moveDown(2)
+      .moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y)
+      .strokeColor('#cccccc').lineWidth(0.5).stroke()
+      .moveDown(0.3)
+      .fontSize(8).fillColor('#888888').font('Helvetica')
+      .text(`Generated: ${new Date().toLocaleString()}  |  Hospital Management System`, { align: 'center' });
 
     doc.end();
   });

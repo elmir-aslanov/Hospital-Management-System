@@ -1,34 +1,102 @@
 import Visit from '../../models/Visit.model.js';
+import Patient from '../../models/Patient.model.js';
+import Doctor from '../../models/Doctor.model.js';
+import Appointment from '../../models/Appointment.model.js';
 import ApiError from '../../utils/ApiError.js';
-import { VISIT_STATUS } from '../../config/constants.js';
 
-export const createVisit = async (data, doctorId) => {
-  return Visit.create({ ...data, doctorId, status: VISIT_STATUS.OPEN });
+// ─── Population helper ────────────────────────────────────────────────────────
+
+const populateVisit = (query) =>
+  query
+    .populate({ path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } })
+    .populate({ path: 'doctorId',  populate: { path: 'userId', select: 'fullName' }, select: 'userId specialization' })
+    .populate({
+      path: 'prescriptions',
+      populate: { path: 'prescribedBy', populate: { path: 'userId', select: 'fullName' } },
+    });
+
+const paginate = (page = 1, limit = 10) => {
+  const pg  = Math.max(1, parseInt(page));
+  const lim = Math.min(100, Math.max(1, parseInt(limit)));
+  return { pg, lim, skip: (pg - 1) * lim };
 };
 
-export const getVisitById = async (id) => {
-  const visit = await Visit.findById(id)
-    .populate('patientId')
-    .populate('doctorId')
-    .populate('prescriptions');
-  if (!visit) throw new ApiError(404, 'Visit not found');
-  return visit;
-};
+// ─── Create ───────────────────────────────────────────────────────────────────
 
-export const closeVisit = async (id, updates) => {
-  const visit = await Visit.findById(id);
-  if (!visit) throw new ApiError(404, 'Visit not found');
-  if (visit.status === VISIT_STATUS.CLOSED) {
-    throw new ApiError(409, 'Visit is already closed');
+export const createVisit = async ({ patientId, doctorId, appointmentId, chiefComplaint }) => {
+  const [patient, doctor] = await Promise.all([
+    Patient.findById(patientId),
+    Doctor.findById(doctorId),
+  ]);
+  if (!patient) throw new ApiError(404, 'Patient not found');
+  if (!doctor)  throw new ApiError(404, 'Doctor not found');
+
+  if (appointmentId) {
+    const appt = await Appointment.findById(appointmentId);
+    if (!appt) throw new ApiError(404, 'Appointment not found');
+    if (String(appt.patientId) !== String(patientId) || String(appt.doctorId) !== String(doctorId)) {
+      throw new ApiError(400, 'Appointment does not match the given patient and doctor');
+    }
   }
 
-  Object.assign(visit, updates, { status: VISIT_STATUS.CLOSED });
-  await visit.save();
+  const visit = await Visit.create({ patientId, doctorId, appointmentId, chiefComplaint });
+  return populateVisit(Visit.findById(visit._id));
+};
+
+// ─── Read ─────────────────────────────────────────────────────────────────────
+
+export const getVisitById = async (visitId) => {
+  const visit = await populateVisit(Visit.findById(visitId));
+  if (!visit) throw new ApiError(404, 'Visit not found');
   return visit;
 };
 
-export const getPatientVisits = async (patientId) => {
-  return Visit.find({ patientId })
-    .populate('doctorId', 'specialization')
-    .sort({ createdAt: -1 });
+export const getPatientVisits = async (patientId, { page, limit } = {}) => {
+  const { pg, lim, skip } = paginate(page, limit);
+  const filter = { patientId };
+
+  const [visits, total] = await Promise.all([
+    populateVisit(Visit.find(filter)).sort({ createdAt: -1 }).skip(skip).limit(lim),
+    Visit.countDocuments(filter),
+  ]);
+  return { visits, total, page: pg, limit: lim };
+};
+
+export const getDoctorVisits = async (doctorId, { status, page, limit } = {}) => {
+  const { pg, lim, skip } = paginate(page, limit);
+  const filter = { doctorId };
+  if (status) filter.status = status;
+
+  const [visits, total] = await Promise.all([
+    populateVisit(Visit.find(filter)).sort({ createdAt: -1 }).skip(skip).limit(lim),
+    Visit.countDocuments(filter),
+  ]);
+  return { visits, total, page: pg, limit: lim };
+};
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+export const updateVisit = async (visitId, { diagnosis, clinicalNotes }) => {
+  const visit = await Visit.findById(visitId);
+  if (!visit) throw new ApiError(404, 'Visit not found');
+  if (visit.status === 'closed') throw new ApiError(400, 'Cannot update a closed visit');
+
+  if (diagnosis    !== undefined) visit.diagnosis    = diagnosis;
+  if (clinicalNotes !== undefined) visit.clinicalNotes = clinicalNotes;
+  await visit.save();
+
+  return populateVisit(Visit.findById(visit._id));
+};
+
+export const closeVisit = async (visitId, doctorId) => {
+  const visit = await Visit.findById(visitId);
+  if (!visit) throw new ApiError(404, 'Visit not found');
+  if (visit.status === 'closed') throw new ApiError(400, 'Visit already closed');
+  if (String(visit.doctorId) !== String(doctorId)) {
+    throw new ApiError(403, 'You are not authorized to close this visit');
+  }
+
+  visit.status = 'closed';
+  await visit.save();
+  return populateVisit(Visit.findById(visit._id));
 };

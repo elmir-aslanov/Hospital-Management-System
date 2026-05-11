@@ -11,7 +11,7 @@ const resolveDoctorId = async (userId) => {
 };
 
 export const createDischargeSummary = asyncHandler(async (req, res) => {
-  const doctorId = await resolveDoctorId(req.user._id);
+  const doctorId = await resolveDoctorId(req.user.id);
   const summary = await dischargeService.createDischargeSummary(req.body, doctorId);
   res.status(201).json(new ApiResponse(201, summary, 'Discharge summary created'));
 });
@@ -21,11 +21,12 @@ export const getDischargeSummaryById = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, summary));
 });
 
-// Redirect to the Cloudinary-hosted PDF URL
+export const getDischargeSummaryByVisit = asyncHandler(async (req, res) => {
+  const summary = await dischargeService.getDischargeSummaryByVisit(req.params.visitId);
+  res.status(200).json(new ApiResponse(200, summary));
+});
+
 export const downloadPDF = asyncHandler(async (req, res) => {
-  const summary = await dischargeService.getDischargeSummaryById(req.params.id);
-  if (!summary.pdfUrl) {
-    return res.status(404).json(new ApiResponse(404, null, 'PDF not available'));
-  }
-  res.redirect(summary.pdfUrl);
+  const data = await dischargeService.getPDFUrl(req.params.id);
+  res.status(200).json(new ApiResponse(200, data, 'PDF ready'));
 });

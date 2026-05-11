@@ -1,14 +1,22 @@
-import { body, param } from 'express-validator';
+import { body } from 'express-validator';
 
 export const validateCreateDischargeSummary = [
-  body('visitId').isMongoId().withMessage('Valid visitId is required'),
-  body('patientId').isMongoId().withMessage('Valid patientId is required'),
-  body('admissionDate').isISO8601().withMessage('Valid admissionDate is required'),
-  body('dischargeDate').isISO8601().withMessage('Valid dischargeDate is required'),
-  body('finalDiagnosis').trim().notEmpty().withMessage('Final diagnosis is required'),
-  body('treatmentSummary').trim().notEmpty().withMessage('Treatment summary is required'),
-];
+  body('visitId').notEmpty().withMessage('visitId is required')
+    .isMongoId().withMessage('visitId must be a valid ObjectId'),
 
-export const validateDischargeParam = [
-  param('id').isMongoId().withMessage('Invalid discharge summary ID'),
+  body('admissionId').optional().isMongoId().withMessage('admissionId must be a valid ObjectId'),
+
+  body('finalDiagnosis').trim().notEmpty().withMessage('finalDiagnosis is required')
+    .isLength({ min: 3 }).withMessage('finalDiagnosis must be at least 3 characters'),
+
+  body('treatmentSummary').trim().notEmpty().withMessage('treatmentSummary is required')
+    .isLength({ min: 3 }).withMessage('treatmentSummary must be at least 3 characters'),
+
+  body('dischargeMedications').optional().isArray(),
+  body('dischargeMedications.*.name').optional().isString().trim(),
+  body('dischargeMedications.*.dosage').optional().isString().trim(),
+  body('dischargeMedications.*.instructions').optional().isString().trim(),
+
+  body('followUpDate').optional().isISO8601().withMessage('followUpDate must be a valid date'),
+  body('followUpInstructions').optional().isString().trim(),
 ];

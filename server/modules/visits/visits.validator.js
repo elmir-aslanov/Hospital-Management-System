@@ -1,13 +1,16 @@
-import { body, param } from 'express-validator';
+import { body } from 'express-validator';
 
 export const validateCreateVisit = [
-  body('patientId').isMongoId().withMessage('Valid patientId is required'),
-  body('chiefComplaint').trim().notEmpty().withMessage('Chief complaint is required'),
-  body('appointmentId').optional().isMongoId(),
+  body('patientId').notEmpty().withMessage('patientId is required')
+    .isMongoId().withMessage('patientId must be a valid ObjectId'),
+  body('doctorId').notEmpty().withMessage('doctorId is required')
+    .isMongoId().withMessage('doctorId must be a valid ObjectId'),
+  body('appointmentId').optional().isMongoId().withMessage('appointmentId must be a valid ObjectId'),
+  body('chiefComplaint').trim().notEmpty().withMessage('chiefComplaint is required')
+    .isLength({ min: 3 }).withMessage('chiefComplaint must be at least 3 characters'),
 ];
 
-export const validateCloseVisit = [
-  param('id').isMongoId().withMessage('Invalid visit ID'),
-  body('diagnosis').optional().trim(),
-  body('clinicalNotes').optional().trim(),
+export const validateUpdateVisit = [
+  body('diagnosis').optional().isString().trim(),
+  body('clinicalNotes').optional().isString().trim(),
 ];
