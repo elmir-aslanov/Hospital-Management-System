@@ -1,12 +1,17 @@
-import { body, param } from 'express-validator';
+import { body } from 'express-validator';
 
 export const validateAdmitPatient = [
-  body('patientId').isMongoId().withMessage('Valid patientId is required'),
-  body('bedId').isMongoId().withMessage('Valid bedId is required'),
-  body('wardId').isMongoId().withMessage('Valid wardId is required'),
-  body('reason').trim().notEmpty().withMessage('Admission reason is required'),
+  body('patientId').notEmpty().withMessage('patientId is required')
+    .isMongoId().withMessage('patientId must be a valid ObjectId'),
+  body('bedId').notEmpty().withMessage('bedId is required')
+    .isMongoId().withMessage('bedId must be a valid ObjectId'),
+  body('wardId').notEmpty().withMessage('wardId is required')
+    .isMongoId().withMessage('wardId must be a valid ObjectId'),
+  body('reason').trim().notEmpty().withMessage('reason is required')
+    .isLength({ min: 3 }).withMessage('reason must be at least 3 characters'),
 ];
 
-export const validateDischarge = [
-  param('id').isMongoId().withMessage('Invalid admission ID'),
+export const validateDischargePatient = [
+  body('dischargeDate').optional()
+    .isISO8601().withMessage('dischargeDate must be a valid date'),
 ];

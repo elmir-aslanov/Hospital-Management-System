@@ -25,7 +25,7 @@ export const BED_STATUS = Object.freeze({
 });
 
 export const ADMISSION_STATUS = Object.freeze({
-  ACTIVE:      'active',
+  ADMITTED:    'admitted',
   DISCHARGED:  'discharged',
   TRANSFERRED: 'transferred',
 });

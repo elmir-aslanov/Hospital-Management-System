@@ -2,14 +2,14 @@ import mongoose from 'mongoose';
 
 const wardSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: { type: String, required: true, unique: true, trim: true },
     type: {
       type: String,
-      enum: ['general', 'icu', 'emergency', 'maternity', 'pediatric', 'surgical'],
       required: true,
+      enum: ['general', 'icu', 'emergency', 'maternity', 'pediatric'],
     },
-    floor: { type: Number, required: true },
-    totalBeds: { type: Number, required: true, min: 1 },
+    floor:      { type: Number, required: true },
+    totalBeds:  { type: Number, required: true, min: 1 },
     headNurseId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true }
