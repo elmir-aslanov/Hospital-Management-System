@@ -8,7 +8,8 @@ export const createDoctor = asyncHandler(async (req, res) => {
 });
 
 export const getDoctors = asyncHandler(async (req, res) => {
-  const result = await doctorsService.getDoctors(req.query);
+  const { specialization, isAvailable, page, limit } = req.query;
+  const result = await doctorsService.getDoctors({ specialization, isAvailable, page, limit });
   res.status(200).json(new ApiResponse(200, result));
 });
 
@@ -28,11 +29,11 @@ export const getDoctorSchedule = asyncHandler(async (req, res) => {
 });
 
 export const updateDoctorSchedule = asyncHandler(async (req, res) => {
-  const schedule = await doctorsService.updateDoctorSchedule(req.params.id, req.body.schedule);
+  const schedule = await doctorsService.updateDoctorSchedule(req.params.id, req.body);
   res.status(200).json(new ApiResponse(200, schedule, 'Schedule updated'));
 });
 
 export const getDoctorAvailability = asyncHandler(async (req, res) => {
-  const slots = await doctorsService.getDoctorAvailability(req.params.id, req.query.date);
-  res.status(200).json(new ApiResponse(200, slots));
+  const availability = await doctorsService.getDoctorAvailability(req.params.id, req.query.date);
+  res.status(200).json(new ApiResponse(200, availability));
 });

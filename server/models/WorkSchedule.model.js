@@ -3,11 +3,11 @@ import mongoose from 'mongoose';
 const workScheduleSchema = new mongoose.Schema(
   {
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
-    dayOfWeek: { type: Number, min: 0, max: 6, required: true }, // 0=Sunday, 6=Saturday
-    startTime: { type: String, required: true }, // HH:mm format
-    endTime: { type: String, required: true },
-    slotDuration: { type: Number, default: 30 }, // minutes per appointment slot
-    isOff: { type: Boolean, default: false }, // true = day off
+    dayOfWeek: { type: Number, required: true, min: 0, max: 6 },
+    startTime: { type: String, required: true },   // "HH:MM"
+    endTime: { type: String, required: true },     // "HH:MM"
+    slotDuration: { type: Number, default: 30 },  // minutes
+    isOff: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

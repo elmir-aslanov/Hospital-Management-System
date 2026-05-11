@@ -1,16 +1,56 @@
-import { body, param } from 'express-validator';
+import { body } from 'express-validator';
 
 export const validateCreateDoctor = [
-  body('userId').isMongoId().withMessage('Valid userId is required'),
-  body('specialization').trim().notEmpty().withMessage('Specialization is required'),
-  body('licenseNumber').trim().notEmpty().withMessage('License number is required'),
-  body('experience').optional().isInt({ min: 0 }).withMessage('Experience must be a positive number'),
+  body('userId')
+    .notEmpty().withMessage('userId is required')
+    .isMongoId().withMessage('userId must be a valid MongoDB ObjectId'),
+
+  body('specialization')
+    .notEmpty().withMessage('Specialization is required')
+    .isString().trim(),
+
+  body('licenseNumber')
+    .notEmpty().withMessage('License number is required')
+    .isString().trim(),
+
+  body('experience')
+    .optional()
+    .isInt({ min: 0 }).withMessage('Experience must be a non-negative integer'),
+
+  body('bio')
+    .optional()
+    .isString().isLength({ max: 500 }).withMessage('Bio must be at most 500 characters').trim(),
+];
+
+export const validateUpdateDoctor = [
+  body('specialization').optional().isString().trim(),
+  body('licenseNumber').optional().isString().trim(),
+  body('experience').optional().isInt({ min: 0 }).withMessage('Experience must be a non-negative integer'),
+  body('bio').optional().isString().isLength({ max: 500 }).withMessage('Bio must be at most 500 characters').trim(),
+  body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean'),
 ];
 
 export const validateUpdateSchedule = [
-  param('id').isMongoId().withMessage('Invalid doctor ID'),
-  body('schedule').isArray({ min: 1 }).withMessage('Schedule must be a non-empty array'),
-  body('schedule.*.dayOfWeek').isInt({ min: 0, max: 6 }).withMessage('dayOfWeek must be 0-6'),
-  body('schedule.*.startTime').matches(/^\d{2}:\d{2}$/).withMessage('startTime must be HH:mm'),
-  body('schedule.*.endTime').matches(/^\d{2}:\d{2}$/).withMessage('endTime must be HH:mm'),
+  body()
+    .isArray({ min: 1 }).withMessage('Schedule must be a non-empty array'),
+
+  body('*.dayOfWeek')
+    .notEmpty().withMessage('dayOfWeek is required')
+    .isInt({ min: 0, max: 6 }).withMessage('dayOfWeek must be an integer between 0 and 6'),
+
+  body('*.startTime')
+    .notEmpty().withMessage('startTime is required')
+    .matches(/^\d{2}:\d{2}$/).withMessage('startTime must be in HH:MM format'),
+
+  body('*.endTime')
+    .notEmpty().withMessage('endTime is required')
+    .matches(/^\d{2}:\d{2}$/).withMessage('endTime must be in HH:MM format'),
+
+  body('*.slotDuration')
+    .optional()
+    .isInt({ min: 15, max: 120 }).withMessage('slotDuration must be between 15 and 120 minutes'),
+
+  body('*.isOff')
+    .optional()
+    .isBoolean().withMessage('isOff must be a boolean'),
 ];
