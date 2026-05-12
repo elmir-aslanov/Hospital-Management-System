@@ -21,6 +21,8 @@ import searchRoutes       from './modules/search/search.routes.js';
 import notificationRoutes from './modules/notifications/notifications.routes.js';
 import vitalsRoutes       from './modules/vitals/vitals.routes.js';
 import auditRoutes        from './modules/audit/audit.routes.js';
+import analyticsRoutes    from './modules/analytics/analytics.routes.js';
+import dashboardRoutes    from './modules/dashboard/dashboard.routes.js';
 
 const app = express();
 
@@ -54,6 +56,8 @@ app.use(`${API}/search`,        searchRoutes);
 app.use(`${API}/notifications`, notificationRoutes);
 app.use(`${API}/vitals`,        vitalsRoutes);
 app.use(`${API}/audit`,         auditRoutes);
+app.use(`${API}/analytics`,     analyticsRoutes);
+app.use(`${API}/dashboard`,     dashboardRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
