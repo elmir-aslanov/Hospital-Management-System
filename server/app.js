@@ -23,6 +23,10 @@ import vitalsRoutes       from './modules/vitals/vitals.routes.js';
 import auditRoutes        from './modules/audit/audit.routes.js';
 import analyticsRoutes    from './modules/analytics/analytics.routes.js';
 import dashboardRoutes    from './modules/dashboard/dashboard.routes.js';
+import ratingsRoutes      from './modules/ratings/ratings.routes.js';
+import certificatesRoutes from './modules/certificates/certificates.routes.js';
+import shiftsRoutes       from './modules/shifts/shifts.routes.js';
+import inventoryRoutes    from './modules/inventory/inventory.routes.js';
 
 const app = express();
 
@@ -58,6 +62,10 @@ app.use(`${API}/vitals`,        vitalsRoutes);
 app.use(`${API}/audit`,         auditRoutes);
 app.use(`${API}/analytics`,     analyticsRoutes);
 app.use(`${API}/dashboard`,     dashboardRoutes);
+app.use(`${API}/ratings`,       ratingsRoutes);
+app.use(`${API}/certificates`,  certificatesRoutes);
+app.use(`${API}/shifts`,        shiftsRoutes);
+app.use(`${API}/inventory`,     inventoryRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

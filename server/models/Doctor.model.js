@@ -7,7 +7,9 @@ const doctorSchema = new mongoose.Schema(
     licenseNumber: { type: String, required: true, unique: true, trim: true },
     experience: { type: Number, min: 0, default: 0 },
     bio: { type: String, trim: true, default: '' },
-    isAvailable: { type: Boolean, default: true },
+    isAvailable:    { type: Boolean, default: true },
+    averageRating:  { type: Number, default: 0, min: 0, max: 5 },
+    totalRatings:   { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );
