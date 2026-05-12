@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import * as authService from './auth.service.js';
+import { forgotPassword, resetPassword } from './passwordReset.service.js';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -31,4 +32,15 @@ export const refreshToken = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken || req.body.refreshToken;
   const data = await authService.refreshAccessToken(token);
   res.status(200).json(new ApiResponse(200, data, 'Token refreshed'));
+});
+
+export const forgotPasswordHandler = asyncHandler(async (req, res) => {
+  await forgotPassword(req.body.email);
+  res.status(200).json(new ApiResponse(200, null, 'OTP sent to your email'));
+});
+
+export const resetPasswordHandler = asyncHandler(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  await resetPassword(email, otp, newPassword, req);
+  res.status(200).json(new ApiResponse(200, null, 'Password reset successful'));
 });
