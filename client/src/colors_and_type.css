@@ -1,0 +1,328 @@
+/* ============================================================
+   ElmirMed — Colors & Type
+   Brand: Premium private hospital, Baku, Azerbaijan
+   "Sağlamlığınız — Prioritetimiz"  (Your Health — Our Priority)
+   ============================================================ */
+
+/* ---------- 1. FONTS ---------- */
+/* Plus Jakarta Sans — primary brand face (display + UI + body).
+   Loaded from Google Fonts. Local fallback chain ends at system-ui. */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  /* ===== 2. COLOR PRIMITIVES ===== */
+  /* Core brand */
+  --em-navy-950: #050E1C;   /* near-black, hero gradients */
+  --em-navy-900: #0A1628;   /* PRIMARY deep navy (brand anchor) */
+  --em-navy-800: #122236;
+  --em-navy-700: #1C2F47;
+  --em-navy-600: #2A405C;
+  --em-navy-500: #3D5675;
+  --em-navy-400: #5E7896;
+  --em-navy-300: #8AA2BD;
+  --em-navy-200: #B9CCE0;
+  --em-navy-100: #DCE6F1;
+  --em-navy-50:  #EEF3F9;
+
+  /* Medical teal — clinical accent */
+  --em-teal-900: #00484E;
+  --em-teal-800: #006670;
+  --em-teal-700: #008793;
+  --em-teal-600: #00A1B0;
+  --em-teal-500: #00BCD4;   /* PRIMARY teal */
+  --em-teal-400: #2BD0E5;
+  --em-teal-300: #5FDEEE;
+  --em-teal-200: #97EBF5;
+  --em-teal-100: #CCF5FA;
+  --em-teal-50:  #E6FAFD;
+
+  /* Premium gold — accents, awards, premium tier */
+  --em-gold-900: #6B4408;
+  --em-gold-800: #92600B;
+  --em-gold-700: #B47808;
+  --em-gold-600: #D89108;
+  --em-gold-500: #F59E0B;   /* PRIMARY gold */
+  --em-gold-400: #FBB13B;
+  --em-gold-300: #FCC56B;
+  --em-gold-200: #FDDB9B;
+  --em-gold-100: #FEEDC9;
+  --em-gold-50:  #FFF7E6;
+
+  /* Neutrals — white -> slate */
+  --em-white:    #FFFFFF;
+  --em-slate-50: #F8FAFC;   /* PRIMARY clean white surface */
+  --em-slate-100:#F1F5F9;
+  --em-slate-200:#E2E8F0;
+  --em-slate-300:#CBD5E1;
+  --em-slate-400:#94A3B8;
+  --em-slate-500:#64748B;
+  --em-slate-600:#475569;
+  --em-slate-700:#334155;
+  --em-slate-800:#1E293B;
+  --em-slate-900:#0F172A;
+
+  /* Semantic states */
+  --em-success-500: #10B981;
+  --em-success-100: #D1FAE5;
+  --em-warning-500: #F59E0B;
+  --em-warning-100: #FEF3C7;
+  --em-danger-500:  #EF4444; /* PRIMARY danger red */
+  --em-danger-100:  #FEE2E2;
+  --em-info-500:    #00BCD4;
+  --em-info-100:    #CCF5FA;
+
+  /* Ward / bed status (visual coding) */
+  --em-bed-free:    #10B981; /* Boş */
+  --em-bed-taken:   #EF4444; /* Tutulub */
+  --em-bed-clean:   #F59E0B; /* Təmizlənir */
+  --em-bed-out:     #94A3B8; /* xidmət xaricində */
+
+  /* ===== 3. SEMANTIC SURFACES (LIGHT THEME) ===== */
+  --bg:           var(--em-slate-50);
+  --bg-elevated:  var(--em-white);
+  --bg-sunken:    var(--em-slate-100);
+  --bg-inverse:   var(--em-navy-900);
+
+  --fg:           var(--em-navy-900);  /* primary text on light */
+  --fg-muted:     var(--em-slate-600);
+  --fg-subtle:    var(--em-slate-500);
+  --fg-disabled:  var(--em-slate-400);
+  --fg-on-dark:   var(--em-slate-50);
+  --fg-on-accent: var(--em-white);
+
+  --border:        var(--em-slate-200);
+  --border-strong: var(--em-slate-300);
+  --border-focus:  var(--em-teal-500);
+
+  --accent:        var(--em-teal-500);
+  --accent-hover:  var(--em-teal-600);
+  --accent-soft:   var(--em-teal-50);
+  --accent-ink:    var(--em-teal-900);
+
+  --brand:         var(--em-navy-900);
+  --brand-hover:   var(--em-navy-800);
+
+  --premium:       var(--em-gold-500);
+  --premium-hover: var(--em-gold-600);
+
+  /* ===== 4. TYPOGRAPHY TOKENS ===== */
+  --font-sans:    "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Type scale — major-third-ish, tuned for hospital interfaces */
+  --fs-display:   clamp(3.5rem, 6vw + 1rem, 6.5rem);  /* hero "ElmirMed" */
+  --fs-h1:        clamp(2.25rem, 3vw + 1rem, 3.5rem);
+  --fs-h2:        clamp(1.75rem, 2vw + 0.75rem, 2.5rem);
+  --fs-h3:        1.5rem;     /* 24 */
+  --fs-h4:        1.25rem;    /* 20 */
+  --fs-h5:        1.125rem;   /* 18 */
+  --fs-body-lg:   1.125rem;   /* 18 */
+  --fs-body:      1rem;       /* 16 */
+  --fs-body-sm:   0.875rem;   /* 14 */
+  --fs-caption:   0.75rem;    /* 12 */
+  --fs-overline:  0.6875rem;  /* 11 — uppercase eyebrow */
+
+  --lh-tight:    1.1;
+  --lh-snug:     1.25;
+  --lh-normal:   1.45;
+  --lh-relaxed:  1.6;
+
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-extra:    800;
+
+  --tracking-tight:   -0.02em;
+  --tracking-display: -0.03em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em;
+  --tracking-overline: 0.14em;
+
+  /* ===== 5. SPACING & LAYOUT ===== */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   10px;   /* default card */
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-2xl:  32px;
+  --radius-pill: 999px;
+
+  /* ===== 6. SHADOWS & ELEVATION ===== */
+  --shadow-xs:  0 1px 2px rgba(10, 22, 40, 0.04);
+  --shadow-sm:  0 1px 3px rgba(10, 22, 40, 0.06), 0 1px 2px rgba(10, 22, 40, 0.04);
+  --shadow-md:  0 4px 12px rgba(10, 22, 40, 0.06), 0 2px 4px rgba(10, 22, 40, 0.04);
+  --shadow-lg:  0 12px 32px rgba(10, 22, 40, 0.08), 0 4px 8px rgba(10, 22, 40, 0.04);
+  --shadow-xl:  0 24px 56px rgba(10, 22, 40, 0.12), 0 8px 16px rgba(10, 22, 40, 0.06);
+
+  /* Brand glows — used on hover for premium feel */
+  --glow-teal: 0 0 0 4px rgba(0, 188, 212, 0.18), 0 12px 32px rgba(0, 188, 212, 0.22);
+  --glow-gold: 0 0 0 4px rgba(245, 158, 11, 0.18), 0 12px 32px rgba(245, 158, 11, 0.22);
+
+  /* Ring (focus) */
+  --ring: 0 0 0 3px rgba(0, 188, 212, 0.35);
+
+  /* ===== 7. MOTION ===== */
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);    /* primary easing */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --dur-fast:   120ms;
+  --dur-base:   200ms;
+  --dur-slow:   320ms;
+  --dur-slower: 560ms;
+
+  /* ===== 8. LAYOUT CONSTANTS ===== */
+  --container-max: 1280px;
+  --content-max:   720px;
+  --sidebar-w:     264px;
+  --sidebar-w-collapsed: 76px;
+  --topbar-h:      72px;
+}
+
+/* ===== 9. BASE / RESET ===== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  font-weight: var(--fw-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--em-teal-200);
+  color: var(--em-navy-900);
+}
+
+/* ===== 10. SEMANTIC TYPE CLASSES ===== */
+.display, h1.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-extra);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-4);
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-3);
+}
+
+h3, .h3 {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  margin: 0 0 var(--space-3);
+}
+
+h4, .h4 {
+  font-size: var(--fs-h4);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  margin: 0 0 var(--space-2);
+}
+
+h5, .h5 {
+  font-size: var(--fs-h5);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-normal);
+  margin: 0 0 var(--space-2);
+}
+
+p, .body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  margin: 0 0 var(--space-3);
+  color: var(--fg);
+}
+
+.body-lg { font-size: var(--fs-body-lg); line-height: var(--lh-relaxed); }
+.body-sm { font-size: var(--fs-body-sm); line-height: var(--lh-normal); }
+.caption { font-size: var(--fs-caption); color: var(--fg-muted); line-height: var(--lh-normal); }
+
+.overline, .eyebrow {
+  font-size: var(--fs-overline);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--em-slate-100);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-xs);
+  color: var(--em-navy-800);
+}
+
+a {
+  color: var(--em-teal-700);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+a:hover { color: var(--em-teal-600); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Numerics — tabular for tables / dashboards */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Numeric KPI display */
+.kpi-num {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--em-navy-900);
+  line-height: 1;
+}
+
+/* Dark surface helpers */
+.on-dark { color: var(--fg-on-dark); }
+.on-dark p, .on-dark .body { color: rgba(248, 250, 252, 0.78); }
+
+/* Focus ring (global) */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
