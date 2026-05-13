@@ -31,7 +31,8 @@ const connectDB = async (attempt = 1) => {
 };
 
 mongoose.connection.on('disconnected', () => {
-  logger.warn('MongoDB disconnected');
+  logger.warn('MongoDB disconnected — attempting reconnect...');
+  setTimeout(() => connectDB(), RETRY_DELAY_MS);
 });
 
 export default connectDB;

@@ -24,7 +24,6 @@ const medicineSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-medicineSchema.index({ name: 1 }, { unique: true });
 medicineSchema.index({ category: 1 });
 medicineSchema.index({ stock: 1 });
 
