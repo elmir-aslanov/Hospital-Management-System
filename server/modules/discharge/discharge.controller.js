@@ -27,6 +27,15 @@ export const getDischargeSummaryByVisit = asyncHandler(async (req, res) => {
 });
 
 export const downloadPDF = asyncHandler(async (req, res) => {
-  const data = await dischargeService.getPDFUrl(req.params.id);
-  res.status(200).json(new ApiResponse(200, data, 'PDF ready'));
+  const { pdfUrl, pdfBuffer } = await dischargeService.generatePDFBuffer(req.params.id);
+
+  if (pdfUrl) {
+    return res.status(200).json(new ApiResponse(200, { pdfUrl }, 'PDF ready'));
+  }
+
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="discharge-${req.params.id}.pdf"`,
+  });
+  res.send(pdfBuffer);
 });

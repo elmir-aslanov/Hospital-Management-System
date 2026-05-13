@@ -120,8 +120,27 @@ export const getDischargeSummaryByVisit = async (visitId) => {
   return summary;
 };
 
-export const getPDFUrl = async (summaryId) => {
-  const summary = await DischargeSummary.findById(summaryId).select('pdfUrl');
+export const generatePDFBuffer = async (summaryId) => {
+  const summary = await populateSummary(DischargeSummary.findById(summaryId));
   if (!summary) throw new ApiError(404, 'Discharge summary not found');
-  return { pdfUrl: summary.pdfUrl };
+
+  if (summary.pdfUrl) return { pdfUrl: summary.pdfUrl };
+
+  const pdfData = {
+    patientName:          summary.patientId?.userId?.fullName || 'N/A',
+    patientId:            summary.patientId?.patientId || 'N/A',
+    bloodGroup:           summary.patientId?.bloodGroup || 'N/A',
+    doctorName:           summary.dischargingDoctor?.userId?.fullName || 'N/A',
+    doctorSpecialization: summary.dischargingDoctor?.specialization || 'N/A',
+    admissionDate:        summary.admissionId?.admissionDate || null,
+    dischargeDate:        summary.dischargeDate,
+    finalDiagnosis:       summary.finalDiagnosis,
+    treatmentSummary:     summary.treatmentSummary,
+    dischargeMedications: summary.dischargeMedications || [],
+    followUpDate:         summary.followUpDate || null,
+    followUpInstructions: summary.followUpInstructions || '',
+  };
+
+  const pdfBuffer = await createDischargePDF(pdfData);
+  return { pdfUrl: null, pdfBuffer };
 };
