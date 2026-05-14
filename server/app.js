@@ -32,20 +32,27 @@ import exportRoutes       from './modules/export/export.routes.js';
 const app = express();
 
 // ── Security & parsing middleware ─────────────────────────────────────────────
-app.use(helmet());
-app.use(cors({
+const corsOptions = {
   origin: (origin, cb) => {
     const allowed = [
       process.env.CLIENT_URL,
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
+      'http://localhost:5176',
     ];
     if (!origin || allowed.includes(origin)) return cb(null, true);
-    cb(new Error('CORS: origin not allowed'));
+    cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
-}));
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-Requested-With'],
+  exposedHeaders: ['Content-Disposition'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));   // preflight bütün route-lar üçün
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
