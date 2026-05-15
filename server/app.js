@@ -3,6 +3,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import { rateLimiter } from './middleware/rateLimiter.middleware.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
@@ -30,6 +32,32 @@ import inventoryRoutes    from './modules/inventory/inventory.routes.js';
 import exportRoutes       from './modules/export/export.routes.js';
 
 const app = express();
+
+// ── Swagger ───────────────────────────────────────────────────────────────────
+const swaggerSpec = swaggerJsdoc({
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Aslan Medical Clinic API',
+      version: '1.0.0',
+      description: 'Hospital Management System REST API',
+      contact: { name: 'Elmir Aslanov', email: 'info@aslanmedical.az' },
+    },
+    servers: [{ url: 'http://localhost:5000/api/v1', description: 'Development server' }],
+    components: {
+      securitySchemes: {
+        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      },
+    },
+    security: [{ bearerAuth: [] }],
+  },
+  apis: ['./modules/**/*.routes.js'],
+});
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { background-color: #0a1628 }',
+  customSiteTitle: 'Aslan Medical API Docs',
+}));
 
 // ── Security & parsing middleware ─────────────────────────────────────────────
 const corsOptions = {
