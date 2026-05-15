@@ -1,12 +1,18 @@
 /* eslint-disable */
+import { useEffect } from 'react';
 import { useFetch } from '../../hooks/useFetch';
 import Icons from '../../components/Icons';
+import { toast } from 'sonner';
 
 function SkeletonRow({cols}){return<tr>{Array.from({length:cols}).map((_,i)=><td key={i}><div style={{height:13,borderRadius:4,background:'var(--em-slate-100)'}}/></td>)}</tr>}
 
 export default function DoctorsPage() {
   const { data, loading, error } = useFetch('/doctors', { limit: 50 });
   const doctors = data?.doctors || [];
+
+  useEffect(() => {
+    if (error) toast.error('Həkim məlumatları yüklənmədi. Serverlə əlaqəni yoxlayın.');
+  }, [error]);
 
   return (
     <div>

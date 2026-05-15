@@ -1,10 +1,16 @@
 /* eslint-disable */
+import { useEffect } from 'react';
 import { useFetch } from '../../hooks/useFetch';
 import Icons from '../../components/Icons';
+import { toast } from 'sonner';
 
 export default function WardsPage() {
   const { data, loading, error } = useFetch('/wards');
   const wards = data?.wards || [];
+
+  useEffect(() => {
+    if (error) toast.error('Palata məlumatları yüklənmədi. Serverlə əlaqəni yoxlayın.');
+  }, [error]);
 
   return (
     <div>

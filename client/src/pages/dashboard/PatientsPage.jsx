@@ -1,7 +1,8 @@
 /* eslint-disable */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFetch } from '../../hooks/useFetch';
 import Icons from '../../components/Icons';
+import { toast } from 'sonner';
 
 function SkeletonRow({cols}){return<tr>{Array.from({length:cols}).map((_,i)=><td key={i}><div style={{height:13,borderRadius:4,background:'var(--em-slate-100)'}}/></td>)}</tr>}
 
@@ -13,6 +14,10 @@ export default function PatientsPage() {
   const patients = data?.patients || data?.results || [];
   const total    = data?.total || 0;
   const pages    = Math.ceil(total / 15) || 1;
+
+  useEffect(() => {
+    if (error) toast.error('Pasiyent məlumatları yüklənmədi. Serverlə əlaqəni yoxlayın.');
+  }, [error]);
 
   return (
     <div>
