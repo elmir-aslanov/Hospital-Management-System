@@ -17,7 +17,11 @@ api.interceptors.response.use(
     const { status } = error.response;
 
     if (status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new Event('storage'));
       toast.error('Sessiyanız bitib. Yenidən daxil olun.');
+      window.location.href = '/login';
     } else if (status === 500) {
       toast.error('Server xətası. Bir az sonra yenidən cəhd edin.');
     }

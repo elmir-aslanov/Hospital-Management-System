@@ -1,35 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import VideoBackground from './VideoBackground';
 
-const VIDEOS = ['/video1.mp4', '/video2.mp4', '/video3.mp4'];
-const FONT   = "'Source Sans 3', 'Raleway', sans-serif";
+const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 
 const HeroSection = () => {
-  const [current, setCurrent] = useState(0);
-  const [fading,  setFading]  = useState(false);
-  const refs = [useRef(null), useRef(null), useRef(null)];
-
-  /* ── video rotation — unchanged ── */
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setCurrent(prev => (prev + 1) % 3);
-        setFading(false);
-      }, 800);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    refs.forEach((ref, i) => {
-      if (ref.current && i === current) {
-        ref.current.currentTime = 0;
-        ref.current.play().catch(() => {});
-      }
-    });
-  }, [current]);
-
   return (
     <div style={{
       position: 'relative',
@@ -39,32 +13,8 @@ const HeroSection = () => {
       background: '#030912',
     }}>
 
-      {/* ── Videos — untouched ── */}
-      {VIDEOS.map((src, i) => (
-        <video
-          key={i}
-          ref={refs[i]}
-          autoPlay={i === 0}
-          muted
-          playsInline
-          style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            objectFit: 'cover',
-            opacity: current === i ? (fading ? 0 : 1) : 0,
-            transition: 'opacity 0.8s ease',
-            zIndex: 1,
-          }}
-        >
-          <source src={src} type="video/mp4" />
-        </video>
-      ))}
-
-      {/* ── Global dark overlay — lighter so video shows ── */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 2,
-        background: 'rgba(0,0,0,0.35)',
-      }} />
+      {/* ── Video layer — preloaded crossfade ── */}
+      <VideoBackground />
 
       {/* ── Left teal content panel (UCSF style) ── */}
       <motion.div
@@ -75,8 +25,8 @@ const HeroSection = () => {
           position: 'absolute',
           left: 0, top: 0, bottom: 0,
           width: '460px',
-          zIndex: 3,
-          background: 'linear-gradient(135deg, rgba(0,100,120,0.93) 0%, rgba(0,60,90,0.89) 100%)',
+          zIndex: 4,
+          background: 'linear-gradient(135deg, rgba(0,100,120,0.78) 0%, rgba(0,60,90,0.72) 100%)',
           padding: '60px 48px 60px 40px',
           display: 'flex',
           flexDirection: 'column',
@@ -137,6 +87,7 @@ const HeroSection = () => {
               transition: 'background 0.25s, color 0.25s',
               letterSpacing: '0.3px',
             }}
+            onClick={() => window.location.href = '/about'}
             onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#00848e'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'white'; }}
           >
@@ -144,30 +95,6 @@ const HeroSection = () => {
           </button>
         </div>
       </motion.div>
-
-      {/* ── Dot indicators bottom right ── */}
-      <div style={{
-        position: 'absolute', bottom: 28, right: 40,
-        display: 'flex', gap: '8px', zIndex: 5,
-      }}>
-        {VIDEOS.map((_, i) => (
-          <div key={i} onClick={() => setCurrent(i)} style={{
-            width: current === i ? 28 : 8,
-            height: 8, borderRadius: 4,
-            cursor: 'pointer',
-            background: current === i ? '#00848e' : 'rgba(255,255,255,0.4)',
-            transition: 'all 0.3s ease',
-          }} />
-        ))}
-      </div>
-
-      {/* ── Progress bar bottom ── */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0,
-        height: '3px', background: '#00848e',
-        animation: 'heroProgress 6s linear infinite',
-        zIndex: 5,
-      }} />
 
       {/* ── Multi-wave transition to white below ── */}
       <div style={{
@@ -190,7 +117,6 @@ const HeroSection = () => {
       </div>
 
       <style>{`
-        @keyframes heroProgress { from { width: 0% } to { width: 100% } }
         @media (max-width: 768px) {
           h1 { font-size: 30px !important; }
         }

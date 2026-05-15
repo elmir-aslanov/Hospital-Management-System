@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useExternalLink } from '../hooks/useExternalLink';
+import ExternalLinkModal from './ui/ExternalLinkModal';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -126,6 +128,8 @@ export default function Navbar() {
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
   }, []);
+
+  const { modal, openExternalLink, handleConfirm, handleCancel } = useExternalLink();
 
   const onEnter = (label) => { clearTimeout(closeTimer.current); setActiveDropdown(label); };
   const onLeave = () => { closeTimer.current = setTimeout(() => setActiveDropdown(null), 120); };
@@ -264,17 +268,22 @@ export default function Navbar() {
             <span style={{ width: '1px', height: '18px', background: 'rgba(0,0,0,0.12)', flexShrink: 0 }} />
 
             {SOCIALS.map(({ Icon, label, href }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                style={{ color: '#1a2b4a', lineHeight: 0, transition: 'color 0.2s, transform 0.2s' }}
+              <span key={label} aria-label={label}
+                onClick={() => openExternalLink(href, label)}
+                style={{ color: '#1a2b4a', lineHeight: 0, transition: 'color 0.2s, transform 0.2s', cursor: 'pointer' }}
                 onMouseEnter={e => { e.currentTarget.style.color = TEAL; e.currentTarget.style.transform = 'scale(1.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = '#1a2b4a'; e.currentTarget.style.transform = 'scale(1)'; }}
-              ><Icon /></a>
+              ><Icon /></span>
             ))}
 
             <span style={{ width: '1px', height: '20px', background: 'rgba(0,0,0,0.1)', flexShrink: 0 }} />
 
             {isAuthenticated ? (
-              <div onClick={() => navigate('/dashboard')}
+              <div
+                onClick={() => {
+                  const role = user?.role?.toUpperCase();
+                  navigate(role === 'PATIENT' ? '/patient' : '/dashboard');
+                }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   background: 'linear-gradient(135deg, #00848e, #006b74)',
@@ -348,9 +357,14 @@ export default function Navbar() {
               {ACTION_PILLS.map((btn, i) => (
                 <button key={btn}
                   onClick={() => {
-                    if (btn === 'Pasiyent Portalı') {
-                      toast.info('Pasiyent portalına daxil olmaq üçün əvvəlcə giriş edin.');
-                      navigate('/login');
+                    if (btn === 'Həkim Tap') {
+                      navigate('/doctors');
+                    } else if (btn === 'Randevu Al') {
+                      if (isAuthenticated) navigate('/patient');
+                      else navigate('/login');
+                    } else if (btn === 'Pasiyent Portalı') {
+                      if (isAuthenticated) navigate('/patient');
+                      else { toast.info('Pasiyent portalına daxil olmaq üçün əvvəlcə giriş edin.'); navigate('/login'); }
                     }
                   }}
                   style={{
@@ -512,6 +526,14 @@ export default function Navbar() {
           .nav-layer3  { display: none !important; }
         }
       `}</style>
+
+      <ExternalLinkModal
+        url={modal.url}
+        siteName={modal.siteName}
+        isOpen={modal.isOpen}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </>
   );
 }

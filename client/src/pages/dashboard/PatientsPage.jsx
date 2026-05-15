@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState, useEffect } from 'react';
+import '../../styles/dashboard.css';
 import { useFetch } from '../../hooks/useFetch';
 import Icons from '../../components/Icons';
 import { toast } from 'sonner';

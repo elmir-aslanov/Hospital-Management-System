@@ -6,21 +6,21 @@ const defaultStories = [
     name: 'Ad Soyad',
     condition: 'Xəstəlik, Ölkə',
     image: '/images/patient1.jpg',
-    gradient: 'linear-gradient(135deg, #0a1628 0%, #0096C7 100%)',
+    gradient: 'linear-gradient(135deg, #0a1628 0%, #006b74 100%)',
   },
   {
     id: 2,
     name: 'Ad Soyad',
     condition: 'Xəstəlik, Ölkə',
     image: '/images/patient2.jpg',
-    gradient: 'linear-gradient(135deg, #0a1628 0%, #00BCD4 100%)',
+    gradient: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)',
   },
   {
     id: 3,
     name: 'Ad Soyad',
     condition: 'Xəstəlik, Ölkə',
     image: '/images/patient3.jpg',
-    gradient: 'linear-gradient(135deg, #023e5e 0%, #00BCD4 100%)',
+    gradient: 'linear-gradient(135deg, #023e5e 0%, #00848e 100%)',
   },
 ];
 
@@ -111,7 +111,7 @@ export default function PatientStories({
           position: 'absolute',
           top: '10%', left: '5%',
           width: '200px', height: '200px',
-          backgroundImage: 'radial-gradient(circle, #00BCD4 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, #00848e 1px, transparent 1px)',
           backgroundSize: '16px 16px',
           opacity: 0.25,
           zIndex: 0,
@@ -141,7 +141,7 @@ export default function PatientStories({
         <p style={{
           fontSize: '12px',
           letterSpacing: '3px',
-          color: '#00BCD4',
+          color: '#00848e',
           textTransform: 'uppercase',
           marginBottom: '12px',
           fontWeight: 600,
@@ -157,13 +157,13 @@ export default function PatientStories({
           lineHeight: 1.2,
         }}>
           {title}{' '}
-          <span style={{ color: '#00BCD4' }}>{titleHighlight}</span>
+          <span style={{ color: '#00848e' }}>{titleHighlight}</span>
         </h2>
 
         {/* Divider */}
         <div style={{
           width: '60px', height: '3px',
-          background: '#00BCD4',
+          background: '#00848e',
           borderRadius: '2px',
           marginTop: '12px',
           marginBottom: '24px',
@@ -191,7 +191,7 @@ export default function PatientStories({
           display: 'inline-flex',
           alignItems: 'center',
           gap: '10px',
-          color: '#00BCD4',
+          color: '#00848e',
           fontWeight: 700,
           fontSize: '16px',
           textDecoration: 'none',
@@ -199,7 +199,7 @@ export default function PatientStories({
           <span style={{
             width: '32px', height: '32px',
             borderRadius: '50%',
-            background: '#00BCD4',
+            background: '#00848e',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

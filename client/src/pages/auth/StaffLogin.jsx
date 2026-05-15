@@ -98,6 +98,7 @@ export default function StaffLogin() {
 
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
+      window.dispatchEvent(new Event('storage'));
       toast.success(`Xoş gəldiniz, ${user.fullName}!`);
       navigate(roleToRoute(user.role));
     } catch (err) {
