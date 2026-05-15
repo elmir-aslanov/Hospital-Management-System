@@ -1,11 +1,14 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import Navbar           from './components/Navbar';
+import PageLoader       from './components/ui/PageLoader';
 import ProtectedRoute   from './components/ui/ProtectedRoute';
 
 /* Public */
 import HomePage         from './pages/public/HomePage';
-import ComingSoon       from './pages/public/ComingSoon';
+import ComingSoon            from './pages/public/ComingSoon';
+import PatientStoriesPage   from './pages/public/PatientStoriesPage';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -23,6 +26,21 @@ import PatientsPage     from './pages/dashboard/PatientsPage';
 import DoctorsPage      from './pages/dashboard/DoctorsPage';
 import AppointmentsPage from './pages/dashboard/AppointmentsPage';
 import WardsPage        from './pages/dashboard/WardsPage';
+
+function RouteLoader() {
+  const location = useLocation()
+  const [loading, setLoading] = useState(false)
+  const [key, setKey] = useState(0)
+
+  useEffect(() => {
+    setLoading(true)
+    setKey(prev => prev + 1)
+    const timer = setTimeout(() => setLoading(false), 1000)
+    return () => clearTimeout(timer)
+  }, [location.pathname])
+
+  return loading ? <PageLoader key={key} /> : null
+}
 
 /* Pages that hide the public navbar */
 const HIDE_NAV_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password']);
@@ -46,6 +64,7 @@ function Layout() {
         <Route path="/patients"    element={<ComingSoon title="Pasiyent Mərkəzi" />} />
         <Route path="/blog"        element={<ComingSoon title="Bloq" />} />
         <Route path="/contact"     element={<ComingSoon title="Əlaqə" />} />
+        <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />
@@ -95,6 +114,7 @@ function Layout() {
 export default function App() {
   return (
     <BrowserRouter>
+      <RouteLoader />
       <Layout />
     </BrowserRouter>
   );

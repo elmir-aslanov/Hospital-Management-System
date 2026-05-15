@@ -138,12 +138,15 @@ export default function Login() {
           {/* Logo */}
           <img
             src="/logo.png"
-            alt="Aslan Medical"
+            alt="Aslan Medical Clinic"
             style={{
-              height: '56px', width: 'auto', objectFit: 'contain',
-              filter: 'brightness(10)',
-              marginBottom: '36px',
+              height: '56px', width: 'auto',
+              background: 'rgba(255,255,255,0.95)',
+              borderRadius: '10px',
+              padding: '8px 16px',
+              marginBottom: '24px',
               alignSelf: 'flex-start',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
             }}
             onError={e => {
               e.currentTarget.style.display = 'none';

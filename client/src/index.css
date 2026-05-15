@@ -15,3 +15,10 @@ body {
   color: #1a2b4a;
   -webkit-font-smoothing: antialiased;
 }
+
+video {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}

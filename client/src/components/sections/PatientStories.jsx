@@ -1,80 +1,60 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const defaultStories = [
   {
     id: 1,
-    name: 'Ad Soyad',
-    condition: 'Xəstəlik, Ölkə',
-    image: '/images/patient1.jpg',
+    name: 'Pasiyent 1',
+    condition: 'Müalicə, Bakı',
+    image: '/pasiyent1.jpeg',
     gradient: 'linear-gradient(135deg, #0a1628 0%, #006b74 100%)',
   },
   {
     id: 2,
-    name: 'Ad Soyad',
-    condition: 'Xəstəlik, Ölkə',
-    image: '/images/patient2.jpg',
+    name: 'Pasiyent 2',
+    condition: 'Müalicə, Bakı',
+    image: '/pasiyent2.jpeg',
     gradient: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)',
   },
   {
     id: 3,
-    name: 'Ad Soyad',
-    condition: 'Xəstəlik, Ölkə',
-    image: '/images/patient3.jpg',
+    name: 'Pasiyent 3',
+    condition: 'Cərrahiyyə, Bakı',
+    image: '/pasiyent3.jpeg',
     gradient: 'linear-gradient(135deg, #023e5e 0%, #00848e 100%)',
   },
 ];
 
 const defaultContent = {
-  overline: 'Xəstə Hekayələri',
+  overline: 'XƏSTƏ HEKAYƏLƏRİ',
   title: 'Pasiyent',
   titleHighlight: 'Hekayələri',
-  description1:
-    'Bunlar Aslan Medical Clinic-i seçən pasiyentlərin və ailələrinin təcrübələridir. Diaqnozdan müalicəyə, sağalmadan sonrakı mərhələyə qədər şəxsi səyahətlərini izləyin.',
-  description2:
-    'Komandamız pasiyentlərimizin həyatında fərq yaratmağa həvəslidir və real insanların ilhamverici şəhadətlərini paylaşmaqdan şərəf duyuruq.',
-  linkHref: '/pasiyentler',
   linkLabel: 'Onların dediklərinə bax',
 };
 
-const sectionReveal = {
-  initial: { opacity: 0, y: 40 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-100px' },
-  transition: { duration: 0.6, ease: 'easeOut' },
-};
-
-function PatientCard({ story, cardStyle }) {
+function StoryCard({ story, style, animDelay }) {
   return (
     <motion.div
-      whileHover={{ scale: 1.03, zIndex: 10 }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.06, zIndex: 10 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.3, ease: 'easeOut', delay: animDelay }}
       style={{
         position: 'absolute',
-        borderRadius: '20px',
         overflow: 'hidden',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
         cursor: 'pointer',
         background: story.gradient,
-        ...cardStyle,
+        ...style,
       }}
     >
       <img
         src={story.image}
         alt={story.name}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        onError={e => {
-          e.target.style.display = 'none';
-          e.target.parentElement.style.background = story.gradient;
-        }}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        onError={e => { e.target.style.display = 'none'; }}
       />
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%)',
-        padding: '20px 14px 14px',
-        color: 'white',
-      }}>
-        <div style={{ fontWeight: 700, fontSize: '14px' }}>{story.name}</div>
-        <div style={{ fontSize: '12px', opacity: 0.85 }}>{story.condition}</div>
-      </div>
+
     </motion.div>
   );
 }
@@ -83,133 +63,148 @@ export default function PatientStories({
   stories = defaultStories,
   content = defaultContent,
 }) {
-  const { overline, title, titleHighlight, description1, description2, linkHref, linkLabel } = content;
+  const navigate = useNavigate();
+  const { overline, title, titleHighlight, linkLabel } = content;
 
   return (
-    <section style={{
-      background: '#f8fafc',
-      padding: '80px 6vw',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '80px',
+    <div style={{
+      background: '#ffffff',
+      padding: '100px 0',
+      position: 'relative',
       overflow: 'hidden',
     }}>
 
-      {/* LEFT — Photo collage */}
-      <motion.div
-        {...sectionReveal}
-        transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
-        style={{
-          position: 'relative',
-          width: '480px',
-          height: '480px',
-          flexShrink: 0,
-        }}
-      >
-        {/* Dot pattern background */}
-        <div style={{
-          position: 'absolute',
-          top: '10%', left: '5%',
-          width: '200px', height: '200px',
-          backgroundImage: 'radial-gradient(circle, #00848e 1px, transparent 1px)',
-          backgroundSize: '16px 16px',
-          opacity: 0.25,
-          zIndex: 0,
-        }} />
+      {/* Top-right curved decoration */}
+      <div style={{
+        position: 'absolute', top: 0, right: 0,
+        width: '220px', height: '220px',
+        opacity: 0.07, zIndex: 0, pointerEvents: 'none',
+      }}>
+        <svg viewBox="0 0 220 220" fill="none">
+          <path d="M220,0 C220,120 120,220 0,220" stroke="#00848e" strokeWidth="50" fill="none"/>
+          <path d="M220,50 C220,150 150,220 50,220" stroke="#00848e" strokeWidth="25" fill="none"/>
+        </svg>
+      </div>
 
-        <PatientCard
-          story={stories[0]}
-          cardStyle={{ top: '5%', left: '0%', width: '220px', height: '220px', zIndex: 2 }}
-        />
-        <PatientCard
-          story={stories[1]}
-          cardStyle={{ top: '0%', left: '42%', width: '260px', height: '260px', zIndex: 3 }}
-        />
-        <PatientCard
-          story={stories[2]}
-          cardStyle={{ top: '50%', left: '15%', width: '240px', height: '220px', zIndex: 2 }}
-        />
-      </motion.div>
+      <div style={{
+        maxWidth: '1280px',
+        margin: '0 auto',
+        padding: '0 80px',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        alignItems: 'center',
+        gap: '80px',
+        position: 'relative',
+        zIndex: 1,
+      }}>
 
-      {/* RIGHT — Text content */}
-      <motion.div
-        {...sectionReveal}
-        transition={{ duration: 0.6, ease: 'easeOut', delay: 0.25 }}
-        style={{ maxWidth: '520px' }}
-      >
-        {/* Overline */}
-        <p style={{
-          fontSize: '12px',
-          letterSpacing: '3px',
-          color: '#00848e',
-          textTransform: 'uppercase',
-          marginBottom: '12px',
-          fontWeight: 600,
-        }}>
-          {overline}
-        </p>
+        {/* ── LEFT — Photo collage ── */}
+        <div style={{ position: 'relative', width: '100%', height: '520px' }}>
+          <div style={{
+            position: 'absolute',
+            top: '-10px', left: '-20px',
+            width: '160px', height: '160px',
+            backgroundImage: 'radial-gradient(circle, #cbd5e0 1.5px, transparent 1.5px)',
+            backgroundSize: '16px 16px',
+            opacity: 0.6, zIndex: 0, pointerEvents: 'none',
+          }} />
 
-        {/* Title */}
-        <h2 style={{
-          fontSize: '38px',
-          fontWeight: 800,
-          color: '#0a1628',
-          lineHeight: 1.2,
-        }}>
-          {title}{' '}
-          <span style={{ color: '#00848e' }}>{titleHighlight}</span>
-        </h2>
+          <StoryCard
+            story={stories[0]}
+            animDelay={0}
+            style={{
+              top: '80px', left: '0',
+              width: '240px', height: '240px',
+              borderRadius: '24px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+              zIndex: 2,
+            }}
+          />
+          <StoryCard
+            story={stories[1]}
+            animDelay={0.15}
+            style={{
+              top: '0', right: '20px',
+              width: '280px', height: '320px',
+              borderRadius: '32px',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.14)',
+              zIndex: 3,
+            }}
+          />
+          <StoryCard
+            story={stories[2]}
+            animDelay={0.3}
+            style={{
+              bottom: '0', left: '100px',
+              width: '260px', height: '220px',
+              borderRadius: '24px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+              zIndex: 2,
+            }}
+          />
+        </div>
 
-        {/* Divider */}
-        <div style={{
-          width: '60px', height: '3px',
-          background: '#00848e',
-          borderRadius: '2px',
-          marginTop: '12px',
-          marginBottom: '24px',
-        }} />
+        {/* ── RIGHT — Text content ── */}
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <p style={{
+            fontSize: '11px', letterSpacing: '3px',
+            color: '#00848e', fontWeight: 700,
+            textTransform: 'uppercase', marginBottom: '14px',
+          }}>
+            {overline}
+          </p>
 
-        <p style={{
-          fontSize: '16px',
-          color: '#4a5568',
-          lineHeight: 1.8,
-          marginBottom: '16px',
-        }}>
-          {description1}
-        </p>
+          <h2 style={{ lineHeight: 1.2, marginBottom: 0 }}>
+            <span style={{ color: '#0a1628', fontWeight: 800, fontSize: '40px' }}>{title} </span>
+            <span style={{ color: '#00848e', fontWeight: 800, fontSize: '40px' }}>{titleHighlight}</span>
+          </h2>
 
-        <p style={{
-          fontSize: '16px',
-          color: '#4a5568',
-          lineHeight: 1.8,
-          marginBottom: '32px',
-        }}>
-          {description2}
-        </p>
+          <div style={{
+            width: '60px', height: '3px',
+            background: '#00848e', borderRadius: '2px',
+            margin: '14px 0 28px',
+          }} />
 
-        <a href={linkHref} style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '10px',
-          color: '#00848e',
-          fontWeight: 700,
-          fontSize: '16px',
-          textDecoration: 'none',
-        }}>
-          <span style={{
-            width: '32px', height: '32px',
-            borderRadius: '50%',
-            background: '#00848e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '14px',
-          }}>›</span>
-          {linkLabel}
-        </a>
-      </motion.div>
+          <p style={{
+            fontSize: '18px', color: '#4a5568',
+            lineHeight: 1.8, marginBottom: '28px',
+            fontStyle: 'italic',
+          }}>
+            "Hər pasiyentin arxasında bir hekayə var.
+            Onlar bizə etibar etdi — biz onları sağaltdıq."
+          </p>
 
-    </section>
+          <button
+            onClick={() => navigate('/pasiyent-hekayeleri')}
+            style={{
+              display: 'inline-flex', alignItems: 'center',
+              gap: '12px', cursor: 'pointer',
+              marginTop: '16px', background: 'none',
+              border: 'none', padding: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.querySelector('.label').style.textDecoration = 'underline'}
+            onMouseLeave={e => e.currentTarget.querySelector('.label').style.textDecoration = 'none'}
+          >
+            <span style={{
+              width: '38px', height: '38px', borderRadius: '50%',
+              background: '#00848e', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: '18px', flexShrink: 0,
+            }}>›</span>
+            <span className="label" style={{
+              color: '#00848e', fontSize: '16px', fontWeight: 700,
+            }}>
+              {linkLabel}
+            </span>
+          </button>
+        </motion.div>
+
+      </div>
+    </div>
   );
 }

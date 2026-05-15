@@ -45,11 +45,9 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0a1628', marginBottom: '8px' }}>
           Xəbərdarlıq
         </h3>
-        <p style={{ fontSize: '15px', color: '#4a5568', lineHeight: 1.6, marginBottom: '8px' }}>
-          <strong style={{ color: '#0a1628' }}>{siteName}</strong> saytından ayrılırsınız.
-        </p>
-        <p style={{ fontSize: '13px', color: '#718096', marginBottom: '24px', lineHeight: 1.5 }}>
-          Sizi xarici bir sayta yönləndiririk. Aslan Medical Clinic bu saytın məzmununa görə məsuliyyət daşımır.
+        <p style={{ fontSize: '15px', color: '#4a5568', lineHeight: 1.6, marginBottom: '24px' }}>
+          <strong style={{ color: '#0a1628' }}>Aslan Medical Clinic</strong> saytından ayrılırsınız.<br />
+          Sizi <strong style={{ color: '#0a1628' }}>{siteName}</strong> xarici saytına yönləndiririk.
         </p>
 
         <div style={{
