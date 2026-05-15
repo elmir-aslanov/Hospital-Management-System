@@ -22,3 +22,23 @@ video {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
+
+img { max-width: 100%; }
+
+@media (max-width: 768px) {
+  html { font-size: 15px; }
+
+  /* Login page — hide left teal panel, show only form */
+  .login-left-panel { display: none !important; }
+  .login-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .login-right-panel {
+    padding: 40px 24px !important;
+    min-height: 100vh;
+  }
+
+  /* Wave dividers smaller on mobile */
+  .wave-divider svg { height: 40px !important; }
+  .wave-divider { height: 40px !important; }
+}

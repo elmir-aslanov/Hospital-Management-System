@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "home": "Ana Səhifə",
+    "doctors": "Həkimlər",
+    "departments": "Şöbələr",
+    "services": "Xidmətlər & Müalicələr",
+    "patientCenter": "Pasiyent Mərkəzi",
+    "about": "Haqqımızda & Təlim",
+    "blog": "Bloq",
+    "contact": "Əlaqə"
+  },
+  "topbar": {
+    "address": "Bakı, Azərbaycan — Aslan Medical Clinic",
+    "forDoctors": "Həkimlər üçün",
+    "services": "Xidmətlər",
+    "eResult": "E-Nəticə"
+  },
+  "header": {
+    "findDoctor": "Həkim Tap",
+    "appointment": "Randevu Al",
+    "patientPortal": "Pasiyent Portalı",
+    "login": "Daxil olun və ya",
+    "register": "Qeydiyyatdan Keçin",
+    "welcome": "Xoş gəldiniz"
+  },
+  "hero": {
+    "badge": "TİBBİ MƏRKƏZ & MÜAYİNƏ",
+    "title": "Azərbaycanda Ən\nMüasir Tibbi Mərkəz",
+    "subtitle": "Aslan Medical Clinic",
+    "learnMore": "Ətraflı Öyrən"
+  },
+  "patientStories": {
+    "overline": "REAL HEKAYƏLƏRİ",
+    "title1": "Pasiyentlərimiz",
+    "title2": "Danışır",
+    "quote": "Hər müalicə bir etimaddan başlayır. Aslan Medical Clinic-də minlərlə pasiyent sağlamlığına qovuşdu — növbə sizdədir.",
+    "cta": "Uğur hekayələrini oxu →",
+    "condition": "Müalicə, Bakı",
+    "condition3": "Cərrahiyyə, Bakı"
+  },
+  "login": {
+    "title": "Hesabınıza daxil olun",
+    "subtitle": "Pasiyent portalına xoş gəldiniz",
+    "email": "E-poçt ünvanı",
+    "password": "Şifrə",
+    "forgot": "Şifrəni unutmusunuz?",
+    "submit": "Daxil Ol",
+    "or": "və ya",
+    "google": "Google ilə daxil ol",
+    "staffLogin": "Əməkdaş girişi",
+    "noAccount": "Hesabınız yoxdur?",
+    "register": "Qeydiyyatdan Keçin",
+    "tagline1": "Sağlamlığınız —",
+    "tagline2": "Prioritetimiz.",
+    "feature1": "Onlayn Randevu",
+    "feature2": "Tibbi Qeydlər",
+    "feature3": "Reseptlər",
+    "backHome": "Ana səhifəyə qayıt"
+  },
+  "patientStoriesPage": {
+    "overline": "XƏSTƏ HEKAYƏLƏRİ",
+    "title": "Pasiyent Hekayələri",
+    "subtitle": "Hər pasiyentin arxasında bir hekayə var. Onlar bizə etibar etdi — biz onları sağaltdıq.",
+    "backHome": "← Ana səhifəyə qayıt",
+    "condition": "Müalicə, Bakı",
+    "condition3": "Cərrahiyyə, Bakı",
+    "story1": "Aslan Medical Clinic-də keçirilən müalicə prosesi həyatımı dəyişdirdi. Peşəkar həkimlər və mehriban heyət sayəsində sağlamlığıma qovuşdum.",
+    "story2": "Buradakı tibbi yardım və qayğı mənə yeni həyat verdi. Hər addımda yanımda olan komandaya minnətdaram.",
+    "story3": "Əməliyyatdan sonrakı bərpa prosesi çox rahat keçdi. Tibb bacıları və həkimlər gecə-gündüz qayğı göstərdi."
+  },
+  "whatsapp": {
+    "tooltip": "Canlı dəstək üçün yazın 💬",
+    "label": "Canlı Dəstək",
+    "message": "Salam! Aslan Medical Clinic ilə əlaqə saxlamaq istəyirəm."
+  },
+  "modal": {
+    "leaving": "saytından ayrılırsınız.",
+    "redirect": "Sizi",
+    "redirectSuffix": "xarici saytına yönləndiririk.",
+    "confirm": "Tamam",
+    "cancel": "Bağla"
+  }
+}

@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
+
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 
 export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -42,12 +45,9 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
           </svg>
         </div>
 
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0a1628', marginBottom: '8px' }}>
-          Xəbərdarlıq
-        </h3>
         <p style={{ fontSize: '15px', color: '#4a5568', lineHeight: 1.6, marginBottom: '24px' }}>
-          <strong style={{ color: '#0a1628' }}>Aslan Medical Clinic</strong> saytından ayrılırsınız.<br />
-          Sizi <strong style={{ color: '#0a1628' }}>{siteName}</strong> xarici saytına yönləndiririk.
+          <strong style={{ color: '#0a1628' }}>Aslan Medical Clinic</strong> {t('modal.leaving')}<br />
+          {t('modal.redirect')} <strong style={{ color: '#0a1628' }}>{siteName}</strong> {t('modal.redirectSuffix')}
         </p>
 
         <div style={{
@@ -68,7 +68,7 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
             onMouseLeave={e => e.currentTarget.style.background = 'white'}
-          >Bağla</button>
+          >{t('modal.cancel')}</button>
 
           <button onClick={onConfirm} style={{
             padding: '10px 24px', borderRadius: '8px',
@@ -78,7 +78,7 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#006b74'}
             onMouseLeave={e => e.currentTarget.style.background = '#00848e'}
-          >Tamam, Davam Et</button>
+          >{t('modal.confirm')}</button>
         </div>
       </div>
     </>

@@ -2,25 +2,20 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { useExternalLink } from '../hooks/useExternalLink';
 import ExternalLinkModal from './ui/ExternalLinkModal';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
 
-const NAV_LINKS = [
-  { label: 'Ana Səhifə',             href: '/',            dropdown: ['Əsas Səhifə', 'Xəbərlər'] },
-  { label: 'Həkimlər',               href: '/doctors' },
-  { label: 'Şöbələr',                href: '/departments', dropdown: ['Kardiologiya', 'Nevrologiya', 'Cərrahiyyə', 'Pediatriya'] },
-  { label: 'Xidmətlər & Müalicələr', href: '/services',    dropdown: ['Cərrahiyyə', 'Diaqnostika', 'Laboratoriya'] },
-  { label: 'Pasiyent Mərkəzi',        href: '/patients',    dropdown: ['Pasiyent Portalı', 'Tibbi Qeydlər', 'Reseptlər'] },
-  { label: 'Haqqımızda & Təlim',      href: '/about',       dropdown: ['Komanda', 'Tərəfdaşlar', 'FAQ'] },
-  { label: 'Bloq',                    href: '/blog',        dropdown: ['Məqalələr', 'Yeniliklər'] },
-  { label: 'Əlaqə',                   href: '/contact' },
-];
-
-const TOP_LINKS    = ['Həkimlər üçün', 'Xidmətlər'];
 const ACTION_PILLS = ['Həkim Tap', 'Randevu Al', 'Pasiyent Portalı'];
+
+const LANGUAGES = [
+  { code: 'AZ', flag: '🇦🇿', label: 'Azərbaycan' },
+  { code: 'RU', flag: '🇷🇺', label: 'Русский' },
+  { code: 'EN', flag: '🇬🇧', label: 'English' },
+];
 
 /* ── Inline SVG icons ─────────────────────────────────── */
 const IconX = () => (
@@ -104,10 +99,34 @@ function Dropdown({ items, open }) {
 
 /* ── Main Navbar ──────────────────────────────────────── */
 export default function Navbar() {
+  const { t, i18n } = useTranslation();
+
+  const NAV_LINKS = [
+    { label: t('nav.home'),          href: '/',            dropdown: ['Əsas Səhifə', 'Xəbərlər'] },
+    { label: t('nav.doctors'),       href: '/doctors' },
+    { label: t('nav.departments'),   href: '/departments', dropdown: ['Kardiologiya', 'Nevrologiya', 'Cərrahiyyə', 'Pediatriya'] },
+    { label: t('nav.services'),      href: '/services',    dropdown: ['Cərrahiyyə', 'Diaqnostika', 'Laboratoriya'] },
+    { label: t('nav.patientCenter'), href: '/patients',    dropdown: ['Pasiyent Portalı', 'Tibbi Qeydlər', 'Reseptlər'] },
+    { label: t('nav.about'),         href: '/about',       dropdown: ['Komanda', 'Tərəfdaşlar', 'FAQ'] },
+    { label: t('nav.blog'),          href: '/blog',        dropdown: ['Məqalələr', 'Yeniliklər'] },
+    { label: t('nav.contact'),       href: '/contact' },
+  ];
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [hoveredNav, setHoveredNav]         = useState(null);
   const [mobileOpen, setMobileOpen]         = useState(false);
   const [scrolled, setScrolled]             = useState(false);
+  const [activeLang, setActiveLang]         = useState(
+    (localStorage.getItem('aslanmedic_lang') || 'az').toUpperCase()
+  );
+  const [langOpen, setLangOpen]             = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aslanmedic_lang');
+    if (saved) {
+      i18n.changeLanguage(saved);
+      setActiveLang(saved.toUpperCase());
+    }
+  }, []);
   const closeTimer = useRef(null);
   const location   = useLocation();
   const navigate   = useNavigate();
@@ -118,6 +137,12 @@ export default function Navbar() {
     const handler = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') setLangOpen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, []);
 
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
@@ -145,7 +170,7 @@ export default function Navbar() {
       }}>
 
         {/* ══ LAYER 1 — Top Bar ══════════════════════════ */}
-        <div style={{
+        <div className="top-bar" style={{
           height: scrolled ? 0 : '40px',
           overflow: 'hidden',
           background: '#1a2b4a',
@@ -156,10 +181,10 @@ export default function Navbar() {
           transition: 'height 0.3s ease',
         }}>
           <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontFamily: FONT }}>
-            Bakı, Azərbaycan — Aslan Medical Clinic
+            {t('topbar.address')}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-            {TOP_LINKS.map(lbl => (
+            {[t('topbar.forDoctors'), t('topbar.services')].map(lbl => (
               <a key={lbl} href="#" style={{
                 fontSize: '13px', color: 'rgba(255,255,255,0.85)',
                 textDecoration: 'none', fontFamily: FONT,
@@ -182,12 +207,13 @@ export default function Navbar() {
             }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
-            >E-Nəticə</a>
+            >{t('topbar.eResult')}</a>
+
           </div>
         </div>
 
         {/* ══ LAYER 2 — Middle Bar ═══════════════════════ */}
-        <div style={{
+        <div className="mid-bar" style={{
           height: '88px',
           background: '#ffffff',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
@@ -279,7 +305,7 @@ export default function Navbar() {
             <span style={{ width: '1px', height: '20px', background: 'rgba(0,0,0,0.1)', flexShrink: 0 }} />
 
             {isAuthenticated ? (
-              <div
+              <div className="mid-login"
                 onClick={() => {
                   const role = user?.role?.toUpperCase();
                   navigate(role === 'PATIENT' ? '/patient' : '/dashboard');
@@ -306,14 +332,14 @@ export default function Navbar() {
                   </svg>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1, fontFamily: FONT }}>Xoş gəldiniz</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1, fontFamily: FONT }}>{t('header.welcome')}</div>
                   <div style={{ fontSize: '13px', color: 'white', fontWeight: 600, lineHeight: 1.3, fontFamily: FONT }}>
                     {user?.name || user?.fullName || 'İstifadəçi'}
                   </div>
                 </div>
               </div>
             ) : (
-              <div onClick={() => navigate('/login')}
+              <div className="mid-login" onClick={() => navigate('/login')}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   background: 'linear-gradient(135deg, #00848e, #006b74)',
@@ -336,8 +362,8 @@ export default function Navbar() {
                   </svg>
                 </div>
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'white', lineHeight: 1.2, fontFamily: FONT }}>Daxil olun və ya</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.2, fontFamily: FONT }}>Qeydiyyatdan Keçin</div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'white', lineHeight: 1.2, fontFamily: FONT }}>{t('header.login')}</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.2, fontFamily: FONT }}>{t('header.register')}</div>
                 </div>
               </div>
             )}
@@ -354,15 +380,19 @@ export default function Navbar() {
               alignItems: 'center',
               gap: '2px',
             }}>
-              {ACTION_PILLS.map((btn, i) => (
-                <button key={btn}
+              {[
+                { key: 'findDoctor',    label: t('header.findDoctor') },
+                { key: 'appointment',  label: t('header.appointment') },
+                { key: 'patientPortal',label: t('header.patientPortal') },
+              ].map(({ key, label }, i) => (
+                <button key={key}
                   onClick={() => {
-                    if (btn === 'Həkim Tap') {
+                    if (key === 'findDoctor') {
                       navigate('/doctors');
-                    } else if (btn === 'Randevu Al') {
+                    } else if (key === 'appointment') {
                       if (isAuthenticated) navigate('/patient');
                       else navigate('/login');
-                    } else if (btn === 'Pasiyent Portalı') {
+                    } else if (key === 'patientPortal') {
                       if (isAuthenticated) navigate('/patient');
                       else { toast.info('Pasiyent portalına daxil olmaq üçün əvvəlcə giriş edin.'); navigate('/login'); }
                     }
@@ -376,11 +406,11 @@ export default function Navbar() {
                     letterSpacing: '0.3px',
                     transition: 'background 0.2s',
                     whiteSpace: 'nowrap',
-                    borderRight: i < ACTION_PILLS.length - 1 ? '1px solid rgba(255,255,255,0.15)' : 'none',
+                    borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none',
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >{btn}</button>
+                >{label}</button>
               ))}
               <button
                 onClick={() => toast.info('Axtarış funksiyası tezliklə əlavə olunacaq.')}
@@ -423,7 +453,7 @@ export default function Navbar() {
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <div style={{ display: 'flex', alignItems: 'stretch', height: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'stretch', height: '100%', flex: 1 }}>
             {NAV_LINKS.map((link) => {
               const open      = activeDropdown === link.label;
               const active    = isActive(link.href);
@@ -461,6 +491,97 @@ export default function Navbar() {
                 </div>
               );
             })}
+          </div>
+
+          {/* ── Language Switcher — always visible ── */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => setLangOpen(o => !o)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: langOpen ? 'rgba(0,132,142,0.08)' : '#f8fafc',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                cursor: 'pointer',
+                color: '#1a2b4a',
+                fontSize: '13px', fontWeight: 600,
+                fontFamily: FONT,
+                transition: 'all 0.2s',
+                height: '34px',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#1a2b4a'; }}
+            >
+              <span style={{ fontSize: '16px', lineHeight: 1 }}>
+                {LANGUAGES.find(l => l.code === activeLang)?.flag}
+              </span>
+              <span style={{ letterSpacing: '0.5px' }}>
+                {activeLang}
+              </span>
+              <svg
+                width="10" height="10" viewBox="0 0 10 10" fill="none"
+                style={{
+                  transform: langOpen ? 'rotate(180deg)' : 'rotate(0)',
+                  transition: 'transform 0.2s',
+                  opacity: 0.5,
+                }}
+              >
+                <path d="M1 3L5 7L9 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+
+            {langOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 9990 }} onClick={() => setLangOpen(false)} />
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)', right: 0,
+                  background: 'white',
+                  borderRadius: '10px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                  overflow: 'hidden',
+                  zIndex: 9991,
+                  minWidth: '160px',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                }}>
+                  {LANGUAGES.map(lang => (
+                    <div
+                      key={lang.code}
+                      onClick={() => {
+                        i18n.changeLanguage(lang.code.toLowerCase());
+                        localStorage.setItem('aslanmedic_lang', lang.code.toLowerCase());
+                        setActiveLang(lang.code);
+                        setLangOpen(false);
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 14px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: activeLang === lang.code ? 600 : 400,
+                        color: activeLang === lang.code ? TEAL : '#2d3748',
+                        background: activeLang === lang.code ? 'rgba(0,132,142,0.06)' : 'white',
+                        transition: 'background 0.15s',
+                        borderLeft: activeLang === lang.code ? `3px solid ${TEAL}` : '3px solid transparent',
+                        fontFamily: FONT,
+                      }}
+                      onMouseEnter={e => { if (activeLang !== lang.code) e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseLeave={e => { if (activeLang !== lang.code) e.currentTarget.style.background = 'white'; }}
+                    >
+                      <span style={{ fontSize: '18px' }}>{lang.flag}</span>
+                      <div>
+                        <div style={{ lineHeight: 1.2 }}>{lang.label}</div>
+                        <div style={{ fontSize: '10px', color: 'rgba(0,0,0,0.35)', lineHeight: 1.2 }}>{lang.code}</div>
+                      </div>
+                      {activeLang === lang.code && (
+                        <span style={{ marginLeft: 'auto', color: TEAL, fontSize: '14px' }}>✓</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -520,10 +641,19 @@ export default function Navbar() {
 
       <style>{`
         @media (max-width: 768px) {
+          .top-bar     { display: none !important; }
           .mid-social  { display: none !important; }
           .mid-actions { display: none !important; }
+          .mid-login   { display: none !important; }
           .nav-hamburger { display: flex !important; }
           .nav-layer3  { display: none !important; }
+          .mid-bar     { height: 64px !important; padding: 0 16px !important; }
+          .mid-logo img { height: 48px !important; }
+        }
+        @media (min-width: 768px) and (max-width: 1024px) {
+          .top-bar     { display: none !important; }
+          .mid-social  { display: none !important; }
+          .mid-actions .pill-btn:nth-child(1) { display: none !important; }
         }
       `}</style>
 

@@ -1,32 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-const fullStories = [
-  {
-    id: 1,
-    name: 'Pasiyent 1',
-    condition: 'Müalicə, Bakı',
-    image: '/pasiyent1.jpeg',
-    story: 'Aslan Medical Clinic-də keçirilən müalicə prosesi həyatımı dəyişdirdi. Peşəkar həkimlər və mehriban heyət sayəsində sağlamlığıma qovuşdum.',
-  },
-  {
-    id: 2,
-    name: 'Pasiyent 2',
-    condition: 'Müalicə, Bakı',
-    image: '/pasiyent2.jpeg',
-    story: 'Buradakı tibbi yardım və qayğı mənə yeni həyat verdi. Hər addımda yanımda olan komandaya minnətdaram.',
-  },
-  {
-    id: 3,
-    name: 'Pasiyent 3',
-    condition: 'Cərrahiyyə, Bakı',
-    image: '/pasiyent3.jpeg',
-    story: 'Əməliyyatdan sonrakı bərpa prosesi çox rahat keçdi. Tibb bacıları və həkimlər gecə-gündüz qayğı göstərdi.',
-  },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function PatientStoriesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const fullStories = [
+    { id: 1, name: 'Pasiyent 1', condition: t('patientStoriesPage.condition1'), image: '/pasiyent1.jpeg', story: t('patientStoriesPage.story1') },
+    { id: 2, name: 'Pasiyent 2', condition: t('patientStoriesPage.condition2'), image: '/pasiyent2.jpeg', story: t('patientStoriesPage.story2') },
+    { id: 3, name: 'Pasiyent 3', condition: t('patientStoriesPage.condition3'), image: '/pasiyent3.jpeg', story: t('patientStoriesPage.story3') },
+  ];
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
@@ -47,7 +31,7 @@ export default function PatientStoriesPage() {
             textTransform: 'uppercase', marginBottom: '16px',
           }}
         >
-          XƏSTƏ HEKAYƏLƏRİ
+          {t('patientStoriesPage.overline')}
         </motion.p>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -58,7 +42,7 @@ export default function PatientStoriesPage() {
             color: 'white', lineHeight: 1.2, marginBottom: '16px',
           }}
         >
-          Pasiyent Hekayələri
+          {t('patientStoriesPage.title')}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -69,7 +53,7 @@ export default function PatientStoriesPage() {
             maxWidth: '560px', margin: '0 auto',
           }}
         >
-          Hər pasiyentin arxasında bir hekayə var. Onlar bizə etibar etdi — biz onları sağaltdıq.
+          {t('patientStoriesPage.subtitle')}
         </motion.p>
       </div>
 
@@ -153,7 +137,7 @@ export default function PatientStoriesPage() {
           onMouseEnter={e => { e.currentTarget.style.background = '#00848e'; e.currentTarget.style.color = 'white'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#00848e'; }}
         >
-          ← Ana səhifəyə qayıt
+          {t('patientStoriesPage.backHome')}
         </button>
       </div>
 

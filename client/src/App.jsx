@@ -1,8 +1,11 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 import Navbar           from './components/Navbar';
 import PageLoader       from './components/ui/PageLoader';
+import WhatsAppButton  from './components/ui/WhatsAppButton';
 import ProtectedRoute   from './components/ui/ProtectedRoute';
 
 /* Public */
@@ -111,11 +114,21 @@ function Layout() {
   );
 }
 
+// Sync HTML lang attribute whenever language changes
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng;
+});
+// Set on initial load
+document.documentElement.lang = i18n.language || 'az';
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <RouteLoader />
-      <Layout />
-    </BrowserRouter>
+    <I18nextProvider i18n={i18n}>
+      <BrowserRouter>
+        <RouteLoader />
+        <Layout />
+        <WhatsAppButton />
+      </BrowserRouter>
+    </I18nextProvider>
   );
 }

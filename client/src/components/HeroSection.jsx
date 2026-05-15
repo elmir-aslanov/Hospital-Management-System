@@ -1,14 +1,18 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import VideoBackground from './VideoBackground';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 
 const HeroSection = () => {
+  const { t } = useTranslation();
+  const { isMobile, isTablet } = useBreakpoint();
   return (
     <div style={{
       position: 'relative',
       width: '100%',
-      height: 'calc(100vh - 176px)',
+      height: isMobile ? '85vh' : 'calc(100vh - 176px)',
       overflow: 'hidden',
       background: '#030912',
     }}>
@@ -24,14 +28,16 @@ const HeroSection = () => {
         style={{
           position: 'absolute',
           left: 0, top: 0, bottom: 0,
-          width: '460px',
+          width: isMobile ? '100%' : isTablet ? '60%' : '460px',
           zIndex: 4,
-          background: 'linear-gradient(135deg, rgba(0,100,120,0.78) 0%, rgba(0,60,90,0.72) 100%)',
-          padding: '60px 48px 60px 40px',
+          background: isMobile
+            ? 'rgba(0,80,90,0.88)'
+            : 'linear-gradient(135deg, rgba(0,100,120,0.78) 0%, rgba(0,60,90,0.72) 100%)',
+          padding: isMobile ? '40px 24px' : '60px 48px 60px 40px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          clipPath: 'polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%)',
+          clipPath: isMobile ? 'none' : 'polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%)',
         }}
       >
         {/* Overline label */}
@@ -44,20 +50,21 @@ const HeroSection = () => {
           fontFamily: FONT,
           fontWeight: 600,
         }}>
-          Tibbi Mərkəz &amp; Müayinə
+          {t('hero.badge')}
         </p>
 
         {/* H1 */}
         <h1 style={{
-          fontSize: '42px',
+          fontSize: isMobile ? '36px' : isTablet ? '38px' : '42px',
           fontWeight: 800,
           color: '#ffffff',
           lineHeight: 1.2,
           marginBottom: '16px',
           fontFamily: FONT,
         }}>
-          Azərbaycanda Ən<br />
-          Müasir Tibbi Mərkəz
+          {t('hero.title').split('\n').map((line, i) => (
+            <span key={i}>{line}{i === 0 && <br />}</span>
+          ))}
         </h1>
 
         {/* Subtitle */}
@@ -68,7 +75,7 @@ const HeroSection = () => {
           fontFamily: FONT,
           fontWeight: 400,
         }}>
-          Aslan Medical Clinic
+          {t('hero.subtitle')}
         </p>
 
         {/* Ghost button */}
@@ -78,6 +85,7 @@ const HeroSection = () => {
               border: '2.5px solid white',
               borderRadius: '28px',
               padding: '12px 32px',
+              width: isMobile ? '100%' : 'auto',
               color: 'white',
               background: 'transparent',
               fontSize: '15px',
@@ -91,7 +99,7 @@ const HeroSection = () => {
             onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#00848e'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'white'; }}
           >
-            Ətraflı Öyrən
+            {t('hero.learnMore')}
           </button>
         </div>
       </motion.div>

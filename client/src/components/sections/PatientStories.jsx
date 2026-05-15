@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 const defaultStories = [
   {
@@ -25,46 +27,42 @@ const defaultStories = [
   },
 ];
 
-const defaultContent = {
-  overline: 'XƏSTƏ HEKAYƏLƏRİ',
-  title: 'Pasiyent',
-  titleHighlight: 'Hekayələri',
-  linkLabel: 'Onların dediklərinə bax',
-};
+const defaultContent = null;
 
-function StoryCard({ story, style, animDelay }) {
+function StoryCard({ story, gridStyle, animDelay }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.06, zIndex: 10 }}
+      whileHover={{ scale: 1.03, boxShadow: '0 16px 48px rgba(0,132,142,0.2)' }}
       viewport={{ once: true }}
-      transition={{ duration: 0.3, ease: 'easeOut', delay: animDelay }}
+      transition={{ duration: 0.5, ease: 'easeOut', delay: animDelay }}
       style={{
-        position: 'absolute',
+        position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
+        borderRadius: '20px',
         background: story.gradient,
-        ...style,
+        ...gridStyle,
       }}
     >
       <img
         src={story.image}
         alt={story.name}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
         onError={e => { e.target.style.display = 'none'; }}
       />
-
     </motion.div>
   );
 }
 
-export default function PatientStories({
-  stories = defaultStories,
-  content = defaultContent,
-}) {
+export default function PatientStories({ stories = defaultStories }) {
   const navigate = useNavigate();
-  const { overline, title, titleHighlight, linkLabel } = content;
+  const { t } = useTranslation();
+  const { isMobile, isTablet } = useBreakpoint();
+  const overline      = t('patientStories.overline');
+  const title         = t('patientStories.title1');
+  const titleHighlight= t('patientStories.title2');
 
   return (
     <div style={{
@@ -89,59 +87,50 @@ export default function PatientStories({
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: '0 80px',
+        padding: isMobile ? '0 20px' : '0 80px',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 1fr',
         alignItems: 'center',
-        gap: '80px',
+        gap: isMobile ? '40px' : '80px',
         position: 'relative',
         zIndex: 1,
       }}>
 
-        {/* ── LEFT — Photo collage ── */}
-        <div style={{ position: 'relative', width: '100%', height: '520px' }}>
-          <div style={{
-            position: 'absolute',
-            top: '-10px', left: '-20px',
-            width: '160px', height: '160px',
-            backgroundImage: 'radial-gradient(circle, #cbd5e0 1.5px, transparent 1.5px)',
-            backgroundSize: '16px 16px',
-            opacity: 0.6, zIndex: 0, pointerEvents: 'none',
+        {/* ── LEFT — Staggered grid ── */}
+        <div style={isMobile ? {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          width: '100%',
+        } : {
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gridTemplateRows: 'auto auto',
+          gap: '16px',
+          width: '100%',
+          maxWidth: '480px',
+        }}>
+          <StoryCard story={stories[0]} animDelay={0} gridStyle={isMobile ? {
+            width: '100%', height: '220px', borderRadius: '16px',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.1)',
+          } : {
+            gridColumn: '1', gridRow: '1', height: '240px',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.1)', transform: 'translateY(0px)',
           }} />
-
-          <StoryCard
-            story={stories[0]}
-            animDelay={0}
-            style={{
-              top: '80px', left: '0',
-              width: '240px', height: '240px',
-              borderRadius: '24px',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-              zIndex: 2,
-            }}
-          />
-          <StoryCard
-            story={stories[1]}
-            animDelay={0.15}
-            style={{
-              top: '0', right: '20px',
-              width: '280px', height: '320px',
-              borderRadius: '32px',
-              boxShadow: '0 16px 48px rgba(0,0,0,0.14)',
-              zIndex: 3,
-            }}
-          />
-          <StoryCard
-            story={stories[2]}
-            animDelay={0.3}
-            style={{
-              bottom: '0', left: '100px',
-              width: '260px', height: '220px',
-              borderRadius: '24px',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-              zIndex: 2,
-            }}
-          />
+          <StoryCard story={stories[1]} animDelay={0.15} gridStyle={isMobile ? {
+            width: '100%', height: '220px', borderRadius: '16px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.12)',
+          } : {
+            gridColumn: '2', gridRow: '1', height: '240px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.12)', transform: 'translateY(0px)',
+          }} />
+          <StoryCard story={stories[2]} animDelay={0.3} gridStyle={isMobile ? {
+            width: '100%', height: '220px', borderRadius: '16px',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.1)',
+          } : {
+            gridColumn: '1 / span 2', gridRow: '2', height: '240px',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.1)', transform: 'translateY(0px)',
+          }} />
         </div>
 
         {/* ── RIGHT — Text content ── */}
@@ -175,33 +164,9 @@ export default function PatientStories({
             lineHeight: 1.8, marginBottom: '28px',
             fontStyle: 'italic',
           }}>
-            "Hər pasiyentin arxasında bir hekayə var.
-            Onlar bizə etibar etdi — biz onları sağaltdıq."
+            {t('patientStories.quote')}
           </p>
 
-          <button
-            onClick={() => navigate('/pasiyent-hekayeleri')}
-            style={{
-              display: 'inline-flex', alignItems: 'center',
-              gap: '12px', cursor: 'pointer',
-              marginTop: '16px', background: 'none',
-              border: 'none', padding: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.querySelector('.label').style.textDecoration = 'underline'}
-            onMouseLeave={e => e.currentTarget.querySelector('.label').style.textDecoration = 'none'}
-          >
-            <span style={{
-              width: '38px', height: '38px', borderRadius: '50%',
-              background: '#00848e', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontSize: '18px', flexShrink: 0,
-            }}>›</span>
-            <span className="label" style={{
-              color: '#00848e', fontSize: '16px', fontWeight: 700,
-            }}>
-              {linkLabel}
-            </span>
-          </button>
         </motion.div>
 
       </div>

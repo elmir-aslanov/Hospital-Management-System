@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "home": "Home",
+    "doctors": "Doctors",
+    "departments": "Departments",
+    "services": "Services & Treatments",
+    "patientCenter": "Patient Center",
+    "about": "About & Training",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "topbar": {
+    "address": "Baku, Azerbaijan — Aslan Medical Clinic",
+    "forDoctors": "For Doctors",
+    "services": "Services",
+    "eResult": "E-Results"
+  },
+  "header": {
+    "findDoctor": "Find a Doctor",
+    "appointment": "Book Appointment",
+    "patientPortal": "Patient Portal",
+    "login": "Sign in or",
+    "register": "Register",
+    "welcome": "Welcome"
+  },
+  "hero": {
+    "badge": "MEDICAL CENTER & DIAGNOSTICS",
+    "title": "Azerbaijan's Most\nAdvanced Medical Center",
+    "subtitle": "Aslan Medical Clinic",
+    "learnMore": "Learn More"
+  },
+  "patientStories": {
+    "overline": "REAL STORIES",
+    "title1": "Our Patients",
+    "title2": "Share Their Stories",
+    "quote": "Every treatment begins with trust. Thousands of patients have regained their health at Aslan Medical Clinic — now it is your turn.",
+    "cta": "Read success stories →",
+    "condition1": "Treatment, Baku",
+    "condition2": "Treatment, Baku",
+    "condition3": "Surgery, Baku"
+  },
+  "login": {
+    "title": "Sign in to your account",
+    "subtitle": "Welcome to the patient portal",
+    "email": "Email address",
+    "password": "Password",
+    "forgot": "Forgot password?",
+    "submit": "Sign In",
+    "or": "or",
+    "google": "Sign in with Google",
+    "staffLogin": "Staff login",
+    "noAccount": "Don't have an account?",
+    "register": "Register now",
+    "tagline1": "Your Health —",
+    "tagline2": "Our Priority.",
+    "feature1": "Online Booking",
+    "feature2": "Medical Records",
+    "feature3": "Prescriptions",
+    "backHome": "Back to homepage"
+  },
+  "patientStoriesPage": {
+    "overline": "PATIENT STORIES",
+    "title": "Patient Stories",
+    "subtitle": "Behind every patient is a story. They trusted us — we healed them.",
+    "backHome": "← Back to homepage",
+    "condition1": "Treatment, Baku",
+    "condition2": "Treatment, Baku",
+    "condition3": "Surgery, Baku",
+    "story1": "The treatment at Aslan Medical Clinic changed my life. Thanks to the professional doctors and caring staff, I regained my health.",
+    "story2": "The medical care and attention here gave me a new life. I am grateful to the team that was with me every step of the way.",
+    "story3": "The recovery after surgery was very comfortable. The nurses and doctors provided care around the clock."
+  },
+  "whatsapp": {
+    "tooltip": "Chat with us 💬",
+    "label": "Live Support",
+    "message": "Hello! I would like to contact Aslan Medical Clinic."
+  },
+  "modal": {
+    "leaving": "you are leaving our website.",
+    "redirect": "We are redirecting you to",
+    "redirectSuffix": "external website.",
+    "confirm": "Continue",
+    "cancel": "Close"
+  }
+}
