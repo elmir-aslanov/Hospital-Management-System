@@ -1,16 +1,22 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Navbar from './components/Navbar';
 import HomePage from './pages/public/HomePage';
 import Login from './pages/auth/Login';
+import StaffLogin from './pages/auth/StaffLogin';
 
-export default function App() {
+const HIDE_NAV = ['/login', '/staff-login', '/register'];
+
+function Layout() {
+  const location = useLocation();
+  const hideNav = HIDE_NAV.includes(location.pathname);
   return (
-    <BrowserRouter>
-      <Navbar />
+    <>
+      {!hideNav && <Navbar />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/staff-login" element={<StaffLogin />} />
       </Routes>
       <Toaster
         position="top-right"
@@ -26,6 +32,14 @@ export default function App() {
           },
         }}
       />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Layout />
     </BrowserRouter>
   );
 }

@@ -7,364 +7,230 @@ import api from '../../api/axios';
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
 
-const TABS = [
-  { key: 'patient', label: 'Pasiyent', icon: '🧑‍⚕️' },
-  { key: 'doctor',  label: 'Həkim',    icon: '👨‍⚕️' },
-  { key: 'admin',   label: 'Admin',    icon: '🔐' },
-];
-
-const FORM_TITLE = { patient: 'Pasiyent Girişi', doctor: 'Həkim Girişi', admin: 'Admin Girişi' };
-
-const DAYS   = Array.from({ length: 31 }, (_, i) => i + 1);
-const MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','İyun','İyul','Avqust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
-const YEARS  = Array.from({ length: 71 }, (_, i) => 2005 - i);
-
-/* ── Input wrapper with floating label ─────────────── */
-function Field({ label, children }) {
-  return (
-    <div style={{ marginBottom: '20px' }}>
-      <label style={{
-        display: 'block', fontSize: '12px',
-        color: '#718096', marginBottom: '6px',
-        fontFamily: FONT, fontWeight: 500,
-      }}>{label}</label>
-      {children}
-    </div>
-  );
+function roleToRoute(role = '') {
+  switch (role.toUpperCase()) {
+    case 'PATIENT':                              return '/patient';
+    case 'ADMIN': case 'SUPER_ADMIN':            return '/dashboard';
+    case 'DOCTOR':                               return '/dashboard';
+    case 'NURSE': case 'RECEPTIONIST':
+    case 'LAB_TECHNICIAN':                       return '/dashboard';
+    default:                                     return '/';
+  }
 }
 
-const inputStyle = {
-  width: '100%', padding: '12px 16px',
-  border: '1.5px solid #e2e8f0',
-  borderRadius: '8px', fontSize: '15px',
-  fontFamily: FONT, color: '#1a2b4a',
-  background: '#fff', outline: 'none',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.2s',
+const inputBase = {
+  width: '100%', padding: '13px 16px',
+  border: '1.5px solid #e2e8f0', borderRadius: '10px',
+  fontSize: '15px', fontFamily: FONT, color: '#1a2b4a',
+  background: '#fff', outline: 'none', boxSizing: 'border-box',
+  transition: 'border-color 0.18s, box-shadow 0.18s',
 };
 
-const selectStyle = {
-  ...inputStyle,
-  appearance: 'none', cursor: 'pointer',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 14px center',
-  paddingRight: '36px',
-};
-
-function focusIn(e)  { e.target.style.borderColor = TEAL; }
-function focusOut(e) { e.target.style.borderColor = '#e2e8f0'; }
-
-/* ── SVG Illustration ────────────────────────────────── */
-function MedIllustration() {
-  return (
-    <svg viewBox="0 0 220 180" width="200" style={{ opacity: 0.85 }} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="40" y="30" width="140" height="120" rx="14" fill="#e8f4f8"/>
-      <rect x="60" y="50" width="100" height="12" rx="6" fill="#b2dce8"/>
-      <rect x="60" y="72" width="80" height="10" rx="5" fill="#cce8f0"/>
-      <rect x="60" y="90" width="90" height="10" rx="5" fill="#cce8f0"/>
-      <rect x="60" y="108" width="60" height="10" rx="5" fill="#cce8f0"/>
-      <circle cx="155" cy="60" r="26" fill={TEAL} opacity="0.15"/>
-      <circle cx="155" cy="54" r="11" fill={TEAL}/>
-      <path d="M138 83c0-9.4 7.6-17 17-17s17 7.6 17 17" fill={TEAL}/>
-      <rect x="80" y="128" width="60" height="8" rx="4" fill={TEAL} opacity="0.3"/>
-    </svg>
-  );
+function focusIn(e) {
+  e.target.style.borderColor = TEAL;
+  e.target.style.boxShadow = '0 0 0 3px rgba(0,132,142,0.1)';
+}
+function focusOut(e) {
+  e.target.style.borderColor = '#e2e8f0';
+  e.target.style.boxShadow = 'none';
 }
 
-/* ── Main Page ───────────────────────────────────────── */
+const FEATURES = ['Onlayn Randevu', 'Tibbi Qeydlər', 'Reseptlər'];
+
 export default function Login() {
   const navigate = useNavigate();
-  const [role, setRole]         = useState('patient');
-  const [loading, setLoading]   = useState(false);
-
-  // Patient fields
-  const [finCode, setFinCode]   = useState('');
-  const [day, setDay]           = useState('');
-  const [month, setMonth]       = useState('');
-  const [year, setYear]         = useState('');
-
-  // Doctor / Admin fields
-  const [email, setEmail]       = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [loading,  setLoading]  = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (role === 'patient') {
-      if (!finCode.trim() || !day || !month || !year) {
-        toast.warning('Zəhmət olmasa bütün məcburi sahələri doldurun.');
-        return;
-      }
-    } else {
-      if (!email.trim() || !password.trim()) {
-        toast.warning('Zəhmət olmasa bütün məcburi sahələri doldurun.');
-        return;
-      }
+    if (!email.trim() || !password.trim()) {
+      toast.warning('Zəhmət olmasa bütün sahələri doldurun.');
+      return;
     }
-
-    const monthIndex = String(MONTHS.indexOf(month) + 1).padStart(2, '0');
-    const payload = role === 'patient'
-      ? { finCode: finCode.trim(), birthDate: `${year}-${monthIndex}-${String(day).padStart(2,'0')}`, role }
-      : { email: email.trim(), password, role };
-
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/login', payload);
-      localStorage.setItem('token', data.data?.accessToken || data.token || '');
-      localStorage.setItem('user', JSON.stringify(data.data?.user || data.user || {}));
+      const { data } = await api.post('/auth/login', { email: email.trim(), password });
+      const { user, accessToken } = data.data;
 
-      if (role === 'patient') {
-        toast.success('Xoş gəldiniz!');
-        navigate('/patient');
-      } else if (role === 'doctor') {
-        toast.success('Xoş gəldiniz, Dr.!');
-        navigate('/dashboard/doctor');
-      } else {
-        toast.success('Admin panelinə xoş gəldiniz!');
-        navigate('/dashboard');
+      if (user.role?.toUpperCase() !== 'PATIENT') {
+        toast.error('Bu hesab üçün icazəniz yoxdur. Əməkdaş girişindən istifadə edin.');
+        setLoading(false);
+        return;
       }
-    } catch {
-      toast.error('Məlumatlar yanlışdır.');
+
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      toast.success(`Xoş gəldiniz, ${user.fullName}!`);
+      navigate(roleToRoute(user.role));
+    } catch (err) {
+      const status = err?.response?.status;
+      if      (status === 404) toast.error('Bu e-poçtla hesab tapılmadı.');
+      else if (status === 401) toast.error('Şifrə yanlışdır.');
+      else if (status === 403) toast.error('Hesabınız deaktiv edilib. Klinikamızla əlaqə saxlayın.');
+      else                     toast.error('Serverlə əlaqə xətası. Bir az sonra yenidən cəhd edin.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#f0f4f8',
-      padding: '40px 6vw', fontFamily: FONT,
-    }}>
-
-      {/* Breadcrumb */}
-      <nav style={{
-        display: 'flex', alignItems: 'center', gap: '8px',
-        fontSize: '14px', color: '#718096', marginBottom: '32px',
-      }}>
-        <span onClick={() => navigate('/')} style={{ cursor: 'pointer', fontSize: '16px' }}>🏠</span>
-        <span>›</span>
-        <span style={{ color: TEAL, fontWeight: 500 }}>Giriş</span>
-      </nav>
-
-      {/* Page title */}
-      <h1 style={{
-        fontSize: '36px', fontWeight: 700,
-        color: TEAL, marginBottom: '8px', fontFamily: FONT,
-      }}>Sistemə Giriş</h1>
-      <p style={{ fontSize: '15px', color: '#718096', marginBottom: '40px', fontFamily: FONT }}>
-        Rolunuzu seçin və sistemə daxil olun.
-      </p>
-
-      {/* Two-column layout */}
+    <>
       <div style={{
-        display: 'flex', gap: '28px', alignItems: 'flex-start',
-        maxWidth: '1100px',
+        height: '100vh',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        overflow: 'hidden',
+        fontFamily: FONT,
       }}>
 
-        {/* ── LEFT — Login form card ──────────────────── */}
-        <div style={{
-          flex: '0 0 58%',
-          background: '#fff', borderRadius: '16px',
-          padding: '40px', boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+        {/* ══ LEFT — Visual side ══════════════════════════ */}
+        <div className="login-left" style={{
+          background: 'linear-gradient(145deg, #0a1628 0%, #00848e 100%)',
+          padding: '48px 52px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+          height: '100vh',
+          boxSizing: 'border-box',
         }}>
-
-          {/* Role tabs */}
+          {/* Decorative circles */}
           <div style={{
-            display: 'flex', gap: '8px',
-            background: '#f0f4f8', borderRadius: '12px',
-            padding: '6px', marginBottom: '32px',
+            position: 'absolute', top: '-80px', right: '-80px',
+            width: '320px', height: '320px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '-60px', left: '-60px',
+            width: '240px', height: '240px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
+          }} />
+
+          {/* Back to homepage */}
+          <div
+            onClick={() => navigate('/')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'rgba(255,255,255,0.6)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              marginBottom: '24px',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.95)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Ana səhifəyə qayıt
+          </div>
+
+          {/* Logo */}
+          <img
+            src="/logo.png"
+            alt="Aslan Medical"
+            style={{
+              height: '56px', width: 'auto', objectFit: 'contain',
+              filter: 'brightness(10)',
+              marginBottom: '36px',
+              alignSelf: 'flex-start',
+            }}
+            onError={e => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextSibling.style.display = 'flex';
+            }}
+          />
+          {/* Fallback logo text */}
+          <div style={{
+            display: 'none', alignItems: 'center', gap: '10px',
+            marginBottom: '36px',
           }}>
-            {TABS.map(tab => (
-              <button key={tab.key} onClick={() => setRole(tab.key)}
-                style={{
-                  flex: 1, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', gap: '6px',
-                  padding: '10px 24px', borderRadius: '8px',
-                  border: 'none', cursor: 'pointer',
-                  fontSize: '14px', fontWeight: 600, fontFamily: FONT,
-                  background: role === tab.key ? TEAL : 'transparent',
-                  color: role === tab.key ? '#fff' : '#4a5568',
-                  transition: 'all 0.2s',
-                  boxShadow: role === tab.key ? '0 2px 8px rgba(0,132,142,0.3)' : 'none',
-                }}
-              >
-                <span>{tab.icon}</span> {tab.label}
-              </button>
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '10px',
+              background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontSize: '22px', fontWeight: 900,
+            }}>+</div>
+            <span style={{ color: '#fff', fontSize: '20px', fontWeight: 800 }}>
+              Aslan Medical
+            </span>
+          </div>
+
+          {/* Heading */}
+          <h1 style={{
+            fontSize: '42px', fontWeight: 800,
+            lineHeight: 1.2, margin: 0, fontFamily: FONT,
+          }}>
+            <span style={{ color: '#ffffff', display: 'block' }}>Sağlamlığınız —</span>
+            <span style={{ color: '#4DD0E1', display: 'block' }}>Prioritetimiz.</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{
+            fontSize: '16px', color: 'rgba(255,255,255,0.7)',
+            lineHeight: 1.7, marginTop: '20px', fontFamily: FONT,
+            maxWidth: '360px',
+          }}>
+            Pasiyent portalına daxil olaraq randevu alın,
+            tibbi qeydlərinizi izləyin.
+          </p>
+
+          {/* Feature pills */}
+          <div style={{
+            display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '24px',
+          }}>
+            {FEATURES.map(f => (
+              <div key={f} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '7px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '20px', padding: '8px 16px',
+                color: 'white', fontSize: '13px', fontFamily: FONT, fontWeight: 500,
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                  stroke="#4DD0E1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                {f}
+              </div>
             ))}
           </div>
 
-          {/* Form title */}
-          <h2 style={{
-            fontSize: '22px', fontWeight: 700,
-            color: TEAL, marginBottom: '28px', fontFamily: FONT,
-          }}>{FORM_TITLE[role]}</h2>
-
-          <form onSubmit={handleSubmit}>
-
-            {/* ── PATIENT FIELDS ── */}
-            {role === 'patient' && (
-              <>
-                <Field label="Ölkə">
-                  <select style={selectStyle} defaultValue="Azərbaycan" onFocus={focusIn} onBlur={focusOut}>
-                    <option>Azərbaycan</option>
-                    <option>Türkiyə</option>
-                    <option>Rusiya</option>
-                  </select>
-                </Field>
-
-                <Field label="ŞV FİN kod">
-                  <input
-                    type="text" placeholder="ŞV FİN kod"
-                    value={finCode} onChange={e => setFinCode(e.target.value)}
-                    style={inputStyle} onFocus={focusIn} onBlur={focusOut}
-                    maxLength={7}
-                  />
-                </Field>
-
-                <Field label="Doğum tarixi">
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <select value={day} onChange={e => setDay(e.target.value)}
-                      style={{ ...selectStyle, flex: 1 }} onFocus={focusIn} onBlur={focusOut}>
-                      <option value="">Gün</option>
-                      {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                    <select value={month} onChange={e => setMonth(e.target.value)}
-                      style={{ ...selectStyle, flex: 1 }} onFocus={focusIn} onBlur={focusOut}>
-                      <option value="">Ay</option>
-                      {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <select value={year} onChange={e => setYear(e.target.value)}
-                      style={{ ...selectStyle, flex: 1 }} onFocus={focusIn} onBlur={focusOut}>
-                      <option value="">İl</option>
-                      {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  </div>
-                </Field>
-              </>
-            )}
-
-            {/* ── DOCTOR / ADMIN FIELDS ── */}
-            {(role === 'doctor' || role === 'admin') && (
-              <>
-                <Field label="E-poçt">
-                  <input
-                    type="email" placeholder="email@example.com"
-                    value={email} onChange={e => setEmail(e.target.value)}
-                    style={inputStyle} onFocus={focusIn} onBlur={focusOut}
-                  />
-                </Field>
-
-                <Field label="Şifrə">
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showPass ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password} onChange={e => setPassword(e.target.value)}
-                      style={{ ...inputStyle, paddingRight: '48px' }}
-                      onFocus={focusIn} onBlur={focusOut}
-                    />
-                    <button type="button" onClick={() => setShowPass(v => !v)}
-                      style={{
-                        position: 'absolute', right: '14px', top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none', border: 'none',
-                        cursor: 'pointer', color: '#718096', lineHeight: 0, padding: 0,
-                      }}>
-                      {showPass
-                        ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                        : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      }
-                    </button>
-                  </div>
-                </Field>
-              </>
-            )}
-
-            <button type="submit" disabled={loading}
-              style={{
-                width: '100%', padding: '14px',
-                background: role === 'admin'
-                  ? (loading ? '#334' : '#1a2b4a')
-                  : (loading ? '#5aacb2' : TEAL),
-                color: '#fff', border: 'none',
-                borderRadius: '8px', fontSize: '16px',
-                fontWeight: 700, fontFamily: FONT,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s, transform 0.15s',
-                marginTop: '8px',
-              }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.9'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-            >
-              {loading ? 'Yüklənir…' : role === 'admin' ? 'Admin Girişi' : 'Daxil Ol'}
-            </button>
-          </form>
-        </div>
-
-        {/* ── RIGHT — Info card ───────────────────────── */}
-        <div style={{
-          flex: 1,
-          background: '#fff', borderRadius: '16px',
-          padding: '40px', boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          display: 'flex', flexDirection: 'column', gap: '20px',
-        }}>
-          <h2 style={{
-            fontSize: '22px', fontWeight: 700,
-            color: TEAL, fontFamily: FONT, margin: 0,
-          }}>Hesabınız yoxdur?</h2>
-
-          <p style={{ fontSize: '14px', color: '#718096', lineHeight: 1.7, margin: 0, fontFamily: FONT }}>
-            Qeydiyyatdan keçərək pasiyent portalına daxil ola
-            və randevu ala bilərsiniz.
-          </p>
-
-          <button
-            onClick={() => navigate('/register')}
-            style={{
-              display: 'inline-block', padding: '12px 24px',
-              border: `2px solid ${TEAL}`, color: TEAL,
-              background: 'transparent', borderRadius: '8px',
-              fontSize: '14px', fontWeight: 700, fontFamily: FONT,
-              cursor: 'pointer', transition: 'all 0.2s',
-              alignSelf: 'flex-start',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEAL; }}
-          >
-            İndi Qeydiyyatdan Keçin!
-          </button>
-
-          {/* Illustration */}
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
-            <MedIllustration />
-          </div>
-
-          {/* Contact */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Contact info — pushed to bottom */}
+          <div style={{ marginTop: 'auto', paddingTop: '28px' }}>
             <a href="tel:+994508363694" style={{
               display: 'flex', alignItems: 'center', gap: '8px',
-              fontSize: '13px', color: '#718096', textDecoration: 'none',
-              fontFamily: FONT, transition: 'color 0.2s',
+              color: 'rgba(255,255,255,0.5)', fontSize: '13px',
+              textDecoration: 'none', fontFamily: FONT, marginBottom: '8px',
+              transition: 'color 0.2s',
             }}
-              onMouseEnter={e => e.currentTarget.style.color = TEAL}
-              onMouseLeave={e => e.currentTarget.style.color = '#718096'}
+              onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.85)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16.92z"/>
               </svg>
               +994 50 836 36 94
             </a>
             <a href="mailto:info@aslanmedical.az" style={{
               display: 'flex', alignItems: 'center', gap: '8px',
-              fontSize: '13px', color: '#718096', textDecoration: 'none',
-              fontFamily: FONT, transition: 'color 0.2s',
+              color: 'rgba(255,255,255,0.5)', fontSize: '13px',
+              textDecoration: 'none', fontFamily: FONT,
+              transition: 'color 0.2s',
             }}
-              onMouseEnter={e => e.currentTarget.style.color = TEAL}
-              onMouseLeave={e => e.currentTarget.style.color = '#718096'}
+              onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.85)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
@@ -372,14 +238,194 @@ export default function Login() {
             </a>
           </div>
         </div>
+
+        {/* ══ RIGHT — Form side ═══════════════════════════ */}
+        <div style={{
+          background: '#ffffff',
+          padding: '48px 52px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          height: '100vh',
+          boxSizing: 'border-box',
+        }}>
+          <div style={{ maxWidth: '400px', width: '100%' }}>
+
+            {/* Small logo for branding */}
+            <img
+              src="/logo.png"
+              alt="Aslan Medical"
+              style={{ height: '44px', width: 'auto', marginBottom: '20px', display: 'block' }}
+              onError={e => e.currentTarget.style.display = 'none'}
+            />
+
+            {/* Title */}
+            <h2 style={{
+              fontSize: '28px', fontWeight: 800,
+              color: '#0a1628', margin: '0 0 4px', fontFamily: FONT,
+            }}>Hesabınıza daxil olun</h2>
+            <p style={{
+              fontSize: '15px', color: '#718096',
+              margin: '0 0 24px', fontFamily: FONT,
+            }}>Pasiyent portalına xoş gəldiniz</p>
+
+            <form onSubmit={handleSubmit}>
+
+              {/* Email */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{
+                  display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#4a5568', marginBottom: '6px', fontFamily: FONT,
+                }}>E-poçt ünvanı</label>
+                <input
+                  type="email" placeholder="siz@example.com"
+                  value={email} onChange={e => setEmail(e.target.value)}
+                  style={inputBase} onFocus={focusIn} onBlur={focusOut}
+                  autoComplete="email"
+                />
+              </div>
+
+              {/* Password */}
+              <div style={{ marginBottom: '8px' }}>
+                <label style={{
+                  display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#4a5568', marginBottom: '6px', fontFamily: FONT,
+                }}>Şifrə</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password} onChange={e => setPassword(e.target.value)}
+                    style={{ ...inputBase, paddingRight: '46px' }}
+                    onFocus={focusIn} onBlur={focusOut}
+                    autoComplete="current-password"
+                  />
+                  <button type="button" onClick={() => setShowPass(v => !v)}
+                    style={{
+                      position: 'absolute', right: '13px', top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none', border: 'none',
+                      cursor: 'pointer', color: '#a0aec0',
+                      lineHeight: 0, padding: 0, transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = TEAL}
+                    onMouseLeave={e => e.currentTarget.style.color = '#a0aec0'}
+                  >
+                    {showPass
+                      ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    }
+                  </button>
+                </div>
+              </div>
+
+              {/* Forgot password */}
+              <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+                <span
+                  onClick={() => navigate('/forgot-password')}
+                  style={{
+                    fontSize: '13px', color: TEAL, cursor: 'pointer',
+                    fontFamily: FONT, fontWeight: 500,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                >Şifrəni unutmusunuz?</span>
+              </div>
+
+              {/* Submit */}
+              <button type="submit" disabled={loading}
+                style={{
+                  width: '100%', padding: '14px',
+                  background: loading ? '#7ec8cc' : TEAL,
+                  color: '#fff', border: 'none', borderRadius: '10px',
+                  fontSize: '16px', fontWeight: 700, fontFamily: FONT,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s, transform 0.15s',
+                  boxShadow: loading ? 'none' : '0 4px 14px rgba(0,132,142,0.35)',
+                }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = '#006b74'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                onMouseLeave={e => { e.currentTarget.style.background = loading ? '#7ec8cc' : TEAL; e.currentTarget.style.transform = 'none'; }}
+              >
+                {loading ? 'Yüklənir…' : 'Daxil Ol'}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              gap: '12px', margin: '20px 0',
+            }}>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+              <span style={{ fontSize: '13px', color: '#a0aec0', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                və ya
+              </span>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+            </div>
+
+            {/* Google button */}
+            <button
+              type="button"
+              onClick={() => toast.info('Google ilə giriş tezliklə əlavə olunacaq.')}
+              style={{
+                width: '100%', padding: '13px',
+                background: '#fff', color: '#3c4043',
+                border: '1.5px solid #dadce0', borderRadius: '10px',
+                fontSize: '15px', fontWeight: 600, fontFamily: FONT,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                transition: 'background 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f8f9fa'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Google ilə daxil ol
+            </button>
+
+            {/* Register */}
+            <p style={{
+              textAlign: 'center', marginTop: '16px',
+              fontSize: '14px', color: '#718096', fontFamily: FONT,
+            }}>
+              Hesabınız yoxdur?{' '}
+              <span
+                onClick={() => navigate('/register')}
+                style={{ color: TEAL, fontWeight: 600, cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+              >Qeydiyyatdan keçin</span>
+            </p>
+
+            {/* Staff login */}
+            <p style={{
+              textAlign: 'center', marginTop: '12px',
+              fontSize: '12px', color: '#cbd5e0', fontFamily: FONT,
+            }}>
+              <span
+                onClick={() => navigate('/staff-login')}
+                style={{ cursor: 'pointer', color: '#a0aec0' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#718096'}
+                onMouseLeave={e => e.currentTarget.style.color = '#a0aec0'}
+              >Əməkdaş girişi</span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Mobile styles */}
       <style>{`
         @media (max-width: 768px) {
-          .login-cols { flex-direction: column !important; }
+          .login-left { display: none !important; }
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
-    </div>
+    </>
   );
 }
