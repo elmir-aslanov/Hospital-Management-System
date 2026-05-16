@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as authController from './auth.controller.js';
+import { sendOtpHandler, verifyOtpHandler } from './otp.controller.js';
 import {
   validateRegister, validateLogin,
   validateForgotPassword, validateResetPassword,
@@ -175,5 +176,9 @@ router.post('/forgot-password', authLimiter, validateForgotPassword, validate, a
  *         description: Invalid or expired token
  */
 router.post('/reset-password', authLimiter, validateResetPassword, validate, authController.resetPasswordHandler);
+
+// OTP-based patient login
+router.post('/send-otp',   authLimiter, sendOtpHandler);
+router.post('/verify-otp', authLimiter, verifyOtpHandler);
 
 export default router;

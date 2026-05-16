@@ -8,19 +8,20 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const HeroSection = () => {
   const { t } = useTranslation();
   const { isMobile, isTablet } = useBreakpoint();
+
   return (
     <div style={{
       position: 'relative',
       width: '100%',
-      height: isMobile ? '85vh' : 'calc(100vh - 176px)',
+      height: isMobile ? 'calc(100vh - 60px)' : 'calc(100vh - 176px)',
+      minHeight: isMobile ? '500px' : 'auto',
       overflow: 'hidden',
       background: '#030912',
     }}>
 
-      {/* ── Video layer — preloaded crossfade ── */}
       <VideoBackground />
 
-      {/* ── Left teal content panel (UCSF style) ── */}
+      {/* Left teal content panel */}
       <motion.div
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
@@ -31,22 +32,22 @@ const HeroSection = () => {
           width: isMobile ? '100%' : isTablet ? '60%' : '460px',
           zIndex: 4,
           background: isMobile
-            ? 'rgba(0,80,90,0.88)'
+            ? 'linear-gradient(160deg, rgba(0,80,90,0.88) 0%, rgba(0,40,60,0.82) 100%)'
             : 'linear-gradient(135deg, rgba(0,100,120,0.78) 0%, rgba(0,60,90,0.72) 100%)',
-          padding: isMobile ? '40px 24px' : '60px 48px 60px 40px',
+          padding: isMobile ? '32px 20px 40px' : '60px 48px 60px 40px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           clipPath: isMobile ? 'none' : 'polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%)',
         }}
       >
-        {/* Overline label */}
+        {/* Badge */}
         <p style={{
-          fontSize: '12px',
+          fontSize: isMobile ? '10px' : '12px',
           color: 'rgba(255,255,255,0.8)',
-          letterSpacing: '2.5px',
+          letterSpacing: isMobile ? '2px' : '2.5px',
           textTransform: 'uppercase',
-          marginBottom: '20px',
+          marginBottom: isMobile ? '12px' : '20px',
           fontFamily: FONT,
           fontWeight: 600,
         }}>
@@ -55,11 +56,11 @@ const HeroSection = () => {
 
         {/* H1 */}
         <h1 style={{
-          fontSize: isMobile ? '36px' : isTablet ? '38px' : '42px',
+          fontSize: isMobile ? '32px' : isTablet ? '38px' : '42px',
           fontWeight: 800,
           color: '#ffffff',
-          lineHeight: 1.2,
-          marginBottom: '16px',
+          lineHeight: isMobile ? 1.15 : 1.2,
+          marginBottom: isMobile ? '8px' : '16px',
           fontFamily: FONT,
         }}>
           {t('hero.title').split('\n').map((line, i) => (
@@ -69,26 +70,26 @@ const HeroSection = () => {
 
         {/* Subtitle */}
         <p style={{
-          fontSize: '16px',
-          color: 'rgba(255,255,255,0.8)',
-          marginBottom: '36px',
+          fontSize: isMobile ? '13px' : '16px',
+          color: isMobile ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.8)',
+          marginBottom: isMobile ? '24px' : '36px',
           fontFamily: FONT,
           fontWeight: 400,
         }}>
           {t('hero.subtitle')}
         </p>
 
-        {/* Ghost button */}
+        {/* Button */}
         <div>
           <button
             style={{
-              border: '2.5px solid white',
+              border: '2px solid white',
               borderRadius: '28px',
-              padding: '12px 32px',
-              width: isMobile ? '100%' : 'auto',
+              padding: '12px 28px',
+              width: 'fit-content',
               color: 'white',
               background: 'transparent',
-              fontSize: '15px',
+              fontSize: isMobile ? '14px' : '15px',
               fontWeight: 600,
               fontFamily: FONT,
               cursor: 'pointer',
@@ -104,13 +105,13 @@ const HeroSection = () => {
         </div>
       </motion.div>
 
-      {/* ── Multi-wave transition to white below ── */}
+      {/* Multi-wave transition */}
       <div style={{
         position: 'absolute', bottom: -2, left: 0, right: 0,
         zIndex: 5, lineHeight: 0, pointerEvents: 'none',
       }}>
         <svg viewBox="0 0 1440 130" preserveAspectRatio="none"
-          style={{ width: '100%', height: '130px', display: 'block' }}>
+          style={{ width: '100%', height: isMobile ? '60px' : '130px', display: 'block' }}>
           <path d="M0,40 C180,90 360,10 540,50 C720,90 900,20 1080,55 C1260,88 1380,30 1440,45 L1440,130 L0,130 Z"
             fill="white" opacity="0.2"/>
           <path d="M0,55 C200,20 400,95 600,65 C800,35 1000,85 1200,60 C1320,45 1400,70 1440,75 L1440,130 L0,130 Z"
@@ -123,12 +124,6 @@ const HeroSection = () => {
             fill="white"/>
         </svg>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          h1 { font-size: 30px !important; }
-        }
-      `}</style>
     </div>
   );
 };

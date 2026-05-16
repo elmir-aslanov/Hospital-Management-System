@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { media } from '../config/media';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 const VIDEOS = [media.heroVideo1, media.heroVideo2, media.heroVideo3];
 const INTERVAL      = 6000;
 const FADE_DURATION = 1200;
 
 export default function VideoBackground() {
+  const { isMobile } = useBreakpoint();
   const [active, setActive]   = useState(0);
   const [loaded, setLoaded]   = useState([false, false, false]);
   const videoRefs = useRef([]);
@@ -148,6 +150,7 @@ export default function VideoBackground() {
             position: 'absolute', inset: 0,
             width: '100%', height: '100%',
             objectFit: 'cover',
+            objectPosition: isMobile ? 'center center' : 'center',
             opacity: active === i && loaded[i] ? 1 : 0,
             transition: `opacity ${FADE_DURATION}ms ease-in-out`,
             zIndex: active === i ? 2 : 1,

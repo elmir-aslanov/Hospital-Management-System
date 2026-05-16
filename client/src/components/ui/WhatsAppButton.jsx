@@ -25,7 +25,7 @@ export default function WhatsAppButton() {
     <div style={{
       position: 'fixed',
       right: isMobile ? '16px' : '24px',
-      bottom: isMobile ? '20px' : '32px',
+      bottom: isMobile ? '80px' : '32px',
       zIndex: 9990,
       display: 'flex',
       flexDirection: 'column',
@@ -113,8 +113,8 @@ export default function WhatsAppButton() {
             : '0 4px 20px rgba(37,211,102,0.35)',
         }}
         style={{
-          width: isMobile ? '52px' : '58px',
-          height: isMobile ? '52px' : '58px',
+          width: isMobile ? '50px' : '58px',
+          height: isMobile ? '50px' : '58px',
           borderRadius: '50%',
           border: 'none',
           background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
