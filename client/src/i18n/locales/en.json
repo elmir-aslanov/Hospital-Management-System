@@ -35,8 +35,7 @@
     "title2": "Share Their Stories",
     "quote": "Every treatment begins with trust. Thousands of patients have regained their health at Aslan Medical Clinic — now it is your turn.",
     "cta": "Read success stories →",
-    "condition1": "Treatment, Baku",
-    "condition2": "Treatment, Baku",
+    "condition": "Treatment, Baku",
     "condition3": "Surgery, Baku"
   },
   "login": {
@@ -63,8 +62,7 @@
     "title": "Patient Stories",
     "subtitle": "Behind every patient is a story. They trusted us — we healed them.",
     "backHome": "← Back to homepage",
-    "condition1": "Treatment, Baku",
-    "condition2": "Treatment, Baku",
+    "condition": "Treatment, Baku",
     "condition3": "Surgery, Baku",
     "story1": "The treatment at Aslan Medical Clinic changed my life. Thanks to the professional doctors and caring staff, I regained my health.",
     "story2": "The medical care and attention here gave me a new life. I am grateful to the team that was with me every step of the way.",

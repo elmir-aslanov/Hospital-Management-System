@@ -513,9 +513,13 @@ export default function Navbar() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#1a2b4a'; }}
             >
-              <span style={{ fontSize: '16px', lineHeight: 1 }}>
-                {LANGUAGES.find(l => l.code === activeLang)?.flag}
-              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ opacity: 0.7, flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
               <span style={{ letterSpacing: '0.5px' }}>
                 {activeLang}
               </span>
@@ -569,10 +573,17 @@ export default function Navbar() {
                       onMouseEnter={e => { if (activeLang !== lang.code) e.currentTarget.style.background = '#f8fafc'; }}
                       onMouseLeave={e => { if (activeLang !== lang.code) e.currentTarget.style.background = 'white'; }}
                     >
-                      <span style={{ fontSize: '18px' }}>{lang.flag}</span>
+                      <div style={{
+                        width: '28px', height: '28px', borderRadius: '6px',
+                        background: activeLang === lang.code ? 'rgba(0,132,142,0.12)' : '#f0f4f8',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 700, color: activeLang === lang.code ? TEAL : '#4a5568',
+                        flexShrink: 0,
+                      }}>
+                        {lang.code}
+                      </div>
                       <div>
                         <div style={{ lineHeight: 1.2 }}>{lang.label}</div>
-                        <div style={{ fontSize: '10px', color: 'rgba(0,0,0,0.35)', lineHeight: 1.2 }}>{lang.code}</div>
                       </div>
                       {activeLang === lang.code && (
                         <span style={{ marginLeft: 'auto', color: TEAL, fontSize: '14px' }}>✓</span>

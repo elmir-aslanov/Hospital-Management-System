@@ -1,4 +1,5 @@
-import HeroSection    from '../../components/HeroSection';
+import HeroSection     from '../../components/HeroSection';
+import AboutDirector  from '../../components/sections/AboutDirector';
 import PatientStories from '../../components/sections/PatientStories';
 
 export default function HomePage() {
@@ -16,6 +17,8 @@ export default function HomePage() {
           />
         </svg>
       </div>
+
+      <AboutDirector />
 
       <PatientStories />
 

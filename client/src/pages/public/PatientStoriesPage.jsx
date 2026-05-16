@@ -7,8 +7,8 @@ export default function PatientStoriesPage() {
   const { t } = useTranslation();
 
   const fullStories = [
-    { id: 1, name: 'Pasiyent 1', condition: t('patientStoriesPage.condition1'), image: '/pasiyent1.jpeg', story: t('patientStoriesPage.story1') },
-    { id: 2, name: 'Pasiyent 2', condition: t('patientStoriesPage.condition2'), image: '/pasiyent2.jpeg', story: t('patientStoriesPage.story2') },
+    { id: 1, name: 'Pasiyent 1', condition: t('patientStoriesPage.condition'), image: '/pasiyent1.jpeg', story: t('patientStoriesPage.story1') },
+    { id: 2, name: 'Pasiyent 2', condition: t('patientStoriesPage.condition'), image: '/pasiyent2.jpeg', story: t('patientStoriesPage.story2') },
     { id: 3, name: 'Pasiyent 3', condition: t('patientStoriesPage.condition3'), image: '/pasiyent3.jpeg', story: t('patientStoriesPage.story3') },
   ];
 

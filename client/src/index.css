@@ -25,6 +25,38 @@ video {
 
 img { max-width: 100%; }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━
+   CUSTOM SCROLLBAR
+━━━━━━━━━━━━━━━━━━━━━━ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f4f8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00848e 0%, #006b74 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00BCD4 0%, #00848e 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: #f0f4f8;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00848e #f0f4f8;
+}
+
 @media (max-width: 768px) {
   html { font-size: 15px; }
 
