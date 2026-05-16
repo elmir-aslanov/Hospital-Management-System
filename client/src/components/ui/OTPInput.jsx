@@ -1,44 +1,89 @@
 import { useRef, useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 
-const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
 
-export default function OTPInput({ length = 6, onComplete, onResend, phone, loading = false, error }) {
-  const [values, setValues] = useState(Array(length).fill(''))
-  const [timer, setTimer] = useState(60)
+export default function OTPInput({
+  length = 6,
+  onComplete,
+  onResend,
+  phone,
+  email,
+  loading = false,
+  error,
+}) {
+  const [values, setValues]     = useState(Array(length).fill(''))
+  const [timer, setTimer]       = useState(60)
   const [canResend, setCanResend] = useState(false)
-  const inputs = useRef([])
+  const inputRefs = useRef([])
 
   useEffect(() => {
-    if (timer === 0) { setCanResend(true); return }
-    const t = setTimeout(() => setTimer(prev => prev - 1), 1000)
-    return () => clearTimeout(t)
-  }, [timer])
+    inputRefs.current[0]?.focus()
+  }, [])
 
-  const handleChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return
+  useEffect(() => {
+    if (timer <= 0) { setCanResend(true); return }
+    const t = setInterval(() => setTimer(p => {
+      if (p <= 1) { setCanResend(true); clearInterval(t); return 0 }
+      return p - 1
+    }), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const handleChange = (index, e) => {
+    const val = e.target.value.replace(/\D/g, '')
+    if (!val && e.target.value !== '') return
+
     const newValues = [...values]
-    newValues[index] = value.slice(-1)
-    setValues(newValues)
-    if (value && index < length - 1) inputs.current[index + 1]?.focus()
+
+    if (val.length > 1) {
+      // Paste into single box
+      const chars = val.split('').slice(0, length - index)
+      chars.forEach((char, i) => {
+        if (index + i < length) newValues[index + i] = char
+      })
+      setValues(newValues)
+      const nextIndex = Math.min(index + chars.length, length - 1)
+      inputRefs.current[nextIndex]?.focus()
+    } else {
+      newValues[index] = val
+      setValues(newValues)
+      if (val && index < length - 1) {
+        inputRefs.current[index + 1]?.focus()
+      }
+    }
+
     const joined = newValues.join('')
-    if (joined.length === length) onComplete(joined)
+    if (joined.length === length && !newValues.includes('')) {
+      onComplete(joined)
+    }
   }
 
   const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !values[index] && index > 0) {
-      inputs.current[index - 1]?.focus()
+    if (e.key === 'Backspace') {
+      e.preventDefault()
+      const newValues = [...values]
+      if (values[index]) {
+        newValues[index] = ''
+        setValues(newValues)
+      } else if (index > 0) {
+        newValues[index - 1] = ''
+        setValues(newValues)
+        inputRefs.current[index - 1]?.focus()
+      }
     }
+    if (e.key === 'ArrowLeft'  && index > 0)           inputRefs.current[index - 1]?.focus()
+    if (e.key === 'ArrowRight' && index < length - 1)  inputRefs.current[index + 1]?.focus()
   }
 
   const handlePaste = (e) => {
     e.preventDefault()
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length)
+    if (!pasted) return
     const newValues = Array(length).fill('')
     pasted.split('').forEach((char, i) => { newValues[i] = char })
     setValues(newValues)
-    inputs.current[Math.min(pasted.length, length - 1)]?.focus()
+    const focusIndex = Math.min(pasted.length, length - 1)
+    inputRefs.current[focusIndex]?.focus()
     if (pasted.length === length) onComplete(pasted)
   }
 
@@ -46,101 +91,102 @@ export default function OTPInput({ length = 6, onComplete, onResend, phone, load
     setValues(Array(length).fill(''))
     setTimer(60)
     setCanResend(false)
-    inputs.current[0]?.focus()
+    setTimeout(() => inputRefs.current[0]?.focus(), 100)
     onResend()
   }
 
+  const destination = phone || email || ''
+  const filled = values.filter(v => v).length
+
   return (
-    <div style={{ textAlign: 'center', fontFamily: FONT }}>
-
-      <p style={{ fontSize: '14px', color: '#4a5568', marginBottom: '4px' }}>
-        <strong style={{ color: '#0a1628' }}>{phone}</strong> nömrəsinə
+    <div>
+      <p style={{ fontSize: '14px', color: '#4a5568', textAlign: 'center', marginBottom: '4px' }}>
+        <strong style={{ color: '#0a1628' }}>{destination}</strong>
       </p>
-      <p style={{ fontSize: '13px', color: '#718096', marginBottom: '28px' }}>
-        6 rəqəmli kod göndərildi
+      <p style={{ fontSize: '13px', color: '#718096', textAlign: 'center', marginBottom: '24px' }}>
+        ünvanına 6 rəqəmli kod göndərildi
       </p>
 
-      {/* OTP boxes */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
-        {values.map((val, i) => (
-          <motion.input
+      {/* 6 input boxes */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
+        {Array(length).fill(0).map((_, i) => (
+          <input
             key={i}
-            ref={el => inputs.current[i] = el}
+            ref={el => { inputRefs.current[i] = el }}
             type="text"
             inputMode="numeric"
-            maxLength={1}
-            value={val}
-            onChange={e => handleChange(i, e.target.value)}
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={values[i]}
+            onChange={e => handleChange(i, e)}
             onKeyDown={e => handleKeyDown(i, e)}
             onPaste={handlePaste}
-            whileFocus={{ scale: 1.06 }}
-            autoFocus={i === 0}
+            onClick={() => inputRefs.current[i]?.select()}
+            onFocus={e => {
+              e.target.style.borderColor = TEAL
+              e.target.style.boxShadow = '0 0 0 3px rgba(0,132,142,0.1)'
+              e.target.select()
+            }}
+            onBlur={e => {
+              if (!values[i]) e.target.style.borderColor = '#e2e8f0'
+              e.target.style.boxShadow = 'none'
+            }}
             style={{
-              width: '48px', height: '56px',
+              width: '46px',
+              height: '54px',
               textAlign: 'center',
-              fontSize: '22px', fontWeight: 700,
+              fontSize: '22px',
+              fontWeight: 700,
+              fontFamily: 'monospace',
               border: error
                 ? '2px solid #EF4444'
-                : val ? `2px solid ${TEAL}` : '2px solid #e2e8f0',
+                : values[i] ? `2px solid ${TEAL}` : '2px solid #e2e8f0',
               borderRadius: '12px',
               outline: 'none',
               color: '#0a1628',
-              background: val ? 'rgba(0,132,142,0.04)' : 'white',
-              transition: 'border-color 0.2s',
+              background: values[i] ? 'rgba(0,132,142,0.05)' : '#ffffff',
+              transition: 'border-color 0.15s, background 0.15s',
               caretColor: TEAL,
-              fontFamily: 'monospace',
               cursor: 'text',
             }}
           />
         ))}
       </div>
 
+      {/* Error */}
       {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ fontSize: '13px', color: '#EF4444', marginBottom: '16px' }}
-        >
+        <p style={{ fontSize: '13px', color: '#EF4444', textAlign: 'center', marginBottom: '12px' }}>
           {error}
-        </motion.p>
+        </p>
       )}
 
       {/* Timer / Resend */}
-      <div style={{ fontSize: '13px', color: '#718096', marginBottom: '24px', fontFamily: FONT }}>
+      <p style={{ fontSize: '13px', color: '#718096', textAlign: 'center', marginBottom: '20px' }}>
         {canResend ? (
-          <button
-            onClick={handleResend}
-            style={{
-              background: 'none', border: 'none', color: TEAL,
-              fontWeight: 700, cursor: 'pointer', fontSize: '13px',
-              fontFamily: FONT, textDecoration: 'underline',
-            }}
-          >
+          <button onClick={handleResend} style={{
+            background: 'none', border: 'none', color: TEAL,
+            fontWeight: 700, cursor: 'pointer', fontSize: '13px',
+            fontFamily: 'inherit', textDecoration: 'underline',
+          }}>
             Kodu yenidən göndər
           </button>
         ) : (
-          <span>
-            Yenidən göndər:{' '}
-            <strong style={{ color: '#0a1628' }}>0:{timer.toString().padStart(2, '0')}</strong>
-          </span>
+          <>Yenidən göndər: <strong style={{ color: '#0a1628' }}>0:{timer.toString().padStart(2, '0')}</strong></>
         )}
-      </div>
+      </p>
 
       {/* Verify button */}
       <button
-        onClick={() => {
-          const joined = values.join('')
-          if (joined.length === length) onComplete(joined)
-        }}
-        disabled={values.join('').length !== length || loading}
+        onClick={() => { const j = values.join(''); if (j.length === length) onComplete(j); }}
+        disabled={filled !== length || loading}
         style={{
           width: '100%', padding: '13px',
-          background: values.join('').length === length ? TEAL : '#e2e8f0',
-          color: values.join('').length === length ? 'white' : '#a0aec0',
+          background: filled === length ? TEAL : '#e2e8f0',
+          color:      filled === length ? 'white' : '#a0aec0',
           border: 'none', borderRadius: '10px',
           fontSize: '15px', fontWeight: 700,
-          cursor: values.join('').length === length ? 'pointer' : 'not-allowed',
-          transition: 'all 0.2s', fontFamily: FONT,
+          cursor: filled === length ? 'pointer' : 'not-allowed',
+          transition: 'all 0.2s', fontFamily: 'inherit',
         }}
       >
         {loading ? 'Yoxlanılır...' : 'Təsdiqlə'}

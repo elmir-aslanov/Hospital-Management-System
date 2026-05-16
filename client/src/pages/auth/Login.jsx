@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
+import { requestOtp, verifyOtp } from '../../api/authApi';
+import OTPInput from '../../components/ui/OTPInput';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -39,44 +41,80 @@ function focusOut(e) {
 const FEATURES = null; // replaced by t() in component
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [loading,  setLoading]  = useState(false);
+  const navigate   = useNavigate();
+  const { t }      = useTranslation();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      toast.warning('Zəhmət olmasa bütün sahələri doldurun.');
+  // OTP flow state
+  const [step,       setStep]       = useState('input'); // 'input' | 'otp'
+  const [otpMethod,  setOtpMethod]  = useState('phone'); // 'phone' | 'email'
+  const [phone,      setPhone]      = useState('');
+  const [email,      setEmail]      = useState('');
+  const [otpError,   setOtpError]   = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [devOtp,     setDevOtp]     = useState('');
+
+  const getPayload = () => otpMethod === 'phone'
+    ? { type: 'phone', phone: '+994' + phone.replace(/\D/g, '') }
+    : { type: 'email', email: email.trim() };
+
+  const handleSendOTP = async () => {
+    if (otpMethod === 'phone' && phone.replace(/\D/g, '').length !== 9) {
+      toast.warning('9 rəqəmli nömrə daxil edin. (Məsələn: 50 836 36 94)');
       return;
     }
-    setLoading(true);
-    try {
-      const { data } = await api.post('/auth/login', { email: email.trim(), password });
-      const { user, accessToken } = data.data;
-
-      if (user.role?.toUpperCase() !== 'PATIENT') {
-        toast.error('Bu hesab üçün icazəniz yoxdur. Əməkdaş girişindən istifadə edin.');
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      window.dispatchEvent(new Event('storage'));
-      toast.success(`Xoş gəldiniz, ${user.fullName}!`);
-      navigate(roleToRoute(user.role));
-    } catch (err) {
-      const status = err?.response?.status;
-      if      (status === 404) toast.error('Bu e-poçtla hesab tapılmadı.');
-      else if (status === 401) toast.error('Şifrə yanlışdır.');
-      else if (status === 403) toast.error('Hesabınız deaktiv edilib. Klinikamızla əlaqə saxlayın.');
-      else                     toast.error('Serverlə əlaqə xətası. Bir az sonra yenidən cəhd edin.');
-    } finally {
-      setLoading(false);
+    if (otpMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.warning('Düzgün email ünvanı daxil edin.');
+      return;
     }
+    const id = toast.loading('Kod göndərilir...');
+    try {
+      const result = await requestOtp(getPayload());
+      toast.dismiss(id);
+      if (result.devCode) {
+        setDevOtp(result.devCode);
+        toast.info(`DEV — Kod: ${result.devCode}`, { duration: 30000 });
+      } else {
+        const dest = otpMethod === 'phone' ? 'telefon nömrənizə' : 'email ünvanınıza';
+        toast.success(`OTP kodu ${dest} göndərildi!`);
+      }
+      setStep('otp');
+    } catch (err) {
+      toast.dismiss(id);
+      toast.error(err.response?.data?.message || 'Kod göndərilmədi. Yenidən cəhd edin.');
+    }
+  };
+
+  const handleVerifyOTP = async (code) => {
+    setOtpLoading(true);
+    setOtpError('');
+    try {
+      const result = await verifyOtp({ ...getPayload(), code });
+      localStorage.setItem('token', result.accessToken);
+      localStorage.setItem('user', JSON.stringify(result.user));
+      window.dispatchEvent(new Event('storage'));
+      toast.success(`Xoş gəldiniz, ${result.user.fullName || 'Pasiyent'}!`);
+      navigate('/patient');
+    } catch (err) {
+      setOtpError(err.response?.data?.message || 'Kod yanlışdır və ya müddəti bitib.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      const result = await requestOtp(getPayload());
+      if (result.devCode) setDevOtp(result.devCode);
+      toast.success('Yeni kod göndərildi.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Xəta baş verdi.');
+    }
+  };
+
+  const resetToInput = () => {
+    setStep('input');
+    setOtpError('');
+    setDevOtp('');
   };
 
   return (
@@ -266,151 +304,153 @@ export default function Login() {
               onError={e => e.currentTarget.style.display = 'none'}
             />
 
-            {/* Title */}
-            <h2 style={{
-              fontSize: '28px', fontWeight: 800,
-              color: '#0a1628', margin: '0 0 4px', fontFamily: FONT,
-            }}>{t('login.title')}</h2>
-            <p style={{
-              fontSize: '15px', color: '#718096',
-              margin: '0 0 24px', fontFamily: FONT,
-            }}>{t('login.subtitle')}</p>
-
-            <form onSubmit={handleSubmit}>
-
-              {/* Email */}
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{
-                  display: 'block', fontSize: '13px', fontWeight: 600,
-                  color: '#4a5568', marginBottom: '6px', fontFamily: FONT,
-                }}>{t('login.email')}</label>
-                <input
-                  type="email" placeholder="siz@example.com"
-                  value={email} onChange={e => setEmail(e.target.value)}
-                  style={inputBase} onFocus={focusIn} onBlur={focusOut}
-                  autoComplete="email"
-                />
-              </div>
-
-              {/* Password */}
-              <div style={{ marginBottom: '8px' }}>
-                <label style={{
-                  display: 'block', fontSize: '13px', fontWeight: 600,
-                  color: '#4a5568', marginBottom: '6px', fontFamily: FONT,
-                }}>Şifrə</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password} onChange={e => setPassword(e.target.value)}
-                    style={{ ...inputBase, paddingRight: '46px' }}
-                    onFocus={focusIn} onBlur={focusOut}
-                    autoComplete="current-password"
-                  />
-                  <button type="button" onClick={() => setShowPass(v => !v)}
-                    style={{
-                      position: 'absolute', right: '13px', top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none', border: 'none',
-                      cursor: 'pointer', color: '#a0aec0',
-                      lineHeight: 0, padding: 0, transition: 'color 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.color = TEAL}
-                    onMouseLeave={e => e.currentTarget.style.color = '#a0aec0'}
-                  >
-                    {showPass
-                      ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    }
-                  </button>
-                </div>
-              </div>
-
-              {/* Forgot password */}
-              <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-                <span
-                  onClick={() => navigate('/forgot-password')}
-                  style={{
-                    fontSize: '13px', color: TEAL, cursor: 'pointer',
-                    fontFamily: FONT, fontWeight: 500,
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                  onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                >{t('login.forgot')}</span>
-              </div>
-
-              {/* Submit */}
-              <button type="submit" disabled={loading}
-                style={{
-                  width: '100%', padding: '14px',
-                  background: loading ? '#7ec8cc' : TEAL,
-                  color: '#fff', border: 'none', borderRadius: '10px',
-                  fontSize: '16px', fontWeight: 700, fontFamily: FONT,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.2s, transform 0.15s',
-                  boxShadow: loading ? 'none' : '0 4px 14px rgba(0,132,142,0.35)',
-                }}
-                onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = '#006b74'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
-                onMouseLeave={e => { e.currentTarget.style.background = loading ? '#7ec8cc' : TEAL; e.currentTarget.style.transform = 'none'; }}
-              >
-                {loading ? 'Yüklənir…' : t('login.submit')}
-              </button>
-            </form>
-
-            {/* Divider */}
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              gap: '12px', margin: '20px 0',
-            }}>
-              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-              <span style={{ fontSize: '13px', color: '#a0aec0', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-                {t('login.or')}
-              </span>
-              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+            {/* Step indicator */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ flex: 1, height: '3px', borderRadius: '2px', background: TEAL }} />
+              <div style={{ flex: 1, height: '3px', borderRadius: '2px', background: step === 'otp' ? TEAL : '#e2e8f0', transition: 'background 0.3s' }} />
             </div>
-
-            {/* Google button */}
-            <button
-              type="button"
-              onClick={() => toast.info('Google ilə giriş tezliklə əlavə olunacaq.')}
-              style={{
-                width: '100%', padding: '13px',
-                background: '#fff', color: '#3c4043',
-                border: '1.5px solid #dadce0', borderRadius: '10px',
-                fontSize: '15px', fontWeight: 600, fontFamily: FONT,
-                cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                transition: 'background 0.15s, box-shadow 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#f8f9fa'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.1)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
-              {t('login.google')}
-            </button>
-
-            {/* Register */}
-            <p style={{
-              textAlign: 'center', marginTop: '16px',
-              fontSize: '14px', color: '#718096', fontFamily: FONT,
-            }}>
-              {t('login.noAccount')}{' '}
-              <span
-                onClick={() => navigate('/register')}
-                style={{ color: TEAL, fontWeight: 600, cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-              >{t('login.register')}</span>
+            <p style={{ fontSize: '12px', color: '#718096', marginBottom: '16px', fontFamily: FONT }}>
+              {step === 'input' ? 'Addım 1/2 — Əlaqə' : 'Addım 2/2 — Təsdiq'}
             </p>
+
+            <h2 style={{ fontSize: '26px', fontWeight: 800, color: '#0a1628', margin: '0 0 4px', fontFamily: FONT }}>
+              {step === 'input' ? 'Hesabınıza daxil olun' : 'Kodu daxil edin'}
+            </h2>
+            <p style={{ fontSize: '14px', color: '#718096', margin: '0 0 24px', fontFamily: FONT }}>
+              {step === 'input'
+                ? 'Pasiyent portalına xoş gəldiniz'
+                : otpMethod === 'phone'
+                  ? `+994${phone} nömrəsinə göndərildi`
+                  : `${email} ünvanına göndərildi`}
+            </p>
+
+            {/* DEV OTP banner */}
+            {devOtp && step === 'otp' && (
+              <div style={{
+                background: 'rgba(245,158,11,0.08)', border: '1px solid #F59E0B',
+                borderRadius: '10px', padding: '10px 14px', marginBottom: '20px',
+                fontSize: '13px', color: '#92400e', textAlign: 'center', fontFamily: FONT,
+              }}>
+                🔧 DEV —{' '}
+                <strong style={{ fontSize: '20px', letterSpacing: '4px', color: TEAL }}>{devOtp}</strong>
+              </div>
+            )}
+
+            {/* STEP 1 — Method selector + input */}
+            {step === 'input' && (
+              <>
+                {/* Method toggle */}
+                <div style={{
+                  display: 'flex', background: '#f0f4f8',
+                  borderRadius: '10px', padding: '4px',
+                  marginBottom: '20px', gap: '4px',
+                }}>
+                  {[
+                    { value: 'phone', label: '📱 Telefon' },
+                    { value: 'email', label: '✉️ Email' },
+                  ].map(m => (
+                    <button
+                      key={m.value}
+                      onClick={() => { setOtpMethod(m.value); setPhone(''); setEmail(''); setDevOtp(''); }}
+                      style={{
+                        flex: 1, padding: '9px', borderRadius: '8px', border: 'none',
+                        background: otpMethod === m.value ? 'white' : 'transparent',
+                        color: otpMethod === m.value ? TEAL : '#718096',
+                        fontWeight: otpMethod === m.value ? 700 : 400,
+                        cursor: 'pointer', fontSize: '13px', fontFamily: FONT,
+                        boxShadow: otpMethod === m.value ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.2s',
+                      }}
+                    >{m.label}</button>
+                  ))}
+                </div>
+
+                {/* Phone input */}
+                {otpMethod === 'phone' && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4a5568', marginBottom: '6px', fontFamily: FONT }}>
+                      Telefon nömrəsi
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <span style={{
+                        padding: '13px 12px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+                        fontSize: '15px', color: '#4a5568', background: '#f8fafc',
+                        whiteSpace: 'nowrap', fontFamily: FONT, flexShrink: 0,
+                      }}>🇦🇿 +994</span>
+                      <input
+                        type="tel" placeholder="50 836 36 94"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
+                        maxLength={9}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }}
+                        style={{ ...inputBase, flex: 1 }}
+                        onFocus={focusIn} onBlur={focusOut}
+                        autoComplete="tel" autoFocus
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Email input */}
+                {otpMethod === 'email' && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4a5568', marginBottom: '6px', fontFamily: FONT }}>
+                      Email ünvanı
+                    </label>
+                    <input
+                      type="email" placeholder="siz@example.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }}
+                      style={inputBase}
+                      onFocus={focusIn} onBlur={focusOut}
+                      autoComplete="email" autoFocus
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSendOTP}
+                  style={{
+                    width: '100%', padding: '14px', background: TEAL, color: '#fff',
+                    border: 'none', borderRadius: '10px', fontSize: '16px',
+                    fontWeight: 700, fontFamily: FONT, cursor: 'pointer',
+                    transition: 'background 0.2s', boxShadow: '0 4px 14px rgba(0,132,142,0.35)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#006b74'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = TEAL; }}
+                >
+                  Kod Al
+                </button>
+              </>
+            )}
+
+            {/* STEP 2 — OTP boxes */}
+            {step === 'otp' && (
+              <>
+                <OTPInput
+                  phone={otpMethod === 'phone' ? '+994' + phone : email}
+                  onComplete={handleVerifyOTP}
+                  onResend={handleResendOTP}
+                  loading={otpLoading}
+                  error={otpError}
+                />
+                <button
+                  onClick={resetToInput}
+                  style={{
+                    background: 'none', border: 'none', color: '#718096',
+                    cursor: 'pointer', fontSize: '13px', fontFamily: FONT,
+                    display: 'block', margin: '12px auto 0',
+                  }}
+                >
+                  ← {otpMethod === 'phone' ? 'Nömrəni dəyiş' : 'Emaili dəyiş'}
+                </button>
+              </>
+            )}
 
             {/* Staff login */}
             <p style={{
-              textAlign: 'center', marginTop: '12px',
+              textAlign: 'center', marginTop: '24px',
               fontSize: '12px', color: '#cbd5e0', fontFamily: FONT,
             }}>
               <span

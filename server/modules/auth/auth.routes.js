@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as authController from './auth.controller.js';
-import { sendOtpHandler, verifyOtpHandler } from './otp.controller.js';
+import { requestOtpHandler, verifyOtpHandler, sendOtpHandler } from './otp.controller.js';
 import {
   validateRegister, validateLogin,
   validateForgotPassword, validateResetPassword,
@@ -178,7 +178,8 @@ router.post('/forgot-password', authLimiter, validateForgotPassword, validate, a
 router.post('/reset-password', authLimiter, validateResetPassword, validate, authController.resetPasswordHandler);
 
 // OTP-based patient login
-router.post('/send-otp',   authLimiter, sendOtpHandler);
-router.post('/verify-otp', authLimiter, verifyOtpHandler);
+router.post('/request-otp', authLimiter, requestOtpHandler);  // primary
+router.post('/send-otp',    authLimiter, sendOtpHandler);      // backward compat alias
+router.post('/verify-otp',  authLimiter, verifyOtpHandler);
 
 export default router;
