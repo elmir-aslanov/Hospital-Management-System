@@ -29,7 +29,9 @@ import ratingsRoutes      from './modules/ratings/ratings.routes.js';
 import certificatesRoutes from './modules/certificates/certificates.routes.js';
 import shiftsRoutes       from './modules/shifts/shifts.routes.js';
 import inventoryRoutes    from './modules/inventory/inventory.routes.js';
-import exportRoutes       from './modules/export/export.routes.js';
+import exportRoutes         from './modules/export/export.routes.js';
+import aiRoutes             from './modules/ai/ai.routes.js';
+import consultationsRoutes  from './modules/consultations/consultations.routes.js';
 
 const app = express();
 
@@ -114,7 +116,9 @@ app.use(`${API}/ratings`,       ratingsRoutes);
 app.use(`${API}/certificates`,  certificatesRoutes);
 app.use(`${API}/shifts`,        shiftsRoutes);
 app.use(`${API}/inventory`,     inventoryRoutes);
-app.use(`${API}/export`,        exportRoutes);
+app.use(`${API}/export`,         exportRoutes);
+app.use(`${API}/ai`,             aiRoutes);
+app.use(`${API}/consultations`,  consultationsRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

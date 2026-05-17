@@ -51,7 +51,6 @@ export default function Login() {
   const [email,      setEmail]      = useState('');
   const [otpError,   setOtpError]   = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
-  const [devOtp,     setDevOtp]     = useState('');
 
   const getPayload = () => otpMethod === 'phone'
     ? { type: 'phone', phone: '+994' + phone.replace(/\D/g, '') }
@@ -68,15 +67,10 @@ export default function Login() {
     }
     const id = toast.loading('Kod göndərilir...');
     try {
-      const result = await requestOtp(getPayload());
+      await requestOtp(getPayload());
       toast.dismiss(id);
-      if (result.devCode) {
-        setDevOtp(result.devCode);
-        toast.info(`DEV — Kod: ${result.devCode}`, { duration: 30000 });
-      } else {
-        const dest = otpMethod === 'phone' ? 'telefon nömrənizə' : 'email ünvanınıza';
-        toast.success(`OTP kodu ${dest} göndərildi!`);
-      }
+      const dest = otpMethod === 'phone' ? 'telefon nömrənizə' : 'email ünvanınıza';
+      toast.success(`OTP kodu ${dest} göndərildi!`);
       setStep('otp');
     } catch (err) {
       toast.dismiss(id);
@@ -103,8 +97,7 @@ export default function Login() {
 
   const handleResendOTP = async () => {
     try {
-      const result = await requestOtp(getPayload());
-      if (result.devCode) setDevOtp(result.devCode);
+      await requestOtp(getPayload());
       toast.success('Yeni kod göndərildi.');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Xəta baş verdi.');
@@ -114,7 +107,6 @@ export default function Login() {
   const resetToInput = () => {
     setStep('input');
     setOtpError('');
-    setDevOtp('');
   };
 
   return (
@@ -324,18 +316,6 @@ export default function Login() {
                   : `${email} ünvanına göndərildi`}
             </p>
 
-            {/* DEV OTP banner */}
-            {devOtp && step === 'otp' && (
-              <div style={{
-                background: 'rgba(245,158,11,0.08)', border: '1px solid #F59E0B',
-                borderRadius: '10px', padding: '10px 14px', marginBottom: '20px',
-                fontSize: '13px', color: '#92400e', textAlign: 'center', fontFamily: FONT,
-              }}>
-                🔧 DEV —{' '}
-                <strong style={{ fontSize: '20px', letterSpacing: '4px', color: TEAL }}>{devOtp}</strong>
-              </div>
-            )}
-
             {/* STEP 1 — Method selector + input */}
             {step === 'input' && (
               <>
@@ -351,7 +331,7 @@ export default function Login() {
                   ].map(m => (
                     <button
                       key={m.value}
-                      onClick={() => { setOtpMethod(m.value); setPhone(''); setEmail(''); setDevOtp(''); }}
+                      onClick={() => { setOtpMethod(m.value); setPhone(''); setEmail(''); }}
                       style={{
                         flex: 1, padding: '9px', borderRadius: '8px', border: 'none',
                         background: otpMethod === m.value ? 'white' : 'transparent',

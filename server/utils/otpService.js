@@ -5,24 +5,26 @@ export const generateOTP = () =>
 
 // ── Email OTP ──────────────────────────────────────────────────────────────
 
+// Use EMAIL_* vars, fall back to SMTP_* vars (shared mail config)
 const transporter = nodemailer.createTransport({
-  host:   process.env.EMAIL_HOST   || 'smtp.gmail.com',
-  port:   parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_SECURE === 'true',
+  host:   process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
+  port:   parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587'),
+  secure: (process.env.EMAIL_SECURE || process.env.SMTP_SECURE || 'false') === 'true',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER || process.env.SMTP_USER,
+    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
   },
 });
 
-export const sendEmailOTP = async (email, otp) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📧 EMAIL OTP for ${email}: ${otp}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    return { success: true };
+transporter.verify((error) => {
+  if (error) {
+    console.error('Email connection error:', error.message);
+  } else {
+    console.log('Email server ready ✅');
   }
+});
 
+export const sendEmailOTP = async (email, otp) => {
   try {
     await transporter.sendMail({
       from:    process.env.EMAIL_FROM || `Aslan Medical Clinic <${process.env.EMAIL_USER}>`,

@@ -11,7 +11,6 @@ api.interceptors.response.use(
   (error) => {
     if (!error.response) {
       toast.error('İnternet bağlantısını yoxlayın.');
-      return Promise.reject(error);
     }
 
     const { status } = error.response;

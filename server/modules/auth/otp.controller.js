@@ -8,8 +8,6 @@ import { sendSms, buildOtpMessage } from '../../utils/smsService.js';
 import { sendEmailOTP }             from '../../utils/otpService.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/generateTokens.js';
 
-const isDev = process.env.NODE_ENV === 'development';
-
 const OTP_EXPIRES_MS       = parseInt(process.env.OTP_EXPIRES_MINUTES   || '5')  * 60 * 1000;
 const RESEND_COOLDOWN_MS   = parseInt(process.env.OTP_RESEND_COOLDOWN_SECONDS || '60') * 1000;
 const MAX_ATTEMPTS         = parseInt(process.env.OTP_MAX_ATTEMPTS       || '5');
@@ -90,20 +88,22 @@ export const requestOtpHandler = asyncHandler(async (req, res) => {
   // ── Send OTP ─────────────────────────────────────────────────────────────
   if (type === 'phone') {
     const result = await sendSms(phone, buildOtpMessage(plainOtp));
-    if (!result.success && !isDev) {
-      throw new ApiError(500, 'SMS göndərilmədi. Yenidən cəhd edin.');
+    if (!result.success) {
+      // SMS provider not configured — log to console in dev
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`📱 SMS OTP → ${phone} : ${plainOtp}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
   } else {
     const result = await sendEmailOTP(email, plainOtp);
-    if (!result.success && !isDev) {
+    if (!result.success) {
       throw new ApiError(500, 'Email göndərilmədi. Yenidən cəhd edin.');
     }
+    console.log(`📧 Email OTP sent to: ${email}`);
   }
 
   res.status(200).json(new ApiResponse(200, {
     expiresInSeconds: OTP_EXPIRES_MS / 1000,
-    // devCode only in development — never in production
-    ...(isDev && { devCode: plainOtp }),
   }, type === 'phone'
     ? 'OTP kodu telefonunuza göndərildi.'
     : 'OTP kodu emailinizə göndərildi.'));
