@@ -32,3 +32,12 @@ export const validateResetPassword = [
   body('newPassword').notEmpty().withMessage('New password is required')
     .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ];
+
+export const validateRequestEmailOtp = [
+  body('email').trim().isEmail().withMessage('Düzgün e-poçt daxil edin').normalizeEmail(),
+];
+
+export const validateVerifyEmailOtp = [
+  body('email').trim().isEmail().withMessage('Düzgün e-poçt daxil edin').normalizeEmail(),
+  body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP 6 rəqəm olmalıdır').isNumeric().withMessage('OTP yalnız rəqəmlərdən ibarət olmalıdır'),
+];

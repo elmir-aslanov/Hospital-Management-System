@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import * as authController from './auth.controller.js';
-import { requestOtpHandler, verifyOtpHandler, sendOtpHandler } from './otp.controller.js';
+import { requestEmailOtp, verifyEmailOtp } from './otp.controller.js';
 import {
   validateRegister, validateLogin,
   validateForgotPassword, validateResetPassword,
+  validateRequestEmailOtp, validateVerifyEmailOtp,
 } from './auth.validator.js';
 import validate     from '../../middleware/validate.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
@@ -80,15 +81,6 @@ router.post('/register', authLimiter, validateRegister, validate, authController
  *     responses:
  *       200:
  *         description: Login successful, returns accessToken and user
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 accessToken:
- *                   type: string
- *                 user:
- *                   type: object
  *       401:
  *         description: Invalid credentials
  */
@@ -177,9 +169,8 @@ router.post('/forgot-password', authLimiter, validateForgotPassword, validate, a
  */
 router.post('/reset-password', authLimiter, validateResetPassword, validate, authController.resetPasswordHandler);
 
-// OTP-based patient login
-router.post('/request-otp', authLimiter, requestOtpHandler);  // primary
-router.post('/send-otp',    authLimiter, sendOtpHandler);      // backward compat alias
-router.post('/verify-otp',  authLimiter, verifyOtpHandler);
+// Email OTP patient login
+router.post('/request-email-otp', authLimiter, validateRequestEmailOtp, validate, requestEmailOtp);
+router.post('/verify-email-otp',  authLimiter, validateVerifyEmailOtp,  validate, verifyEmailOtp);
 
 export default router;

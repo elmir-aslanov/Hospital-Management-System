@@ -1,24 +1,25 @@
 import api from './axios';
 
-/**
- * Request an OTP code to be sent to the given phone or email.
- *
- * @param {{ phone?: string, email?: string, type: 'phone'|'email' }} payload
- * @returns {Promise<{ devCode?: string, expiresInSeconds: number }>}
- */
-export const requestOtp = async (payload) => {
-  const { data } = await api.post('/auth/request-otp', payload);
-  // data.data contains { devCode?, expiresInSeconds }
-  return data.data ?? {};
-};
+export const requestEmailOtp = (email) =>
+  api.post('/auth/request-email-otp', { email });
 
-/**
- * Verify the OTP code submitted by the user.
- *
- * @param {{ phone?: string, email?: string, code: string, type: 'phone'|'email' }} payload
- * @returns {Promise<{ accessToken: string, refreshToken: string, user: object }>}
- */
-export const verifyOtp = async (payload) => {
-  const { data } = await api.post('/auth/verify-otp', payload);
-  return data.data; // { accessToken, refreshToken, user }
-};
+export const verifyEmailOtp = (email, otp) =>
+  api.post('/auth/verify-email-otp', { email, otp });
+
+export const login = (email, password) =>
+  api.post('/auth/login', { email, password });
+
+export const register = (data) =>
+  api.post('/auth/register', data);
+
+export const logout = () =>
+  api.post('/auth/logout');
+
+export const refreshToken = () =>
+  api.post('/auth/refresh-token');
+
+export const forgotPassword = (email) =>
+  api.post('/auth/forgot-password', { email });
+
+export const resetPassword = (data) =>
+  api.post('/auth/reset-password', data);

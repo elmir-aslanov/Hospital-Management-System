@@ -1,10 +1,9 @@
 /* eslint-disable */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import api from '../../api/axios';
-import { requestOtp, verifyOtp } from '../../api/authApi';
+import { requestEmailOtp, verifyEmailOtp } from '../../api/authApi';
 import OTPInput from '../../components/ui/OTPInput';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
@@ -19,6 +18,11 @@ function roleToRoute(role = '') {
     case 'LAB_TECHNICIAN':                       return '/dashboard';
     default:                                     return '/';
   }
+}
+
+function maskEmail(email) {
+  const [local, domain] = email.split('@');
+  return local.slice(0, 3) + '***@' + domain;
 }
 
 const inputBase = {
@@ -38,43 +42,38 @@ function focusOut(e) {
   e.target.style.boxShadow = 'none';
 }
 
-const FEATURES = null; // replaced by t() in component
-
 export default function Login() {
-  const navigate   = useNavigate();
-  const { t }      = useTranslation();
+  const navigate    = useNavigate();
+  const { t }       = useTranslation();
 
-  // OTP flow state
   const [step,       setStep]       = useState('input'); // 'input' | 'otp'
-  const [otpMethod,  setOtpMethod]  = useState('phone'); // 'phone' | 'email'
-  const [phone,      setPhone]      = useState('');
   const [email,      setEmail]      = useState('');
   const [otpError,   setOtpError]   = useState('');
+  const [loading,    setLoading]    = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+  const [cooldown,   setCooldown]   = useState(0);
 
-  const getPayload = () => otpMethod === 'phone'
-    ? { type: 'phone', phone: '+994' + phone.replace(/\D/g, '') }
-    : { type: 'email', email: email.trim() };
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   const handleSendOTP = async () => {
-    if (otpMethod === 'phone' && phone.replace(/\D/g, '').length !== 9) {
-      toast.warning('9 rəqəmli nömrə daxil edin. (Məsələn: 50 836 36 94)');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.warning('Düzgün e-poçt ünvanı daxil edin.');
       return;
     }
-    if (otpMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.warning('Düzgün email ünvanı daxil edin.');
-      return;
-    }
-    const id = toast.loading('Kod göndərilir...');
+    setLoading(true);
     try {
-      await requestOtp(getPayload());
-      toast.dismiss(id);
-      const dest = otpMethod === 'phone' ? 'telefon nömrənizə' : 'email ünvanınıza';
-      toast.success(`OTP kodu ${dest} göndərildi!`);
+      await requestEmailOtp(email.trim());
+      toast.success('OTP e-poçtunuza göndərildi');
       setStep('otp');
+      setCooldown(60);
     } catch (err) {
-      toast.dismiss(id);
       toast.error(err.response?.data?.message || 'Kod göndərilmədi. Yenidən cəhd edin.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,12 +81,13 @@ export default function Login() {
     setOtpLoading(true);
     setOtpError('');
     try {
-      const result = await verifyOtp({ ...getPayload(), code });
-      localStorage.setItem('token', result.accessToken);
-      localStorage.setItem('user', JSON.stringify(result.user));
+      const res = await verifyEmailOtp(email.trim(), code);
+      const { accessToken, user } = res.data.data;
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('user', JSON.stringify(user));
       window.dispatchEvent(new Event('storage'));
-      toast.success(`Xoş gəldiniz, ${result.user.fullName || 'Pasiyent'}!`);
-      navigate('/patient');
+      toast.success(`Xoş gəldiniz, ${user.fullName || 'Pasiyent'}!`);
+      navigate(roleToRoute(user.role));
     } catch (err) {
       setOtpError(err.response?.data?.message || 'Kod yanlışdır və ya müddəti bitib.');
     } finally {
@@ -96,17 +96,14 @@ export default function Login() {
   };
 
   const handleResendOTP = async () => {
+    if (cooldown > 0) return;
     try {
-      await requestOtp(getPayload());
+      await requestEmailOtp(email.trim());
       toast.success('Yeni kod göndərildi.');
+      setCooldown(60);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Xəta baş verdi.');
     }
-  };
-
-  const resetToInput = () => {
-    setStep('input');
-    setOtpError('');
   };
 
   return (
@@ -302,7 +299,7 @@ export default function Login() {
               <div style={{ flex: 1, height: '3px', borderRadius: '2px', background: step === 'otp' ? TEAL : '#e2e8f0', transition: 'background 0.3s' }} />
             </div>
             <p style={{ fontSize: '12px', color: '#718096', marginBottom: '16px', fontFamily: FONT }}>
-              {step === 'input' ? 'Addım 1/2 — Əlaqə' : 'Addım 2/2 — Təsdiq'}
+              {step === 'input' ? 'Addım 1/2 — E-poçt' : 'Addım 2/2 — Təsdiq'}
             </p>
 
             <h2 style={{ fontSize: '26px', fontWeight: 800, color: '#0a1628', margin: '0 0 4px', fontFamily: FONT }}>
@@ -311,96 +308,46 @@ export default function Login() {
             <p style={{ fontSize: '14px', color: '#718096', margin: '0 0 24px', fontFamily: FONT }}>
               {step === 'input'
                 ? 'Pasiyent portalına xoş gəldiniz'
-                : otpMethod === 'phone'
-                  ? `+994${phone} nömrəsinə göndərildi`
-                  : `${email} ünvanına göndərildi`}
+                : `${maskEmail(email)} ünvanına göndərildi`}
             </p>
 
-            {/* STEP 1 — Method selector + input */}
+            {/* STEP 1 — Email input */}
             {step === 'input' && (
               <>
-                {/* Method toggle */}
-                <div style={{
-                  display: 'flex', background: '#f0f4f8',
-                  borderRadius: '10px', padding: '4px',
-                  marginBottom: '20px', gap: '4px',
-                }}>
-                  {[
-                    { value: 'phone', label: '📱 Telefon' },
-                    { value: 'email', label: '✉️ Email' },
-                  ].map(m => (
-                    <button
-                      key={m.value}
-                      onClick={() => { setOtpMethod(m.value); setPhone(''); setEmail(''); }}
-                      style={{
-                        flex: 1, padding: '9px', borderRadius: '8px', border: 'none',
-                        background: otpMethod === m.value ? 'white' : 'transparent',
-                        color: otpMethod === m.value ? TEAL : '#718096',
-                        fontWeight: otpMethod === m.value ? 700 : 400,
-                        cursor: 'pointer', fontSize: '13px', fontFamily: FONT,
-                        boxShadow: otpMethod === m.value ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                        transition: 'all 0.2s',
-                      }}
-                    >{m.label}</button>
-                  ))}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4a5568', marginBottom: '6px', fontFamily: FONT }}>
+                    E-poçt ünvanı
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="siz@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }}
+                    style={inputBase}
+                    onFocus={focusIn}
+                    onBlur={focusOut}
+                    autoComplete="email"
+                    autoFocus
+                  />
                 </div>
-
-                {/* Phone input */}
-                {otpMethod === 'phone' && (
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4a5568', marginBottom: '6px', fontFamily: FONT }}>
-                      Telefon nömrəsi
-                    </label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <span style={{
-                        padding: '13px 12px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                        fontSize: '15px', color: '#4a5568', background: '#f8fafc',
-                        whiteSpace: 'nowrap', fontFamily: FONT, flexShrink: 0,
-                      }}>🇦🇿 +994</span>
-                      <input
-                        type="tel" placeholder="50 836 36 94"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                        maxLength={9}
-                        onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }}
-                        style={{ ...inputBase, flex: 1 }}
-                        onFocus={focusIn} onBlur={focusOut}
-                        autoComplete="tel" autoFocus
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Email input */}
-                {otpMethod === 'email' && (
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4a5568', marginBottom: '6px', fontFamily: FONT }}>
-                      Email ünvanı
-                    </label>
-                    <input
-                      type="email" placeholder="siz@example.com"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSendOTP(); }}
-                      style={inputBase}
-                      onFocus={focusIn} onBlur={focusOut}
-                      autoComplete="email" autoFocus
-                    />
-                  </div>
-                )}
 
                 <button
                   onClick={handleSendOTP}
+                  disabled={loading}
                   style={{
-                    width: '100%', padding: '14px', background: TEAL, color: '#fff',
-                    border: 'none', borderRadius: '10px', fontSize: '16px',
-                    fontWeight: 700, fontFamily: FONT, cursor: 'pointer',
-                    transition: 'background 0.2s', boxShadow: '0 4px 14px rgba(0,132,142,0.35)',
+                    width: '100%', padding: '14px',
+                    background: loading ? '#7ec8cc' : TEAL,
+                    color: '#fff', border: 'none', borderRadius: '10px',
+                    fontSize: '16px', fontWeight: 700, fontFamily: FONT,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s',
+                    boxShadow: loading ? 'none' : '0 4px 14px rgba(0,132,142,0.35)',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#006b74'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = TEAL; }}
+                  onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#006b74'; }}
+                  onMouseLeave={e => { if (!loading) e.currentTarget.style.background = TEAL; }}
                 >
-                  Kod Al
+                  {loading ? 'Göndərilir…' : 'Kodu Göndər'}
                 </button>
               </>
             )}
@@ -409,21 +356,22 @@ export default function Login() {
             {step === 'otp' && (
               <>
                 <OTPInput
-                  phone={otpMethod === 'phone' ? '+994' + phone : email}
+                  phone={email}
                   onComplete={handleVerifyOTP}
                   onResend={handleResendOTP}
                   loading={otpLoading}
                   error={otpError}
+                  cooldown={cooldown}
                 />
                 <button
-                  onClick={resetToInput}
+                  onClick={() => { setStep('input'); setOtpError(''); }}
                   style={{
                     background: 'none', border: 'none', color: '#718096',
                     cursor: 'pointer', fontSize: '13px', fontFamily: FONT,
                     display: 'block', margin: '12px auto 0',
                   }}
                 >
-                  ← {otpMethod === 'phone' ? 'Nömrəni dəyiş' : 'Emaili dəyiş'}
+                  ← E-poçtu dəyiş
                 </button>
               </>
             )}
