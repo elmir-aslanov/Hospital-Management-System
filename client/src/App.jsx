@@ -12,6 +12,7 @@ import ProtectedRoute   from './components/ui/ProtectedRoute';
 import HomePage         from './pages/public/HomePage';
 import ComingSoon            from './pages/public/ComingSoon';
 import PatientStoriesPage   from './pages/public/PatientStoriesPage';
+import HekimlerPage          from './pages/public/HekimlerPage';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -68,6 +69,7 @@ function Layout() {
         <Route path="/blog"        element={<ComingSoon title="Bloq" />} />
         <Route path="/contact"     element={<ComingSoon title="Əlaqə" />} />
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
+        <Route path="/hekimler"            element={<HekimlerPage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />
