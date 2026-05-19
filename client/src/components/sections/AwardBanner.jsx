@@ -1,73 +1,133 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 const FONT    = "'Source Sans 3', 'Raleway', sans-serif";
 const RALEWAY = "'Raleway', sans-serif";
 const NAVY    = '#0a1628';
 const TEAL    = '#00848e';
-
-// max-w-7xl  = 1280px
-// px-4       = 16px   (mobile)
-// sm:px-6    = 24px   (tablet)
-// lg:px-8    = 32px   (desktop)
+const BG      = '#f4f6f7';                    // section background
 const CONTAINER = { maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto' };
 
-const STATS = [
-  { value: '10+',  label: 'İl Təcrübə'    },
-  { value: '50+',  label: 'Peşəkar Həkim' },
-  { value: '24/7', label: 'Xidmət'         },
-];
-
 export default function AwardBanner() {
+  const navigate = useNavigate();
   const { isMobile, isTablet } = useBreakpoint();
-  const isNarrow = isMobile || isTablet;
+  const isDesktop = !isMobile && !isTablet;
 
-  const px       = isMobile ? 16 : isTablet ? 24 : 32;
-  const py       = isMobile ? 64 : 96;
-  const imgH     = isMobile ? 280 : isTablet ? 380 : 480;
+  const px = isMobile ? 16 : isTablet ? 24 : 32;
 
   return (
-    <section style={{ background: '#ffffff', paddingTop: py, paddingBottom: py, fontFamily: FONT }}>
+    <section style={{ background: BG, paddingTop: isMobile ? 56 : 104, paddingBottom: isMobile ? 56 : 104, fontFamily: FONT }}>
+      {/* ── Controlled outer container ─────────────────────────────────────── */}
       <div style={{ ...CONTAINER, paddingLeft: px, paddingRight: px, boxSizing: 'border-box' }}>
+
+        {/* ════════════════════════════════════════════════════════════════════
+            DESKTOP — relative wrapper: image absolute-right, card in normal flow
+            MOBILE  — block: image on top, card below
+        ════════════════════════════════════════════════════════════════════ */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr',
-          gap: isNarrow ? 40 : 64,
-          alignItems: 'center',
+          position: 'relative',
+          // On desktop the image is absolute so we give the wrapper a min-height
+          // and center the card vertically with flexbox.
+          ...(isDesktop ? {
+            display: 'flex',
+            alignItems: 'center',
+            minHeight: 620,
+          } : {
+            display: 'block',
+          }),
         }}>
 
-          {/* ══ LEFT — Text ══════════════════════════════════════════════════ */}
+          {/* ── IMAGE ─────────────────────────────────────────────────────── */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, scale: 1.04 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.85, ease: 'easeOut' }}
+            style={{
+              ...(isDesktop ? {
+                // Absolute: fills right 72% of the wrapper height
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '72%',
+                height: '100%',
+              } : {
+                // Normal flow on narrow screens
+                width: '100%',
+                height: isTablet ? 380 : 260,
+                marginBottom: 24,
+              }),
+              borderRadius: 28,
+              overflow: 'hidden',
+              boxShadow: '0 32px 80px rgba(10,22,40,0.18), 0 8px 24px rgba(10,22,40,0.08)',
+            }}
+          >
+            <img
+              src="/hospital.png"
+              alt="Aslan Medical Center"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+            />
+
+            {/* Left-side gradient: blends image edge into section bg so card sits cleanly on top */}
+            {isDesktop && (
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: `linear-gradient(to right, ${BG} 0%, rgba(244,246,247,0.55) 22%, transparent 46%)`,
+                pointerEvents: 'none',
+              }} />
+            )}
+
+            {/* Bottom gradient for depth */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to bottom, rgba(10,22,40,0.01) 0%, rgba(10,22,40,0.00) 55%, rgba(10,22,40,0.22) 100%)',
+              pointerEvents: 'none',
+            }} />
+          </motion.div>
+
+          {/* ── CONTENT CARD ──────────────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, x: -28 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ display: 'flex', flexDirection: 'column', maxWidth: 520 }}
+            transition={{ duration: 0.65, ease: 'easeOut' }}
+            style={{
+              position: 'relative',
+              zIndex: 10,
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: isMobile ? '28px 22px' : isTablet ? '40px' : '52px 48px',
+              boxShadow: '0 24px 64px rgba(10,22,40,0.14), 0 4px 16px rgba(10,22,40,0.06)',
+              // On desktop: fixed width so the card overlaps ~180px into the image
+              ...(isDesktop ? { width: 520, flexShrink: 0 } : { width: '100%' }),
+            }}
           >
             {/* Eyebrow */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 7,
               background: 'rgba(0,132,142,0.07)',
-              border: '1px solid rgba(0,132,142,0.18)',
+              border: '1px solid rgba(0,132,142,0.16)',
               borderRadius: 20,
-              padding: '6px 14px',
+              padding: '5px 12px',
               marginBottom: 20,
-              alignSelf: 'flex-start',
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: TEAL, display: 'block', flexShrink: 0 }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: TEAL, letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: FONT }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: TEAL, display: 'block', flexShrink: 0 }} />
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: TEAL, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT }}>
                 Aslan Medical Center
               </span>
             </div>
 
             {/* Heading */}
             <h2 style={{
-              fontSize: isMobile ? 30 : isTablet ? 38 : 46,
+              fontSize: isMobile ? 27 : isTablet ? 34 : 42,
               fontWeight: 800,
               color: NAVY,
-              lineHeight: 1.15,
+              lineHeight: 1.18,
               letterSpacing: '-0.02em',
               margin: '0 0 16px',
               fontFamily: RALEWAY,
@@ -78,95 +138,82 @@ export default function AwardBanner() {
 
             {/* Paragraph */}
             <p style={{
-              fontSize: 15,
+              fontSize: 14,
               color: '#4a5568',
-              lineHeight: 1.85,
-              margin: '0 0 32px',
+              lineHeight: 1.9,
+              margin: '0 0 28px',
               fontFamily: FONT,
             }}>
-              Aslan Medical Center müasir tibbi texnologiyalar və peşəkar həkimlər
-              heyəti ilə hər bir pasiyentə fərdi yanaşır. Sağlamlığınız üçün
-              etibarlı tərəfdaşınız.
+              Aslan Medical Center müasir tibbi texnologiyalar, peşəkar həkim heyəti
+              və pasiyentyönümlü xidmət yanaşması ilə hər bir pasiyentə etibarlı və
+              fərdi qayğı təqdim edir. Diaqnostikadan müalicəyə qədər bütün
+              mərhələlərdə sağlamlığınız üçün güvənli tərəfdaşınızıq.
             </p>
 
             {/* Award badge */}
             <div style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              gap: 16,
-              background: '#ffffff',
+              gap: 14,
+              background: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderLeft: `4px solid ${TEAL}`,
               borderRadius: 14,
-              padding: '14px 20px',
-              boxShadow: '0 4px 24px rgba(10,22,40,0.07)',
+              padding: '13px 16px',
               marginBottom: 28,
-              alignSelf: 'flex-start',
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 16, letterSpacing: 4, color: '#f59e0b', lineHeight: 1 }}>★★★★★</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: NAVY, letterSpacing: '0.5px', fontFamily: FONT }}>ƏN YAXŞI KLİNİKA</span>
-                <span style={{ fontSize: 11, color: TEAL, fontFamily: FONT }}>2025 – 2026</span>
+              {/* Stars + title + year */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+                <span style={{ fontSize: 14, letterSpacing: '3px', color: '#f59e0b', lineHeight: 1 }}>★★★★★</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: NAVY, letterSpacing: '0.4px', fontFamily: FONT }}>
+                  ƏN YAXŞI KLİNİKA
+                </span>
+                <span style={{ fontSize: 10.5, color: TEAL, fontFamily: FONT }}>2025 – 2026</span>
               </div>
-              <div style={{ width: 1, height: 44, background: '#e2e8f0', flexShrink: 0 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: NAVY, letterSpacing: '0.3px', fontFamily: FONT }}>Aslan Medical Center</span>
-                <span style={{ fontSize: 10, color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: FONT }}>Azərbaycan</span>
+
+              <div style={{ width: 1, height: 38, background: '#dde4ea', flexShrink: 0 }} />
+
+              {/* Clinic name */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: NAVY, letterSpacing: '0.3px', fontFamily: FONT }}>
+                  Aslan Medical Center
+                </span>
+                <span style={{ fontSize: 10, color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: FONT }}>
+                  Azərbaycan
+                </span>
               </div>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {STATS.map(s => (
-                <div key={s.value} style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderTop: `3px solid ${TEAL}`,
-                  borderRadius: 12,
-                  padding: '12px 18px',
-                  minWidth: 84,
-                  textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(10,22,40,0.04)',
-                }}>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: TEAL, lineHeight: 1, fontFamily: RALEWAY }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 5, fontWeight: 500, fontFamily: FONT, whiteSpace: 'nowrap' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ══ RIGHT — Hospital image ════════════════════════════════════════ */}
-          <motion.div
-            initial={{ opacity: 0, scale: 1.04 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.75 }}
-            style={{
-              position: 'relative',
-              borderRadius: 24,
-              overflow: 'hidden',
-              boxShadow: '0 24px 64px rgba(10,22,40,0.13), 0 6px 20px rgba(10,22,40,0.07)',
-            }}
-          >
-            <img
-              src="/hospital.png"
-              alt="Aslan Medical Center"
+            {/* CTA button */}
+            <button
+              onClick={() => navigate('/departments')}
               style={{
-                width: '100%',
-                height: imgH,
-                objectFit: 'cover',
-                objectPosition: 'center',
-                display: 'block',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: NAVY,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 12,
+                padding: '13px 28px',
+                fontSize: 14,
+                fontWeight: 700,
+                fontFamily: FONT,
+                cursor: 'pointer',
+                letterSpacing: '0.01em',
+                transition: 'background 0.2s',
               }}
-            />
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to bottom, rgba(10,22,40,0.02) 0%, rgba(10,22,40,0.00) 40%, rgba(10,22,40,0.25) 100%)',
-              pointerEvents: 'none',
-            }} />
-          </motion.div>
+              onMouseEnter={e => { e.currentTarget.style.background = TEAL; }}
+              onMouseLeave={e => { e.currentTarget.style.background = NAVY; }}
+            >
+              Xidmətlərə bax
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
 
+          </motion.div>
         </div>
       </div>
     </section>
