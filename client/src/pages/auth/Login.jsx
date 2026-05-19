@@ -349,6 +349,16 @@ export default function Login() {
                 >
                   {loading ? 'Göndərilir…' : 'Kodu Göndər'}
                 </button>
+
+                <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '14px', color: '#718096', fontFamily: FONT }}>
+                  Hesabınız yoxdur?{' '}
+                  <span
+                    onClick={() => navigate('/register')}
+                    style={{ color: '#00848e', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Qeydiyyat
+                  </span>
+                </p>
               </>
             )}
 
