@@ -224,15 +224,15 @@ export default function Navbar() {
           gap: '24px',
         }}>
 
-          {/* Logo — with teal right divider */}
+          {/* Logo */}
           <div style={{
             display: 'flex', alignItems: 'center', flexShrink: 0,
-            marginRight: '32px', paddingRight: '32px',
-            borderRight: '1.5px solid rgba(0,132,142,0.15)',
+            marginRight: '24px', paddingRight: '24px',
+            borderRight: '1.5px solid rgba(0,132,142,0.12)',
           }}>
             <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
               <img src="/logo.png" alt="Aslan Medical"
-                style={{ height: '72px', width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,132,142,0.18))' }}
+                style={{ height: '48px', width: 'auto', objectFit: 'contain' }}
                 className="navbar-logo"
                 onError={e => {
                   e.currentTarget.style.display = 'none';
@@ -668,7 +668,7 @@ export default function Navbar() {
           .nav-hamburger { display: flex !important; }
           .nav-layer3  { display: none !important; }
           .mid-bar     { height: 60px !important; padding: 0 16px !important; }
-          .navbar-logo { height: 44px !important; }
+          .navbar-logo { height: 36px !important; }
         }
         @media (min-width: 768px) and (max-width: 1024px) {
           .top-bar     { display: none !important; }
