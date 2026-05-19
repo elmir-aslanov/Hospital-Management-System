@@ -17,16 +17,17 @@ export const requestEmailOtp = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Düzgün e-poçt daxil edin.');
   }
 
-  const user = await User.findOne({ email });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user) throw new ApiError(404, 'İstifadəçi tapılmadı.');
 
   const otp       = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
   // Remove any previous unused OTPs for this email
-  await OTP.deleteMany({ email, type: 'email', usedAt: null });
+  await OTP.deleteMany({ email: normalizedEmail, type: 'email', usedAt: null });
 
-  await OTP.create({ email, type: 'email', hashedOtp: otp, expiresAt, lastResendAt: new Date() });
+  await OTP.create({ email: normalizedEmail, type: 'email', hashedOtp: otp, expiresAt, lastResendAt: new Date() });
 
   const result = await sendEmailOTP(email, otp);
   if (!result.success) throw new ApiError(500, 'Email göndərilmədi. Yenidən cəhd edin.');
@@ -41,7 +42,8 @@ export const verifyEmailOtp = asyncHandler(async (req, res) => {
 
   if (!email || !otp) throw new ApiError(400, 'E-poçt və OTP tələb olunur.');
 
-  const record = await OTP.findOne({ email, type: 'email', usedAt: null }).sort({ createdAt: -1 });
+  const normalizedEmail = email.toLowerCase().trim();
+  const record = await OTP.findOne({ email: normalizedEmail, type: 'email', usedAt: null }).sort({ createdAt: -1 });
 
   if (!record)                    throw new ApiError(400, 'OTP müddəti bitib və ya tapılmadı.');
   if (new Date() > record.expiresAt) {
@@ -53,7 +55,7 @@ export const verifyEmailOtp = asyncHandler(async (req, res) => {
   record.usedAt = new Date();
   await record.save();
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user)        throw new ApiError(404, 'İstifadəçi tapılmadı.');
   if (!user.isActive) throw new ApiError(403, 'Hesab deaktiv edilib.');
 
