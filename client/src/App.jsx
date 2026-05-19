@@ -10,6 +10,7 @@ import ProtectedRoute   from './components/ui/ProtectedRoute';
 
 /* Public */
 import HomePage         from './pages/public/HomePage';
+import RandevuPage      from './pages/public/RandevuPage';
 import ComingSoon            from './pages/public/ComingSoon';
 import PatientStoriesPage   from './pages/public/PatientStoriesPage';
 import HekimlerPage          from './pages/public/HekimlerPage';
@@ -47,7 +48,7 @@ function RouteLoader() {
 }
 
 /* Pages that hide the public navbar */
-const HIDE_NAV_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password']);
+const HIDE_NAV_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu']);
 const HIDE_NAV_PREFIX = ['/dashboard', '/patient'];
 
 function Layout() {
@@ -70,6 +71,7 @@ function Layout() {
         <Route path="/contact"     element={<ComingSoon title="Əlaqə" />} />
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
         <Route path="/hekimler"            element={<HekimlerPage />} />
+        <Route path="/randevu"             element={<RandevuPage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />

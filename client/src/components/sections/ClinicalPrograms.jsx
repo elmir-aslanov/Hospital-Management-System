@@ -99,7 +99,7 @@ export default function ClinicalPrograms() {
             <img
               src="/client1.jpeg"
               alt="Klinik proqramlar"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
             />
           </div>
         </motion.div>
@@ -164,37 +164,24 @@ export default function ClinicalPrograms() {
             />
           </div>
 
-          {/* Bottom-right — "Ətraflı" CTA */}
-          <button
+          {/* Bottom-right */}
+          <div
             onClick={() => navigate('/departments')}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = TEAL;
-              e.currentTarget.style.color = '#ffffff';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = '#ffffff';
-              e.currentTarget.style.color = TEAL;
-            }}
             style={{
               width: smallSize,
               height: smallSize,
               borderRadius: '50%',
-              background: '#ffffff',
-              border: `2px solid ${TEAL}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #00848e 0%, #0a1628 100%)',
               cursor: 'pointer',
-              color: TEAL,
-              fontSize: 15,
-              fontWeight: 700,
-              fontFamily: FONT,
-              transition: 'background 0.25s, color 0.25s',
-              outline: 'none',
             }}
           >
-            Ətraflı →
-          </button>
+            <img
+              src="/client5.jpeg"
+              alt="Klinik 4"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            />
+          </div>
         </motion.div>
 
       </div>

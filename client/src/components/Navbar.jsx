@@ -391,8 +391,7 @@ export default function Navbar() {
                     if (key === 'findDoctor') {
                       navigate('/doctors');
                     } else if (key === 'appointment') {
-                      if (isAuthenticated) navigate('/patient');
-                      else navigate('/login');
+                      navigate('/randevu');
                     } else if (key === 'patientPortal') {
                       if (isAuthenticated) navigate('/patient');
                       else { toast.info('Pasiyent portalına daxil olmaq üçün əvvəlcə giriş edin.'); navigate('/login'); }
@@ -639,12 +638,21 @@ export default function Navbar() {
               style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               {ACTION_PILLS.map(btn => (
-                <button key={btn} style={{
-                  padding: '12px 20px', background: TEAL,
-                  color: '#fff', border: 'none', borderRadius: '8px',
-                  fontSize: '15px', fontWeight: 600,
-                  fontFamily: FONT, cursor: 'pointer', textAlign: 'left',
-                }}>{btn}</button>
+                <button key={btn}
+                  onClick={() => {
+                    if (btn === 'Randevu Al') navigate('/randevu');
+                    else if (btn === 'Həkim Tap') navigate('/doctors');
+                    else if (btn === 'Pasiyent Portalı') {
+                      if (isAuthenticated) navigate('/patient');
+                      else navigate('/login');
+                    }
+                  }}
+                  style={{
+                    padding: '12px 20px', background: TEAL,
+                    color: '#fff', border: 'none', borderRadius: '8px',
+                    fontSize: '15px', fontWeight: 600,
+                    fontFamily: FONT, cursor: 'pointer', textAlign: 'left',
+                  }}>{btn}</button>
               ))}
             </motion.div>
           </motion.div>
