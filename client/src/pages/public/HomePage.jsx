@@ -2,6 +2,7 @@ import HeroSection      from '../../components/HeroSection';
 import PatientStories   from '../../components/sections/PatientStories';
 import ClinicalPrograms from '../../components/sections/ClinicalPrograms';
 import AwardBanner      from '../../components/sections/AwardBanner';
+import DoctorsSection   from '../../components/sections/DoctorsSection';
 
 export default function HomePage() {
   return (
@@ -9,6 +10,7 @@ export default function HomePage() {
       <HeroSection />
       <ClinicalPrograms />
       <AwardBanner />
+      <DoctorsSection />
       <PatientStories />
     </main>
   );

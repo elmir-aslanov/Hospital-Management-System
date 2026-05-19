@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { I18nextProvider } from 'react-i18next';
@@ -98,6 +98,9 @@ function Layout() {
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="wards"        element={<WardsPage />} />
         </Route>
+
+        {/* ── Catch-all — unknown paths redirect to homepage ── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <Toaster

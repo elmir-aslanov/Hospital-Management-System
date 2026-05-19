@@ -17,11 +17,16 @@ api.interceptors.response.use(
     const { status } = error.response;
 
     if (status === 401) {
+      const hadToken = !!localStorage.getItem('token');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.dispatchEvent(new Event('storage'));
-      toast.error('Sessiyanız bitib. Yenidən daxil olun.');
-      window.location.href = '/login';
+      // Only redirect when the user had an active session that expired.
+      // Public pages making unauthenticated requests should NOT be redirected.
+      if (hadToken) {
+        toast.error('Sessiyanız bitib. Yenidən daxil olun.');
+        window.location.href = '/login';
+      }
     } else if (status === 500) {
       toast.error('Server xətası. Bir az sonra yenidən cəhd edin.');
     }
