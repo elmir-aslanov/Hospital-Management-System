@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(\"killed\")",
+      "Bash(curl -s http://localhost:5000/api/v1/site-doctors)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK' if d['success'] else 'FAIL', '— doctors:', len\\(d.get\\('data',[]\\)\\) \\)\")",
+      "Bash(curl -s \"http://localhost:5000/api/v1/site-doctors?limit=8\")",
+      "PowerShell($p = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -First 1; if \\($p\\) { Stop-Process -Id $p -Force; \"Killed PID $p\" } else { \"Nothing on 5000\" })",
+      "PowerShell($p = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -First 1; if \\($p\\) { Stop-Process -Id $p -Force; \"Killed PID $p\" } else { Get-Process -Name \"node\" -ErrorAction SilentlyContinue | Stop-Process -Force; \"Killed all node\" })",
+      "Bash(curl -s \"http://localhost:5000/api/v1/site-doctors?limit=4\")",
+      "Bash(Get-ChildItem -Directory -ErrorAction SilentlyContinue)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(curl -s http://localhost:5000/api/v1/departments)",
+      "Bash(curl -s http://localhost:5000/api/v1/services)",
+      "Bash(curl -s http://localhost:5000/api/v1/blog)",
+      "Bash(curl -s -X POST http://localhost:5000/api/v1/contact -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"t@t.com\",\"message\":\"test\"}')"
+    ]
+  }
+}

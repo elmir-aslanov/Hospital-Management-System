@@ -36,28 +36,19 @@ function SkeletonCard() {
   );
 }
 
-// ── Star rating ────────────────────────────────────────────────────────────────
-function Stars({ rating = 0, total = 0 }) {
-  if (!total) return null;
-  const rounded = Math.round(rating);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
-      {[1, 2, 3, 4, 5].map(i => (
-        <svg key={i} width="11" height="11" viewBox="0 0 24 24"
-          fill={i <= rounded ? '#f59e0b' : '#e2e8f0'} stroke="none">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-      ))}
-      <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: FONT }}>({total})</span>
-    </div>
-  );
+// ── Doctor card ────────────────────────────────────────────────────────────────
+// Resolve image URL: external http → use directly; / path → prepend backend origin;
+// empty → return null (falls back to initials).
+function resolveImage(src) {
+  if (!src) return null;
+  if (src.startsWith('http')) return src;
+  if (src.startsWith('/')) return `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'}${src}`;
+  return src;
 }
 
-// ── Doctor card ────────────────────────────────────────────────────────────────
 function DoctorCard({ doctor, index, navigate }) {
-  const user     = doctor.userId ?? {};
-  const name     = user.fullName ?? 'Həkim';
-  const avatar   = user.avatar   || null;
+  const name     = doctor.name     ?? 'Həkim';
+  const imgSrc   = resolveImage(doctor.image);
   const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -66,10 +57,9 @@ function DoctorCard({ doctor, index, navigate }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.45, delay: index * 0.08, ease: 'easeOut' }}
-      onClick={() => navigate('/doctors')}
-      style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+      style={{ display: 'flex', flexDirection: 'column' }}
     >
-      {/* Image */}
+      {/* Image block */}
       <div style={{
         position: 'relative',
         borderRadius: 20,
@@ -78,7 +68,9 @@ function DoctorCard({ doctor, index, navigate }) {
         flexShrink: 0,
         boxShadow: '0 4px 20px rgba(10,22,40,0.10)',
         transition: 'box-shadow 0.3s, transform 0.3s',
+        cursor: 'pointer',
       }}
+        onClick={() => navigate('/doctors')}
         onMouseEnter={e => {
           e.currentTarget.style.boxShadow = '0 12px 36px rgba(0,132,142,0.20)';
           e.currentTarget.style.transform = 'translateY(-4px)';
@@ -88,9 +80,9 @@ function DoctorCard({ doctor, index, navigate }) {
           e.currentTarget.style.transform = 'translateY(0)';
         }}
       >
-        {avatar ? (
+        {imgSrc ? (
           <img
-            src={avatar}
+            src={imgSrc}
             alt={name}
             style={{ width: '100%', height: 300, objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
             onError={e => {
@@ -102,7 +94,7 @@ function DoctorCard({ doctor, index, navigate }) {
 
         {/* Initials fallback */}
         <div style={{
-          display: avatar ? 'none' : 'flex',
+          display: imgSrc ? 'none' : 'flex',
           width: '100%',
           height: 300,
           alignItems: 'center',
@@ -115,60 +107,31 @@ function DoctorCard({ doctor, index, navigate }) {
         }}>
           {initials}
         </div>
-
-        {/* Available badge */}
-        {doctor.isAvailable && (
-          <div style={{
-            position: 'absolute',
-            top: 14,
-            right: 14,
-            background: '#22c55e',
-            color: '#fff',
-            fontSize: 10.5,
-            fontWeight: 700,
-            borderRadius: 20,
-            padding: '3px 10px',
-            fontFamily: FONT,
-            letterSpacing: '0.3px',
-          }}>
-            Mövcuddur
-          </div>
-        )}
       </div>
 
-      {/* Info */}
+      {/* Text info */}
       <div style={{ marginTop: 18, paddingLeft: 2 }}>
-        {/* Teal accent line */}
         <div style={{ width: 32, height: 3, background: TEAL, borderRadius: 2, marginBottom: 10 }} />
 
-        <h3 style={{
-          fontSize: 17,
-          fontWeight: 700,
-          color: NAVY,
-          margin: 0,
-          fontFamily: FONT,
-          lineHeight: 1.3,
-        }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, color: NAVY, margin: 0, fontFamily: FONT, lineHeight: 1.3 }}>
           {name}
         </h3>
 
-        <p style={{
-          fontSize: 13.5,
-          color: '#64748b',
-          margin: '4px 0 0',
-          fontFamily: FONT,
-          fontWeight: 500,
-        }}>
-          {doctor.specialization}
+        <p style={{ fontSize: 13.5, color: '#64748b', margin: '4px 0 0', fontFamily: FONT, fontWeight: 500 }}>
+          {doctor.specialty}
         </p>
+
+        {doctor.department && (
+          <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0', fontFamily: FONT }}>
+            {doctor.department}
+          </p>
+        )}
 
         {doctor.experience > 0 && (
           <p style={{ fontSize: 12, color: '#94a3b8', margin: '3px 0 0', fontFamily: FONT }}>
             {doctor.experience} il təcrübə
           </p>
         )}
-
-        <Stars rating={doctor.averageRating} total={doctor.totalRatings} />
       </div>
     </motion.article>
   );
@@ -183,9 +146,8 @@ export default function DoctorsSection() {
   const py   = isMobile ? 64 : 96;
   const cols = isMobile ? 1 : isTablet ? 2 : 4;
 
-  // TODO: Replace with real API call once /doctors/public returns populated data.
-  // The endpoint GET /api/v1/doctors/public exists and returns an array of doctor objects.
-  const { data, loading, error } = useFetch('/doctors/public', { limit: 8 });
+  // Fetches from GET /api/v1/site-doctors — standalone public doctor profiles.
+  const { data, loading, error } = useFetch('/site-doctors', { limit: 8 });
   const doctors = Array.isArray(data) ? data : [];
 
   return (

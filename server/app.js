@@ -32,6 +32,12 @@ import inventoryRoutes    from './modules/inventory/inventory.routes.js';
 import exportRoutes         from './modules/export/export.routes.js';
 import aiRoutes             from './modules/ai/ai.routes.js';
 import consultationsRoutes  from './modules/consultations/consultations.routes.js';
+import siteDoctorsRoutes    from './modules/sitedoctors/sitedoctors.routes.js';
+// ── Public website modules ────────────────────────────────────────────────────
+import departmentsRoutes    from './modules/departments/departments.routes.js';
+import servicesRoutes       from './modules/services/services.routes.js';
+import blogRoutes           from './modules/blog/blog.routes.js';
+import contactRoutes        from './modules/contact/contact.routes.js';
 
 const app = express();
 
@@ -119,6 +125,12 @@ app.use(`${API}/inventory`,     inventoryRoutes);
 app.use(`${API}/export`,         exportRoutes);
 app.use(`${API}/ai`,             aiRoutes);
 app.use(`${API}/consultations`,  consultationsRoutes);
+app.use(`${API}/site-doctors`,   siteDoctorsRoutes);
+// ── Public website ─────────────────────────────────────────────────────────────
+app.use(`${API}/departments`,    departmentsRoutes);
+app.use(`${API}/services`,       servicesRoutes);
+app.use(`${API}/blog`,           blogRoutes);
+app.use(`${API}/contact`,        contactRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
