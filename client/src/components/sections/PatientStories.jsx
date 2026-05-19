@@ -64,12 +64,13 @@ export default function PatientStories({ stories = defaultStories }) {
   const title         = t('patientStories.title1');
   const titleHighlight= t('patientStories.title2');
 
+  const px = isMobile ? 16 : isTablet ? 24 : 32;
+
   return (
     <div style={{
       background: '#ffffff',
-      padding: '100px 0',
+      padding: isMobile ? '64px 0' : '88px 0',
       position: 'relative',
-      overflow: 'hidden',
     }}>
 
       {/* Top-right curved decoration */}
@@ -85,13 +86,16 @@ export default function PatientStories({ stories = defaultStories }) {
       </div>
 
       <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        padding: isMobile ? '0 20px' : '0 80px',
+        maxWidth: 1280,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        paddingLeft: px,
+        paddingRight: px,
+        boxSizing: 'border-box',
         display: 'grid',
         gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 1fr',
         alignItems: 'center',
-        gap: isMobile ? '40px' : '80px',
+        gap: isMobile ? 40 : 64,
         position: 'relative',
         zIndex: 1,
       }}>
