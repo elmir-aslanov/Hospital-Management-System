@@ -4,7 +4,6 @@ import { requestEmailOtp, verifyEmailOtp } from './otp.controller.js';
 import {
   validateRegister, validateLogin,
   validateForgotPassword, validateResetPassword,
-  validateRequestEmailOtp, validateVerifyEmailOtp,
 } from './auth.validator.js';
 import validate     from '../../middleware/validate.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
@@ -170,7 +169,7 @@ router.post('/forgot-password', authLimiter, validateForgotPassword, validate, a
 router.post('/reset-password', authLimiter, validateResetPassword, validate, authController.resetPasswordHandler);
 
 // Email OTP patient login
-router.post('/request-email-otp', authLimiter, validateRequestEmailOtp, validate, requestEmailOtp);
-router.post('/verify-email-otp',  authLimiter, validateVerifyEmailOtp,  validate, verifyEmailOtp);
+router.post('/request-email-otp', authLimiter, requestEmailOtp);
+router.post('/verify-email-otp',  authLimiter, verifyEmailOtp);
 
 export default router;
