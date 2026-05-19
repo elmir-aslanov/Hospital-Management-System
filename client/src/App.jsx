@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 import Navbar           from './components/Navbar';
+import Footer           from './components/Footer';
 import PageLoader       from './components/ui/PageLoader';
 import WhatsAppButton  from './components/ui/WhatsAppButton';
 import ProtectedRoute   from './components/ui/ProtectedRoute';
@@ -47,18 +48,18 @@ function RouteLoader() {
   return loading ? <PageLoader key={key} /> : null
 }
 
-/* Pages that hide the public navbar */
-const HIDE_NAV_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu']);
-const HIDE_NAV_PREFIX = ['/dashboard', '/patient'];
+/* Pages that hide the public navbar/footer */
+const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu']);
+const HIDE_CHROME_PREFIX = ['/dashboard', '/patient'];
 
 function Layout() {
   const { pathname } = useLocation();
-  const hideNav = HIDE_NAV_EXACT.has(pathname) ||
-    HIDE_NAV_PREFIX.some(p => pathname.startsWith(p));
+  const hideChrome = HIDE_CHROME_EXACT.has(pathname) ||
+    HIDE_CHROME_PREFIX.some(p => pathname.startsWith(p));
 
   return (
     <>
-      {!hideNav && <Navbar />}
+      {!hideChrome && <Navbar />}
       <Routes>
         {/* ── Public ── */}
         <Route path="/"            element={<HomePage />} />
@@ -117,6 +118,7 @@ function Layout() {
           },
         }}
       />
+      {!hideChrome && <Footer />}
     </>
   );
 }
