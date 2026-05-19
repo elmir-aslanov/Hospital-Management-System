@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 const FONT    = "'Source Sans 3', 'Raleway', sans-serif";
@@ -184,34 +183,6 @@ export default function AwardBanner() {
               </div>
             </div>
 
-            {/* CTA button */}
-            <button
-              onClick={() => navigate('/departments')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: NAVY,
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 12,
-                padding: '13px 28px',
-                fontSize: 14,
-                fontWeight: 700,
-                fontFamily: FONT,
-                cursor: 'pointer',
-                letterSpacing: '0.01em',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = TEAL; }}
-              onMouseLeave={e => { e.currentTarget.style.background = NAVY; }}
-            >
-              Xidmətlərə bax
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
-            </button>
 
           </motion.div>
         </div>

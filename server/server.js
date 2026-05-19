@@ -20,6 +20,15 @@ const start = async () => {
   httpServer.listen(PORT, () => {
     logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
   });
+
+  httpServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`Port ${PORT} is already in use. Stop the existing process or set a different PORT in .env`);
+    } else {
+      logger.error(`Server error: ${err.message}`);
+    }
+    process.exit(1);
+  });
 };
 
 start();
