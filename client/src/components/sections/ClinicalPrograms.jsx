@@ -27,8 +27,9 @@ export default function ClinicalPrograms() {
 
   const px          = isMobile ? 16 : isTablet ? 24 : 32;
   const py          = isMobile ? 64 : 80;
-  const mainCircle  = isMobile ? 200 : isTablet ? 230 : 256;
-  const smallCircle = isTablet ? 104 : 120;
+  const ringSize    = isMobile ? 300 : isTablet ? 370 : 460;
+  const imgInset    = isMobile ? 15  : isTablet ? 15  : 20;
+  const smallCircle = isMobile ? 130 : isTablet ? 160 : 200;
 
   return (
     <section style={{ background: '#ffffff', paddingTop: py, paddingBottom: py, fontFamily: FONT }}>
@@ -90,8 +91,8 @@ export default function ClinicalPrograms() {
             {/* Main large circle with decorative gold ring */}
             <div style={{
               position: 'relative',
-              width: mainCircle,
-              height: mainCircle,
+              width: ringSize,
+              height: ringSize,
               flexShrink: 0,
             }}>
               {/* Gold ring */}
@@ -108,7 +109,7 @@ export default function ClinicalPrograms() {
                 position: 'absolute',
                 borderRadius: '50%',
                 overflow: 'hidden',
-                inset: isMobile ? 10 : 12,
+                inset: imgInset,
                 zIndex: 5,
               }}>
                 <img
@@ -125,7 +126,7 @@ export default function ClinicalPrograms() {
                 display: 'grid',
                 gridTemplateColumns: `${smallCircle}px ${smallCircle}px`,
                 gridTemplateRows: `${smallCircle}px ${smallCircle}px`,
-                gap: 12,
+                gap: 20,
                 flexShrink: 0,
               }}>
                 {SMALL.map(({ src, alt, bg, nav }) => (
