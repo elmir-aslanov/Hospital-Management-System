@@ -9,11 +9,12 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
 
 const NAV_ITEMS = [
-  { label: 'Əsas Səhifə',  href: '/dashboard',              Icon: Icons.Home       },
-  { label: 'Pasiyentlər',  href: '/dashboard/patients',     Icon: Icons.Users      },
-  { label: 'Həkimlər',     href: '/dashboard/doctors',      Icon: Icons.Stethoscope },
-  { label: 'Randevular',   href: '/dashboard/appointments', Icon: Icons.Calendar   },
-  { label: 'Palatalar',    href: '/dashboard/wards',        Icon: Icons.Bed        },
+  { label: 'Əsas Səhifə',  href: '/dashboard',                   Icon: Icons.Home        },
+  { label: 'Pasiyentlər',  href: '/dashboard/patients',          Icon: Icons.Users       },
+  { label: 'Həkimlər',     href: '/dashboard/doctors',           Icon: Icons.Stethoscope },
+  { label: 'Randevular',   href: '/dashboard/appointments',      Icon: Icons.Calendar    },
+  { label: 'Palatalar',    href: '/dashboard/wards',             Icon: Icons.Bed         },
+  { label: 'Site Həkimləri', href: '/dashboard/site-doctors',   Icon: Icons.Globe       },
 ];
 
 export default function DashboardLayout() {

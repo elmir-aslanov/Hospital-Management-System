@@ -146,7 +146,6 @@ export default function DoctorsSection() {
   const py   = isMobile ? 64 : 96;
   const cols = isMobile ? 1 : isTablet ? 2 : 4;
 
-  // Fetches from GET /api/v1/site-doctors — standalone public doctor profiles.
   const { data, loading, error } = useFetch('/site-doctors', { limit: 8 });
   const doctors = Array.isArray(data) ? data : [];
 

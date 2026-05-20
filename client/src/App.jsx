@@ -36,6 +36,7 @@ import PatientsPage     from './pages/dashboard/PatientsPage';
 import DoctorsPage      from './pages/dashboard/DoctorsPage';
 import AppointmentsPage from './pages/dashboard/AppointmentsPage';
 import WardsPage        from './pages/dashboard/WardsPage';
+import SiteDoctorsPage  from './pages/dashboard/SiteDoctorsPage';
 
 function RouteLoader() {
   const location = useLocation()
@@ -102,6 +103,7 @@ function Layout() {
           <Route path="doctors"      element={<DoctorsPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="wards"        element={<WardsPage />} />
+          <Route path="site-doctors" element={<SiteDoctorsPage />} />
         </Route>
 
         {/* ── Catch-all — unknown paths redirect to homepage ── */}

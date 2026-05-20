@@ -25,7 +25,8 @@ const SPECIALTIES = [
 function DoctorCard({ doctor }) {
   const navigate  = useNavigate()
   const imgSrc    = resolveImage(doctor.image)
-  const initials  = (doctor.name ?? 'H').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const fullName  = doctor.userId?.fullName || doctor.fullName || doctor.name || ''
+  const initials  = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
 
   return (
     <motion.div
@@ -60,7 +61,7 @@ function DoctorCard({ doctor }) {
         {imgSrc ? (
           <img
             src={imgSrc}
-            alt={doctor.name}
+            alt={doctor.userId?.fullName || doctor.fullName || doctor.name}
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
             onError={e => {
               e.currentTarget.style.display = 'none'
@@ -96,7 +97,7 @@ function DoctorCard({ doctor }) {
       {/* Info */}
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ fontSize: '17px', fontWeight: 800, color: NAVY, margin: '0 0 4px', fontFamily: FONT }}>
-          {doctor.name}
+          {doctor.userId?.fullName || doctor.fullName || doctor.name || 'Həkim'}
         </h3>
 
         {doctor.department && (
@@ -149,9 +150,9 @@ export default function HekimlerPage() {
 
   useEffect(() => {
     // Public doctors endpoint — no auth required
-    api.get('/site-doctors', { params: { limit: 20 } })
+    api.get('/doctors', { params: { limit: 20 } })
       .then(res => {
-        const data = res.data?.data ?? res.data
+        const data = res.data?.data?.doctors ?? res.data?.data ?? res.data
         setDoctors(Array.isArray(data) ? data : [])
       })
       .catch(() => setError(true))

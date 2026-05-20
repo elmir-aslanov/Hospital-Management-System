@@ -10,7 +10,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (!error.response) {
-      toast.error('İnternet bağlantısını yoxlayın.');
+      // Network error — only show toast if it's not a background/silent request
+      const url = error.config?.url || '';
+      const silentRoutes = ['/notifications', '/dashboard/stats', '/analytics'];
+      const isSilent = silentRoutes.some(r => url.includes(r));
+      if (!isSilent) {
+        toast.error('Server ilə əlaqə qurulmadı. Backend işləyirmi?');
+      }
       return Promise.reject(error);
     }
 
@@ -21,9 +27,10 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.dispatchEvent(new Event('storage'));
-      // Only redirect when the user had an active session that expired.
-      // Public pages making unauthenticated requests should NOT be redirected.
-      if (hadToken) {
+      // Only redirect if the user had an active session (expired token).
+      // Anonymous users hitting protected endpoints should NOT be redirected.
+      const publicRoutes = ['/login', '/register', '/staff-login'];
+      if (hadToken && !publicRoutes.includes(window.location.pathname)) {
         toast.error('Sessiyanız bitib. Yenidən daxil olun.');
         window.location.href = '/login';
       }
