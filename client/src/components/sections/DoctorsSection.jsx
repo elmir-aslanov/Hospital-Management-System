@@ -47,9 +47,9 @@ function resolveImage(src) {
 }
 
 function DoctorCard({ doctor, index, navigate }) {
-  const name     = doctor.name     ?? 'Həkim';
+  const name     = doctor.userId?.fullName || doctor.fullName || doctor.name || 'Həkim';
   const imgSrc   = resolveImage(doctor.image);
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const initials = name.split(' ').map(w => w?.[0] || '').join('').toUpperCase().slice(0, 2) || 'DR';
 
   return (
     <motion.article
@@ -147,7 +147,7 @@ export default function DoctorsSection() {
   const cols = isMobile ? 1 : isTablet ? 2 : 4;
 
   const { data, loading, error } = useFetch('/site-doctors', { limit: 8 });
-  const doctors = Array.isArray(data) ? data : [];
+  const doctors = Array.isArray(data) ? data : (Array.isArray(data?.doctors) ? data.doctors : []);
 
   return (
     <section style={{ background: '#f8fafc', paddingTop: py, paddingBottom: py, fontFamily: FONT }}>
