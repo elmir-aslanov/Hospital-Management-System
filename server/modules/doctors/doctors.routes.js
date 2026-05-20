@@ -11,14 +11,33 @@ import authorize from '../../middleware/rbac.middleware.js';
 
 const router = Router();
 
-router.use(authenticate);
-
 /**
  * @swagger
  * tags:
  *   name: Doctors
  *   description: Doctor profiles and schedule management
  */
+
+/**
+ * @swagger
+ * /doctors:
+ *   get:
+ *     summary: Get all doctors (public)
+ *     tags: [Doctors]
+ *     parameters:
+ *       - in: query
+ *         name: specialization
+ *         schema:
+ *           type: string
+ *         description: Filter by specialization
+ *     responses:
+ *       200:
+ *         description: List of doctor profiles
+ */
+router.get(
+  '/',
+  doctorsController.getDoctors
+);
 
 /**
  * @swagger
@@ -55,33 +74,9 @@ router.use(authenticate);
  */
 router.post(
   '/',
-  authorize('ADMIN'),
+  authenticate, authorize('ADMIN'),
   validateCreateDoctor, validate,
   doctorsController.createDoctor
-);
-
-/**
- * @swagger
- * /doctors:
- *   get:
- *     summary: Get all doctors
- *     tags: [Doctors]
- *     parameters:
- *       - in: query
- *         name: specialization
- *         schema:
- *           type: string
- *         description: Filter by specialization
- *     responses:
- *       200:
- *         description: List of doctor profiles
- *       401:
- *         description: Unauthorized
- */
-router.get(
-  '/',
-  authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
-  doctorsController.getDoctors
 );
 
 /**
@@ -104,7 +99,7 @@ router.get(
  */
 router.get(
   '/:id/schedule',
-  authorize('ADMIN', 'DOCTOR', 'RECEPTIONIST'),
+  authenticate, authorize('ADMIN', 'DOCTOR', 'RECEPTIONIST'),
   doctorsController.getDoctorSchedule
 );
 
@@ -149,7 +144,7 @@ router.get(
  */
 router.put(
   '/:id/schedule',
-  authorize('ADMIN', 'DOCTOR'),
+  authenticate, authorize('ADMIN', 'DOCTOR'),
   validateUpdateSchedule, validate,
   doctorsController.updateDoctorSchedule
 );
@@ -181,7 +176,7 @@ router.put(
  */
 router.get(
   '/:id/availability',
-  authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
+  authenticate, authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
   doctorsController.getDoctorAvailability
 );
 
@@ -205,7 +200,7 @@ router.get(
  */
 router.get(
   '/:id',
-  authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
+  authenticate, authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
   doctorsController.getDoctorById
 );
 
@@ -242,7 +237,7 @@ router.get(
  */
 router.put(
   '/:id',
-  authorize('ADMIN', 'DOCTOR'),
+  authenticate, authorize('ADMIN', 'DOCTOR'),
   validateUpdateDoctor, validate,
   doctorsController.updateDoctor
 );

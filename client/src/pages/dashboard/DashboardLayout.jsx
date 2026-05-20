@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { label: 'Həkimlər',     href: '/dashboard/doctors',           Icon: Icons.Stethoscope },
   { label: 'Randevular',   href: '/dashboard/appointments',      Icon: Icons.Calendar    },
   { label: 'Palatalar',    href: '/dashboard/wards',             Icon: Icons.Bed         },
-  { label: 'Site Həkimləri', href: '/dashboard/site-doctors',   Icon: Icons.Globe       },
+  { label: 'Site Həkimləri', href: '/dashboard/doctors',   Icon: Icons.Globe       },
 ];
 
 export default function DashboardLayout() {
