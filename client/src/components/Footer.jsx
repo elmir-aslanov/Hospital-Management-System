@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
 
+const NAVY = '#466B7C';
+const TEAL = '#00848e';
+
 // ── Social icons ──────────────────────────────────────────────────────────────
 const IgIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
@@ -24,7 +27,7 @@ const LiIcon = () => (
 const YtIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
     <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
-    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
+    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill={NAVY}/>
   </svg>
 );
 const WaIcon = () => (
@@ -42,28 +45,35 @@ const SOCIALS = [
 ];
 
 const KLINIKA_LINKS = [
-  { label: 'Haqqımızda',  to: '/about' },
-  { label: 'Xidmətlər',  to: '/services' },
-  { label: 'Həkimlər',   to: '/hekimler' },
-  { label: 'Karyera',    to: '#' },
-  { label: 'Xəbərlər',   to: '/blog' },
-  { label: 'Əlaqə',      to: '/contact' },
+  { label: 'Haqqımızda', to: '/about' },
+  { label: 'Xidmətlər', to: '/services' },
+  { label: 'Həkimlər',  to: '/hekimler' },
+  { label: 'Əlaqə',     to: '/contact' },
 ];
 
 const PASIYENT_LINKS = [
-  { label: 'Xidmətlər',            to: '/services' },
-  { label: 'Randevu',              to: '/randevu' },
-  { label: 'Hazırlıq',             to: '#' },
-  { label: 'Sığorta',              to: '#' },
-  { label: 'Tez-tez soruşulanlar', to: '/about' },
-  { label: 'Məlumatlar',           to: '#' },
+  { label: 'Xidmətlər',  to: '/services' },
+  { label: 'Randevu',    to: '/randevu' },
+  { label: 'Məlumatlar', to: '#' },
 ];
 
+const linkStyle = {
+  fontSize: 14,
+  fontWeight: 500,
+  color: 'rgba(255,255,255,0.7)',
+  textDecoration: 'none',
+  lineHeight: 1.7,
+  transition: 'color 0.18s',
+};
+
 function NavLink({ to, label }) {
+  const handleEnter = e => { e.currentTarget.style.color = TEAL; };
+  const handleLeave = e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; };
+
   if (to === '#') {
     return (
       <li>
-        <a href="#" className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700 leading-relaxed">
+        <a href="#" style={linkStyle} onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
           {label}
         </a>
       </li>
@@ -71,7 +81,7 @@ function NavLink({ to, label }) {
   }
   return (
     <li>
-      <Link to={to} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700 leading-relaxed">
+      <Link to={to} style={linkStyle} onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
         {label}
       </Link>
     </li>
@@ -80,7 +90,14 @@ function NavLink({ to, label }) {
 
 function ColHead({ children }) {
   return (
-    <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 mb-6">
+    <h3 style={{
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '2px',
+      textTransform: 'uppercase',
+      color: 'rgba(255,255,255,0.5)',
+      margin: '0 0 20px',
+    }}>
       {children}
     </h3>
   );
@@ -88,23 +105,24 @@ function ColHead({ children }) {
 
 export default function Footer() {
   return (
-    <footer style={{ width: '100%', backgroundColor: '#fff', color: '#334155' }}>
+    <footer style={{ background: NAVY, margin: 0, padding: 0 }}>
 
-      {/* ── Wave divider ─────────────────────────────────────────────────────── */}
-      <div style={{ overflow: 'hidden', lineHeight: 0, marginBottom: '-2px' }}>
-        <svg
-          viewBox="0 0 1440 60"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ display: 'block', width: '100%' }}
-        >
-          <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="#0a1628" />
+      {/* ── Wave: white above curve, navy below ──────────────────────────────── */}
+      <div style={{ background: 'white', lineHeight: 0, display: 'block', overflow: 'hidden' }}>
+        <svg viewBox="0 0 1440 100" xmlns="http://www.w3.org/2000/svg"
+          style={{ display: 'block', width: '100%', height: '100px' }}
+          preserveAspectRatio="none">
+          <path d="M0,40 C240,100 480,0 720,50 C960,100 1200,20 1440,60 L1440,100 L0,100 Z"
+            fill={NAVY} />
+          <path d="M0,60 C300,20 600,80 900,40 C1100,20 1300,70 1440,50 L1440,100 L0,100 Z"
+            fill={NAVY} opacity="0.6" />
         </svg>
       </div>
 
-      {/* ── Centered content wrapper ─────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 40px 0' }}>
+      {/* ── Content ──────────────────────────────────────────────────────────── */}
+      <div style={{ background: NAVY, maxWidth: 1200, margin: '0 auto', padding: '60px 40px 0' }}>
 
-        {/* ── Main 4-column grid ───────────────────────────────────────────── */}
+        {/* ── 4-column grid ────────────────────────────────────────────────── */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -112,81 +130,103 @@ export default function Footer() {
           alignItems: 'start',
         }}>
 
-          {/* ── Column 1 — Brand ──────────────────────────────────────────── */}
-          <div className="flex flex-col gap-5">
+          {/* Column 1 — Brand */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <Link to="/" style={{ alignSelf: 'flex-start' }}>
               <img
                 src="/logo.png"
                 alt="Aslan Medical Center"
-                className="h-24 w-auto object-contain"
+                style={{ height: 96, width: 'auto', objectFit: 'contain', filter: 'none', background: 'transparent', padding: 0, border: 'none', borderRadius: 0 }}
                 onError={e => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.nextElementSibling.style.display = 'flex';
                 }}
               />
-              <div style={{ display: 'none' }} className="items-center gap-2">
-                <div className="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center text-white text-xl font-black">
-                  +
-                </div>
-                <span className="text-slate-800 text-base font-bold">Aslan Medical</span>
+              <div style={{ display: 'none', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 8, background: TEAL,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 18, fontWeight: 900,
+                }}>+</div>
+                <span style={{ color: '#fff', fontSize: 16, fontWeight: 700 }}>Aslan Medical</span>
               </div>
             </Link>
 
-            <p className="text-sm italic text-slate-500 leading-relaxed">
+            <p style={{ fontSize: 13, fontStyle: 'italic', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, margin: 0 }}>
               Sağlamlığınız üçün etibarlı tərəfdaş
             </p>
 
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
               BAKI · 24/7
             </p>
           </div>
 
-          {/* ── Column 2 — Klinika ────────────────────────────────────────── */}
+          {/* Column 2 — Klinika */}
           <div>
             <ColHead>KLİNİKA</ColHead>
-            <ul className="flex flex-col gap-3.5">
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {KLINIKA_LINKS.map(l => <NavLink key={l.label} {...l} />)}
             </ul>
           </div>
 
-          {/* ── Column 3 — Pasiyent ───────────────────────────────────────── */}
+          {/* Column 3 — Pasiyent */}
           <div>
             <ColHead>PASİYENT</ColHead>
-            <ul className="flex flex-col gap-3.5">
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {PASIYENT_LINKS.map(l => <NavLink key={l.label} {...l} />)}
             </ul>
           </div>
 
-          {/* ── Column 4 — Contact ────────────────────────────────────────── */}
-          <div className="flex flex-col gap-4">
+          {/* Column 4 — Contact */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <ColHead>ƏLAQƏ</ColHead>
 
-            <a
-              href="tel:+994508363694"
-              className="text-2xl font-light tracking-tight text-slate-800 hover:text-teal-700 transition-colors"
+            <a href="tel:+994508363694" style={{
+              fontSize: 28, fontWeight: 700, color: '#fff',
+              textDecoration: 'none', lineHeight: 1.2, transition: 'color 0.18s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = TEAL; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#fff'; }}
             >
               +994 50 836 36 94
             </a>
 
-            <a
-              href="mailto:info@aslanmedical.az"
-              className="text-sm font-medium text-slate-600 hover:text-teal-700 transition-colors"
+            <a href="mailto:info@aslanmedical.az" style={{
+              fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)',
+              textDecoration: 'none', transition: 'color 0.18s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = TEAL; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
             >
               info@aslanmedical.az
             </a>
 
-            <p className="text-sm text-slate-500 leading-snug">
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.5 }}>
               Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı
             </p>
 
-            <p className="text-sm text-slate-500">
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
               Hər gün: 24/7
             </p>
 
             <div style={{ marginTop: 4 }}>
-              <Link
-                to="/randevu"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:border-teal-600 hover:bg-teal-50 hover:text-teal-700"
+              <Link to="/randevu" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)',
+                padding: '10px 20px', fontSize: 14, fontWeight: 500,
+                color: 'rgba(255,255,255,0.85)', textDecoration: 'none',
+                transition: 'border-color 0.18s, color 0.18s, background 0.18s',
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = TEAL;
+                  e.currentTarget.style.color = TEAL;
+                  e.currentTarget.style.background = 'rgba(0,132,142,0.1)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+                  e.currentTarget.style.color = 'rgba(255,255,255,0.85)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
                 Randevu Al
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -197,15 +237,14 @@ export default function Footer() {
               </Link>
             </div>
 
-            <div className="flex items-center gap-4 pt-4">
+            {/* Social icons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 8 }}>
               {SOCIALS.map(({ Icon, label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                   aria-label={label}
-                  className="text-slate-400 hover:text-teal-700 transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', transition: 'color 0.18s' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
                 >
                   <Icon />
                 </a>
@@ -215,7 +254,7 @@ export default function Footer() {
 
         </div>
 
-        {/* ── Bottom row ────────────────────────────────────────────────────── */}
+        {/* ── Bottom row ───────────────────────────────────────────────────────── */}
         <div style={{
           borderTop: '1px solid rgba(255,255,255,0.1)',
           marginTop: 48,
@@ -226,18 +265,22 @@ export default function Footer() {
           flexWrap: 'wrap',
           gap: 12,
         }}>
-          <span className="text-xs text-slate-500">© 2026 Aslan Medical Center</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+            © 2026 Aslan Medical Center
+          </span>
 
-          <div className="flex items-center gap-6">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             {[
               { label: 'Məxfilik', to: '/about' },
               { label: 'Şərtlər',  to: '/about' },
               { label: 'Əlaqə',    to: '/contact' },
             ].map(({ label, to }) => (
-              <Link
-                key={label}
-                to={to}
-                className="text-xs text-slate-500 hover:text-teal-700 transition-colors"
+              <Link key={label} to={to} style={{
+                fontSize: 12, color: 'rgba(255,255,255,0.4)',
+                textDecoration: 'none', transition: 'color 0.18s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.color = TEAL; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
               >
                 {label}
               </Link>
