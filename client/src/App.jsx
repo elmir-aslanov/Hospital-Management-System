@@ -15,6 +15,10 @@ import RandevuPage      from './pages/public/RandevuPage';
 import ComingSoon            from './pages/public/ComingSoon';
 import PatientStoriesPage   from './pages/public/PatientStoriesPage';
 import HekimlerPage          from './pages/public/HekimlerPage';
+import DepartmentsPage       from './pages/public/DepartmentsPage';
+import ServicesPage          from './pages/public/ServicesPage';
+import BlogPage              from './pages/public/BlogPage';
+import ContactPage           from './pages/public/ContactPage';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -65,11 +69,11 @@ function Layout() {
         <Route path="/"            element={<HomePage />} />
         <Route path="/about"       element={<ComingSoon title="Haqqımızda" />} />
         <Route path="/doctors"     element={<ComingSoon title="Həkimlər" />} />
-        <Route path="/departments" element={<ComingSoon title="Şöbələr" />} />
-        <Route path="/services"    element={<ComingSoon title="Xidmətlər & Müalicələr" />} />
+        <Route path="/departments" element={<DepartmentsPage />} />
+        <Route path="/services"    element={<ServicesPage />} />
         <Route path="/patients"    element={<ComingSoon title="Pasiyent Mərkəzi" />} />
-        <Route path="/blog"        element={<ComingSoon title="Bloq" />} />
-        <Route path="/contact"     element={<ComingSoon title="Əlaqə" />} />
+        <Route path="/blog"        element={<BlogPage />} />
+        <Route path="/contact"     element={<ContactPage />} />
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
         <Route path="/hekimler"            element={<HekimlerPage />} />
         <Route path="/randevu"             element={<RandevuPage />} />
