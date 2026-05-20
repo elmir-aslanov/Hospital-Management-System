@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-const NAVY = '#466B7C';
+const NAVY = '#829AA4';
 const TEAL = '#00848e';
 
 // ── Social icons ──────────────────────────────────────────────────────────────

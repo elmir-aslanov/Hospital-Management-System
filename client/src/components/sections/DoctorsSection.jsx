@@ -146,7 +146,7 @@ export default function DoctorsSection() {
   const py   = isMobile ? 64 : 96;
   const cols = isMobile ? 1 : isTablet ? 2 : 4;
 
-  const { data, loading, error } = useFetch('/site-doctors', { limit: 8 });
+  const { data, loading, error } = useFetch('/doctors', { limit: 8 });
   const doctors = Array.isArray(data) ? data : (Array.isArray(data?.doctors) ? data.doctors : []);
 
   return (
