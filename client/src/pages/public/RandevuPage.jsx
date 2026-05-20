@@ -283,6 +283,34 @@ export default function RandevuPage() {
           /* ── FORM ── */
           <>
             <div style={{ marginBottom: 32 }}>
+              <button
+                onClick={() => navigate('/')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  marginBottom: 20,
+                  background: 'none',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: 8,
+                  padding: '7px 14px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  fontFamily: FONT,
+                  transition: 'border-color 0.18s, color 0.18s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"/>
+                  <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Ana Səhifə
+              </button>
               <h2 style={{ fontSize: 26, fontWeight: 700, color: NAVY, margin: '0 0 6px', fontFamily: FONT }}>
                 Randevu Sifariş Et
               </h2>
