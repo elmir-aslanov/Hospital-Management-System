@@ -108,12 +108,27 @@ export default function RandevuPage() {
       return;
     }
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Randevu üçün hesabınıza daxil olun.');
+      navigate('/login');
+      return;
+    }
+
     setSubmitting(true);
     const endTime = addMinutes(form.startTime, 30);
 
     try {
+      let patientId = null;
+
+      if (user?.role === 'PATIENT') {
+        const patRes = await api.get(`/patients/by-user/${user._id}`);
+        const pat = patRes.data?.data?.patient ?? patRes.data?.patient;
+        patientId = pat?._id;
+      }
+
       await api.post('/appointments', {
-        patientId: user?._id,
+        patientId,
         doctorId: form.doctorId,
         date: form.date,
         startTime: form.startTime,
@@ -123,17 +138,19 @@ export default function RandevuPage() {
 
       const doc = doctors.find(d => d._id === form.doctorId);
       setBooked({
-        doctor: doc ? `${doc.userId?.name} — ${doc.specialization}` : form.doctorId,
+        doctor: doc ? `${doc.userId?.fullName} — ${doc.specialization}` : form.doctorId,
         date: form.date,
         time: form.startTime,
       });
     } catch (err) {
       const status = err?.response?.status;
       if (status === 409) {
-        toast.error('Bu vaxt artıq sifarişlidir. Zəhmət olmasa başqa vaxt seçin.');
+        toast.error('Bu vaxt artıq sifarişlidir.');
       } else if (status === 401) {
-        toast.error('Randevu sifariş etmək üçün daxil olun.');
-        setTimeout(() => navigate('/login'), 1500);
+        toast.error('Daxil olun.');
+        navigate('/login');
+      } else if (status === 400) {
+        toast.error(err.response?.data?.message || 'Məlumatlar yanlışdır.');
       } else {
         toast.error('Xəta baş verdi. Yenidən cəhd edin.');
       }
@@ -383,7 +400,7 @@ export default function RandevuPage() {
                   </option>
                   {doctors.map(doc => (
                     <option key={doc._id} value={doc._id}>
-                      {doc.userId?.name} — {doc.specialization}
+                      {doc.userId?.fullName} — {doc.specialization}
                     </option>
                   ))}
                 </select>

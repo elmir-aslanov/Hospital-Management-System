@@ -33,7 +33,7 @@ export default function DoctorsPage() {
       <div className="panel">
         <table className="tbl">
           <thead>
-            <tr><th>Həkim</th><th>İxtisas</th><th>Lisenziya</th><th>Təcrübə</th><th>Qiymət</th><th>Status</th></tr>
+            <tr><th>Həkim</th><th>İxtisas</th><th>Lisenziya</th><th>Təcrübə</th><th>Reytinq</th><th>Status</th></tr>
           </thead>
           <tbody>
             {loading
@@ -54,7 +54,7 @@ export default function DoctorsPage() {
                         <td>{d.specialization||'—'}</td>
                         <td><span className="id">{d.licenseNumber||'—'}</span></td>
                         <td>{d.experience != null ? `${d.experience} il` : '—'}</td>
-                        <td>{d.consultationFee != null ? `₼${d.consultationFee}` : '—'}</td>
+                        <td>{d.averageRating != null ? `⭐ ${d.averageRating.toFixed(1)} / 5` : '—'}</td>
                         <td>
                           {d.isAvailable
                             ? <span className="bdg bdg-confirmed"><span className="d"/>Aktiv</span>

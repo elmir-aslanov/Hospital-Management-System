@@ -141,6 +141,12 @@ router.get(
  *         description: Unauthorized
  */
 router.get(
+  '/by-user/:userId',
+  authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
+  patientsController.getPatientByUserId
+);
+
+router.get(
   '/:id',
   authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
   patientsController.getPatientById

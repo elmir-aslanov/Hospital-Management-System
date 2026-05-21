@@ -102,11 +102,10 @@ export default function Navbar() {
   const { t, i18n } = useTranslation();
 
   const NAV_LINKS = [
-    { label: t('nav.home'),          href: '/',            dropdown: ['Əsas Səhifə', 'Xəbərlər'] },
+    { label: t('nav.home'),          href: '/' },
     { label: t('nav.doctors'),       href: '/doctors' },
     { label: t('nav.departments'),   href: '/departments', dropdown: ['Kardiologiya', 'Nevrologiya', 'Cərrahiyyə', 'Pediatriya'] },
     { label: t('nav.services'),      href: '/services',    dropdown: ['Cərrahiyyə', 'Diaqnostika', 'Laboratoriya'] },
-    { label: t('nav.patientCenter'), href: '/patients',    dropdown: ['Pasiyent Portalı', 'Tibbi Qeydlər', 'Reseptlər'] },
     { label: t('nav.about'),         href: '/about',       dropdown: ['Komanda', 'Tərəfdaşlar', 'FAQ'] },
     { label: t('nav.blog'),          href: '/blog',        dropdown: ['Məqalələr', 'Yeniliklər'] },
     { label: t('nav.contact'),       href: '/contact' },
@@ -168,49 +167,6 @@ export default function Navbar() {
         boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.1)' : 'none',
         transition: 'box-shadow 0.3s ease',
       }}>
-
-        {/* ══ LAYER 1 — Top Bar ══════════════════════════ */}
-        <div className="top-bar" style={{
-          height: scrolled ? 0 : '40px',
-          overflow: 'hidden',
-          background: '#1a2b4a',
-          padding: '0 40px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          transition: 'height 0.3s ease',
-        }}>
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontFamily: FONT }}>
-            {t('topbar.address')}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-            {[t('topbar.forDoctors'), t('topbar.services')].map(lbl => (
-              <a key={lbl} href="#" style={{
-                fontSize: '13px', color: 'rgba(255,255,255,0.85)',
-                textDecoration: 'none', fontFamily: FONT,
-                transition: 'color 0.2s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.textDecoration = 'underline'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; e.currentTarget.style.textDecoration = 'none'; }}
-              >{lbl}</a>
-            ))}
-            <a href="#" style={{
-              fontSize: '12px', fontWeight: 700,
-              fontFamily: FONT,
-              color: '#ffffff',
-              textDecoration: 'none',
-              background: 'linear-gradient(135deg, #e8622a 0%, #d44e1a 100%)',
-              padding: '4px 14px',
-              borderRadius: '20px',
-              letterSpacing: '0.3px',
-              transition: 'opacity 0.2s, transform 0.2s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
-            >{t('topbar.eResult')}</a>
-
-          </div>
-        </div>
 
         {/* ══ LAYER 2 — Middle Bar ═══════════════════════ */}
         <div className="mid-bar" style={{
@@ -370,6 +326,25 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* E-Nəticə — center */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <a href="#" style={{
+              fontSize: '13px', fontWeight: 700,
+              fontFamily: FONT,
+              color: '#ffffff',
+              textDecoration: 'none',
+              background: 'linear-gradient(135deg, #e8622a 0%, #d44e1a 100%)',
+              padding: '10px 28px',
+              borderRadius: '28px',
+              letterSpacing: '0.4px',
+              boxShadow: '0 4px 14px rgba(232,98,42,0.35)',
+              transition: 'opacity 0.2s, transform 0.2s, box-shadow 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(232,98,42,0.45)'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(232,98,42,0.35)'; }}
+            >E-Nəticə</a>
+          </div>
+
           {/* Action pill — right-aligned */}
           <div className="mid-actions" style={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
             <div style={{
@@ -412,19 +387,6 @@ export default function Navbar() {
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >{label}</button>
               ))}
-              <button
-                onClick={() => toast.info('Axtarış funksiyası tezliklə əlavə olunacaq.')}
-                style={{
-                  padding: '9px 14px', borderRadius: '26px',
-                  border: 'none', cursor: 'pointer',
-                  background: 'transparent', color: 'white',
-                  lineHeight: 0, transition: 'background 0.2s',
-                  fontSize: '16px',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                aria-label="Axtar"
-              ><IconSearch /></button>
             </div>
           </div>
 
