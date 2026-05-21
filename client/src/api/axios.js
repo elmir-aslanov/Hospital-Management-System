@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+  baseURL: '/api/v1',
   withCredentials: true,
 });
 
@@ -12,7 +12,7 @@ api.interceptors.response.use(
     if (!error.response) {
       // Network error — only show toast if it's not a background/silent request
       const url = error.config?.url || '';
-      const silentRoutes = ['/notifications', '/dashboard/stats', '/analytics'];
+      const silentRoutes = ['/notifications', '/dashboard/stats', '/analytics', '/doctors', '/departments', '/services', '/blog'];
       const isSilent = silentRoutes.some(r => url.includes(r));
       if (!isSilent) {
         toast.error('Server ilə əlaqə qurulmadı. Backend işləyirmi?');
