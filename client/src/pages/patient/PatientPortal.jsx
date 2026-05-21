@@ -14,7 +14,27 @@ function fmt(dateStr) {
 }
 
 function Skel({ w = '100%', h = 16 }) {
-  return <div style={{ width: w, height: h, borderRadius: 6, background: '#e2e8f0', animation: 'pulse 1.5s ease-in-out infinite' }} />;
+  return (
+    <div style={{ width: w, height: h, borderRadius: 6, background: '#e2e8f0', animation: 'skelpulse 1.5s ease-in-out infinite' }} />
+  );
+}
+
+const STATUS_COLORS = {
+  scheduled: { bg: '#dbeafe', color: '#1d4ed8', label: 'Gözləyir' },
+  confirmed:  { bg: '#dcfce7', color: '#166534', label: 'Təsdiqləndi' },
+  completed:  { bg: '#d1fae5', color: '#065f46', label: 'Tamamlandı' },
+  cancelled:  { bg: '#fee2e2', color: '#991b1b', label: 'Ləğv edildi' },
+  missed:     { bg: '#fef9c3', color: '#854d0e', label: 'Gəlmədi' },
+  no_show:    { bg: '#fef3c7', color: '#92400e', label: 'Gəlmədi' },
+};
+
+function StatusBadge({ status }) {
+  const s = STATUS_COLORS[status] || { bg: '#f1f5f9', color: '#475569', label: status };
+  return (
+    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: s.bg, color: s.color, fontFamily: FONT, whiteSpace: 'nowrap' }}>
+      {s.label}
+    </span>
+  );
 }
 
 function Card({ children, style }) {
@@ -25,17 +45,8 @@ function Card({ children, style }) {
   );
 }
 
-function CardTitle({ children }) {
-  return <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{children}</h3>;
-}
-
-function Empty({ icon, text }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '28px 0', color: '#718096' }}>
-      <div style={{ fontSize: 36, marginBottom: 10 }}>{icon}</div>
-      <p style={{ margin: 0, fontSize: 13, fontFamily: FONT }}>{text}</p>
-    </div>
-  );
+function SectionTitle({ children }) {
+  return <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{children}</h3>;
 }
 
 export default function PatientPortal() {
@@ -43,12 +54,12 @@ export default function PatientPortal() {
   let user = {};
   try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch {}
 
-  const [patient, setPatient] = useState(null);
+  const [patient, setPatient]           = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
-  const [vitals, setVitals] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [vitals, setVitals]             = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [notFound, setNotFound]         = useState(false);
 
   useEffect(() => {
     if (!user._id) { setLoading(false); return; }
@@ -58,8 +69,9 @@ export default function PatientPortal() {
         const pat = res.data?.data?.patient ?? res.data?.patient;
         setPatient(pat);
         const pid = pat._id;
+
         return Promise.allSettled([
-          api.get(`/appointments/patient/${pid}`, { params: { limit: 5, sort: 'date' } }),
+          api.get(`/appointments/patient/${pid}`, { params: { limit: 10 } }),
           api.get(`/prescriptions/patient/${pid}`, { params: { limit: 5 } }),
           api.get(`/vitals/patient/${pid}/latest`),
         ]);
@@ -67,21 +79,26 @@ export default function PatientPortal() {
       .then(results => {
         if (!results) return;
         const [apptR, presR, vitR] = results;
+
         if (apptR.status === 'fulfilled') {
-          const d = apptR.value.data?.data ?? apptR.value.data;
-          setAppointments(Array.isArray(d) ? d : d?.appointments || []);
+          const d = apptR.value.data?.data;
+          setAppointments(d?.appointments ?? (Array.isArray(d) ? d : []));
         }
         if (presR.status === 'fulfilled') {
-          const d = presR.value.data?.data ?? presR.value.data;
-          setPrescriptions(Array.isArray(d) ? d : d?.prescriptions || []);
+          const d = presR.value.data?.data;
+          setPrescriptions(d?.prescriptions ?? (Array.isArray(d) ? d : []));
         }
         if (vitR.status === 'fulfilled') {
-          const d = vitR.value.data?.data ?? vitR.value.data;
-          setVitals(d);
+          const d = vitR.value.data?.data;
+          setVitals(d?.vitals ?? d ?? null);
         }
       })
       .catch(err => {
-        setError(err.response?.data?.message || 'Məlumatlar yüklənmədi.');
+        if (err.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          toast.error('Məlumatlar yüklənmədi.');
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -95,114 +112,122 @@ export default function PatientPortal() {
     navigate('/');
   };
 
-  const upcomingAppts = appointments.filter(a => a.status === 'scheduled');
-  const lastCompleted = [...appointments].filter(a => a.status === 'completed').sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-  const nextAppt = [...upcomingAppts].sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+  const upcomingAppts   = appointments.filter(a => a.status === 'scheduled');
+  const completedAppts  = appointments.filter(a => a.status === 'completed').sort((a, b) => new Date(b.date) - new Date(a.date));
+  const nextAppt        = [...upcomingAppts].sort((a, b) => new Date(a.date) - new Date(b.date))[0];
 
   const STATS = [
-    { label: 'Gəlməkdə olan randevular', value: upcomingAppts.length, color: '#3b82f6', icon: '📅' },
-    { label: 'Aktiv reseptlər',           value: prescriptions.length,  color: '#10b981', icon: '💊' },
-    { label: 'Son ziyarət',               value: fmt(lastCompleted?.date), color: '#8b5cf6', icon: '🏥' },
-    { label: 'Növbəti randevu',           value: fmt(nextAppt?.date),   color: TEAL,      icon: '⏰' },
+    { label: 'Gözləyən Randevular', value: upcomingAppts.length,           color: TEAL },
+    { label: 'Aktiv Reseptlər',      value: prescriptions.length,            color: TEAL },
+    { label: 'Son Randevu',           value: fmt(completedAppts[0]?.date),   color: TEAL },
+    { label: 'Növbəti Randevu',       value: fmt(nextAppt?.date),            color: TEAL },
   ];
 
+  /* ── Header (shared across all states) ── */
+  const Header = (
+    <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, padding: '20px 6vw', marginBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img src="/logo.png" alt="logo" style={{ height: 44 }} onError={e => e.currentTarget.style.display = 'none'} />
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: FONT }}>Pasiyent Portalı</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', fontFamily: FONT }}>
+              Xoş gəldiniz, {user.fullName?.split(' ')[0] || 'Pasiyent'} 👋
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => navigate('/')}
+            style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
+            Ana Səhifə
+          </button>
+          <button onClick={logout}
+            style={{ padding: '8px 16px', background: 'rgba(220,38,38,0.8)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
+            Çıxış
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── Loading state ── */
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f0f4f8', fontFamily: FONT, padding: '32px 6vw' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-          <Skel w={220} h={44} />
-          <Skel w={140} h={36} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-          {[...Array(4)].map((_, i) => <Skel key={i} h={90} />)}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '60% 1fr', gap: 20 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <Skel h={260} /><Skel h={180} />
+      <div style={{ minHeight: '100vh', background: '#f0f4f8', fontFamily: FONT }}>
+        {Header}
+        <div style={{ padding: '28px 6vw' }}>
+          <div style={{ display: 'flex', gap: 16, marginBottom: 32 }}>
+            {[...Array(4)].map((_, i) => <Skel key={i} h={90} />)}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <Skel h={240} /><Skel h={180} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <Skel h={260} /><Skel h={180} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <Skel h={220} /><Skel h={200} />
+            </div>
           </div>
         </div>
-        <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
+        <style>{`@keyframes skelpulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
       </div>
     );
   }
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#f0f4f8', fontFamily: FONT }}>
-
-      {/* ── Header ── */}
-      <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, padding: '20px 6vw' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <img src="/logo.png" alt="logo" style={{ height: 44 }} onError={e => e.currentTarget.style.display = 'none'} />
-            <div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: FONT }}>Pasiyent Portalı</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', fontFamily: FONT }}>
-                Xoş gəldiniz, {user.fullName?.split(' ')[0] || 'Pasiyent'} 👋
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => navigate('/')}
-              style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
-              Ana Səhifə
-            </button>
-            <button onClick={logout}
-              style={{ padding: '8px 16px', background: 'rgba(220,38,38,0.8)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
-              Çıxış
-            </button>
-          </div>
+  /* ── 404 — patient profile not found ── */
+  if (notFound) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f0f4f8', fontFamily: FONT }}>
+        {Header}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 56, marginBottom: 20 }}>🏥</div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: NAVY, margin: '0 0 12px', fontFamily: FONT }}>
+            Pasiyent profili tapılmadı
+          </h2>
+          <p style={{ fontSize: 14, color: '#718096', margin: '0 0 28px', fontFamily: FONT }}>
+            Hesabınız hələ pasiyent kimi qeydiyyatdan keçməyib.
+          </p>
+          <button onClick={() => navigate('/register')}
+            style={{ padding: '12px 28px', background: `linear-gradient(135deg, ${NAVY}, ${TEAL})`, border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+            Qeydiyyatdan Keç
+          </button>
         </div>
       </div>
+    );
+  }
+
+  /* ── Main content ── */
+  return (
+    <div style={{ minHeight: '100vh', background: '#f0f4f8', fontFamily: FONT }}>
+      {Header}
 
       <div style={{ padding: '28px 6vw' }}>
 
-        {error && (
-          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 16px', color: '#991B1B', fontSize: 13, marginBottom: 20, fontFamily: FONT }}>
-            {error} —{' '}
-            <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', color: '#991B1B', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontFamily: FONT }}>
-              Yenidən cəhd et
-            </button>
-          </div>
-        )}
-
-        {/* ── Stats Row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        {/* Stats row */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 32 }}>
           {STATS.map(s => (
-            <div key={s.label} style={{ background: '#fff', borderRadius: 12, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 14, alignItems: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: s.color + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{s.icon}</div>
-              <div>
-                <div style={{ fontSize: 11, color: '#718096', fontWeight: 600, marginBottom: 4, fontFamily: FONT }}>{s.label}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: NAVY, fontFamily: FONT }}>{s.value}</div>
-              </div>
+            <div key={s.label} style={{ flex: 1, background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: s.color, marginBottom: 6, fontFamily: FONT }}>{s.value}</div>
+              <div style={{ fontSize: 13, color: '#718096', fontFamily: FONT }}>{s.label}</div>
             </div>
           ))}
         </div>
 
-        {/* ── Main Grid ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '60% 1fr', gap: 20, alignItems: 'start' }}>
+        {/* 2-column grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, alignItems: 'start' }}>
 
-          {/* LEFT */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* ── LEFT ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             {/* Appointments */}
             <Card>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                <CardTitle>Gəlməkdə olan Randevular</CardTitle>
-                <button onClick={() => navigate('/randevu')}
-                  style={{ padding: '7px 14px', background: TEAL, border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
-                  + Randevu Al
-                </button>
-              </div>
+              <SectionTitle>Randevularım</SectionTitle>
 
-              {upcomingAppts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '28px 0', color: '#718096' }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>📅</div>
-                  <p style={{ margin: '0 0 14px', fontSize: 13, fontFamily: FONT }}>Aktiv randevunuz yoxdur</p>
+              {appointments.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
+                  <p style={{ color: '#718096', fontSize: 14, margin: '0 0 16px', fontFamily: FONT }}>Randevunuz yoxdur</p>
                   <button onClick={() => navigate('/randevu')}
-                    style={{ padding: '9px 20px', background: TEAL, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
+                    style={{ padding: '10px 22px', background: TEAL, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
                     Randevu Al
                   </button>
                 </div>
@@ -210,28 +235,27 @@ export default function PatientPortal() {
                 <>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <tr>
                         {['Tarix', 'Vaxt', 'Həkim', 'Status'].map(h => (
-                          <th key={h} style={{ textAlign: 'left', padding: '0 8px 10px', fontSize: 11, color: '#718096', fontWeight: 700, fontFamily: FONT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                          <th key={h} style={{ textAlign: 'left', padding: '0 8px 12px', fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {[...upcomingAppts].sort((a, b) => new Date(a.date) - new Date(b.date)).map((a, i) => (
-                        <tr key={a._id || i} style={{ borderBottom: '1px solid #f8fafc' }}>
+                      {[...appointments].sort((a, b) => new Date(b.date) - new Date(a.date)).map((a, i) => (
+                        <tr key={a._id || i} style={{ borderTop: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '11px 8px', fontWeight: 600, color: NAVY, fontFamily: FONT }}>{fmt(a.date)}</td>
                           <td style={{ padding: '11px 8px', color: '#475569', fontFamily: FONT }}>{a.startTime || '—'}</td>
                           <td style={{ padding: '11px 8px', color: '#475569', fontFamily: FONT }}>{a.doctorId?.userId?.fullName || '—'}</td>
-                          <td style={{ padding: '11px 8px' }}>
-                            <span style={{ background: '#dbeafe', color: '#1d4ed8', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, fontFamily: FONT }}>Gözləyir</span>
-                          </td>
+                          <td style={{ padding: '11px 8px' }}><StatusBadge status={a.status} /></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <div style={{ textAlign: 'right', marginTop: 14 }}>
-                    <button onClick={() => navigate('/randevu')} style={{ background: 'none', border: 'none', color: TEAL, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
-                      Hamısına bax →
+                  <div style={{ marginTop: 18, textAlign: 'right' }}>
+                    <button onClick={() => navigate('/randevu')}
+                      style={{ background: TEAL, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, padding: '9px 18px', cursor: 'pointer', fontFamily: FONT }}>
+                      Yeni Randevu Al →
                     </button>
                   </div>
                 </>
@@ -240,12 +264,12 @@ export default function PatientPortal() {
 
             {/* Prescriptions */}
             <Card>
-              <CardTitle>Son Reseptlər</CardTitle>
+              <SectionTitle>Reseptlərim</SectionTitle>
               {prescriptions.length === 0 ? (
-                <Empty icon="💊" text="Resept tapılmadı" />
+                <p style={{ color: '#9ca3af', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>Resept tapılmadı</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {prescriptions.slice(0, 3).map((p, i) => (
+                  {prescriptions.map((p, i) => (
                     <div key={p._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: FONT }}>
@@ -255,7 +279,9 @@ export default function PatientPortal() {
                           {p.medications?.[0]?.dosage || p.dosage || '—'} · {p.doctorId?.userId?.fullName || '—'}
                         </div>
                       </div>
-                      <div style={{ fontSize: 12, color: '#718096', flexShrink: 0, fontFamily: FONT }}>{fmt(p.createdAt || p.prescribedDate)}</div>
+                      <div style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0, marginLeft: 12, fontFamily: FONT }}>
+                        {fmt(p.createdAt || p.prescribedDate)}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -263,27 +289,26 @@ export default function PatientPortal() {
             </Card>
           </div>
 
-          {/* RIGHT */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* ── RIGHT ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             {/* Vitals */}
             <Card>
-              <CardTitle>Son Həyati Göstəricilər</CardTitle>
+              <SectionTitle>Həyati Göstəricilər</SectionTitle>
               {!vitals ? (
-                <Empty icon="🩺" text="Həyati göstərici qeyd edilməyib" />
+                <p style={{ color: '#9ca3af', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>Ölçü qeyd edilməyib</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div>
                   {[
-                    { icon: '❤️', label: 'Qan təzyiqi', value: vitals.bloodPressure ? `${vitals.bloodPressure.systolic}/${vitals.bloodPressure.diastolic} mmHg` : '—' },
-                    { icon: '💓', label: 'Nəbz',         value: vitals.heartRate  ? `${vitals.heartRate} bpm`  : '—' },
+                    { icon: '🫀', label: 'Qan təzyiqi', value: vitals.bloodPressure ? `${vitals.bloodPressure.systolic}/${vitals.bloodPressure.diastolic} mmHg` : '—' },
+                    { icon: '❤️', label: 'Nəbz',         value: vitals.heartRate  ? `${vitals.heartRate} bpm`   : '—' },
                     { icon: '🌡️', label: 'Hərarət',      value: vitals.temperature ? `${vitals.temperature} °C` : '—' },
-                    { icon: '⚖️', label: 'Çəki',          value: vitals.weight     ? `${vitals.weight} kg`    : '—' },
-                    { icon: '📏', label: 'Boy',           value: vitals.height     ? `${vitals.height} cm`    : '—' },
+                    { icon: '⚖️', label: 'Çəki',          value: vitals.weight     ? `${vitals.weight} kg`      : '—' },
+                    { icon: '📏', label: 'Boy',           value: vitals.height     ? `${vitals.height} cm`      : '—' },
                   ].map(row => (
-                    <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid #f1f5f9' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 9, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{row.icon}</div>
-                      <div style={{ flex: 1, fontSize: 13, color: '#475569', fontFamily: FONT }}>{row.label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{row.value}</div>
+                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: 13, color: '#718096', fontFamily: FONT }}>{row.icon} {row.label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: TEAL, fontFamily: FONT }}>{row.value}</span>
                     </div>
                   ))}
                 </div>
@@ -292,17 +317,19 @@ export default function PatientPortal() {
 
             {/* Profile */}
             <Card>
-              <CardTitle>Profil Məlumatları</CardTitle>
+              <SectionTitle>Profil</SectionTitle>
               <div>
                 {[
-                  ['Ad Soyad',    user.fullName || '—'],
-                  ['E-poçt',      user.email || '—'],
-                  ['Qan qrupu',   patient?.bloodGroup || '—'],
+                  ['Ad Soyad',     user.fullName || '—'],
+                  ['E-poçt',       user.email || '—'],
+                  ['Qan qrupu',    patient?.bloodGroup || '—'],
                   ['Doğum tarixi', fmt(patient?.dateOfBirth)],
+                  ['Cins',         patient?.gender ? (patient.gender === 'male' ? 'Kişi' : patient.gender === 'female' ? 'Qadın' : patient.gender) : '—'],
+                  ['Telefon',      patient?.phone || patient?.userId?.phone || '—'],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
                     <span style={{ color: '#718096', fontWeight: 600, fontFamily: FONT }}>{k}</span>
-                    <span style={{ color: NAVY, fontWeight: 700, fontFamily: FONT, maxWidth: '60%', textAlign: 'right', wordBreak: 'break-word' }}>{v}</span>
+                    <span style={{ color: NAVY, fontWeight: 700, fontFamily: FONT, textAlign: 'right', maxWidth: '60%', wordBreak: 'break-word' }}>{v}</span>
                   </div>
                 ))}
               </div>
@@ -311,7 +338,7 @@ export default function PatientPortal() {
         </div>
       </div>
 
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
+      <style>{`@keyframes skelpulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
     </div>
   );
 }

@@ -43,7 +43,7 @@ export const searchPatients = asyncHandler(async (req, res) => {
 
 export const getPatientByUserId = asyncHandler(async (req, res) => {
   const patient = await Patient.findOne({ userId: req.params.userId })
-    .populate('userId', 'fullName email avatar')
+    .populate('userId', 'fullName email avatar phone')
     .lean();
   if (!patient) throw new ApiError(404, 'Pasiyent profili tapılmadı.');
   res.json(new ApiResponse(200, { patient }, 'Uğurla alındı.'));
