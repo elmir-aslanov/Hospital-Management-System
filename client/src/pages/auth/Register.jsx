@@ -211,8 +211,8 @@ export default function Register() {
         </div>
 
         {/* ── RIGHT ── */}
-        <div style={{ background: '#fff', padding: '40px 52px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'auto', height: '100vh', boxSizing: 'border-box' }}>
-          <div style={{ maxWidth: '440px', width: '100%' }}>
+        <div style={{ background: '#fff', padding: '48px 52px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto', height: '100vh', boxSizing: 'border-box' }}>
+          <div style={{ width: '100%', maxWidth: '420px' }}>
 
             <h2 style={{ fontSize: '28px', fontWeight: 800, color: NAVY, margin: '0 0 4px', fontFamily: FONT }}>Hesab Yaradın</h2>
             <p style={{ fontSize: '13px', color: TEAL, fontWeight: 700, margin: '0 0 24px', letterSpacing: '0.3px', fontFamily: FONT }}>Aslan Medical Center</p>
