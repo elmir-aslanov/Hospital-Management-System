@@ -1,9 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
-const NAVY = '#829AA4';
+const BG        = '#515E73';
+const WAVE_COLOR = '#515E73';
 const TEAL = '#00848e';
+const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 
-// ── Social icons ──────────────────────────────────────────────────────────────
+/* ── Social SVG icons ─────────────────────────────────────────────────────── */
 const IgIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -19,20 +22,20 @@ const FbIcon = () => (
 );
 const LiIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/>
-    <rect x="2" y="9" width="4" height="12"/>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/>
     <circle cx="4" cy="4" r="2"/>
   </svg>
 );
 const YtIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.97C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
-    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill={NAVY}/>
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#0d1f3c"/>
   </svg>
 );
 const WaIcon = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.944-1.418A9.959 9.959 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
   </svg>
 );
 
@@ -40,254 +43,152 @@ const SOCIALS = [
   { Icon: IgIcon, label: 'Instagram', href: 'https://instagram.com' },
   { Icon: FbIcon, label: 'Facebook',  href: 'https://facebook.com' },
   { Icon: LiIcon, label: 'LinkedIn',  href: 'https://linkedin.com' },
-  { Icon: YtIcon, label: 'YouTube',   href: 'https://youtube.com' },
+  { Icon: YtIcon, label: 'YouTube',   href: 'https://youtube.com'  },
   { Icon: WaIcon, label: 'WhatsApp',  href: 'https://wa.me/994508363694' },
 ];
 
-const KLINIKA_LINKS = [
-  { label: 'Haqqımızda', to: '/about' },
-  { label: 'Xidmətlər', to: '/services' },
-  { label: 'Həkimlər',  to: '/hekimler' },
-  { label: 'Əlaqə',     to: '/contact' },
-];
-
-const PASIYENT_LINKS = [
-  { label: 'Xidmətlər',  to: '/services' },
-  { label: 'Randevu',    to: '/randevu' },
-  { label: 'Məlumatlar', to: '#' },
-];
-
-const linkStyle = {
-  fontSize: 14,
-  fontWeight: 500,
-  color: 'rgba(255,255,255,0.7)',
-  textDecoration: 'none',
-  lineHeight: 1.7,
-  transition: 'color 0.18s',
-};
-
-function NavLink({ to, label }) {
-  const handleEnter = e => { e.currentTarget.style.color = TEAL; };
-  const handleLeave = e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; };
-
-  if (to === '#') {
-    return (
-      <li>
-        <a href="#" style={linkStyle} onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-          {label}
-        </a>
-      </li>
-    );
-  }
-  return (
-    <li>
-      <Link to={to} style={linkStyle} onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-        {label}
-      </Link>
-    </li>
-  );
-}
-
+/* ── Reusable sub-components ─────────────────────────────────────────────── */
 function ColHead({ children }) {
   return (
-    <h3 style={{
-      fontSize: 11,
-      fontWeight: 700,
-      letterSpacing: '2px',
-      textTransform: 'uppercase',
-      color: 'rgba(255,255,255,0.5)',
-      margin: '0 0 20px',
-    }}>
-      {children}
-    </h3>
+    <>
+      <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: TEAL, fontFamily: FONT }}>
+        {children}
+      </h3>
+      <div style={{ width: 30, height: 2, background: TEAL, margin: '8px 0 18px' }} />
+    </>
   );
 }
 
-export default function Footer() {
+function FooterLink({ to, children }) {
   return (
-    <footer style={{ background: NAVY, margin: 0, padding: 0 }}>
+    <Link
+      to={to}
+      style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, display: 'block', padding: '6px 0', textDecoration: 'none', fontFamily: FONT, transition: 'color 0.18s' }}
+      onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+      onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
+    >
+      {children}
+    </Link>
+  );
+}
 
-      {/* ── Wave: white above curve, navy below ──────────────────────────────── */}
-      <div style={{ background: 'white', lineHeight: 0, display: 'block', overflow: 'hidden' }}>
-        <svg viewBox="0 0 1440 100" xmlns="http://www.w3.org/2000/svg"
-          style={{ display: 'block', width: '100%', height: '100px' }}
-          preserveAspectRatio="none">
-          <path d="M0,40 C240,100 480,0 720,50 C960,100 1200,20 1440,60 L1440,100 L0,100 Z"
-            fill={NAVY} />
-          <path d="M0,60 C300,20 600,80 900,40 C1100,20 1300,70 1440,50 L1440,100 L0,100 Z"
-            fill={NAVY} opacity="0.6" />
+function ContactRow({ icon, text }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13 }}>
+        {icon}
+      </div>
+      <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontFamily: FONT, lineHeight: 1.5 }}>{text}</span>
+    </div>
+  );
+}
+
+function SocialBtn({ Icon, label, href }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+      style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s, color 0.2s, transform 0.2s', flexShrink: 0 }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+    >
+      <Icon />
+    </a>
+  );
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+export default function Footer() {
+  const navigate = useNavigate();
+  const { isMobile } = useBreakpoint();
+
+  return (
+    <footer style={{ background: BG, margin: 0, padding: 0, fontFamily: FONT }}>
+
+      {/* Wave */}
+      <div style={{ background: 'white', lineHeight: 0 }}>
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 120 }}>
+          <path d="M0,40 C180,100 360,0 540,60 C720,120 900,20 1080,70 C1260,115 1380,45 1440,60 L1440,120 L0,120 Z" fill={WAVE_COLOR} opacity="0.3"/>
+          <path d="M0,60 C200,20 400,100 600,55 C800,10 1000,85 1200,50 C1340,25 1410,65 1440,55 L1440,120 L0,120 Z" fill={WAVE_COLOR} opacity="0.6"/>
+          <path d="M0,80 C240,40 480,110 720,65 C960,20 1200,90 1440,70 L1440,120 L0,120 Z" fill={WAVE_COLOR}/>
         </svg>
       </div>
 
-      {/* ── Content ──────────────────────────────────────────────────────────── */}
-      <div style={{ background: NAVY, maxWidth: 1200, margin: '0 auto', padding: '60px 40px 0' }}>
-
-        {/* ── 4-column grid ────────────────────────────────────────────────── */}
+      {/* Main grid */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '32px 20px 0' : '60px 40px 0' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '48px',
-          alignItems: 'start',
+          gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 1.6fr',
+          gap: isMobile ? 32 : 48,
         }}>
 
-          {/* Column 1 — Brand */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <Link to="/" style={{ alignSelf: 'flex-start' }}>
-              <img
-                src="/logo.png"
-                alt="Aslan Medical Center"
-                style={{ height: 96, width: 'auto', objectFit: 'contain', filter: 'none', background: 'transparent', padding: 0, border: 'none', borderRadius: 0 }}
-                onError={e => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling.style.display = 'flex';
-                }}
-              />
-              <div style={{ display: 'none', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 8, background: TEAL,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 18, fontWeight: 900,
-                }}>+</div>
-                <span style={{ color: '#fff', fontSize: 16, fontWeight: 700 }}>Aslan Medical</span>
-              </div>
-            </Link>
-
-            <p style={{ fontSize: 13, fontStyle: 'italic', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, margin: 0 }}>
+          {/* Col 1 — Brand */}
+          <div>
+            <img src="/logo.png" alt="Aslan Medical" style={{ height: 56, display: 'block' }} onError={e => e.currentTarget.style.display = 'none'} />
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', marginTop: 16, marginBottom: 0, lineHeight: 1.7, fontFamily: FONT }}>
               Sağlamlığınız üçün etibarlı tərəfdaş
             </p>
-
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
-              BAKI · 24/7
-            </p>
           </div>
 
-          {/* Column 2 — Klinika */}
+          {/* Col 2 — Klinika */}
           <div>
             <ColHead>KLİNİKA</ColHead>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {KLINIKA_LINKS.map(l => <NavLink key={l.label} {...l} />)}
-            </ul>
+            <FooterLink to="/about">Haqqımızda</FooterLink>
+            <FooterLink to="/services">Xidmətlər</FooterLink>
+            <FooterLink to="/hekimler">Həkimlər</FooterLink>
+            <FooterLink to="/contact">Əlaqə</FooterLink>
           </div>
 
-          {/* Column 3 — Pasiyent */}
+          {/* Col 3 — Pasiyent */}
           <div>
             <ColHead>PASİYENT</ColHead>
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {PASIYENT_LINKS.map(l => <NavLink key={l.label} {...l} />)}
-            </ul>
+            <FooterLink to="/services">Xidmətlər</FooterLink>
+            <FooterLink to="/randevu">Randevu</FooterLink>
+            <FooterLink to="/about">Məlumatlar</FooterLink>
           </div>
 
-          {/* Column 4 — Contact */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Col 4 — Əlaqə */}
+          <div>
             <ColHead>ƏLAQƏ</ColHead>
 
-            <a href="tel:+994508363694" style={{
-              fontSize: 28, fontWeight: 700, color: '#fff',
-              textDecoration: 'none', lineHeight: 1.2, transition: 'color 0.18s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.color = TEAL; }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#fff'; }}
-            >
+            <a href="tel:+994508363694" style={{ color: '#fff', fontSize: 26, fontWeight: 800, display: 'block', marginBottom: 16, textDecoration: 'none', fontFamily: FONT }}>
               +994 50 836 36 94
             </a>
 
-            <a href="mailto:info@aslanmedical.az" style={{
-              fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)',
-              textDecoration: 'none', transition: 'color 0.18s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.color = TEAL; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
+            <ContactRow icon="✉" text="info@aslanmedical.az" />
+            <ContactRow icon="📍" text="Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı" />
+            <ContactRow icon="🕐" text="Hər gün: 24/7" />
+
+            <button
+              onClick={() => navigate('/randevu')}
+              style={{ marginTop: 20, border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: 8, padding: '10px 20px', color: '#fff', background: 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'background 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              info@aslanmedical.az
-            </a>
+              Randevu Al →
+            </button>
 
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.5 }}>
-              Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı
-            </p>
-
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-              Hər gün: 24/7
-            </p>
-
-            <div style={{ marginTop: 4 }}>
-              <Link to="/randevu" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)',
-                padding: '10px 20px', fontSize: 14, fontWeight: 500,
-                color: 'rgba(255,255,255,0.85)', textDecoration: 'none',
-                transition: 'border-color 0.18s, color 0.18s, background 0.18s',
-              }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = TEAL;
-                  e.currentTarget.style.color = TEAL;
-                  e.currentTarget.style.background = 'rgba(0,132,142,0.1)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.85)';
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                Randevu Al
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </Link>
-            </div>
-
-            {/* Social icons */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, paddingTop: 8 }}>
-              {SOCIALS.map(({ Icon, label, href }) => (
-                <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                  aria-label={label}
-                  style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', transition: 'color 0.18s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
-                >
-                  <Icon />
-                </a>
-              ))}
+            <div style={{ marginTop: 24, display: 'flex', gap: 10 }}>
+              {SOCIALS.map(s => <SocialBtn key={s.label} {...s} />)}
             </div>
           </div>
-
         </div>
 
-        {/* ── Bottom row ───────────────────────────────────────────────────────── */}
-        <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          marginTop: 48,
-          padding: '20px 0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 12,
-        }}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+        {/* Bottom bar */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 48, padding: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: FONT }}>
             © 2026 Aslan Medical Center
           </span>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            {[
-              { label: 'Məxfilik', to: '/about' },
-              { label: 'Şərtlər',  to: '/about' },
-              { label: 'Əlaqə',    to: '/contact' },
-            ].map(({ label, to }) => (
-              <Link key={label} to={to} style={{
-                fontSize: 12, color: 'rgba(255,255,255,0.4)',
-                textDecoration: 'none', transition: 'color 0.18s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.color = TEAL; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
-              >
-                {label}
-              </Link>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {['Məxfilik', 'Şərtlər', 'Əlaqə'].map((label, i) => (
+              <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>|</span>}
+                <a href="#" style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontFamily: FONT, transition: 'color 0.18s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                >{label}</a>
+              </span>
             ))}
           </div>
         </div>
-
       </div>
     </footer>
   );

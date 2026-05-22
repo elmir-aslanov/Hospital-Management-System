@@ -386,18 +386,6 @@ export default function Login() {
               </>
             )}
 
-            {/* Staff login */}
-            <p style={{
-              textAlign: 'center', marginTop: '24px',
-              fontSize: '12px', color: '#cbd5e0', fontFamily: FONT,
-            }}>
-              <span
-                onClick={() => navigate('/staff-login')}
-                style={{ cursor: 'pointer', color: '#a0aec0' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#718096'}
-                onMouseLeave={e => e.currentTarget.style.color = '#a0aec0'}
-              >{t('login.staffLogin')}</span>
-            </p>
           </div>
         </div>
       </div>

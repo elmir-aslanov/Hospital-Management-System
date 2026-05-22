@@ -9,10 +9,23 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Aborted / canceled requests — never show a toast
+    if (
+      error.name === 'CanceledError'  ||
+      error.code === 'ERR_CANCELED'   ||
+      axios.isCancel(error)
+    ) {
+      return Promise.reject(error);
+    }
+
     if (!error.response) {
       // Network error — only show toast if it's not a background/silent request
       const url = error.config?.url || '';
-      const silentRoutes = ['/notifications', '/dashboard/stats', '/analytics', '/doctors', '/departments', '/services', '/blog'];
+      const silentRoutes = [
+        '/notifications', '/dashboard/stats', '/analytics',
+        '/doctors', '/site-doctors', '/departments', '/services',
+        '/blog', '/appointments', '/ehr/patient-results',
+      ];
       const isSilent = silentRoutes.some(r => url.includes(r));
       if (!isSilent) {
         toast.error('Server ilə əlaqə qurulmadı. Backend işləyirmi?');
