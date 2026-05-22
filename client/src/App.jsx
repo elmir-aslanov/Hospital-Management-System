@@ -19,6 +19,7 @@ import DepartmentsPage       from './pages/public/DepartmentsPage';
 import ServicesPage          from './pages/public/ServicesPage';
 import BlogPage              from './pages/public/BlogPage';
 import ContactPage           from './pages/public/ContactPage';
+import ENeticePage           from './pages/public/ENeticePage';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -54,7 +55,7 @@ function RouteLoader() {
 }
 
 /* Pages that hide the public navbar/footer */
-const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu']);
+const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu', '/e-netice']);
 const HIDE_CHROME_PREFIX = ['/dashboard', '/patient'];
 
 function Layout() {
@@ -78,6 +79,7 @@ function Layout() {
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
         <Route path="/hekimler"            element={<HekimlerPage />} />
         <Route path="/randevu"             element={<RandevuPage />} />
+        <Route path="/e-netice"            element={<ENeticePage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />

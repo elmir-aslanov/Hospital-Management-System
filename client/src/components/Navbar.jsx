@@ -328,11 +328,12 @@ export default function Navbar() {
 
           {/* E-Nəticə — center */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <a href="#" style={{
+            <button onClick={() => navigate('/e-netice')} style={{
               fontSize: '13px', fontWeight: 700,
               fontFamily: FONT,
               color: '#ffffff',
-              textDecoration: 'none',
+              border: 'none',
+              cursor: 'pointer',
               background: 'linear-gradient(135deg, #e8622a 0%, #d44e1a 100%)',
               padding: '10px 28px',
               borderRadius: '28px',
@@ -342,7 +343,7 @@ export default function Navbar() {
             }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(232,98,42,0.45)'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(232,98,42,0.35)'; }}
-            >E-Nəticə</a>
+            >E-Nəticə</button>
           </div>
 
           {/* Action pill — right-aligned */}

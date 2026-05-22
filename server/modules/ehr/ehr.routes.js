@@ -7,6 +7,9 @@ import authorize from '../../middleware/rbac.middleware.js';
 
 const router = Router();
 
+// Public — no auth required
+router.get('/patient-results', ehrController.getPatientResults);
+
 router.use(authenticate);
 
 // Create a medical record (append-only — no DELETE route)
