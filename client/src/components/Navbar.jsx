@@ -296,7 +296,7 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <div className="mid-login" onClick={() => navigate('/login')}
+              <div className="mid-login" onClick={() => navigate('/register')}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   background: 'linear-gradient(135deg, #00848e, #006b74)',

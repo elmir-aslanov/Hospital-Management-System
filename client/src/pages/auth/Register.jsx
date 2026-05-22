@@ -161,39 +161,52 @@ export default function Register() {
       <div style={{ height: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden', fontFamily: FONT }}>
 
         {/* ── LEFT ── */}
-        <div style={{ background: 'linear-gradient(145deg, #0a1628 0%, #00848e 100%)', padding: '48px 52px', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', overflow: 'hidden', height: '100vh', boxSizing: 'border-box' }}>
-          <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '320px', height: '320px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+        <div style={{ background: 'linear-gradient(145deg, #0a1628 0%, #00848e 100%)', padding: '48px 44px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100vh', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
 
-          <div onClick={() => navigate('/')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', marginBottom: '24px' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.95)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Ana səhifəyə qayıt
+          {/* Decorative circles */}
+          <div style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -60, left: -60, width: 220, height: 220, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
+
+          {/* TOP */}
+          <div>
+            {/* Back button */}
+            <div onClick={() => navigate('/')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.65)', fontSize: '13px', cursor: 'pointer', fontFamily: FONT }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.65)'}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Ana səhifəyə qayıt
+            </div>
+
+            {/* Image card */}
+            <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', position: 'relative', marginTop: 24 }}>
+              <img
+                src="/emeliyyat_sekli.png"
+                alt=""
+                style={{ width: '100%', height: 'calc(100vh - 200px)', objectFit: 'cover', objectPosition: 'center center', display: 'block' }}
+                onError={e => e.currentTarget.style.display = 'none'}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)' }} />
+              <div style={{ position: 'absolute', bottom: 14, left: 16 }}>
+                <div style={{ color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: FONT }}>Peşəkar Tibbi Komanda</div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 2, fontFamily: FONT }}>Aslan Medical Center</div>
+              </div>
+            </div>
           </div>
 
-          <img src="/logo.png" alt="Aslan Medical" style={{ height: '56px', width: 'auto', filter: 'brightness(10)', marginBottom: '36px', alignSelf: 'flex-start' }} onError={e => e.currentTarget.style.display = 'none'} />
+          {/* BOTTOM */}
+          <div>
+            {/* Feature pills */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+              {['✓ Onlayn Randevu', '✓ Tibbi Qeydlər', '✓ 24/7 Dəstək'].map(p => (
+                <span key={p} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 14px', color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 600, fontFamily: FONT }}>{p}</span>
+              ))}
+            </div>
 
-          <h1 style={{ fontSize: '38px', fontWeight: 800, lineHeight: 1.2, margin: '0 0 16px', fontFamily: FONT }}>
-            <span style={{ color: '#fff', display: 'block' }}>Bizimlə</span>
-            <span style={{ color: '#4DD0E1', display: 'block' }}>Qoşulun.</span>
-          </h1>
-
-          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, maxWidth: '340px', fontFamily: FONT, margin: 0 }}>
-            Pasiyent portalına qeydiyyatdan keçərək randevu alın, tibbi qeydlərinizi izləyin.
-          </p>
-
-          <img
-            src="/emeliyyat_sekli.png"
-            alt=""
-            style={{ width: '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 16, marginTop: 24, opacity: 0.85 }}
-            onError={e => e.currentTarget.style.display = 'none'}
-          />
-
-          <div style={{ marginTop: 'auto', paddingTop: '28px' }}>
-            <a href="tel:+994508363694" style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', textDecoration: 'none', fontFamily: FONT, marginBottom: '6px' }}>📞 +994 50 836 36 94</a>
-            <a href="mailto:info@aslanmedical.az" style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', textDecoration: 'none', fontFamily: FONT }}>✉ info@aslanmedical.az</a>
+            {/* Contact */}
+            <a href="tel:+994508363694" style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', fontFamily: FONT, marginBottom: 6 }}>📞 +994 50 836 36 94</a>
+            <a href="mailto:info@aslanmedical.az" style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'rgba(255,255,255,0.5)', fontSize: 13, textDecoration: 'none', fontFamily: FONT }}>✉ info@aslanmedical.az</a>
           </div>
         </div>
 
