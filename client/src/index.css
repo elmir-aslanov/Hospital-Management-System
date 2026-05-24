@@ -76,3 +76,16 @@ img { max-width: 100%; }
   .wave-divider svg { height: 40px !important; }
   .wave-divider { height: 40px !important; }
 }
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 20px;
+  }
+}

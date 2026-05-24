@@ -7,12 +7,6 @@ const NAVY = '#0a1628';
 const TEAL = '#00848e';
 const GOLD = '#c9a84c';
 
-// max-w-7xl  = 1280px
-// px-4       = 16px   (mobile)
-// sm:px-6    = 24px   (tablet)
-// lg:px-8    = 32px   (desktop)
-const CONTAINER = { maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto' };
-
 const SMALL = [
   { src: '/client2.jpeg', alt: 'Klinik 1', bg: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', nav: false },
   { src: '/client3.jpeg', alt: 'Klinik 2', bg: 'linear-gradient(135deg,#00848e 0%,#0a1628 100%)', nav: false },
@@ -25,7 +19,6 @@ export default function ClinicalPrograms() {
   const { isMobile, isTablet } = useBreakpoint();
   const isNarrow    = isMobile || isTablet;
 
-  const px          = isMobile ? 16 : isTablet ? 24 : 32;
   const py          = isMobile ? 64 : 80;
   const ringSize    = isMobile ? 300 : isTablet ? 370 : 460;
   const imgInset    = isMobile ? 15  : isTablet ? 15  : 20;
@@ -33,7 +26,7 @@ export default function ClinicalPrograms() {
 
   return (
     <section style={{ background: '#ffffff', paddingTop: py, paddingBottom: py, fontFamily: FONT }}>
-      <div style={{ ...CONTAINER, paddingLeft: px, paddingRight: px, boxSizing: 'border-box' }}>
+      <div className="container">
         <div style={{
           display: 'grid',
           gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr',
