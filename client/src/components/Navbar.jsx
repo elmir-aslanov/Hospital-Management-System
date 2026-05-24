@@ -173,11 +173,11 @@ export default function Navbar() {
           height: '88px',
           background: '#ffffff',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          padding: '0 48px',
+          padding: '0 32px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '24px',
+          gap: '16px',
         }}>
 
           {/* Logo */}
@@ -212,8 +212,8 @@ export default function Navbar() {
 
           {/* Center — single row: phone | divider | email | divider | socials */}
           <div className="mid-social" style={{
-            flex: 1, display: 'flex', alignItems: 'center',
-            gap: '20px', flexWrap: 'nowrap',
+            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center',
+            gap: '12px', flexWrap: 'nowrap',
           }}>
             <a href="tel:+994508363694" style={{
               display: 'flex', alignItems: 'center', gap: '6px',
@@ -572,8 +572,8 @@ export default function Navbar() {
           >
             {NAV_LINKS.map((link, i) => (
               <motion.div key={link.label}
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.045 }}
               >
                 <Link to={link.href} style={{
