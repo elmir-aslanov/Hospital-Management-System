@@ -42,29 +42,24 @@ export default function AboutDirector() {
         }}>
 
           {/* Section title */}
-          <motion.div
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            style={{ marginBottom: '48px' }}
+            style={{
+              fontSize: isMobile ? '22px' : '28px',
+              fontWeight: 800,
+              color: '#0a1628',
+              marginBottom: '48px',
+              lineHeight: 1.3,
+              borderBottom: `3px solid ${TEAL}`,
+              paddingBottom: '20px',
+              fontFamily: FONT,
+            }}
           >
-            <span style={{
-              display: 'inline-block', fontSize: '11px', fontWeight: 700,
-              color: '#00848e', letterSpacing: '2.5px', textTransform: 'uppercase',
-              fontFamily: FONT, marginBottom: '16px',
-            }}>
-              Haqqımızda
-            </span>
-            <h2 style={{
-              fontSize: isMobile ? '32px' : 'clamp(36px, 4vw, 54px)',
-              fontWeight: 800, color: '#0a1628', margin: 0,
-              lineHeight: 1.2, fontFamily: FONT, letterSpacing: '-0.3px',
-            }}>
-              Sağlamlığınız —{' '}
-              <span style={{ color: '#00848e' }}>Bizim Prioritetimiz.</span>
-            </h2>
-          </motion.div>
+            Müasir Tibbi Xidmət, Peşəkar Komanda və Güvənli Müalicə
+          </motion.h2>
 
           {/* Two column layout */}
           <div style={{
