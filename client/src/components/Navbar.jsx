@@ -299,18 +299,18 @@ export default function Navbar() {
               <div className="mid-login"
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
-                  border: '1.5px solid #ccc', borderRadius: '50px',
-                  background: 'white', padding: '6px 16px 6px 10px',
+                  border: 'none', borderRadius: '20px',
+                  background: '#00848e', padding: '6px 16px 6px 10px',
                   cursor: 'pointer', flexShrink: 0,
                 }}
                 onClick={() => navigate('/login')}
               >
                 <div>
-                  <div style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: 500, fontFamily: FONT, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Daxil olun və ya</div>
-                  <div style={{ fontSize: '11px', color: '#555', fontFamily: FONT, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Qeydiyyatdan Keçin</div>
+                  <div style={{ fontSize: '13px', color: 'white', fontWeight: 500, fontFamily: FONT, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Daxil olun və ya</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontFamily: FONT, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Qeydiyyatdan Keçin</div>
                 </div>
                 <div style={{
-                  background: '#00848e', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)', borderRadius: '50%',
                   width: '32px', height: '32px', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
