@@ -328,6 +328,7 @@ export default function Navbar() {
               color: '#ffffff', border: 'none', cursor: 'pointer',
               background: '#e8500a', padding: '8px 20px',
               borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0,
+              marginLeft: '12px',
             }}>E-Nəticə</button>
 
           </div>
