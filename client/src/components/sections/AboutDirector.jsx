@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
@@ -18,13 +19,7 @@ export default function AboutDirector() {
   const { t } = useTranslation()
   const { isMobile } = useBreakpoint()
   const [modalOpen, setModalOpen] = useState(false)
-
-  const titles = [
-    'Təsisçi və Direktor, Aslan Medical Clinic',
-    'Səhiyyə idarəçiliyi və pasiyent yönümlü xidmət',
-    'Müasir tibbi xidmətlərin inkişafı',
-    'Keyfiyyətli və etibarlı müalicə yanaşması',
-  ]
+  const navigate = useNavigate()
 
 
   return (
@@ -59,82 +54,107 @@ export default function AboutDirector() {
               fontFamily: FONT,
             }}
           >
-            Müasir Tibbi Xidmət, Peşəkar Komanda və Güvənli Müalicə
+            <span style={{ display: 'block' }}>Sağlamlığınız —</span>
+            <span style={{ display: 'block', color: TEAL }}>Bizim Prioritetimiz.</span>
           </motion.h2>
 
           {/* Two column layout */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '320px 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr',
             gap: isMobile ? '32px' : '64px',
             alignItems: 'flex-start',
           }}>
 
-            {/* LEFT — Photo + Name + Titles */}
+            {/* LEFT — Circular image grid */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
+              style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '24px', flexDirection: isMobile ? 'column' : 'row', flexShrink: 0 }}
             >
-              {/* Photo — UCSF style */}
+              {/* Large center circle */}
               <div style={{
+                width: isMobile ? '220px' : '320px',
+                height: isMobile ? '220px' : '320px',
+                borderRadius: '50%',
+                border: '2.5px solid #c9a84c',
                 position: 'relative',
-                display: 'inline-block',
-                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}>
-                {/* Teal corner bracket — top left */}
-                <div style={{
-                  position: 'absolute',
-                  top: -10, left: -10,
-                  width: '44px', height: '44px',
-                  borderTop: `4px solid ${TEAL}`,
-                  borderLeft: `4px solid ${TEAL}`,
-                  zIndex: 2,
-                  borderRadius: '2px 0 0 0',
-                }} />
-
                 <img
-                  src="/mainphoto.png"
-                  alt="Elmir Aslan — Aslan Medical Clinic"
+                  src="/client1.jpeg"
+                  alt="Aslan Medical"
                   style={{
-                    width: isMobile ? '100%' : '300px',
-                    height: isMobile ? '260px' : '360px',
+                    width: '92%', height: '92%',
+                    borderRadius: '50%',
                     objectFit: 'cover',
-                    objectPosition: 'center top',
                     display: 'block',
-                    borderRadius: '0 0 80px 0',
-                    filter: 'contrast(1.02) brightness(1.01)',
                   }}
-                  onError={e => {
-                    e.target.src = 'https://placehold.co/300x360/e8f0f4/0a1628?text=Elmir+Aslan'
-                  }}
+                  onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
                 />
+                {/* ... badge */}
+                <div style={{
+                  position: 'absolute', top: '-8px', right: '20px',
+                  background: TEAL, borderRadius: '20px', padding: '5px 12px',
+                  color: 'white', fontSize: '18px', fontWeight: 700, letterSpacing: '3px',
+                }}>···</div>
               </div>
 
-              {/* Name */}
-              <h3 style={{
-                fontSize: '20px', fontWeight: 800,
-                color: TEAL, marginBottom: '8px',
-                lineHeight: 1.3, fontFamily: FONT,
+              {/* 2x2 mini circles */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: isMobile ? '10px' : '14px',
+                flexShrink: 0,
               }}>
-                Elmir Aslan
-              </h3>
-
-              <div style={{ width: '40px', height: '2px', background: TEAL, marginBottom: '12px' }} />
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {titles.map((title, i) => (
-                  <p key={i} style={{
-                    fontSize: '13px', color: '#4a5568',
-                    lineHeight: 1.5, margin: 0,
-                    paddingLeft: '10px',
-                    borderLeft: '2px solid rgba(0,132,142,0.25)',
-                    fontFamily: FONT,
-                  }}>
-                    {title}
-                  </p>
+                {['/client2.jpeg', '/client3.jpeg', '/client4.jpeg'].map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    style={{
+                      width: isMobile ? '100px' : '140px',
+                      height: isMobile ? '100px' : '140px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                    onError={e => { e.currentTarget.style.background = '#e8f4f8'; e.currentTarget.style.display = 'block'; }}
+                  />
                 ))}
+                {/* "Həkimlərə bax" outline circle */}
+                <div
+                  onClick={() => navigate('/hekimler')}
+                  style={{
+                    width: isMobile ? '100px' : '140px',
+                    height: isMobile ? '100px' : '140px',
+                    borderRadius: '50%',
+                    border: '2px solid #00848e',
+                    background: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#00848e'; e.currentTarget.querySelector('span').style.color = 'white'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.querySelector('span').style.color = '#00848e'; }}
+                >
+                  <span style={{
+                    fontSize: '13px', fontWeight: 700,
+                    color: '#00848e', textAlign: 'center',
+                    padding: '8px', fontFamily: FONT,
+                    lineHeight: 1.3,
+                    transition: 'color 0.2s',
+                  }}>
+                    Həkimlərə<br/>bax
+                  </span>
+                </div>
               </div>
             </motion.div>
 
