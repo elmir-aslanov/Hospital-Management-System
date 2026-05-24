@@ -1,9 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 
-const BG        = '#515E73';
-const WAVE_COLOR = '#515E73';
-const TEAL = '#00848e';
+const MAIN_NAVY = '#061F33';
+const DARK_NAVY = '#031827';
+const ACCENT_TEAL = '#18C4CF';
+const HEADING_TEAL = '#20C7D2';
+const TEXT_MAIN = '#F4FAFC';
+const TEXT_MUTED = '#C9D6DE';
+const BORDER_COLOR = 'rgba(255, 255, 255, 0.18)';
+const ICON_BG = 'rgba(32, 199, 210, 0.12)';
+const BUTTON_BORDER = '#1BC7D2';
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 
 /* ── Social SVG icons ─────────────────────────────────────────────────────── */
@@ -51,10 +57,10 @@ const SOCIALS = [
 function ColHead({ children }) {
   return (
     <>
-      <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: TEAL, fontFamily: FONT }}>
+      <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: HEADING_TEAL, fontFamily: FONT }}>
         {children}
       </h3>
-      <div style={{ width: 30, height: 2, background: TEAL, margin: '8px 0 18px' }} />
+      <div style={{ width: 36, height: 2, background: ACCENT_TEAL, margin: '10px 0 20px', borderRadius: 999 }} />
     </>
   );
 }
@@ -63,9 +69,9 @@ function FooterLink({ to, children }) {
   return (
     <Link
       to={to}
-      style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, display: 'block', padding: '6px 0', textDecoration: 'none', fontFamily: FONT, transition: 'color 0.18s' }}
-      onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-      onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
+      style={{ color: TEXT_MUTED, fontSize: 14, display: 'block', padding: '7px 0', textDecoration: 'none', fontFamily: FONT, transition: 'color 0.18s, transform 0.18s' }}
+      onMouseEnter={e => { e.currentTarget.style.color = HEADING_TEAL; e.currentTarget.style.transform = 'translateX(3px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.color = TEXT_MUTED; e.currentTarget.style.transform = 'translateX(0)'; }}
     >
       {children}
     </Link>
@@ -74,11 +80,11 @@ function FooterLink({ to, children }) {
 
 function ContactRow({ icon, text }) {
   return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13 }}>
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ width: 34, height: 34, borderRadius: '50%', background: ICON_BG, color: HEADING_TEAL, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>
         {icon}
       </div>
-      <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontFamily: FONT, lineHeight: 1.5 }}>{text}</span>
+      <span style={{ color: TEXT_MUTED, fontSize: 14, fontFamily: FONT, lineHeight: 1.55 }}>{text}</span>
     </div>
   );
 }
@@ -86,9 +92,9 @@ function ContactRow({ icon, text }) {
 function SocialBtn({ Icon, label, href }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-      style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s, color 0.2s, transform 0.2s', flexShrink: 0 }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+      style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: TEXT_MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s, color 0.2s, transform 0.2s, border-color 0.2s', flexShrink: 0 }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(32,199,210,0.16)'; e.currentTarget.style.color = HEADING_TEAL; e.currentTarget.style.borderColor = 'rgba(32,199,210,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = TEXT_MUTED; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.transform = 'translateY(0)'; }}
     >
       <Icon />
     </a>
@@ -101,19 +107,19 @@ export default function Footer() {
   const { isMobile } = useBreakpoint();
 
   return (
-    <footer style={{ background: BG, margin: 0, padding: 0, fontFamily: FONT }}>
+    <footer style={{ background: `linear-gradient(180deg, ${MAIN_NAVY} 0%, ${DARK_NAVY} 100%)`, margin: 0, padding: 0, fontFamily: FONT, color: TEXT_MAIN, overflow: 'hidden' }}>
 
       {/* Wave */}
       <div style={{ background: 'white', lineHeight: 0 }}>
         <svg viewBox="0 0 1440 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 120 }}>
-          <path d="M0,40 C180,100 360,0 540,60 C720,120 900,20 1080,70 C1260,115 1380,45 1440,60 L1440,120 L0,120 Z" fill={WAVE_COLOR} opacity="0.3"/>
-          <path d="M0,60 C200,20 400,100 600,55 C800,10 1000,85 1200,50 C1340,25 1410,65 1440,55 L1440,120 L0,120 Z" fill={WAVE_COLOR} opacity="0.6"/>
-          <path d="M0,80 C240,40 480,110 720,65 C960,20 1200,90 1440,70 L1440,120 L0,120 Z" fill={WAVE_COLOR}/>
+          <path d="M0,40 C180,100 360,0 540,60 C720,120 900,20 1080,70 C1260,115 1380,45 1440,60 L1440,120 L0,120 Z" fill={ACCENT_TEAL} opacity="0.12"/>
+          <path d="M0,60 C200,20 400,100 600,55 C800,10 1000,85 1200,50 C1340,25 1410,65 1440,55 L1440,120 L0,120 Z" fill={MAIN_NAVY} opacity="0.82"/>
+          <path d="M0,80 C240,40 480,110 720,65 C960,20 1200,90 1440,70 L1440,120 L0,120 Z" fill={MAIN_NAVY}/>
         </svg>
       </div>
 
       {/* Main grid */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '32px 20px 0' : '60px 40px 0' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '34px 20px 0' : '64px 40px 0' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 1.6fr',
@@ -122,8 +128,10 @@ export default function Footer() {
 
           {/* Col 1 — Brand */}
           <div>
-            <img src="/logo.png" alt="Aslan Medical" style={{ height: 56, display: 'block' }} onError={e => e.currentTarget.style.display = 'none'} />
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', marginTop: 16, marginBottom: 0, lineHeight: 1.7, fontFamily: FONT }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.96)', borderRadius: 16, padding: '12px 16px', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.14)' }}>
+              <img src="/logo.png" alt="Aslan Medical" style={{ height: 56, display: 'block' }} onError={e => e.currentTarget.style.display = 'none'} />
+            </div>
+            <p style={{ fontSize: 15, color: TEXT_MUTED, fontStyle: 'italic', marginTop: 18, marginBottom: 0, lineHeight: 1.7, fontFamily: FONT, maxWidth: 260 }}>
               Sağlamlığınız üçün etibarlı tərəfdaş
             </p>
           </div>
@@ -149,7 +157,7 @@ export default function Footer() {
           <div>
             <ColHead>ƏLAQƏ</ColHead>
 
-            <a href="tel:+994508363694" style={{ color: '#fff', fontSize: 26, fontWeight: 800, display: 'block', marginBottom: 16, textDecoration: 'none', fontFamily: FONT }}>
+            <a href="tel:+994508363694" style={{ color: TEXT_MAIN, fontSize: 28, fontWeight: 800, display: 'block', marginBottom: 18, textDecoration: 'none', fontFamily: FONT }}>
               +994 50 836 36 94
             </a>
 
@@ -159,31 +167,31 @@ export default function Footer() {
 
             <button
               onClick={() => navigate('/randevu')}
-              style={{ marginTop: 20, border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: 8, padding: '10px 20px', color: '#fff', background: 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'background 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              style={{ marginTop: 20, border: `1px solid ${BUTTON_BORDER}`, borderRadius: 12, padding: '13px 24px', color: TEXT_MAIN, background: 'transparent', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = ACCENT_TEAL; e.currentTarget.style.color = DARK_NAVY; e.currentTarget.style.borderColor = ACCENT_TEAL; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEXT_MAIN; e.currentTarget.style.borderColor = BUTTON_BORDER; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               Randevu Al →
             </button>
 
-            <div style={{ marginTop: 24, display: 'flex', gap: 10 }}>
+            <div style={{ marginTop: 26, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {SOCIALS.map(s => <SocialBtn key={s.label} {...s} />)}
             </div>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 48, padding: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontFamily: FONT }}>
+        <div style={{ borderTop: `1px solid ${BORDER_COLOR}`, marginTop: 52, padding: '22px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <span style={{ fontSize: 13, color: TEXT_MUTED, fontFamily: FONT }}>
             © 2026 Aslan Medical Center
           </span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {['Məxfilik', 'Şərtlər', 'Əlaqə'].map((label, i) => (
               <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>|</span>}
-                <a href="#" style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontFamily: FONT, transition: 'color 0.18s' }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                {i > 0 && <span style={{ color: BORDER_COLOR, fontSize: 12 }}>|</span>}
+                <a href="#" style={{ fontSize: 13, color: TEXT_MUTED, textDecoration: 'none', fontFamily: FONT, transition: 'color 0.18s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = HEADING_TEAL}
+                  onMouseLeave={e => e.currentTarget.style.color = TEXT_MUTED}
                 >{label}</a>
               </span>
             ))}
