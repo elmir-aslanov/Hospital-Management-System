@@ -170,97 +170,99 @@ export default function Navbar() {
 
         {/* ══ LAYER 2 — Middle Bar ═══════════════════════ */}
         <div className="mid-bar" style={{
-          height: '88px',
           background: '#ffffff',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          padding: '0 32px',
+          padding: '10px 24px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           gap: '16px',
         }}>
 
-          {/* Logo */}
-          <div style={{
-            display: 'flex', alignItems: 'center', flexShrink: 0,
-            marginRight: '24px', paddingRight: '24px',
-            borderRight: '1.5px solid rgba(0,132,142,0.12)',
-          }}>
-            <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
-              <img src="/logo.png" alt="Aslan Medical"
-                style={{ height: '48px', width: 'auto', objectFit: 'contain' }}
-                className="navbar-logo"
-                onError={e => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextSibling.style.display = 'flex';
-                }}
-              />
+          {/* 1. Logo */}
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+            <img src="/logo.png" alt="Aslan Medical"
+              style={{ height: '44px', width: 'auto', objectFit: 'contain' }}
+              className="navbar-logo"
+              onError={e => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextSibling.style.display = 'flex';
+              }}
+            />
+            <span style={{
+              display: 'none', alignItems: 'center', gap: '8px',
+              fontSize: '20px', fontWeight: 800, color: '#1a2b4a', fontFamily: FONT,
+            }}>
               <span style={{
-                display: 'none', alignItems: 'center', gap: '8px',
-                fontSize: '20px', fontWeight: 800, color: '#1a2b4a', fontFamily: FONT,
-              }}>
-                <span style={{
-                  width: '34px', height: '34px', background: TEAL,
-                  borderRadius: '8px', display: 'inline-flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '18px', fontWeight: 900,
-                }}>+</span>
-                ElmirMed
-              </span>
-            </Link>
-          </div>
+                width: '34px', height: '34px', background: TEAL,
+                borderRadius: '8px', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: '18px', fontWeight: 900,
+              }}>+</span>
+              ElmirMed
+            </span>
+          </Link>
 
-          {/* Center — single row: phone | divider | email | divider | socials */}
-          <div className="mid-social" style={{
-            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center',
-            gap: '8px', flexWrap: 'nowrap',
-          }}>
+          {/* 2. Contact: phone + email */}
+          <div className="mid-social" style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
             <a href="tel:+994508363694" style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              color: '#1a2b4a', fontWeight: 600, fontSize: '14px',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              color: '#1a2b4a', fontWeight: 600, fontSize: '13px',
               fontFamily: FONT, textDecoration: 'none',
               transition: 'color 0.2s', whiteSpace: 'nowrap',
             }}
               onMouseEnter={e => e.currentTarget.style.color = TEAL}
               onMouseLeave={e => e.currentTarget.style.color = '#1a2b4a'}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16.92z"/>
               </svg>
               +994 50 836 36 94
             </a>
 
-            <span style={{ width: '1px', height: '18px', background: 'rgba(0,0,0,0.12)', flexShrink: 0 }} />
-
             <a href="mailto:info@aslanmedical.az" style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              color: '#1a2b4a', fontWeight: 500, fontSize: '14px',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              color: '#1a2b4a', fontWeight: 500, fontSize: '13px',
               fontFamily: FONT, textDecoration: 'none',
               transition: 'color 0.2s', whiteSpace: 'nowrap',
             }}
               onMouseEnter={e => e.currentTarget.style.color = TEAL}
               onMouseLeave={e => e.currentTarget.style.color = '#1a2b4a'}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
               info@aslanmedical.az
             </a>
 
-            <span style={{ width: '1px', height: '18px', background: 'rgba(0,0,0,0.12)', flexShrink: 0 }} />
+            {/* 3. Location */}
+            <span style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              color: TEAL, fontSize: '13px', fontFamily: FONT, whiteSpace: 'nowrap',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Bakı, Əliağa Vahid 12
+            </span>
 
+            {/* 4. Social icons */}
             {SOCIALS.map(({ Icon, label, href }) => (
               <span key={label} aria-label={label}
                 onClick={() => openExternalLink(href, label)}
-                style={{ color: '#1a2b4a', lineHeight: 0, transition: 'color 0.2s, transform 0.2s', cursor: 'pointer' }}
+                style={{ color: '#1a2b4a', lineHeight: 0, transition: 'color 0.2s, transform 0.2s', cursor: 'pointer', flexShrink: 0 }}
                 onMouseEnter={e => { e.currentTarget.style.color = TEAL; e.currentTarget.style.transform = 'scale(1.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = '#1a2b4a'; e.currentTarget.style.transform = 'scale(1)'; }}
               ><Icon /></span>
             ))}
+          </div>
 
-            <span style={{ width: '1px', height: '20px', background: 'rgba(0,0,0,0.1)', flexShrink: 0 }} />
+          {/* 5. Divider */}
+          <span style={{ width: '1px', height: '24px', background: '#ddd', flexShrink: 0 }} />
 
+          {/* 6. Left button group: login pill + E-Nəticə */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {isAuthenticated ? (
               <div className="mid-login"
                 onClick={() => {
@@ -322,18 +324,15 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* E-Nəticə — left group */}
             <button onClick={() => navigate('/e-netice')} style={{
               fontSize: '14px', fontWeight: 600, fontFamily: FONT,
               color: '#ffffff', border: 'none', cursor: 'pointer',
               background: '#e8500a', padding: '8px 20px',
               borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0,
-              marginLeft: '12px',
             }}>E-Nəticə</button>
-
           </div>
 
-          {/* Action buttons — right-aligned */}
+          {/* 7. Right button group */}
           <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             {[
               { key: 'findDoctor',     label: t('header.findDoctor') },
