@@ -296,88 +296,71 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <div className="mid-login" onClick={() => navigate('/login')}
+              <div className="mid-login"
                 style={{
-                  display: 'flex', alignItems: 'center',
-                  background: 'linear-gradient(135deg, #00848e, #006b74)',
-                  borderRadius: '24px', padding: '8px 20px',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  border: '1.5px solid #ccc', borderRadius: '50px',
+                  background: 'white', padding: '6px 16px 6px 10px',
                   cursor: 'pointer', flexShrink: 0,
-                  boxShadow: '0 3px 12px rgba(0,132,142,0.25)',
-                  transition: 'box-shadow 0.2s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,132,142,0.4)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 3px 12px rgba(0,132,142,0.25)'}
+                onClick={() => navigate('/login')}
               >
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'white', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-                  Daxil ol
-                </span>
+                <div>
+                  <div style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: 500, fontFamily: FONT, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Daxil olun və ya</div>
+                  <div style={{ fontSize: '11px', color: '#555', fontFamily: FONT, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Qeydiyyatdan Keçin</div>
+                </div>
+                <div style={{
+                  background: '#00848e', borderRadius: '50%',
+                  width: '32px', height: '32px', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* E-Nəticə — center */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            {/* E-Nəticə — left group */}
             <button onClick={() => navigate('/e-netice')} style={{
-              fontSize: '13px', fontWeight: 700,
-              fontFamily: FONT,
-              color: '#ffffff',
-              border: 'none',
-              cursor: 'pointer',
-              background: 'linear-gradient(135deg, #e8622a 0%, #d44e1a 100%)',
-              padding: '8px 16px',
-              borderRadius: '28px',
-              letterSpacing: '0.4px',
-              boxShadow: '0 4px 14px rgba(232,98,42,0.35)',
-              transition: 'opacity 0.2s, transform 0.2s, box-shadow 0.2s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(232,98,42,0.45)'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(232,98,42,0.35)'; }}
-            >E-Nəticə</button>
+              fontSize: '14px', fontWeight: 600, fontFamily: FONT,
+              color: '#ffffff', border: 'none', cursor: 'pointer',
+              background: '#e8500a', padding: '8px 20px',
+              borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0,
+            }}>E-Nəticə</button>
+
           </div>
 
-          {/* Action pill — right-aligned */}
-          <div className="mid-actions" style={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #00848e 0%, #006b74 100%)',
-              borderRadius: '32px',
-              padding: '8px 8px',
-              boxShadow: '0 4px 16px rgba(0,132,142,0.3)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '2px',
-            }}>
-              {[
-                { key: 'findDoctor',    label: t('header.findDoctor') },
-                { key: 'appointment',  label: t('header.appointment') },
-                { key: 'patientPortal',label: t('header.patientPortal') },
-              ].map(({ key, label }, i) => (
-                <button key={key}
-                  onClick={() => {
-                    if (key === 'findDoctor') {
-                      navigate('/doctors');
-                    } else if (key === 'appointment') {
-                      navigate('/randevu');
-                    } else if (key === 'patientPortal') {
-                      if (isAuthenticated) navigate('/patient');
-                      else { toast.info('Pasiyent portalına daxil olmaq üçün əvvəlcə giriş edin.'); navigate('/login'); }
-                    }
-                  }}
-                  style={{
-                    fontSize: '13.5px', color: 'white',
-                    fontWeight: 600, fontFamily: FONT,
-                    padding: '9px 18px', borderRadius: '26px',
-                    border: 'none', cursor: 'pointer',
-                    background: 'transparent',
-                    letterSpacing: '0.3px',
-                    transition: 'background 0.2s',
-                    whiteSpace: 'nowrap',
-                    borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >{label}</button>
-              ))}
-            </div>
+          {/* Action buttons — right-aligned */}
+          <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto', flexShrink: 0 }}>
+            {[
+              { key: 'findDoctor',     label: t('header.findDoctor') },
+              { key: 'appointment',   label: t('header.appointment') },
+              { key: 'patientPortal', label: t('header.patientPortal') },
+            ].map(({ key, label }) => (
+              <button key={key}
+                onClick={() => {
+                  if (key === 'findDoctor') {
+                    navigate('/doctors');
+                  } else if (key === 'appointment') {
+                    navigate('/randevu');
+                  } else if (key === 'patientPortal') {
+                    if (isAuthenticated) navigate('/patient');
+                    else { toast.info('Pasiyent portalına daxil olmaq üçün əvvəlcə giriş edin.'); navigate('/login'); }
+                  }
+                }}
+                style={{
+                  fontSize: '14px', color: 'white', fontWeight: 600, fontFamily: FONT,
+                  padding: '8px 20px', borderRadius: '20px',
+                  border: 'none', cursor: 'pointer',
+                  background: '#00848e', whiteSpace: 'nowrap',
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >{label}</button>
+            ))}
           </div>
 
           {/* Hamburger — mobile only */}
