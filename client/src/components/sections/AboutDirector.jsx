@@ -96,11 +96,6 @@ export default function AboutDirector() {
                 }}
                 onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
               />
-              <div style={{
-                position: 'absolute', top: '-10px', right: '16px',
-                background: TEAL, borderRadius: '20px', padding: '6px 14px',
-                color: 'white', fontSize: '20px', fontWeight: 700, letterSpacing: '3px',
-              }}>···</div>
             </div>
           </motion.div>
 
@@ -131,26 +126,18 @@ export default function AboutDirector() {
                   onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
                 />
               ))}
-              <div
-                onClick={() => navigate('/hekimler')}
+              <img
+                src="/client5.jpeg"
+                alt=""
                 style={{
-                  width: circleSize, height: circleSize,
+                  width: isMobile ? '110px' : '165px',
+                  height: isMobile ? '110px' : '165px',
                   borderRadius: '50%',
-                  border: '2px solid #00848e',
-                  background: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
+                  objectFit: 'cover',
+                  display: 'block',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.querySelector('span').style.color = 'white'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.querySelector('span').style.color = TEAL; }}
-              >
-                <span style={{
-                  color: TEAL, fontSize: '14px', fontWeight: 700,
-                  fontFamily: FONT, transition: 'color 0.2s',
-                }}>Ətraflı</span>
-              </div>
+                onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
+              />
             </div>
           </motion.div>
 
