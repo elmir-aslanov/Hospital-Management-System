@@ -213,7 +213,7 @@ export default function Navbar() {
           {/* Center — single row: phone | divider | email | divider | socials */}
           <div className="mid-social" style={{
             flex: 1, minWidth: 0, display: 'flex', alignItems: 'center',
-            gap: '12px', flexWrap: 'nowrap',
+            gap: '8px', flexWrap: 'nowrap',
           }}>
             <a href="tel:+994508363694" style={{
               display: 'flex', alignItems: 'center', gap: '6px',
@@ -334,7 +334,7 @@ export default function Navbar() {
           </div>
 
           {/* Action buttons — right-aligned */}
-          <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto', flexShrink: 0 }}>
+          <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             {[
               { key: 'findDoctor',     label: t('header.findDoctor') },
               { key: 'appointment',   label: t('header.appointment') },
