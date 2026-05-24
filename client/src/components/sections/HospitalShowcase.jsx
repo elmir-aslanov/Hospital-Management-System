@@ -57,63 +57,6 @@ export default function HospitalShowcase() {
             boxShadow: '0 30px 80px rgba(10,22,40,0.16)',
           }}
         />
-
-        <div
-          style={{
-            position: isMobile ? 'relative' : 'absolute',
-            bottom: isMobile ? 'auto' : '-38px',
-            right: isMobile ? 'auto' : '-40px',
-            marginTop: isMobile ? '-30px' : 0,
-            marginLeft: isMobile ? '18px' : 0,
-            marginRight: isMobile ? '18px' : 0,
-            background: '#ffffff',
-            borderRadius: '24px',
-            padding: isMobile ? '24px' : '28px 32px',
-            maxWidth: '360px',
-            boxShadow: '0 24px 70px rgba(10,22,40,0.14)',
-            border: '1px solid rgba(10,22,40,0.08)',
-          }}
-        >
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: 'rgba(0,132,142,0.12)',
-              color: TEAL,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-              fontWeight: 800,
-              marginBottom: '18px',
-            }}
-          >
-            +
-          </div>
-          <h3
-            style={{
-              margin: '0 0 8px',
-              color: NAVY,
-              fontSize: '22px',
-              lineHeight: 1.2,
-              fontWeight: 800,
-            }}
-          >
-            JCI Akkreditasiyası
-          </h3>
-          <p
-            style={{
-              margin: 0,
-              color: 'rgba(10,22,40,0.62)',
-              fontSize: '16px',
-              lineHeight: 1.55,
-              fontWeight: 500,
-            }}
-          >
-            Beynəlxalq səhiyyə standartlarına uyğun.
-          </p>
-        </div>
       </div>
 
       <motion.div
