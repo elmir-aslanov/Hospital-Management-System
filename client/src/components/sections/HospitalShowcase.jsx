@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 const TEAL = '#00848e';
 const NAVY = '#0a1628';
 const FONT = "'Source Sans 3','Raleway',sans-serif";
-const SERIF_FONT = "'Cormorant Garamond','Playfair Display',Georgia,serif";
 
 const features = [
   '24/7 Təcili yardım',
@@ -30,75 +29,82 @@ export default function HospitalShowcase() {
     <section
       style={{
         background: '#f5fbfc',
-        padding: isMobile ? '70px 24px' : '90px 72px',
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gap: isMobile ? '56px' : '80px',
-        alignItems: 'center',
+        padding: isMobile ? '64px 24px 72px' : '80px 72px 90px',
         overflow: 'hidden',
         fontFamily: FONT,
       }}
     >
       <div
         style={{
-          position: 'relative',
-          borderRadius: '28px',
-          overflow: 'visible',
-        }}
-      >
-        <img
-          src="/AslanMedical2.png"
-          alt="Aslan Medical Center"
-          style={{
-            width: '100%',
-            height: isMobile ? '420px' : '520px',
-            objectFit: 'cover',
-            borderRadius: '28px',
-            display: 'block',
-            boxShadow: '0 30px 80px rgba(10,22,40,0.16)',
-          }}
-        />
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        viewport={{ once: true }}
-        style={{
-          maxWidth: '720px',
+          maxWidth: '1320px',
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '0.95fr 1.05fr',
+          gap: isMobile ? '42px' : '64px',
+          alignItems: 'center',
         }}
       >
         <div
           style={{
-            color: TEAL,
-            fontSize: '13px',
-            fontWeight: 800,
-            letterSpacing: '7px',
-            textTransform: 'uppercase',
-            marginBottom: '24px',
-            fontFamily: FONT,
+            position: 'relative',
+            borderRadius: '28px',
+            overflow: 'visible',
           }}
         >
-          HAQQIMIZDA
+          <img
+            src="/AslanMedical2.png"
+            alt="Aslan Medical Center"
+            style={{
+              width: '100%',
+              height: isMobile ? '340px' : '440px',
+              objectFit: 'cover',
+              borderRadius: '28px',
+              display: 'block',
+              boxShadow: '0 30px 80px rgba(10,22,40,0.16)',
+            }}
+          />
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          viewport={{ once: true }}
+          style={{
+            maxWidth: '720px',
+          }}
+        >
+          <div
+            style={{
+              color: TEAL,
+              fontSize: '13px',
+              fontWeight: 800,
+              letterSpacing: '7px',
+              textTransform: 'uppercase',
+              marginBottom: '20px',
+              fontFamily: FONT,
+            }}
+          >
+            HAQQIMIZDA
+          </div>
 
         <h2
           style={{
-            margin: '0 0 32px',
-            fontFamily: SERIF_FONT,
+            margin: '0 0 24px',
+            fontFamily: FONT,
             color: NAVY,
-            fontSize: isMobile ? 'clamp(42px, 12vw, 62px)' : 'clamp(54px, 6vw, 84px)',
-            lineHeight: 0.95,
-            fontWeight: 400,
-            letterSpacing: '-1.5px',
+            fontSize: isMobile ? 'clamp(34px, 9vw, 44px)' : 'clamp(40px, 4vw, 56px)',
+            lineHeight: 1.08,
+            fontWeight: 800,
+            letterSpacing: '-0.8px',
           }}
         >
           Bakının qəlbində{' '}
           <em
             style={{
-              fontStyle: 'italic',
-              fontWeight: 300,
+              color: TEAL,
+              fontStyle: 'normal',
+              fontWeight: 800,
             }}
           >
             qayğı
@@ -108,14 +114,13 @@ export default function HospitalShowcase() {
 
         <p
           style={{
-            margin: '0 0 20px',
+            margin: '0 0 24px',
             fontFamily: FONT,
-            fontSize: isMobile ? '18px' : '21px',
-            lineHeight: 1.55,
+            fontSize: isMobile ? '17px' : '18px',
+            lineHeight: 1.7,
             color: 'rgba(10,22,40,0.68)',
             fontWeight: 400,
-            maxWidth: '680px',
-            marginBottom: '28px',
+            maxWidth: '620px',
           }}
         >
           Aslan Medical Center yalnız bir xəstəxana deyil — burada hər xəstə üçün fərdi yanaşma, beş ulduzlu komfort və ən yüksək tibbi standartlar bir araya gəlir.
@@ -123,14 +128,13 @@ export default function HospitalShowcase() {
 
         <p
           style={{
-            margin: 0,
+            margin: '0 0 24px',
             fontFamily: FONT,
-            fontSize: isMobile ? '18px' : '21px',
-            lineHeight: 1.55,
+            fontSize: isMobile ? '17px' : '18px',
+            lineHeight: 1.7,
             color: 'rgba(10,22,40,0.68)',
             fontWeight: 400,
-            maxWidth: '680px',
-            marginBottom: '28px',
+            maxWidth: '620px',
           }}
         >
           30+ ixtisas üzrə xidmət göstərən mərkəzimiz, son texnologiyalı diaqnostika avadanlıqları və beynəlxalq sertifikatlı həkimlərlə sizə dəstək olur.
@@ -139,9 +143,10 @@ export default function HospitalShowcase() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: '18px 28px',
-            marginTop: '34px',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+            columnGap: '40px',
+            rowGap: '20px',
+            marginTop: '30px',
             maxWidth: '560px',
           }}
         >
@@ -156,11 +161,11 @@ export default function HospitalShowcase() {
             >
               <span
                 style={{
-                  width: '10px',
-                  height: '10px',
+                  width: '9px',
+                  height: '9px',
                   borderRadius: '50%',
                   background: '#18C4CF',
-                  flex: '0 0 10px',
+                  flex: '0 0 9px',
                 }}
               />
               <span
@@ -168,7 +173,7 @@ export default function HospitalShowcase() {
                   color: NAVY,
                   fontFamily: FONT,
                   fontWeight: 700,
-                  fontSize: '17px',
+                  fontSize: '16px',
                 }}
               >
                 {feature}
@@ -176,7 +181,8 @@ export default function HospitalShowcase() {
             </div>
           ))}
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </section>
   );
 }
