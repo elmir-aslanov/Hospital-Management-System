@@ -23,8 +23,8 @@ const HeroSection = () => {
 
       {/* Left teal content panel */}
       <motion.div
-        initial={{ opacity: 0, x: -40 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.2 }}
         style={{
           position: 'absolute',
@@ -34,7 +34,7 @@ const HeroSection = () => {
           background: isMobile
             ? 'linear-gradient(160deg, rgba(0,80,90,0.88) 0%, rgba(0,40,60,0.82) 100%)'
             : 'linear-gradient(135deg, rgba(0,100,120,0.78) 0%, rgba(0,60,90,0.72) 100%)',
-          padding: isMobile ? '32px 20px 40px' : '60px 48px 60px 40px',
+          padding: isMobile ? '32px 24px 40px' : '60px 48px 60px 80px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',

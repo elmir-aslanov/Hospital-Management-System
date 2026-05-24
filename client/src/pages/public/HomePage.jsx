@@ -1,17 +1,15 @@
-import HeroSection      from '../../components/HeroSection';
-import PatientStories   from '../../components/sections/PatientStories';
-import ClinicalPrograms from '../../components/sections/ClinicalPrograms';
-import HospitalShowcase from '../../components/sections/HospitalShowcase';
-import DoctorsSection   from '../../components/sections/DoctorsSection';
+import HeroSection         from '../../components/HeroSection';
+import AboutDirector       from '../../components/sections/AboutDirector';
+import MedicalConsultation from '../../components/sections/MedicalConsultation';
+import PatientStories      from '../../components/sections/PatientStories';
 
 export default function HomePage() {
   return (
-    <main>
+    <main style={{ background: '#ffffff' }}>
       <HeroSection />
-      <HospitalShowcase />
-      <ClinicalPrograms />
+      <AboutDirector />
+      <MedicalConsultation />
       <PatientStories />
-      <DoctorsSection />
     </main>
   );
 }

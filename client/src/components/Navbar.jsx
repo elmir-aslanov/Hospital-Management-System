@@ -296,11 +296,11 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <div className="mid-login" onClick={() => navigate('/register')}
+              <div className="mid-login" onClick={() => navigate('/login')}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
+                  display: 'flex', alignItems: 'center',
                   background: 'linear-gradient(135deg, #00848e, #006b74)',
-                  borderRadius: '24px', padding: '8px 18px 8px 12px',
+                  borderRadius: '24px', padding: '8px 20px',
                   cursor: 'pointer', flexShrink: 0,
                   boxShadow: '0 3px 12px rgba(0,132,142,0.25)',
                   transition: 'box-shadow 0.2s',
@@ -308,20 +308,9 @@ export default function Navbar() {
                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,132,142,0.4)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = '0 3px 12px rgba(0,132,142,0.25)'}
               >
-                <div style={{
-                  width: '30px', height: '30px', borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.18)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'white', lineHeight: 1.2, fontFamily: FONT }}>{t('header.login')}</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.2, fontFamily: FONT }}>{t('header.register')}</div>
-                </div>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'white', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                  Daxil ol
+                </span>
               </div>
             )}
           </div>
@@ -335,7 +324,7 @@ export default function Navbar() {
               border: 'none',
               cursor: 'pointer',
               background: 'linear-gradient(135deg, #e8622a 0%, #d44e1a 100%)',
-              padding: '10px 28px',
+              padding: '8px 16px',
               borderRadius: '28px',
               letterSpacing: '0.4px',
               boxShadow: '0 4px 14px rgba(232,98,42,0.35)',

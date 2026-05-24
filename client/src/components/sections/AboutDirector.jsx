@@ -34,6 +34,7 @@ export default function AboutDirector() {
         padding: isMobile ? '60px 0' : '80px 0',
         borderBottom: '1px solid rgba(0,0,0,0.06)',
         fontFamily: FONT,
+        overflowX: 'hidden',
       }}>
         <div style={{
           maxWidth: '1200px',
@@ -71,8 +72,8 @@ export default function AboutDirector() {
 
             {/* LEFT — Photo + Name + Titles */}
             <motion.div
-              initial={{ opacity: 0, x: isMobile ? 0 : -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
@@ -139,8 +140,8 @@ export default function AboutDirector() {
 
             {/* RIGHT — Text */}
             <motion.div
-              initial={{ opacity: 0, x: isMobile ? 0 : 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.15 }}
             >

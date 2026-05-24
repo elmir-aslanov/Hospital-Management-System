@@ -89,6 +89,7 @@ export default function MedicalConsultation() {
       padding: isMobile ? '60px 0' : '80px 0',
       position: 'relative',
       overflow: 'hidden',
+      overflowX: 'hidden',
       fontFamily: FONT,
     }}>
 
@@ -105,8 +106,8 @@ export default function MedicalConsultation() {
         {/* ── LEFT — Visual + Features ── */}
         {!isMobile && (
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
@@ -194,8 +195,8 @@ export default function MedicalConsultation() {
 
         {/* ── RIGHT — Form card ── */}
         <motion.div
-          initial={{ opacity: 0, x: isMobile ? 0 : 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: isMobile ? 0 : 0.15 }}
         >

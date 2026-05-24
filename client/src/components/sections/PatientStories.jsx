@@ -71,6 +71,7 @@ export default function PatientStories({ stories = defaultStories }) {
       background: '#ffffff',
       padding: isMobile ? '64px 0' : '88px 0',
       position: 'relative',
+      overflowX: 'hidden',
     }}>
 
       {/* Top-right curved decoration */}
@@ -139,8 +140,8 @@ export default function PatientStories({ stories = defaultStories }) {
 
         {/* ── RIGHT — Text content ── */}
         <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
