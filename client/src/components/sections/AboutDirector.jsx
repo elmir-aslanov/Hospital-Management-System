@@ -35,7 +35,11 @@ export default function AboutDirector() {
         borderBottom: '1px solid rgba(0,0,0,0.06)',
         fontFamily: FONT,
       }}>
-        <div className="container">
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: isMobile ? '0 20px' : '0 80px',
+        }}>
 
           {/* Section title */}
           <motion.div

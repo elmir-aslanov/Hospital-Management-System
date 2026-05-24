@@ -64,6 +64,8 @@ export default function PatientStories({ stories = defaultStories }) {
   const title         = t('patientStories.title1');
   const titleHighlight= t('patientStories.title2');
 
+  const px = isMobile ? 16 : isTablet ? 24 : 32;
+
   return (
     <div style={{
       background: '#ffffff',
@@ -83,7 +85,13 @@ export default function PatientStories({ stories = defaultStories }) {
         </svg>
       </div>
 
-      <div className="container" style={{
+      <div style={{
+        maxWidth: 1280,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        paddingLeft: px,
+        paddingRight: px,
+        boxSizing: 'border-box',
         display: 'grid',
         gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 1fr',
         alignItems: 'center',

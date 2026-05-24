@@ -242,10 +242,11 @@ export default function Footer() {
       />
 
       <div
-        className="container"
         style={{
           position: 'relative',
-          paddingTop: isMobile ? 36 : 66,
+          maxWidth: 1220,
+          margin: '0 auto',
+          padding: isMobile ? '36px 22px 0' : '66px 42px 0',
         }}
       >
         <div

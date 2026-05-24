@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 const TEAL = '#00848e';
 const NAVY = '#0a1628';
 const FONT = "'Source Sans 3','Raleway',sans-serif";
-const SERIF_FONT = "'Cormorant Garamond','Playfair Display',Georgia,serif";
 
 const features = [
   '24/7 Təcili yardım',
@@ -74,10 +73,8 @@ export default function HospitalShowcase() {
             color: TEAL,
             fontSize: '13px',
             fontWeight: 800,
-            letterSpacing: '7px',
-            textTransform: 'uppercase',
+            letterSpacing: '6px',
             marginBottom: '24px',
-            fontFamily: FONT,
           }}
         >
           HAQQIMIZDA
@@ -85,13 +82,12 @@ export default function HospitalShowcase() {
 
         <h2
           style={{
-            margin: '0 0 32px',
-            fontFamily: SERIF_FONT,
+            margin: '0 0 28px',
             color: NAVY,
-            fontSize: isMobile ? 'clamp(42px, 12vw, 62px)' : 'clamp(54px, 6vw, 84px)',
-            lineHeight: 0.95,
-            fontWeight: 400,
-            letterSpacing: '-1.5px',
+            fontSize: isMobile ? '42px' : 'clamp(42px, 5vw, 72px)',
+            lineHeight: 1.05,
+            fontWeight: 500,
+            letterSpacing: 0,
           }}
         >
           Bakının qəlbində{' '}
@@ -109,13 +105,10 @@ export default function HospitalShowcase() {
         <p
           style={{
             margin: '0 0 20px',
-            fontFamily: FONT,
-            fontSize: isMobile ? '18px' : '21px',
-            lineHeight: 1.55,
+            fontSize: '18px',
+            lineHeight: 1.8,
             color: 'rgba(10,22,40,0.68)',
-            fontWeight: 400,
-            maxWidth: '680px',
-            marginBottom: '28px',
+            maxWidth: '620px',
           }}
         >
           Aslan Medical Center yalnız bir xəstəxana deyil — burada hər xəstə üçün fərdi yanaşma, beş ulduzlu komfort və ən yüksək tibbi standartlar bir araya gəlir.
@@ -124,13 +117,10 @@ export default function HospitalShowcase() {
         <p
           style={{
             margin: 0,
-            fontFamily: FONT,
-            fontSize: isMobile ? '18px' : '21px',
-            lineHeight: 1.55,
+            fontSize: '18px',
+            lineHeight: 1.8,
             color: 'rgba(10,22,40,0.68)',
-            fontWeight: 400,
-            maxWidth: '680px',
-            marginBottom: '28px',
+            maxWidth: '620px',
           }}
         >
           30+ ixtisas üzrə xidmət göstərən mərkəzimiz, son texnologiyalı diaqnostika avadanlıqları və beynəlxalq sertifikatlı həkimlərlə sizə dəstək olur.
@@ -156,19 +146,18 @@ export default function HospitalShowcase() {
             >
               <span
                 style={{
-                  width: '10px',
-                  height: '10px',
+                  width: '9px',
+                  height: '9px',
                   borderRadius: '50%',
-                  background: '#18C4CF',
-                  flex: '0 0 10px',
+                  background: TEAL,
+                  flex: '0 0 9px',
                 }}
               />
               <span
                 style={{
                   color: NAVY,
-                  fontFamily: FONT,
                   fontWeight: 700,
-                  fontSize: '17px',
+                  fontSize: '16px',
                 }}
               >
                 {feature}
