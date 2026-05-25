@@ -5,9 +5,9 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
 
 const hospitals = [
-  { name: 'Aslan Medical Center', image: '/AslanMedical2.png', desc: 'Sağlamlıqda multidisiplinar yanaşması, müasir infrastrukturu və texnologiya imkanları ilə Bakının mərkəzində xidmət göstərir.' },
-  { name: 'Filial 1', image: '/Filial1.png', desc: 'Müasir tibbi avadanlıqlar və peşəkar heyəti ilə keyfiyyətli səhiyyə xidməti göstərir.' },
-  { name: 'Filial 2', image: '/Filial2.png', desc: 'Geniş ixtisas üzrə diaqnostika və müalicə xidmətləri təklif edir.' },
+  { name: 'Aslan Medical Center', location: 'Bakı', image: '/AslanMedical2.png', desc: 'Sağlamlıqda multidisiplinar yanaşması, müasir infrastrukturu və texnologiya imkanları ilə Bakının mərkəzində xidmət göstərir.' },
+  { name: 'Aslan Medical Center', location: 'Ankara', image: '/Filial1.png', desc: 'Müasir tibbi avadanlıqlar və peşəkar heyəti ilə keyfiyyətli səhiyyə xidməti göstərir.' },
+  { name: 'Aslan Medical Center', location: 'Samsun', image: '/Filial2.png', desc: 'Geniş ixtisas üzrə diaqnostika və müalicə xidmətləri təklif edir.' },
 ]
 
 export default function HospitalShowcase() {
@@ -115,7 +115,7 @@ export default function HospitalShowcase() {
                   marginTop: '4px', marginBottom: 0,
                   fontFamily: FONT,
                 }}>
-                  {h.name}
+                  {h.location}
                 </p>
               </div>
             ))}
@@ -153,7 +153,7 @@ export default function HospitalShowcase() {
               color: 'white', fontSize: '20px', fontWeight: 700,
               margin: 0, marginBottom: '8px', fontFamily: FONT,
             }}>
-              {hospitals[active].name}
+              {hospitals[active].location}
             </h3>
             <p style={{
               color: 'white', fontSize: '14px', lineHeight: 1.6,
