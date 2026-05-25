@@ -21,6 +21,7 @@ import ServicesPage          from './pages/public/ServicesPage';
 import BlogPage              from './pages/public/BlogPage';
 import ContactPage           from './pages/public/ContactPage';
 import ENeticePage           from './pages/public/ENeticePage';
+import ElektronMuraciet     from './pages/public/ElektronMuraciet';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -81,6 +82,7 @@ function Layout() {
         <Route path="/hekimler"            element={<HekimlerPage />} />
         <Route path="/randevu"             element={<RandevuPage />} />
         <Route path="/e-netice"            element={<ENeticePage />} />
+        <Route path="/elektron-muraciet"   element={<ElektronMuraciet />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />

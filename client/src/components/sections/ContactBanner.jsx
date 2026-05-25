@@ -2,12 +2,21 @@ import { useNavigate } from 'react-router-dom'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 
+const Hex = () => (
+  <svg width="70" height="70" viewBox="0 0 70 70" fill="none">
+    <polygon
+      points="35,4 64,19 64,51 35,66 6,51 6,19"
+      stroke="#e53e3e" strokeWidth="1.5" fill="none"
+    />
+  </svg>
+)
+
 export default function ContactBanner() {
   const isMobile = window.innerWidth < 768
   const navigate = useNavigate()
 
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box', background: '#e8f6f8' }}>
+    <div style={{ width: '100%', boxSizing: 'border-box', background: '#fff5f5' }}>
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
@@ -17,6 +26,21 @@ export default function ContactBanner() {
         position: 'relative',
         overflow: 'hidden',
       }}>
+
+        {/* Top-left hexagons */}
+        <div style={{ position: 'absolute', top: '20px', left: '40px', opacity: 0.4, display: 'flex', gap: '4px', pointerEvents: 'none' }}>
+          <Hex /><Hex />
+        </div>
+
+        {/* Top-right hexagons */}
+        <div style={{ position: 'absolute', top: '10px', right: '60px', opacity: 0.15, display: 'flex', gap: '4px', pointerEvents: 'none' }}>
+          <Hex /><Hex />
+        </div>
+
+        {/* Bottom-right hexagons */}
+        <div style={{ position: 'absolute', bottom: '20px', right: '40px', opacity: 0.2, display: 'flex', gap: '4px', pointerEvents: 'none' }}>
+          <Hex /><Hex />
+        </div>
 
         {/* Main content */}
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -32,7 +56,7 @@ export default function ContactBanner() {
           </h2>
 
           <button
-            onClick={() => navigate('/elaqe')}
+            onClick={() => navigate('/elektron-muraciet')}
             style={{
               background: '#e53e3e',
               color: 'white',
@@ -41,7 +65,7 @@ export default function ContactBanner() {
               fontSize: '16px',
               fontWeight: 500,
               cursor: 'pointer',
-              borderRadius: '8px',
+              borderRadius: '4px',
               fontFamily: FONT,
             }}
           >
