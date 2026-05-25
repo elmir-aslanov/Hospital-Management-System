@@ -58,11 +58,18 @@ export default function DoctorsSection() {
     fetch('http://localhost:5000/api/v1/site-doctors?limit=8')
       .then(r => r.json())
       .then(data => {
-        const list = Array.isArray(data) ? data : (data.doctors || data.data || [])
+        let list = []
+        if (Array.isArray(data)) list = data
+        else if (data && Array.isArray(data.doctors)) list = data.doctors
+        else if (data && Array.isArray(data.data)) list = data.data
+        else if (data && Array.isArray(data.result)) list = data.result
         setDoctors(list)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {
+        setDoctors([])
+        setLoading(false)
+      })
   }, [])
 
   if (!loading && doctors.length === 0) return null
