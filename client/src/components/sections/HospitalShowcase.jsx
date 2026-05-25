@@ -12,7 +12,7 @@ const hospitals = [
 
 export default function HospitalShowcase() {
   const { isMobile } = useBreakpoint()
-  const [active, setActive] = useState(0)
+  const [active, setActive] = useState(1)
 
   const prev = () => setActive(i => (i - 1 + hospitals.length) % hospitals.length)
   const next = () => setActive(i => (i + 1) % hospitals.length)
