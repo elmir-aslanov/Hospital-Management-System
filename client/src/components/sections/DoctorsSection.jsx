@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useBreakpoint } from '../../hooks/useBreakpoint'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 
@@ -64,7 +63,7 @@ function SkeletonCard() {
 }
 
 export default function DoctorsSection() {
-  const { isMobile } = useBreakpoint()
+  const isMobile = window.innerWidth < 768
   const [doctors, setDoctors] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -93,36 +92,38 @@ export default function DoctorsSection() {
         }
       `}</style>
 
-      <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        padding: isMobile ? '40px 16px' : '60px 48px',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontSize: '18px', color: '#666',
-          fontWeight: 400, marginBottom: '8px',
-          fontFamily: FONT,
-        }}>
-          Meet Our
-        </p>
-        <h2 style={{
-          fontSize: isMobile ? '28px' : '40px',
-          fontWeight: 700, color: '#0a1628',
-          margin: '0 0 48px', fontFamily: FONT,
-        }}>
-          Peşəkar Həkimlərimiz
-        </h2>
-
+      <div style={{ width: '100%', boxSizing: 'border-box' }}>
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: '24px',
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: isMobile ? '40px 16px' : '60px 48px',
+          textAlign: 'center',
         }}>
-          {loading
-            ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-            : doctors.map((doc, i) => <DoctorCard key={doc._id || i} doctor={doc} />)
-          }
+          <p style={{
+            fontSize: '18px', color: '#666',
+            fontWeight: 400, marginBottom: '8px',
+            fontFamily: FONT,
+          }}>
+            Meet Our
+          </p>
+          <h2 style={{
+            fontSize: isMobile ? '28px' : '40px',
+            fontWeight: 700, color: '#0a1628',
+            margin: '0 0 48px', fontFamily: FONT,
+          }}>
+            Peşəkar Həkimlərimiz
+          </h2>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+            gap: '24px',
+          }}>
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+              : doctors.map((doc, i) => <DoctorCard key={doc._id || i} doctor={doc} />)
+            }
+          </div>
         </div>
       </div>
     </>
