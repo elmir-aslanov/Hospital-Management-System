@@ -19,129 +19,132 @@ export default function AboutDirector() {
   const [modalOpen, setModalOpen] = useState(false)
   const navigate = useNavigate()
 
-  const circleSize = isMobile ? '110px' : '165px'
+  const circleSize = isMobile ? '120px' : '170px'
 
   return (
     <>
       <section style={{
         background: '#ffffff',
-        padding: isMobile ? '60px 0' : '80px 0',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: isMobile ? '24px' : '40px',
+        padding: isMobile ? '40px 16px' : '60px 48px',
+        width: '100%',
+        boxSizing: 'border-box',
       }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: isMobile ? '0 20px' : '0 40px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: isMobile ? '32px' : '60px',
-          flexDirection: isMobile ? 'column' : 'row',
-        }}>
 
-          {/* COLUMN 1 — Left text */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ flex: 1, minWidth: 0 }}
-          >
-            <h2 style={{
-              fontSize: 'clamp(28px, 3.5vw, 42px)',
-              fontWeight: 800,
-              color: '#0a1628',
-              lineHeight: 1.2,
-              marginBottom: '20px',
-              fontFamily: FONT,
-            }}>
-              Klinik Proqramlar
-            </h2>
-            <p style={{
-              fontSize: '15px',
-              color: '#4a5568',
-              lineHeight: 1.8,
-              marginBottom: 0,
-              fontFamily: FONT,
-            }}>
-              Aslan Medical Center 30-dan çox ixtisas üzrə diaqnostika, cərrahiyyə, kardiologiya, pediatriya və terapiya xidmətləri göstərir. Beynəlxalq sertifikatlı həkimlərimiz və son texnologiyalı avadanlıqlarımız hər pasiyentə dəqiq müalicə təmin edir.
-            </p>
-          </motion.div>
+        {/* COLUMN 1 — Left text */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          style={{ maxWidth: '320px', flexShrink: 0 }}
+        >
+          <h2 style={{
+            fontSize: 'clamp(28px, 3.5vw, 42px)',
+            fontWeight: 800,
+            color: '#0a1628',
+            lineHeight: 1.2,
+            marginBottom: '20px',
+            fontFamily: FONT,
+          }}>
+            Klinik Proqramlar
+          </h2>
+          <p style={{
+            fontSize: '15px',
+            color: '#4a5568',
+            lineHeight: 1.8,
+            marginBottom: 0,
+            fontFamily: FONT,
+          }}>
+            Aslan Medical Center 30-dan çox ixtisas üzrə diaqnostika, cərrahiyyə, kardiologiya, pediatriya və terapiya xidmətləri göstərir. Beynəlxalq sertifikatlı həkimlərimiz və son texnologiyalı avadanlıqlarımız hər pasiyentə dəqiq müalicə təmin edir.
+          </p>
+        </motion.div>
 
-          {/* COLUMN 2 — Center large circle */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            style={{ flexShrink: 0 }}
-          >
-            <div style={{
-              width: isMobile ? '240px' : '380px',
-              height: isMobile ? '240px' : '380px',
-              borderRadius: '50%',
-              border: '2.5px solid #c9a84c',
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
+        {/* COLUMN 2 — Center large circle */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            width: isMobile ? '260px' : '400px',
+            height: isMobile ? '260px' : '400px',
+          }}
+        >
+          <div style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            border: '2.5px solid #c9a84c',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+<img
+              src="/client1.jpeg"
+              alt="Aslan Medical"
+              style={{
+                width: '91%', height: '91%',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+              onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
+            />
+          </div>
+        </motion.div>
+
+        {/* COLUMN 3 — Right 2x2 mini circles */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{ flexShrink: 0 }}
+        >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: isMobile ? '10px' : '16px',
+          }}>
+            {['/client2.jpeg', '/client3.jpeg', '/client4.jpeg'].map((src, i) => (
               <img
-                src="/client1.jpeg"
-                alt="Aslan Medical"
-                style={{
-                  width: '91%', height: '91%',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-                onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
-              />
-            </div>
-          </motion.div>
-
-          {/* COLUMN 3 — Right 2x2 mini circles */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            style={{ flexShrink: 0 }}
-          >
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: isMobile ? '10px' : '16px',
-            }}>
-              {['/client2.jpeg', '/client3.jpeg', '/client4.jpeg'].map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt=""
-                  style={{
-                    width: circleSize, height: circleSize,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    display: 'block',
-                  }}
-                  onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
-                />
-              ))}
-              <img
-                src="/client5.jpeg"
+                key={i}
+                src={src}
                 alt=""
                 style={{
-                  width: isMobile ? '110px' : '165px',
-                  height: isMobile ? '110px' : '165px',
+                  width: circleSize, height: circleSize,
                   borderRadius: '50%',
                   objectFit: 'cover',
                   display: 'block',
                 }}
                 onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
               />
-            </div>
-          </motion.div>
+            ))}
+            <img
+              src="/client5.jpeg"
+              alt=""
+              style={{
+                width: circleSize, height: circleSize,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+              onError={e => { e.currentTarget.style.background = '#e8f4f8'; }}
+            />
+          </div>
+        </motion.div>
 
-        </div>
       </section>
 
       {/* ── Modal ── */}
