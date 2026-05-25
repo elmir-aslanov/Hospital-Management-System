@@ -55,7 +55,7 @@ export default function DoctorsSection() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/v1/site-doctors?limit=8')
+    fetch('http://localhost:5000/api/v1/site-doctors?limit=8')
       .then(r => r.json())
       .then(data => {
         const list = Array.isArray(data) ? data : (data.doctors || data.data || [])
