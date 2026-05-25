@@ -12,8 +12,8 @@ export default function HomePage() {
       <AboutDirector />
       <HospitalShowcase />
       <DoctorsSection />
-      <ContactBanner />
       <PatientStories />
+      <ContactBanner />
     </main>
   );
 }

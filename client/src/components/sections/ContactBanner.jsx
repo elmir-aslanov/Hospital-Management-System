@@ -1,17 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
-
-const Hexagon = ({ width = 80, height = 80, strokeWidth = 2, opacity = 0.3, animate }) => (
-  <motion.svg
-    width={width} height={height} viewBox="0 0 80 80" style={{ opacity }}
-    animate={animate}
-    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-  >
-    <polygon points="40,4 74,22 74,58 40,76 6,58 6,22" fill="none" stroke="#00848e" strokeWidth={strokeWidth} />
-  </motion.svg>
-)
 
 export default function ContactBanner() {
   const isMobile = window.innerWidth < 768
@@ -32,24 +21,6 @@ export default function ContactBanner() {
         position: 'relative',
         overflow: 'hidden',
       }}>
-
-        {/* Top-left hexagons */}
-        <div style={{ position: 'absolute', top: '20px', left: '40px', display: 'flex', gap: '8px', pointerEvents: 'none' }}>
-          <Hexagon width={80} height={80} opacity={0.3} animate={{ y: [0, -10, 0], rotate: [0, 10, 0] }} />
-          <Hexagon width={80} height={80} opacity={0.3} animate={{ y: [0, 10, 0], rotate: [0, -8, 0] }} />
-        </div>
-
-        {/* Top-right hexagons */}
-        <div style={{ position: 'absolute', top: '10px', right: '60px', display: 'flex', gap: '8px', pointerEvents: 'none' }}>
-          <Hexagon width={100} height={100} opacity={0.15} animate={{ y: [0, 12, 0], rotate: [0, -12, 0] }} />
-          <Hexagon width={100} height={100} opacity={0.15} animate={{ y: [0, -8, 0], rotate: [0, 10, 0] }} />
-        </div>
-
-        {/* Bottom-right hexagons */}
-        <div style={{ position: 'absolute', bottom: '20px', right: '40px', display: 'flex', gap: '8px', pointerEvents: 'none' }}>
-          <Hexagon width={90} height={90} opacity={0.2} animate={{ y: [0, -12, 0], rotate: [0, 8, 0] }} />
-          <Hexagon width={90} height={90} opacity={0.2} animate={{ y: [0, 10, 0], rotate: [0, -10, 0] }} />
-        </div>
 
         {/* Main content */}
         <div style={{ position: 'relative', zIndex: 1 }}>

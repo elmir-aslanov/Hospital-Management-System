@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
+import { AuthProvider } from './context/AuthContext';
 import Navbar           from './components/Navbar';
 import Footer           from './components/Footer';
 import PageLoader       from './components/ui/PageLoader';
@@ -141,11 +142,13 @@ document.documentElement.lang = i18n.language || 'az';
 export default function App() {
   return (
     <I18nextProvider i18n={i18n}>
-      <BrowserRouter>
-        <RouteLoader />
-        <Layout />
-        <WhatsAppButton />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <RouteLoader />
+          <Layout />
+          <WhatsAppButton />
+        </BrowserRouter>
+      </AuthProvider>
     </I18nextProvider>
   );
 }

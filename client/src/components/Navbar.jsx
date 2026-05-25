@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useExternalLink } from '../hooks/useExternalLink';
 import ExternalLinkModal from './ui/ExternalLinkModal';
+import { useAuth } from '../context/AuthContext';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -144,14 +145,8 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
-  const user = (() => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } })();
-
-  useEffect(() => {
-    const sync = () => setIsAuthenticated(!!localStorage.getItem('token'));
-    window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
-  }, []);
+  const { isAuthenticated, user, logout: authLogout } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const { modal, openExternalLink, handleConfirm, handleCancel } = useExternalLink();
 
@@ -267,38 +262,72 @@ export default function Navbar() {
           {/* 6. Left button group: login pill + E-Nəticə */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {isAuthenticated ? (
-              <div className="mid-login"
-                onClick={() => {
-                  const role = user?.role?.toUpperCase();
-                  navigate(role === 'PATIENT' ? '/patient' : '/dashboard');
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  background: 'linear-gradient(135deg, #00848e, #006b74)',
-                  borderRadius: '24px', padding: '8px 16px',
-                  cursor: 'pointer', flexShrink: 0,
-                  boxShadow: '0 3px 12px rgba(0,132,142,0.25)',
-                  transition: 'box-shadow 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,132,142,0.4)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 3px 12px rgba(0,132,142,0.25)'}
-              >
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
+              <div className="mid-login" style={{ position: 'relative', flexShrink: 0 }}>
+                <div
+                  onClick={() => setUserMenuOpen(o => !o)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: 'linear-gradient(135deg, #00848e, #006b74)',
+                    borderRadius: '24px', padding: '6px 14px 6px 6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 3px 12px rgba(0,132,142,0.25)',
+                    transition: 'box-shadow 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,132,142,0.4)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '0 3px 12px rgba(0,132,142,0.25)'}
+                >
+                  <div style={{
+                    width: '30px', height: '30px', borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '13px', fontWeight: 700, color: 'white', flexShrink: 0,
+                    fontFamily: FONT,
+                  }}>
+                    {(user?.fullName || user?.name || 'U')[0].toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: '13px', color: 'white', fontWeight: 600, fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                    {user?.fullName || user?.name || user?.email || 'Hesabım'}
+                  </span>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                    style={{ transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', opacity: 0.8 }}>
+                    <path d="M1 3L5 7L9 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1, fontFamily: FONT }}>{t('header.welcome')}</div>
-                  <div style={{ fontSize: '13px', color: 'white', fontWeight: 600, lineHeight: 1.3, fontFamily: FONT }}>
-                    {user?.name || user?.fullName || 'İstifadəçi'}
-                  </div>
-                </div>
+
+                {/* User dropdown */}
+                {userMenuOpen && (
+                  <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 1998 }} onClick={() => setUserMenuOpen(false)} />
+                    <div style={{
+                      position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                      background: 'white', borderRadius: '10px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                      overflow: 'hidden', zIndex: 1999, minWidth: '170px',
+                      border: '1px solid rgba(0,0,0,0.06)',
+                    }}>
+                      {[
+                        { label: 'Profilim', icon: '👤', action: () => { setUserMenuOpen(false); navigate('/patient'); } },
+                        { label: 'Çıxış', icon: '🚪', action: async () => { setUserMenuOpen(false); await authLogout(); navigate('/'); toast.success('Çıxış edildi.'); } },
+                      ].map(item => (
+                        <div
+                          key={item.label}
+                          onClick={item.action}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '11px 16px', cursor: 'pointer',
+                            fontSize: '14px', fontFamily: FONT, color: '#1a2b4a',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f2fafb'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <span>{item.icon}</span>
+                          <span>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="mid-login"
