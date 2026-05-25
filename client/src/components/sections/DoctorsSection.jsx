@@ -92,7 +92,7 @@ export default function DoctorsSection() {
         }
       `}</style>
 
-      <div style={{ width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', boxSizing: 'border-box', margin: 0, background: '#ffffff' }}>
         <div style={{
           maxWidth: '1280px',
           margin: '0 auto',

@@ -69,7 +69,10 @@ export default function PatientStories({ stories = defaultStories }) {
   return (
     <div style={{
       background: '#ffffff',
-      padding: isMobile ? '64px 0' : '88px 0',
+      width: '100%',
+      boxSizing: 'border-box',
+      margin: 0,
+      padding: 0,
       position: 'relative',
       overflowX: 'hidden',
     }}>
@@ -87,11 +90,9 @@ export default function PatientStories({ stories = defaultStories }) {
       </div>
 
       <div style={{
-        maxWidth: 1280,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        paddingLeft: px,
-        paddingRight: px,
+        maxWidth: '1280px',
+        margin: '0 auto',
+        padding: isMobile ? '40px 16px' : '60px 48px',
         boxSizing: 'border-box',
         display: 'grid',
         gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 1fr',

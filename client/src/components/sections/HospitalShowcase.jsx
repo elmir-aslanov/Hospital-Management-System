@@ -17,7 +17,7 @@ export default function HospitalShowcase() {
   const next = () => setActive(i => (i + 1) % hospitals.length)
 
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ width: '100%', boxSizing: 'border-box', margin: 0, background: '#f8fffe' }}>
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',

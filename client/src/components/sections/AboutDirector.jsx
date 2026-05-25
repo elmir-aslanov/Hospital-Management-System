@@ -26,6 +26,7 @@ export default function AboutDirector() {
         background: '#ffffff',
         width: '100%',
         boxSizing: 'border-box',
+        margin: 0,
       }}>
         <div style={{
           maxWidth: '1280px',

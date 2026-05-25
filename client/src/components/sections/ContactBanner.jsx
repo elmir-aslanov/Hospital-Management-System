@@ -7,16 +7,12 @@ export default function ContactBanner() {
   const navigate = useNavigate()
 
   return (
-    <section style={{
-      width: '100%',
-      boxSizing: 'border-box',
-      background: '#e8f6f8',
-      overflow: 'hidden',
-    }}>
+    <div style={{ width: '100%', boxSizing: 'border-box', background: '#e8f6f8' }}>
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: isMobile ? '60px 16px' : '80px 48px',
+        padding: window.innerWidth < 768 ? '60px 16px' : '80px 48px',
+        boxSizing: 'border-box',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden',
@@ -54,6 +50,6 @@ export default function ContactBanner() {
         </div>
 
       </div>
-    </section>
+    </div>
   )
 }
