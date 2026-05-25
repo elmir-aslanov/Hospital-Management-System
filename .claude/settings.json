@@ -14,7 +14,8 @@
       "Bash(curl -s http://localhost:5000/api/v1/services)",
       "Bash(curl -s http://localhost:5000/api/v1/blog)",
       "Bash(curl -s -X POST http://localhost:5000/api/v1/contact -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"t@t.com\",\"message\":\"test\"}')",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Test-Path \"c:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\\\\client\\\\src\\\\components\\\\sections\\\\HospitalShowcase.jsx\")"
     ]
   }
 }
