@@ -202,6 +202,9 @@ export default function Navbar() {
             </span>
           </Link>
 
+          {/* Divider after logo */}
+          <span style={{ width: '1px', height: '24px', background: '#ddd', alignSelf: 'center', flexShrink: 0 }} />
+
           {/* 2. Contact: phone + email */}
           <div className="mid-social" style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
             <a href="tel:+994508363694" style={{
@@ -244,7 +247,7 @@ export default function Navbar() {
                 <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
               </svg>
-              Bakı, Əliağa Vahid 12
+              Xətai r., Əfiyəddin Cəlilov, Bakı
             </span>
 
             {/* 4. Social icons */}
@@ -258,8 +261,8 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* 5. Divider */}
-          <span style={{ width: '1px', height: '24px', background: '#ddd', flexShrink: 0 }} />
+          {/* 5. Divider (before left button group) */}
+          <span style={{ width: '1px', height: '24px', background: '#ddd', alignSelf: 'center', flexShrink: 0 }} />
 
           {/* 6. Left button group: login pill + E-Nəticə */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
