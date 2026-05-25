@@ -2,12 +2,9 @@ import { useNavigate } from 'react-router-dom'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 
-const Hex = () => (
-  <svg width="70" height="70" viewBox="0 0 70 70" fill="none">
-    <polygon
-      points="35,4 64,19 64,51 35,66 6,51 6,19"
-      stroke="#e53e3e" strokeWidth="1.5" fill="none"
-    />
+const Hex = ({ size = 80, style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 80 80" style={style}>
+    <polygon points="40,4 74,22 74,58 40,76 6,58 6,22" fill="none" stroke="#00848e" strokeWidth="1.5" />
   </svg>
 )
 
@@ -16,63 +13,92 @@ export default function ContactBanner() {
   const navigate = useNavigate()
 
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box', background: '#fff5f5' }}>
+    <div style={{ width: '100%', boxSizing: 'border-box', background: '#e8f6f8' }}>
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
-        padding: window.innerWidth < 768 ? '60px 16px' : '80px 48px',
-        boxSizing: 'border-box',
+        padding: isMobile ? '60px 16px' : '80px 48px',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden',
       }}>
 
-        {/* Top-left hexagons */}
-        <div style={{ position: 'absolute', top: '20px', left: '40px', opacity: 0.4, display: 'flex', gap: '4px', pointerEvents: 'none' }}>
-          <Hex /><Hex />
+        {/* Background hexagons — left */}
+        <div style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', opacity: 0.12 }}>
+          <Hex size={100} style={{ position: 'absolute', top: '10px', left: '20px' }} />
+          <Hex size={70}  style={{ position: 'absolute', top: '80px', left: '100px' }} />
+          <Hex size={60}  style={{ position: 'absolute', top: '160px', left: '30px' }} />
+          <Hex size={80}  style={{ position: 'absolute', top: '0px', left: '150px' }} />
         </div>
 
-        {/* Top-right hexagons */}
-        <div style={{ position: 'absolute', top: '10px', right: '60px', opacity: 0.15, display: 'flex', gap: '4px', pointerEvents: 'none' }}>
-          <Hex /><Hex />
-        </div>
-
-        {/* Bottom-right hexagons */}
-        <div style={{ position: 'absolute', bottom: '20px', right: '40px', opacity: 0.2, display: 'flex', gap: '4px', pointerEvents: 'none' }}>
-          <Hex /><Hex />
+        {/* Background hexagons — right */}
+        <div style={{ position: 'absolute', top: 0, right: 0, pointerEvents: 'none', opacity: 0.12 }}>
+          <Hex size={100} style={{ position: 'absolute', top: '10px', right: '20px' }} />
+          <Hex size={70}  style={{ position: 'absolute', top: '80px', right: '100px' }} />
+          <Hex size={60}  style={{ position: 'absolute', top: '160px', right: '30px' }} />
+          <Hex size={80}  style={{ position: 'absolute', top: '0px', right: '150px' }} />
         </div>
 
         {/* Main content */}
         <div style={{ position: 'relative', zIndex: 1 }}>
+
+          {/* Top icon */}
+          <div style={{
+            width: '64px', height: '64px',
+            background: '#00848e',
+            clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '20px',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+
+          {/* Heading */}
           <h2 style={{
-            fontSize: isMobile ? '28px' : '42px',
-            fontWeight: 500,
-            color: '#1a1a1a',
+            fontSize: isMobile ? '26px' : '38px',
+            fontWeight: 700,
+            color: '#0a1628',
             lineHeight: 1.4,
-            marginBottom: '40px',
+            marginBottom: '12px',
             fontFamily: FONT,
           }}>
             Təklif və ya tələblərinizi<br />dinləməkdən məmnun olarıq
           </h2>
 
+          {/* Subtext */}
+          <p style={{
+            fontSize: '15px',
+            color: '#555',
+            marginBottom: '32px',
+            fontFamily: FONT,
+          }}>
+            Rəy və təkliflərinizi bizimlə paylaşın, xidmət keyfiyyətimizi birlikdə artıraq.
+          </p>
+
+          {/* Button */}
           <button
             onClick={() => navigate('/elektron-muraciet')}
             style={{
-              background: '#e53e3e',
-              color: 'white',
-              border: 'none',
-              padding: '16px 40px',
-              fontSize: '16px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              borderRadius: '4px',
-              fontFamily: FONT,
+              display: 'inline-flex', alignItems: 'center', gap: '10px',
+              background: '#00848e', color: 'white', border: 'none',
+              padding: '14px 36px', fontSize: '16px', fontWeight: 500,
+              borderRadius: '8px', cursor: 'pointer', fontFamily: FONT,
             }}
           >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
             Elektron müraciət ünvanla
           </button>
-        </div>
 
+        </div>
       </div>
     </div>
   )

@@ -12,42 +12,32 @@ const PersonIcon = () => (
 function DoctorCard({ doctor }) {
   return (
     <div style={{ fontFamily: FONT }}>
-      {doctor.photo ? (
-        <img
-          src={doctor.photo}
-          alt={doctor.fullName}
-          style={{
-            width: '100%', aspectRatio: '3/4',
-            objectFit: 'cover', borderRadius: '8px',
-            marginBottom: '12px', display: 'block',
-          }}
-          onError={e => {
-            e.currentTarget.style.display = 'none'
-            e.currentTarget.nextSibling.style.display = 'flex'
-          }}
-        />
-      ) : null}
-      <div style={{
-        width: '100%', aspectRatio: '3/4',
-        background: '#e8f6f8', borderRadius: '8px',
-        marginBottom: '12px',
-        display: doctor.photo ? 'none' : 'flex',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <PersonIcon />
+      <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', borderRadius: '8px', marginBottom: '16px', background: '#f0f0f0' }}>
+        {doctor.photo ? (
+          <img
+            src={doctor.photo}
+            alt={doctor.fullName}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+            onError={e => {
+              e.currentTarget.style.display = 'none'
+              e.currentTarget.nextSibling.style.display = 'flex'
+            }}
+          />
+        ) : null}
+        <div style={{
+          width: '100%', height: '100%',
+          background: '#e8f6f8',
+          display: doctor.photo ? 'none' : 'flex',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <PersonIcon />
+        </div>
       </div>
-      <h3 style={{
-        fontSize: '16px', fontWeight: 700,
-        color: '#0a1628', margin: '0 0 4px',
-        textAlign: 'left', fontFamily: FONT,
-      }}>
+      <p style={{ fontSize: '16px', fontWeight: 700, color: '#0a1628', marginBottom: '4px', margin: '0 0 4px', fontFamily: FONT }}>
         {doctor.fullName}
-      </h3>
-      <p style={{
-        fontSize: '14px', color: '#666',
-        margin: 0, textAlign: 'left', fontFamily: FONT,
-      }}>
-        {doctor.specialization || doctor.department || ''}
+      </p>
+      <p style={{ fontSize: '14px', color: '#888', fontWeight: 400, margin: 0, fontFamily: FONT }}>
+        {doctor.specialization || doctor.department || 'Həkim'}
       </p>
     </div>
   )
@@ -55,10 +45,7 @@ function DoctorCard({ doctor }) {
 
 function SkeletonCard() {
   return (
-    <div style={{
-      background: '#f0f0f0', borderRadius: '8px',
-      height: '280px', animation: 'pulse 1.5s ease-in-out infinite',
-    }} />
+    <div style={{ aspectRatio: '3/4', background: '#f5f5f5', borderRadius: '8px', animation: 'pulse 1.5s ease-in-out infinite' }} />
   )
 }
 
@@ -71,10 +58,7 @@ export default function DoctorsSection() {
     fetch('/api/v1/site-doctors?limit=8')
       .then(r => r.json())
       .then(data => {
-        let list = []
-        if (Array.isArray(data)) list = data
-        else if (Array.isArray(data.doctors)) list = data.doctors
-        else if (Array.isArray(data.data)) list = data.data
+        const list = Array.isArray(data) ? data : (data.doctors || data.data || [])
         setDoctors(list)
         setLoading(false)
       })
@@ -87,43 +71,40 @@ export default function DoctorsSection() {
     <>
       <style>{`
         @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
         }
       `}</style>
 
-      <div style={{ width: '100%', boxSizing: 'border-box', margin: 0, background: '#ffffff' }}>
+      <div style={{ width: '100%', boxSizing: 'border-box', background: 'white' }}>
         <div style={{
           maxWidth: '1280px',
           margin: '0 auto',
           padding: isMobile ? '40px 16px' : '60px 48px',
-          textAlign: 'center',
         }}>
-          <p style={{
-            fontSize: '18px', color: '#666',
-            fontWeight: 400, marginBottom: '8px',
-            fontFamily: FONT,
-          }}>
-            Meet Our
-          </p>
-          <h2 style={{
-            fontSize: isMobile ? '28px' : '40px',
-            fontWeight: 700, color: '#0a1628',
-            margin: '0 0 48px', fontFamily: FONT,
-          }}>
-            Peşəkar Həkimlərimiz
-          </h2>
 
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <p style={{ fontSize: '20px', fontWeight: 400, color: '#666', marginBottom: '8px', fontFamily: FONT }}>
+              Meet Our
+            </p>
+            <h2 style={{ fontSize: isMobile ? '28px' : '40px', fontWeight: 700, color: '#0a1628', margin: 0, fontFamily: FONT }}>
+              Peşəkar Həkimlərimiz
+            </h2>
+          </div>
+
+          {/* Grid */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-            gap: '24px',
+            gap: '32px',
           }}>
             {loading
               ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
               : doctors.map((doc, i) => <DoctorCard key={doc._id || i} doctor={doc} />)
             }
           </div>
+
         </div>
       </div>
     </>

@@ -121,7 +121,7 @@ export default function ElektronMuraciet() {
               type="submit"
               disabled={loading}
               style={{
-                background: loading ? '#aaa' : '#e53e3e',
+                background: loading ? '#aaa' : '#00848e',
                 color: 'white', border: 'none',
                 padding: '14px 48px', fontSize: '16px', borderRadius: '4px',
                 cursor: loading ? 'not-allowed' : 'pointer',
