@@ -6,7 +6,6 @@ dotenv.config()
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
 import User from './models/User.model.js'
-import Doctor from './models/Doctor.model.js'
 
 const seed = async () => {
   try {
@@ -14,22 +13,20 @@ const seed = async () => {
     console.log('MongoDB connected')
 
     await User.deleteMany({})
-    await Doctor.deleteMany({})
-    console.log('Users and doctors cleared')
+    console.log('Users cleared')
 
     const admin = await User.create({
-      fullName: 'Admin User',
-      email: 'admin@hms.com',
+      fullName: 'Admin',
+      email: 'admin@aslanmedical.az',
       password: 'Admin123!',
       role: 'ADMIN',
-      phone: '+994501000001',
       isActive: true
     })
 
     console.log('')
     console.log('=== SEED TAMAMLANDI ===')
     console.log('Admin yaradıldı:')
-    console.log('  Email:    admin@hms.com')
+    console.log('  Email:    admin@aslanmedical.az')
     console.log('  Şifrə:    Admin123!')
     console.log('  Rol:      ADMIN')
     console.log('  ID:      ', admin._id.toString())

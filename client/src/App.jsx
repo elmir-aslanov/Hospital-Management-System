@@ -22,6 +22,8 @@ import BlogPage              from './pages/public/BlogPage';
 import ContactPage           from './pages/public/ContactPage';
 import ENeticePage           from './pages/public/ENeticePage';
 import ElektronMuraciet     from './pages/public/ElektronMuraciet';
+import AdminLoginPage       from './pages/AdminLoginPage';
+import AdminDashboard       from './pages/AdminDashboard';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -57,8 +59,8 @@ function RouteLoader() {
 }
 
 /* Pages that hide the public navbar/footer */
-const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu', '/e-netice']);
-const HIDE_CHROME_PREFIX = ['/dashboard', '/patient'];
+const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu', '/e-netice', '/admin']);
+const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin'];
 
 function Layout() {
   const { pathname } = useLocation();
@@ -83,6 +85,10 @@ function Layout() {
         <Route path="/randevu"             element={<RandevuPage />} />
         <Route path="/e-netice"            element={<ENeticePage />} />
         <Route path="/elektron-muraciet"   element={<ElektronMuraciet />} />
+
+        {/* ── Admin ── */}
+        <Route path="/admin"           element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />
