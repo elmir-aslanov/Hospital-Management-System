@@ -94,7 +94,7 @@ export default function HospitalShowcase() {
           <div style={{ display: 'flex', gap: '12px', marginTop: '16px', overflowX: 'hidden' }}>
             {hospitals.map((h, i) => (
               <div
-                key={h.name}
+                key={i}
                 onClick={() => setActive(i)}
                 style={{ width: '140px', flexShrink: 0, cursor: 'pointer' }}
               >
