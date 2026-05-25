@@ -38,6 +38,7 @@ import departmentsRoutes    from './modules/departments/departments.routes.js';
 import servicesRoutes       from './modules/services/services.routes.js';
 import blogRoutes           from './modules/blog/blog.routes.js';
 import contactRoutes        from './modules/contact/contact.routes.js';
+import muracietRoutes       from './modules/muraciet/muraciet.routes.js';
 
 const app = express();
 
@@ -131,6 +132,7 @@ app.use(`${API}/departments`,    departmentsRoutes);
 app.use(`${API}/services`,       servicesRoutes);
 app.use(`${API}/blog`,           blogRoutes);
 app.use(`${API}/contact`,        contactRoutes);
+app.use(`${API}/muraciet`,       muracietRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
