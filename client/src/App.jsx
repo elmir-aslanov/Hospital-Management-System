@@ -28,7 +28,11 @@ import AdminDoctors         from './pages/admin/AdminDoctors';
 import AdminPatients        from './pages/admin/AdminPatients';
 import AdminAppointments    from './pages/admin/AdminAppointments';
 import AdminMuraciet        from './pages/admin/AdminMuraciet';
-import DoctorDashboard      from './pages/doctor/DoctorDashboard';
+import DoctorDashboard      from './pages/doctor/DoctorDashboard'
+import DoctorPatients       from './pages/doctor/DoctorPatients'
+import DoctorPrescriptions  from './pages/doctor/DoctorPrescriptions'
+import DoctorAnalyses       from './pages/doctor/DoctorAnalyses'
+import DoctorProfile        from './pages/doctor/DoctorProfile';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -65,7 +69,7 @@ function RouteLoader() {
 
 /* Pages that hide the public navbar/footer */
 const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu', '/e-netice', '/admin']);
-const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin'];
+const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin', '/doctor'];
 
 function Layout() {
   const { pathname } = useLocation();
@@ -103,11 +107,11 @@ function Layout() {
         <Route path="/admin/settings"     element={<AdminDashboard />} />
 
         {/* ── Doctor ── */}
-        <Route path="/doctor/dashboard"    element={<DoctorDashboard />} />
-        <Route path="/doctor/patients"     element={<DoctorDashboard />} />
-        <Route path="/doctor/appointments" element={<DoctorDashboard />} />
-        <Route path="/doctor/prescriptions" element={<DoctorDashboard />} />
-        <Route path="/doctor/profile"      element={<DoctorDashboard />} />
+        <Route path="/doctor/dashboard"     element={<DoctorDashboard />} />
+        <Route path="/doctor/patients"      element={<DoctorPatients />} />
+        <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
+        <Route path="/doctor/analyses"      element={<DoctorAnalyses />} />
+        <Route path="/doctor/profile"       element={<DoctorProfile />} />
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />

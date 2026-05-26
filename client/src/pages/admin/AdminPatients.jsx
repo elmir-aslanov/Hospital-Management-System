@@ -3,8 +3,8 @@ import AdminLayout from '../../components/admin/AdminLayout'
 
 const BASE = 'http://localhost:5000'
 const PAGE_SIZE = 10
-const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-']
-const emptyForm = { fullName: '', phone: '', email: '', bloodType: '', dateOfBirth: '', gender: '', address: '' }
+const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+const emptyForm = { fullName: '', email: '', phone: '', bloodGroup: '', doctorId: '' }
 
 export default function AdminPatients() {
   const [patients, setPatients]     = useState([])
@@ -19,6 +19,7 @@ export default function AdminPatients() {
   const [form, setForm]             = useState(emptyForm)
   const [saving, setSaving]         = useState(false)
   const [formError, setFormError]   = useState('')
+  const [doctors, setDoctors]       = useState([])
   const debounceRef = useRef(null)
 
   const token   = localStorage.getItem('adminToken')
@@ -65,28 +66,37 @@ export default function AdminPatients() {
       .finally(() => setDetailLoad(false))
   }
 
-  const openModal = () => { setForm(emptyForm); setFormError(''); setShowModal(true) }
+  const openModal = () => {
+    setForm(emptyForm); setFormError(''); setShowModal(true)
+    fetch(`${BASE}/api/v1/site-doctors/all`, { headers })
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d) ? d : d.doctors || d.data || []
+        setDoctors(list)
+      })
+      .catch(() => setDoctors([]))
+  }
   const closeModal = () => { setShowModal(false); setFormError('') }
 
   const handleSave = async () => {
     if (!form.fullName.trim()) { setFormError('Ad Soyad tələb olunur'); return }
-    if (!form.phone.trim())    { setFormError('Telefon tələb olunur'); return }
+    if (!form.email.trim())    { setFormError('E-poçt tələb olunur'); return }
     setSaving(true); setFormError('')
     try {
-      const r = await fetch(`${BASE}/api/v1/patients`, {
+      const body = {
+        fullName:  form.fullName.trim(),
+        email:     form.email.trim(),
+        phone:     form.phone.trim() || undefined,
+        bloodGroup: form.bloodGroup || undefined,
+        doctorId:  form.doctorId || undefined,
+      }
+      const r = await fetch(`${BASE}/api/v1/patients/admin-create`, {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName:    form.fullName.trim(),
-          phone:       form.phone.trim(),
-          email:       form.email.trim() || undefined,
-          bloodType:   form.bloodType || undefined,
-          dateOfBirth: form.dateOfBirth || undefined,
-          gender:      form.gender || undefined,
-          address:     form.address.trim() || undefined,
-        }),
+        body: JSON.stringify(body),
       })
-      if (!r.ok) { const e = await r.json(); throw new Error(e.message || 'Xəta baş verdi') }
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.message || data.error || 'Xəta baş verdi')
       closeModal()
       load(search, page)
     } catch (e) { setFormError(e.message) }
@@ -264,27 +274,24 @@ export default function AdminPatients() {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <MField label="Ad Soyad *"   value={form.fullName}    onChange={v => setForm(f => ({ ...f, fullName: v }))} />
-              <MField label="Telefon *"    value={form.phone}       onChange={v => setForm(f => ({ ...f, phone: v }))} />
-              <MField label="E-poçt"       value={form.email}       onChange={v => setForm(f => ({ ...f, email: v }))} type="email" />
+              <MField label="Ad Soyad *" value={form.fullName} onChange={v => setForm(f => ({ ...f, fullName: v }))} />
+              <MField label="E-poçt *"   value={form.email}    onChange={v => setForm(f => ({ ...f, email: v }))}    type="email" />
+              <MField label="Telefon"    value={form.phone}    onChange={v => setForm(f => ({ ...f, phone: v }))}    placeholder="0501234567" />
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Qan qrupu</label>
-                <select value={form.bloodType} onChange={e => setForm(f => ({ ...f, bloodType: e.target.value }))} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
+                <select value={form.bloodGroup} onChange={e => setForm(f => ({ ...f, bloodGroup: e.target.value }))} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
                   <option value="">Seçin...</option>
                   {BLOOD_TYPES.map(bt => <option key={bt} value={bt}>{bt}</option>)}
                 </select>
               </div>
-              <MField label="Doğum tarixi" value={form.dateOfBirth} onChange={v => setForm(f => ({ ...f, dateOfBirth: v }))} type="date" />
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Cins</label>
-                <select value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
-                  <option value="">Seçin...</option>
-                  <option value="male">Kişi</option>
-                  <option value="female">Qadın</option>
-                </select>
-              </div>
               <div style={{ gridColumn: 'span 2' }}>
-                <MField label="Ünvan" value={form.address} onChange={v => setForm(f => ({ ...f, address: v }))} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Həkim (istəyə bağlı)</label>
+                <select value={form.doctorId} onChange={e => setForm(f => ({ ...f, doctorId: e.target.value }))} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
+                  <option value="">Həkim seçin...</option>
+                  {doctors.map(d => (
+                    <option key={d._id} value={d._id}>{d.fullName || d.name} {d.specialization || d.specialty ? `— ${d.specialization || d.specialty}` : ''}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -303,11 +310,11 @@ export default function AdminPatients() {
   )
 }
 
-function MField({ label, value, onChange, type = 'text' }) {
+function MField({ label, value, onChange, type = 'text', placeholder = '' }) {
   return (
     <div>
       <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
     </div>
   )
 }
