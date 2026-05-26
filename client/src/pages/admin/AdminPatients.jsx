@@ -3,19 +3,25 @@ import AdminLayout from '../../components/admin/AdminLayout'
 
 const BASE = 'http://localhost:5000'
 const PAGE_SIZE = 10
+const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-']
+const emptyForm = { fullName: '', phone: '', email: '', bloodType: '', dateOfBirth: '', gender: '', address: '' }
 
 export default function AdminPatients() {
-  const [patients, setPatients]   = useState([])
-  const [total, setTotal]         = useState(0)
-  const [page, setPage]           = useState(1)
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const [selected, setSelected]   = useState(null)
-  const [detail, setDetail]       = useState(null)
+  const [patients, setPatients]     = useState([])
+  const [total, setTotal]           = useState(0)
+  const [page, setPage]             = useState(1)
+  const [loading, setLoading]       = useState(true)
+  const [search, setSearch]         = useState('')
+  const [selected, setSelected]     = useState(null)
+  const [detail, setDetail]         = useState(null)
   const [detailLoad, setDetailLoad] = useState(false)
+  const [showModal, setShowModal]   = useState(false)
+  const [form, setForm]             = useState(emptyForm)
+  const [saving, setSaving]         = useState(false)
+  const [formError, setFormError]   = useState('')
   const debounceRef = useRef(null)
 
-  const token = localStorage.getItem('adminToken')
+  const token   = localStorage.getItem('adminToken')
   const headers = { Authorization: `Bearer ${token}` }
 
   const load = useCallback((q, pg) => {
@@ -27,10 +33,14 @@ export default function AdminPatients() {
       : `${BASE}/api/v1/patients?${params}`
     fetch(url, { headers })
       .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : d.patients || d.result || []
+      .then(data => {
+        let list = []
+        if (Array.isArray(data)) list = data
+        else if (Array.isArray(data.patients)) list = data.patients
+        else if (Array.isArray(data.data)) list = data.data
+        else if (Array.isArray(data.docs)) list = data.docs
         setPatients(list)
-        setTotal(d.total || d.count || list.length)
+        setTotal(data.total || list.length)
       })
       .catch(() => { setPatients([]); setTotal(0) })
       .finally(() => setLoading(false))
@@ -55,12 +65,39 @@ export default function AdminPatients() {
       .finally(() => setDetailLoad(false))
   }
 
+  const openModal = () => { setForm(emptyForm); setFormError(''); setShowModal(true) }
+  const closeModal = () => { setShowModal(false); setFormError('') }
+
+  const handleSave = async () => {
+    if (!form.fullName.trim()) { setFormError('Ad Soyad tələb olunur'); return }
+    if (!form.phone.trim())    { setFormError('Telefon tələb olunur'); return }
+    setSaving(true); setFormError('')
+    try {
+      const r = await fetch(`${BASE}/api/v1/patients`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName:    form.fullName.trim(),
+          phone:       form.phone.trim(),
+          email:       form.email.trim() || undefined,
+          bloodType:   form.bloodType || undefined,
+          dateOfBirth: form.dateOfBirth || undefined,
+          gender:      form.gender || undefined,
+          address:     form.address.trim() || undefined,
+        }),
+      })
+      if (!r.ok) { const e = await r.json(); throw new Error(e.message || 'Xəta baş verdi') }
+      closeModal()
+      load(search, page)
+    } catch (e) { setFormError(e.message) }
+    finally { setSaving(false) }
+  }
+
   const pages = Math.ceil(total / PAGE_SIZE) || 1
 
   const getAge = (dob) => {
     if (!dob) return '—'
-    const diff = Date.now() - new Date(dob).getTime()
-    return Math.floor(diff / (365.25 * 24 * 3600 * 1000)) + ' yaş'
+    return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)) + ' yaş'
   }
 
   return (
@@ -69,12 +106,17 @@ export default function AdminPatients() {
 
         {/* LEFT PANEL */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Pasiyentlər</h1>
               <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{total} pasiyent</p>
             </div>
+            <button onClick={openModal} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Yeni Pasiyent
+            </button>
           </div>
 
           {/* Search */}
@@ -103,7 +145,7 @@ export default function AdminPatients() {
                   </tr>
                 </thead>
                 <tbody>
-                  {patients.map(pat => {
+                  {(patients || []).map(pat => {
                     const u = pat.userId || pat
                     const isSelected = selected === pat._id
                     return (
@@ -168,13 +210,13 @@ export default function AdminPatients() {
                     <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginTop: 2 }}>{detail.patientId || ''}</div>
                   </div>
 
-                  <InfoRow label="E-poçt" value={detail.userId?.email || detail.email || '—'} />
-                  <InfoRow label="Telefon" value={detail.phone || '—'} />
+                  <InfoRow label="E-poçt"       value={detail.userId?.email || detail.email || '—'} />
+                  <InfoRow label="Telefon"       value={detail.phone || '—'} />
                   <InfoRow label="Doğum tarixi" value={detail.dateOfBirth ? new Date(detail.dateOfBirth).toLocaleDateString('az-AZ') : '—'} />
-                  <InfoRow label="Yaş" value={getAge(detail.dateOfBirth)} />
-                  <InfoRow label="Cins" value={detail.gender === 'male' ? 'Kişi' : detail.gender === 'female' ? 'Qadın' : '—'} />
-                  <InfoRow label="Qan qrupu" value={detail.bloodType || '—'} />
-                  <InfoRow label="Ünvan" value={detail.address || '—'} />
+                  <InfoRow label="Yaş"           value={getAge(detail.dateOfBirth)} />
+                  <InfoRow label="Cins"          value={detail.gender === 'male' ? 'Kişi' : detail.gender === 'female' ? 'Qadın' : '—'} />
+                  <InfoRow label="Qan qrupu"     value={detail.bloodType || '—'} />
+                  <InfoRow label="Ünvan"         value={detail.address || '—'} />
 
                   {detail.medicalHistory && detail.medicalHistory.length > 0 && (
                     <div style={{ marginTop: 16 }}>
@@ -205,8 +247,68 @@ export default function AdminPatients() {
           )}
         </div>
       </div>
+
+      {/* ADD PATIENT MODAL */}
+      {showModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => { if (e.target === e.currentTarget) closeModal() }}
+        >
+          <div style={{ background: 'white', borderRadius: 16, width: 520, maxWidth: '95vw', maxHeight: '90vh', overflow: 'auto', padding: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>Yeni Pasiyent</h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 22, lineHeight: 1 }}>×</button>
+            </div>
+
+            {formError && (
+              <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{formError}</div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <MField label="Ad Soyad *"   value={form.fullName}    onChange={v => setForm(f => ({ ...f, fullName: v }))} />
+              <MField label="Telefon *"    value={form.phone}       onChange={v => setForm(f => ({ ...f, phone: v }))} />
+              <MField label="E-poçt"       value={form.email}       onChange={v => setForm(f => ({ ...f, email: v }))} type="email" />
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Qan qrupu</label>
+                <select value={form.bloodType} onChange={e => setForm(f => ({ ...f, bloodType: e.target.value }))} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
+                  <option value="">Seçin...</option>
+                  {BLOOD_TYPES.map(bt => <option key={bt} value={bt}>{bt}</option>)}
+                </select>
+              </div>
+              <MField label="Doğum tarixi" value={form.dateOfBirth} onChange={v => setForm(f => ({ ...f, dateOfBirth: v }))} type="date" />
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Cins</label>
+                <select value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
+                  <option value="">Seçin...</option>
+                  <option value="male">Kişi</option>
+                  <option value="female">Qadın</option>
+                </select>
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <MField label="Ünvan" value={form.address} onChange={v => setForm(f => ({ ...f, address: v }))} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
+              <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
+              <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+                {saving ? 'Saxlanır...' : 'Əlavə et'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </AdminLayout>
+  )
+}
+
+function MField({ label, value, onChange, type = 'text' }) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
+    </div>
   )
 }
 
