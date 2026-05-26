@@ -17,6 +17,7 @@ export default function AdminDoctors() {
   const [delId, setDelId]       = useState(null)
   const [search, setSearch]     = useState('')
   const [error, setError]       = useState('')
+  const [success, setSuccess]   = useState('')
 
   const token = localStorage.getItem('adminToken')
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
@@ -49,9 +50,21 @@ export default function AdminDoctors() {
     try {
       const url    = modal === 'add' ? `${BASE}/api/v1/site-doctors` : `${BASE}/api/v1/site-doctors/${editId}`
       const method = modal === 'add' ? 'POST' : 'PUT'
-      const r = await fetch(url, { method, headers, body: JSON.stringify({ ...form, experience: Number(form.experience) || 0 }) })
+      const body = {
+        fullName:       form.fullName,
+        specialization: form.specialization,
+        department:     form.department,
+        experience:     Number(form.experience) || 0,
+        photoUrl:       form.photoUrl,
+        bio:            form.bio,
+        isActive:       form.isActive,
+      }
+      const r = await fetch(url, { method, headers, body: JSON.stringify(body) })
       if (!r.ok) { const e = await r.json(); throw new Error(e.message || 'Xəta') }
-      setModal(null); load()
+      setModal(null)
+      setSuccess(modal === 'add' ? 'Həkim uğurla əlavə edildi' : 'Həkim uğurla yeniləndi')
+      setTimeout(() => setSuccess(''), 3000)
+      load()
     } catch (e) { setError(e.message) }
     finally { setSaving(false) }
   }
@@ -64,14 +77,17 @@ export default function AdminDoctors() {
     } catch { setDelId(null) }
   }
 
-  const filtered = doctors.filter(d =>
-    d.name?.toLowerCase().includes(search.toLowerCase()) ||
-    d.specialty?.toLowerCase().includes(search.toLowerCase()) ||
-    d.department?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = doctors.filter(d => {
+    const s = search.toLowerCase()
+    return (d.fullName || d.name || '').toLowerCase().includes(s) ||
+           (d.specialization || d.specialty || '').toLowerCase().includes(s) ||
+           (d.department || '').toLowerCase().includes(s)
+  })
 
   return (
     <AdminLayout activePage="doctors">
+      {success && <div style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 600, marginBottom: 18 }}>{success}</div>}
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -104,18 +120,18 @@ export default function AdminDoctors() {
           {filtered.map(doc => (
             <div key={doc._id} style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
               <div style={{ height: 130, background: 'linear-gradient(135deg,#e8f6f8,#f0fafb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                {doc.image ? (
-                  <img src={doc.image} alt={doc.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {(doc.photoUrl || doc.image) ? (
+                  <img src={doc.photoUrl || doc.image} alt={doc.fullName || doc.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-                    {doc.name?.[0]?.toUpperCase() || 'D'}
+                    {(doc.fullName || doc.name || 'D')[0].toUpperCase()}
                   </div>
                 )}
                 <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: doc.isActive ? '#22c55e' : '#94a3b8', boxShadow: doc.isActive ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
               </div>
               <div style={{ padding: '14px 16px' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{doc.name}</div>
-                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialty}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{doc.fullName || doc.name}</div>
+                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || doc.specialty}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>{doc.department} {doc.experience ? `· ${doc.experience} il` : ''}</div>
                 {doc.bio && <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{doc.bio}</div>}
                 <div style={{ display: 'flex', gap: 8 }}>

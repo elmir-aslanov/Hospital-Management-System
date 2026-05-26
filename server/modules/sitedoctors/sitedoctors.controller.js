@@ -1,45 +1,58 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
-import Doctor       from '../../models/Doctor.model.js';
+import ApiError     from '../../utils/ApiError.js';
+import * as svc     from './sitedoctors.service.js';
 
 export const getPublicDoctors = asyncHandler(async (req, res) => {
-  const limit = parseInt(req.query.limit) || 8;
-
-  const doctors = await Doctor.find({ isAvailable: true })
-    .populate('userId', 'fullName email avatar phone')
-    .sort({ averageRating: -1, experience: -1 })
-    .limit(limit)
-    .lean();
-
-  const mapped = doctors.map(doc => ({
-    _id:            doc._id,
-    name:           doc.userId?.fullName || 'Həkim',
-    fullName:       doc.userId?.fullName || 'Həkim',
-    specialty:      doc.specialization,
-    specialization: doc.specialization,
-    department:     doc.specialization,
-    experience:     doc.experience,
-    bio:            doc.bio,
-    image:          doc.userId?.avatar || '',
-    averageRating:  doc.averageRating,
-    totalRatings:   doc.totalRatings,
-    isAvailable:    doc.isAvailable,
-    isActive:       doc.isAvailable,
-  }));
-
-  res.json(new ApiResponse(200, { doctors: mapped, total: mapped.length }, 'Həkimlər uğurla alındı.'));
+  const limit   = parseInt(req.query.limit) || 8;
+  const doctors = await svc.getPublicDoctors(limit);
+  res.json(new ApiResponse(200, { doctors, total: doctors.length }, 'Həkimlər uğurla alındı.'));
 });
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
-export const getAllDoctors = asyncHandler(async (req, res) => {
-  const doctors = await Doctor.find()
-    .populate('userId', 'fullName email avatar')
-    .sort({ createdAt: -1 })
-    .lean();
+export const getAllDoctors = asyncHandler(async (_req, res) => {
+  const doctors = await svc.getAllDoctors();
   res.json(new ApiResponse(200, doctors));
 });
 
-export const createDoctor  = asyncHandler(async (_req, res) => res.status(405).json(new ApiResponse(405, null, 'Use /api/v1/doctors to manage HMS doctors.')));
-export const updateDoctor  = asyncHandler(async (_req, res) => res.status(405).json(new ApiResponse(405, null, 'Use /api/v1/doctors to manage HMS doctors.')));
-export const deleteDoctor  = asyncHandler(async (_req, res) => res.status(405).json(new ApiResponse(405, null, 'Use /api/v1/doctors to manage HMS doctors.')));
+export const createDoctor = asyncHandler(async (req, res) => {
+  const { fullName, specialization, department, experience, photoUrl, bio, isActive, order } = req.body;
+  if (!fullName?.trim())       throw new ApiError(400, 'fullName tələb olunur');
+  if (!specialization?.trim()) throw new ApiError(400, 'specialization tələb olunur');
+
+  const doctor = await svc.createDoctor({
+    name:       fullName.trim(),
+    specialty:  specialization.trim(),
+    department: department?.trim() || '',
+    experience: Number(experience) || 0,
+    image:      photoUrl?.trim() || '',
+    bio:        bio?.trim() || '',
+    isActive:   isActive ?? true,
+    order:      Number(order) || 0,
+  });
+
+  res.status(201).json(new ApiResponse(201, doctor, 'Həkim uğurla yaradıldı'));
+});
+
+export const updateDoctor = asyncHandler(async (req, res) => {
+  const { fullName, specialization, department, experience, photoUrl, bio, isActive, order } = req.body;
+
+  const update = {};
+  if (fullName       !== undefined) update.name       = fullName.trim();
+  if (specialization !== undefined) update.specialty  = specialization.trim();
+  if (department     !== undefined) update.department = department.trim();
+  if (experience     !== undefined) update.experience = Number(experience) || 0;
+  if (photoUrl       !== undefined) update.image      = photoUrl.trim();
+  if (bio            !== undefined) update.bio        = bio.trim();
+  if (isActive       !== undefined) update.isActive   = isActive;
+  if (order          !== undefined) update.order      = Number(order) || 0;
+
+  const doctor = await svc.updateDoctor(req.params.id, update);
+  res.json(new ApiResponse(200, doctor, 'Həkim uğurla yeniləndi'));
+});
+
+export const deleteDoctor = asyncHandler(async (req, res) => {
+  await svc.deleteDoctor(req.params.id);
+  res.json(new ApiResponse(200, null, 'Həkim uğurla silindi'));
+});
