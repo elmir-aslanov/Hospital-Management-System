@@ -68,7 +68,7 @@ export default function AdminDashboard() {
   const [adminUser]          = useState(() => JSON.parse(localStorage.getItem('adminUser') || '{}'))
   const token                = localStorage.getItem('adminToken')
   const [stats, setStats]    = useState({ doctors: 0, patients: 0, appointments: 0, muraciet: 0 })
-  const [appts, setAppts]    = useState([])
+  const [appointments, setAppointments] = useState([])
   const [search, setSearch]  = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -76,19 +76,59 @@ export default function AdminDashboard() {
     if (!token) { navigate('/admin'); return }
     const headers = { Authorization: `Bearer ${token}` }
 
-    Promise.all([
-      fetch(`${API}/admin/stats`, { headers }).then(r => r.json()),
-      fetch(`${API}/admin/appointments?limit=5`, { headers }).then(r => r.json()),
-    ])
-      .then(([statsData, apptData]) => {
-        if (statsData?.data) setStats(statsData.data)
-        const list = Array.isArray(apptData?.data) ? apptData.data
-          : Array.isArray(apptData?.appointments) ? apptData.appointments
-          : []
-        setAppts(list)
+    const p1 = fetch(`${API}/site-doctors/all`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : data.doctors || data.data || []
+        setStats(prev => ({ ...prev, doctors: list.length }))
       })
-      .catch(console.error)
-      .finally(() => setLoading(false))
+      .catch(() => {})
+
+    const p2 = fetch(`${API}/patients`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        const count = data.total || data.count || (Array.isArray(data) ? data.length : 0) || (Array.isArray(data.patients) ? data.patients.length : 0)
+        setStats(prev => ({ ...prev, patients: count }))
+      })
+      .catch(() => {})
+
+    const p3 = fetch(`${API}/appointments`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        const count = data.total || data.count || (Array.isArray(data) ? data.length : 0) || (Array.isArray(data.appointments) ? data.appointments.length : 0)
+        setStats(prev => ({ ...prev, appointments: count }))
+      })
+      .catch(() => {})
+
+    const p4 = fetch(`${API}/contact`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        const count = data.total || data.count || (Array.isArray(data) ? data.length : 0) || (Array.isArray(data.contacts) ? data.contacts.length : 0)
+        setStats(prev => ({ ...prev, muraciet: count }))
+      })
+      .catch(() => {
+        fetch(`${API}/muraciet`, { headers })
+          .then(r => r.json())
+          .then(data => {
+            const count = Array.isArray(data) ? data.length : data.total || 0
+            setStats(prev => ({ ...prev, muraciet: count }))
+          })
+          .catch(() => {})
+      })
+
+    const p5 = fetch(`${API}/appointments?limit=5&sort=-createdAt`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        let list = []
+        if (Array.isArray(data)) list = data
+        else if (Array.isArray(data.appointments)) list = data.appointments
+        else if (Array.isArray(data.data)) list = data.data
+        else if (Array.isArray(data.docs)) list = data.docs
+        setAppointments(list)
+      })
+      .catch(() => setAppointments([]))
+
+    Promise.allSettled([p1, p2, p3, p4, p5]).finally(() => setLoading(false))
   }, [navigate, token])
 
   const handleLogout = () => {
@@ -259,7 +299,7 @@ export default function AdminDashboard() {
                 Xoş gəldiniz, {adminUser?.fullName || 'Admin'} 👋
               </h1>
               <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, marginBottom: 24 }}>
-                Bugün 12 randevu var, 3 yeni müraciət gözləyir
+                Bugün {stats.appointments} randevu var, {stats.muraciet} yeni müraciət gözləyir
               </p>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button style={{ background: 'white', color: '#00848e', border: 'none', borderRadius: 10, padding: '10px 22px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -313,13 +353,13 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {appts.length === 0 ? (
+                  {(appointments || []).length === 0 ? (
                     <tr><td colSpan={4} style={{ padding: 28, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Məlumat yoxdur</td></tr>
-                  ) : appts.map((a, i) => {
-                    const s = STATUS[a.status] || STATUS.scheduled
-                    const pName = a.patientId?.userId?.fullName ?? a.patientId?.fullName ?? '—'
-                    const dName = a.doctorId?.userId?.fullName  ?? a.doctorId?.fullName  ?? '—'
-                    const dSpec = a.doctorId?.specialization ?? ''
+                  ) : (appointments || []).map((a, i) => {
+                    const s = STATUS[a.status || 'scheduled'] || STATUS.scheduled
+                    const pName = a.patientId?.fullName || a.patient?.fullName || a.patientName || '—'
+                    const dName = a.doctorId?.fullName  || a.doctor?.fullName  || a.doctorName  || '—'
+                    const dSpec = a.doctorId?.specialization || a.doctor?.specialization || a.specialization || ''
                     return (
                       <tr key={a._id || i} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.1s' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
@@ -341,7 +381,7 @@ export default function AdminDashboard() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b' }}>
                             <svg width="12" height="12" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             {a.date ? new Date(a.date).toLocaleDateString('az-AZ') : '—'}
-                            {a.startTime ? ` · ${a.startTime}` : ''}
+                            {a.time ? ` · ${a.time}` : ''}
                           </div>
                         </td>
                         <td style={{ padding: '14px 24px' }}>

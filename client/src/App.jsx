@@ -24,6 +24,10 @@ import ENeticePage           from './pages/public/ENeticePage';
 import ElektronMuraciet     from './pages/public/ElektronMuraciet';
 import AdminLoginPage       from './pages/AdminLoginPage';
 import AdminDashboard       from './pages/admin/AdminDashboard';
+import AdminDoctors         from './pages/admin/AdminDoctors';
+import AdminPatients        from './pages/admin/AdminPatients';
+import AdminAppointments    from './pages/admin/AdminAppointments';
+import AdminMuraciet        from './pages/admin/AdminMuraciet';
 import DoctorDashboard      from './pages/doctor/DoctorDashboard';
 
 /* Auth */
@@ -90,11 +94,12 @@ function Layout() {
         {/* ── Admin ── */}
         <Route path="/admin"              element={<AdminLoginPage />} />
         <Route path="/admin/dashboard"    element={<AdminDashboard />} />
-        <Route path="/admin/doctors"      element={<AdminDashboard />} />
-        <Route path="/admin/patients"     element={<AdminDashboard />} />
-        <Route path="/admin/appointments" element={<AdminDashboard />} />
-        <Route path="/admin/muraciet"     element={<AdminDashboard />} />
-        <Route path="/admin/prescriptions" element={<AdminDashboard />} />
+        <Route path="/admin/doctors"      element={<AdminDoctors />} />
+        <Route path="/admin/patients"     element={<AdminPatients />} />
+        <Route path="/admin/appointments" element={<AdminAppointments />} />
+        <Route path="/admin/muraciet"     element={<AdminMuraciet />} />
+        <Route path="/admin/inventory"    element={<AdminDashboard />} />
+        <Route path="/admin/analytics"    element={<AdminDashboard />} />
         <Route path="/admin/settings"     element={<AdminDashboard />} />
 
         {/* ── Doctor ── */}
