@@ -1,58 +1,85 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-const FONT  = "'Source Sans 3', 'Raleway', sans-serif"
-const NAVY  = '#0a1628'
-const TEAL  = '#00848e'
-const API   = 'http://localhost:5000/api/v1'
+const API = 'http://localhost:5000/api/v1'
 
-const NAV = [
-  { label: 'Ana səhifə',    icon: '🏠', path: '/admin/dashboard' },
-  { label: 'Həkimlər',      icon: '👨‍⚕️', path: '/admin/doctors' },
-  { label: 'Pasiyentlər',   icon: '🏥', path: '/admin/patients' },
-  { label: 'Randevular',    icon: '📅', path: '/admin/appointments' },
-  { label: 'Müraciətlər',   icon: '📋', path: '/admin/muraciet' },
-  { label: 'Reseptlər',     icon: '💊', path: '/admin/prescriptions' },
-  { label: 'Ayarlar',       icon: '⚙️', path: '/admin/settings' },
+const NAV_ITEMS = [
+  { label: 'Ana səhifə',  path: '/admin/dashboard',     icon: HomeIcon },
+  { label: 'Həkimlər',    path: '/admin/doctors',        icon: UsersIcon },
+  { label: 'Pasiyentlər', path: '/admin/patients',       icon: UserIcon },
+  { label: 'Randevular',  path: '/admin/appointments',   icon: CalendarIcon },
+  { label: 'Müraciətlər', path: '/admin/muraciet',       icon: MailIcon },
+  { label: 'Reseptlər',   path: '/admin/prescriptions',  icon: PillIcon },
+  { label: 'Ayarlar',     path: '/admin/settings',       icon: SettingsIcon },
 ]
 
-const STATUS_STYLE = {
-  scheduled:   { background: '#fef9c3', color: '#854d0e', label: 'Gözləyir' },
-  waiting:     { background: '#fef9c3', color: '#854d0e', label: 'Gözləmədə' },
-  in_progress: { background: '#dbeafe', color: '#1e40af', label: 'Davam edir' },
-  completed:   { background: '#dcfce7', color: '#166534', label: 'Tamamlandı' },
-  cancelled:   { background: '#fee2e2', color: '#991b1b', label: 'Ləğv edildi' },
-  missed:      { background: '#f3f4f6', color: '#374151', label: 'Buraxıldı' },
+const STATUS = {
+  scheduled:   { bg: '#fef9c3', color: '#854d0e', label: 'Gözləyir' },
+  waiting:     { bg: '#fef9c3', color: '#854d0e', label: 'Gözləmədə' },
+  in_progress: { bg: '#dbeafe', color: '#1e40af', label: 'Davam edir' },
+  completed:   { bg: '#dcfce7', color: '#166534', label: 'Tamamlandı' },
+  cancelled:   { bg: '#fee2e2', color: '#991b1b', label: 'Ləğv edilib' },
+  missed:      { bg: '#f3f4f6', color: '#374151', label: 'Buraxıldı' },
 }
 
-function authHeaders() {
-  return { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+const SCHEDULE = [
+  { time: '10:00', name: 'Dr. Nigar Əliyeva',   type: 'Kardiologiya' },
+  { time: '11:30', name: 'Dr. Tural Qasımov',   type: 'Nevrologiya' },
+  { time: '14:00', name: 'Dr. Elnur Məmmədov',  type: 'Cərrahiyyə' },
+  { time: '16:00', name: 'Dr. Nigar Əliyeva',   type: 'Müayinə' },
+]
+
+/* ─── SVG Icons ─── */
+function HomeIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+}
+function UsersIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+}
+function UserIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+}
+function CalendarIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+}
+function MailIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+}
+function PillIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M10.5 20.5L3.5 13.5a5 5 0 0 1 7.07-7.07l7 7a5 5 0 0 1-7.07 7.07z"/><line x1="8.5" y1="11.5" x2="13.5" y2="6.5"/></svg>
+}
+function SettingsIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+}
+function BellIcon() {
+  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+}
+function SearchIcon() {
+  return <svg width="15" height="15" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+}
+function WAIcon() {
+  return <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
 }
 
 export default function AdminDashboard() {
   const navigate  = useNavigate()
   const location  = useLocation()
-  const isMobile  = window.innerWidth < 768
 
-  const [adminUser, setAdminUser]   = useState(null)
-  const [stats, setStats]           = useState({ doctors: 0, patients: 0, appointments: 0, muraciet: 0 })
-  const [appointments, setAppts]    = useState([])
-  const [sidebarOpen, setSidebar]   = useState(false)
+  const [adminUser]          = useState(() => JSON.parse(localStorage.getItem('adminUser') || '{}'))
+  const token                = localStorage.getItem('adminToken')
+  const [stats, setStats]    = useState({ doctors: 0, patients: 0, appointments: 0, muraciet: 0 })
+  const [appts, setAppts]    = useState([])
+  const [search, setSearch]  = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
     if (!token) { navigate('/admin'); return }
-    const u = localStorage.getItem('adminUser')
-    if (u) setAdminUser(JSON.parse(u))
 
-    fetch(`${API}/admin/stats`, { headers: authHeaders() })
-      .then(r => r.json()).then(d => { if (d.data) setStats(d.data) })
-      .catch(() => {})
+    fetch(`${API}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => d.data && setStats(d.data)).catch(() => {})
 
-    fetch(`${API}/admin/appointments?limit=5`, { headers: authHeaders() })
-      .then(r => r.json()).then(d => { if (Array.isArray(d.data)) setAppts(d.data) })
-      .catch(() => {})
-  }, [navigate])
+    fetch(`${API}/admin/appointments?limit=5`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => Array.isArray(d.data) && setAppts(d.data)).catch(() => {})
+  }, [navigate, token])
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
@@ -60,169 +87,285 @@ export default function AdminDashboard() {
     navigate('/admin')
   }
 
-  const currentNav = NAV.find(n => n.path === location.pathname) || NAV[0]
+  const initial = adminUser?.fullName?.[0]?.toUpperCase() || 'A'
 
   const STAT_CARDS = [
-    { label: 'Həkimlər',    value: stats.doctors,      color: '#6366f1' },
-    { label: 'Pasiyentlər', value: stats.patients,     color: '#06b6d4' },
-    { label: 'Randevular',  value: stats.appointments, color: '#f59e0b' },
-    { label: 'Müraciətlər', value: stats.muraciet,     color: '#10b981' },
+    { label: 'Həkimlər',    value: stats.doctors,      grad: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)', color: '#00848e', delta: '+18%' },
+    { label: 'Pasiyentlər', value: stats.patients,     grad: 'linear-gradient(135deg,#e8f5e9,#c8e6c9)', color: '#2e7d32', delta: '+24%' },
+    { label: 'Randevular',  value: stats.appointments, grad: 'linear-gradient(135deg,#ede7f6,#d1c4e9)', color: '#6b21a8', delta: '+8%'  },
+    { label: 'Müraciətlər', value: stats.muraciet,     grad: 'linear-gradient(135deg,#fff8e1,#ffecb3)', color: '#b45309', delta: '+12%' },
   ]
 
-  const Sidebar = () => (
-    <div style={{
-      width: '240px', background: NAVY, height: '100vh',
-      position: 'fixed', top: 0, left: isMobile ? (sidebarOpen ? 0 : '-240px') : 0,
-      display: 'flex', flexDirection: 'column', zIndex: 100,
-      transition: 'left 0.25s ease',
-    }}>
-      <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <img src="/logo.png" alt="Aslan Medical" style={{ height: '40px' }} />
-      </div>
-
-      <nav style={{ flex: 1, paddingTop: '8px' }}>
-        {NAV.map(item => {
-          const active = location.pathname === item.path
-          return (
-            <div
-              key={item.path}
-              onClick={() => { navigate(item.path); setSidebar(false) }}
-              style={{
-                padding: '12px 24px', cursor: 'pointer', fontSize: '14px',
-                display: 'flex', alignItems: 'center', gap: '10px',
-                color: active ? 'white' : '#94a3b8',
-                background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderLeft: active ? `3px solid ${TEAL}` : '3px solid transparent',
-                fontFamily: FONT,
-              }}
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </div>
-          )
-        })}
-      </nav>
-
-      <div style={{ padding: '20px' }}>
-        <button onClick={handleLogout} style={{
-          width: '100%', background: 'rgba(255,255,255,0.06)',
-          color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)',
-          padding: '10px', borderRadius: '8px', cursor: 'pointer',
-          fontSize: '14px', fontFamily: FONT,
-        }}>
-          Çıxış
-        </button>
-      </div>
-    </div>
-  )
-
   return (
-    <div style={{ display: 'flex', fontFamily: FONT }}>
-      <Sidebar />
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
 
-      {/* Mobile overlay */}
-      {isMobile && sidebarOpen && (
-        <div onClick={() => setSidebar(false)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99,
-        }} />
-      )}
-
-      {/* Main */}
-      <div style={{
-        marginLeft: isMobile ? 0 : '240px',
-        padding: isMobile ? '16px' : '32px',
-        background: '#f1f5f9', minHeight: '100vh', flex: 1,
+      {/* ── SIDEBAR ── */}
+      <aside style={{
+        width: 256, minHeight: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 50,
+        background: 'linear-gradient(180deg,#0a1628 0%,#0d2137 60%,#0a1f35 100%)',
+        display: 'flex', flexDirection: 'column',
       }}>
-        {/* Top bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {isMobile && (
-              <button onClick={() => setSidebar(true)} style={{
-                background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer',
-              }}>☰</button>
-            )}
-            <h1 style={{ fontSize: '22px', fontWeight: 700, color: NAVY, margin: 0 }}>
-              {currentNav.label}
-            </h1>
+        {/* Logo */}
+        <div style={{ padding: '24px 20px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: '#00848e',
+            boxShadow: '0 0 16px rgba(0,132,142,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '14px', color: '#64748b' }}>{adminUser?.fullName}</span>
-            <div style={{
-              width: '36px', height: '36px', borderRadius: '50%',
-              background: TEAL, color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '15px', fontWeight: 700,
-            }}>
-              {adminUser?.fullName?.[0]?.toUpperCase() || 'A'}
-            </div>
+          <div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>Aslan Medical</div>
+            <div style={{ color: '#64748b', fontSize: 11 }}>Medical Center</div>
           </div>
         </div>
 
-        {/* Stat cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: '20px', marginBottom: '32px',
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px 8px' }} />
+
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: '0 12px' }}>
+          {NAV_ITEMS.map(({ label, path, icon: Icon }) => {
+            const active = location.pathname === path
+            return (
+              <div key={path} onClick={() => navigate(path)} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
+                fontSize: 13, fontWeight: 500, marginBottom: 2,
+                color: active ? 'white' : '#94a3b8',
+                background: active ? 'rgba(0,132,142,0.15)' : 'transparent',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                <Icon />
+                <span style={{ flex: 1 }}>{label}</span>
+                {active && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00848e' }} />}
+              </div>
+            )
+          })}
+        </nav>
+
+        {/* Logout */}
+        <div style={{ padding: '12px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div onClick={handleLogout} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
+            fontSize: 13, fontWeight: 500, color: '#94a3b8',
+            transition: 'color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent' }}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span>Çıxış</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── RIGHT SIDE ── */}
+      <div style={{ marginLeft: 256, flex: 1, display: 'flex', flexDirection: 'column' }}>
+
+        {/* TOPBAR */}
+        <header style={{
+          position: 'sticky', top: 0, zIndex: 10,
+          background: 'rgba(248,250,252,0.85)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          padding: '14px 32px', display: 'flex', alignItems: 'center', gap: 16,
         }}>
-          {STAT_CARDS.map(card => (
-            <div key={card.label} style={{
-              background: 'white', borderRadius: '12px', padding: '24px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          {/* Search */}
+          <div style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
+            <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>
+              <SearchIcon />
+            </div>
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Pasiyent, həkim və ya randevu axtar..."
+              style={{
+                width: '100%', background: 'white', border: '1px solid #e2e8f0',
+                borderRadius: 12, padding: '9px 16px 9px 40px',
+                fontSize: 13, color: '#64748b', outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Bell */}
+            <button style={{
+              width: 36, height: 36, background: 'white', border: '1px solid #e2e8f0',
+              borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', position: 'relative',
+            }}>
+              <BellIcon />
+              <div style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, background: '#ef4444', borderRadius: '50%', border: '2px solid white' }} />
+            </button>
+
+            {/* Profile chip */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: 'white', border: '1px solid #e2e8f0',
+              borderRadius: 12, padding: '6px 14px 6px 6px',
             }}>
               <div style={{
-                width: '40px', height: '40px', borderRadius: '10px',
-                background: card.color + '20', display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                marginBottom: '12px',
-              }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: card.color }} />
+                width: 32, height: 32, borderRadius: 8,
+                background: 'linear-gradient(135deg,#00848e,#00a8b5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontSize: 12, fontWeight: 700,
+              }}>{initial}</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1b2d', lineHeight: 1.2 }}>{adminUser?.fullName || 'Admin'}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>{adminUser?.email || ''}</div>
               </div>
-              <p style={{ fontSize: '32px', fontWeight: 700, color: NAVY, margin: '0 0 4px' }}>{card.value}</p>
-              <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>{card.label}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        </header>
 
-        {/* Recent appointments table */}
-        <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: NAVY, margin: 0 }}>Son Randevular</h2>
+        {/* MAIN */}
+        <main style={{ padding: '28px 32px', flex: 1 }}>
+
+          {/* Hero card */}
+          <div style={{
+            borderRadius: 24, padding: '32px 40px', marginBottom: 28,
+            position: 'relative', overflow: 'hidden',
+            background: 'linear-gradient(135deg,#00848e 0%,#006d75 50%,#004d52 100%)',
+          }}>
+            <div style={{ position: 'absolute', width: 256, height: 256, background: 'rgba(255,255,255,0.08)', borderRadius: '50%', top: -32, right: -32, filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', width: 192, height: 192, background: 'rgba(0,200,210,0.15)', borderRadius: '50%', bottom: -24, right: 200, filter: 'blur(32px)' }} />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h1 style={{ color: 'white', fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
+                Xoş gəldiniz, {adminUser?.fullName || 'Admin'} 👋
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, marginBottom: 24 }}>
+                Bugün 12 randevu var, 3 yeni müraciət gözləyir
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button style={{ background: 'white', color: '#00848e', border: 'none', borderRadius: 10, padding: '10px 22px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  ＋ Yeni randevu
+                </button>
+                <button style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '10px 22px', fontSize: 13, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
+                  Hesabat
+                </button>
+              </div>
+            </div>
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc' }}>
-                  {['Pasiyent', 'Həkim', 'Tarix', 'Saat', 'Status'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {appointments.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Məlumat yoxdur</td></tr>
-                ) : appointments.map((appt, i) => {
-                  const s = STATUS_STYLE[appt.status] || STATUS_STYLE.scheduled
-                  const patientName = appt.patientId?.userId?.fullName || '—'
-                  const doctorName  = appt.doctorId?.userId?.fullName  || '—'
-                  return (
-                    <tr key={appt._id || i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '14px 16px', color: NAVY, fontWeight: 500 }}>{patientName}</td>
-                      <td style={{ padding: '14px 16px', color: '#475569' }}>{doctorName}</td>
-                      <td style={{ padding: '14px 16px', color: '#475569' }}>{appt.date ? new Date(appt.date).toLocaleDateString('az-AZ') : '—'}</td>
-                      <td style={{ padding: '14px 16px', color: '#475569' }}>{appt.startTime || '—'}</td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{
-                          ...s, padding: '4px 10px', borderRadius: '20px',
-                          fontSize: '12px', fontWeight: 600,
-                        }}>{s.label}</span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 28 }}>
+            {STAT_CARDS.map(c => (
+              <div key={c.label} style={{
+                background: 'white', borderRadius: 16, padding: '22px 24px',
+                border: '1px solid #f1f5f9', cursor: 'default',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: c.color }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '3px 8px', background: '#dcfce7', color: '#166534' }}>{c.delta}</span>
+                </div>
+                <p style={{ fontSize: 32, fontWeight: 800, color: '#0f1b2d', margin: '16px 0 4px', lineHeight: 1 }}>{c.value}</p>
+                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{c.label}</p>
+              </div>
+            ))}
           </div>
-        </div>
+
+          {/* Two columns */}
+          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+
+            {/* LEFT — appointments table */}
+            <div style={{ flex: 2, background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f8fafc' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#0f1b2d' }}>Son Randevular</span>
+                <span style={{ fontSize: 12, color: '#00848e', cursor: 'pointer' }}>Bütün randevular →</span>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#fafafa' }}>
+                    {['Pasiyent', 'Həkim', 'Tarix', 'Status'].map(h => (
+                      <th key={h} style={{ padding: '10px 24px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f1f5f9' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {appts.length === 0 ? (
+                    <tr><td colSpan={4} style={{ padding: 28, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Məlumat yoxdur</td></tr>
+                  ) : appts.map((a, i) => {
+                    const s = STATUS[a.status] || STATUS.scheduled
+                    const pName = a.patientId?.userId?.fullName || '—'
+                    const dName = a.doctorId?.userId?.fullName  || '—'
+                    const dSpec = a.doctorId?.specialization    || ''
+                    return (
+                      <tr key={a._id || i} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.1s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <td style={{ padding: '14px 24px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#ede7f6,#d1c4e9)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b21a8', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                              {pName[0]?.toUpperCase() || '?'}
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: '#0f1b2d' }}>{pName}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 24px' }}>
+                          <div style={{ fontSize: 13, color: '#0f1b2d' }}>{dName}</div>
+                          {dSpec && <div style={{ fontSize: 11, color: '#94a3b8' }}>{dSpec}</div>}
+                        </td>
+                        <td style={{ padding: '14px 24px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b' }}>
+                            <svg width="12" height="12" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            {a.date ? new Date(a.date).toLocaleDateString('az-AZ') : '—'}
+                            {a.startTime ? ` · ${a.startTime}` : ''}
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 24px' }}>
+                          <span style={{ background: s.bg, color: s.color, borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600 }}>{s.label}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* RIGHT column */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Schedule card */}
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', padding: 24 }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#0f1b2d', marginBottom: 16 }}>Bu günün cədvəli</p>
+                {SCHEDULE.map((s, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < SCHEDULE.length - 1 ? '1px solid #f8fafc' : 'none' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)', color: '#00848e', borderRadius: 8, padding: '4px 10px', flexShrink: 0 }}>{s.time}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#0f1b2d' }}>{s.name}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{s.type}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Support CTA */}
+              <div style={{ borderRadius: 16, padding: 24, background: 'linear-gradient(135deg,#6b21a8,#7c3aed)' }}>
+                <div style={{ marginBottom: 12 }}><WAIcon /></div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 6 }}>Pasiyent dəstəyi</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>Pasiyentlərə kömək etmək üçün WhatsApp-a keçin</p>
+                <button style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, padding: '9px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  WhatsApp-ı aç
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   )
