@@ -411,14 +411,42 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              {/* Support CTA */}
-              <div style={{ borderRadius: 16, padding: 24, background: 'linear-gradient(135deg,#6b21a8,#7c3aed)' }}>
-                <div style={{ marginBottom: 12 }}><WAIcon /></div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 6 }}>Pasiyent dəstəyi</p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 16 }}>Pasiyentlərə kömək etmək üçün WhatsApp-a keçin</p>
-                <button style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, padding: '9px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                  WhatsApp-ı aç
-                </button>
+              {/* Quick Actions */}
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', padding: 24 }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#0f1b2d', marginBottom: 16, marginTop: 0 }}>Sürətli Əməliyyatlar</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    {
+                      label: '＋ Yeni Randevu',
+                      path: '/admin/appointments',
+                      icon: <svg width="16" height="16" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+                    },
+                    {
+                      label: '＋ Yeni Pasiyent',
+                      path: '/admin/patients',
+                      icon: <svg width="16" height="16" fill="none" stroke="#16a34a" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+                    },
+                    {
+                      label: '＋ Yeni Həkim',
+                      path: '/admin/doctors',
+                      icon: <svg width="16" height="16" fill="none" stroke="#2563eb" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+                    },
+                    {
+                      label: '📋 Müraciətlər',
+                      path: '/admin/muraciet',
+                      icon: <svg width="16" height="16" fill="none" stroke="#d97706" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+                    },
+                  ].map(({ label, path, icon }) => (
+                    <button key={path} onClick={() => navigate(path)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#0f1b2d', width: '100%', textAlign: 'left' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                    >
+                      {icon}
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
             </div>
