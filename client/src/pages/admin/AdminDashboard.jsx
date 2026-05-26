@@ -70,15 +70,25 @@ export default function AdminDashboard() {
   const [stats, setStats]    = useState({ doctors: 0, patients: 0, appointments: 0, muraciet: 0 })
   const [appts, setAppts]    = useState([])
   const [search, setSearch]  = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!token) { navigate('/admin'); return }
+    const headers = { Authorization: `Bearer ${token}` }
 
-    fetch(`${API}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => d.data && setStats(d.data)).catch(() => {})
-
-    fetch(`${API}/admin/appointments?limit=5`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => Array.isArray(d.data) && setAppts(d.data)).catch(() => {})
+    Promise.all([
+      fetch(`${API}/admin/stats`, { headers }).then(r => r.json()),
+      fetch(`${API}/admin/appointments?limit=5`, { headers }).then(r => r.json()),
+    ])
+      .then(([statsData, apptData]) => {
+        if (statsData?.data) setStats(statsData.data)
+        const list = Array.isArray(apptData?.data) ? apptData.data
+          : Array.isArray(apptData?.appointments) ? apptData.appointments
+          : []
+        setAppts(list)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }, [navigate, token])
 
   const handleLogout = () => {
@@ -95,6 +105,14 @@ export default function AdminDashboard() {
     { label: 'Randevular',  value: stats.appointments, grad: 'linear-gradient(135deg,#ede7f6,#d1c4e9)', color: '#6b21a8', delta: '+8%'  },
     { label: 'Müraciətlər', value: stats.muraciet,     grad: 'linear-gradient(135deg,#fff8e1,#ffecb3)', color: '#b45309', delta: '+12%' },
   ]
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f8fafc', flexDirection: 'column', gap: 16 }}>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#00848e', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <span style={{ fontSize: 13, color: '#94a3b8' }}>Yüklənir...</span>
+    </div>
+  )
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -299,9 +317,9 @@ export default function AdminDashboard() {
                     <tr><td colSpan={4} style={{ padding: 28, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Məlumat yoxdur</td></tr>
                   ) : appts.map((a, i) => {
                     const s = STATUS[a.status] || STATUS.scheduled
-                    const pName = a.patientId?.userId?.fullName || '—'
-                    const dName = a.doctorId?.userId?.fullName  || '—'
-                    const dSpec = a.doctorId?.specialization    || ''
+                    const pName = a.patientId?.userId?.fullName ?? a.patientId?.fullName ?? '—'
+                    const dName = a.doctorId?.userId?.fullName  ?? a.doctorId?.fullName  ?? '—'
+                    const dSpec = a.doctorId?.specialization ?? ''
                     return (
                       <tr key={a._id || i} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.1s' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}

@@ -17,7 +17,8 @@
       "Bash(node -e ' *)",
       "Bash(Test-Path \"c:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\\\\client\\\\src\\\\components\\\\sections\\\\HospitalShowcase.jsx\")",
       "Bash(git commit *)",
-      "Bash(curl \"http://localhost:5050/api/v1/site-doctors?limit=8\")"
+      "Bash(curl \"http://localhost:5050/api/v1/site-doctors?limit=8\")",
+      "Bash(curl -s http://localhost:5000/api/v1/admin/stats -H \"Authorization: Bearer test\")"
     ]
   }
 }
