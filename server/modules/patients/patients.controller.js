@@ -9,6 +9,12 @@ export const createPatient = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, patient, 'Patient profile created'));
 });
 
+export const adminCreatePatient = asyncHandler(async (req, res) => {
+  const { fullName, email, phone, bloodGroup } = req.body;
+  const patient = await patientsService.adminCreatePatient({ fullName, email, phone, bloodGroup });
+  res.status(201).json(new ApiResponse(201, patient, 'Pasiyent uğurla yaradıldı'));
+});
+
 export const getPatients = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
   const result = await patientsService.getPatients({ page, limit });

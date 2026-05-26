@@ -1,4 +1,5 @@
 import Patient from '../../models/Patient.model.js';
+import User    from '../../models/User.model.js';
 import ApiError from '../../utils/ApiError.js';
 
 const POPULATE_USER = 'fullName email phone';
@@ -11,6 +12,27 @@ export const createPatient = async ({ userId, bloodGroup, allergies, chronicCond
 
   const patient = await Patient.create({ userId, bloodGroup, allergies, chronicConditions, emergencyContact });
   return patient.populate('userId', POPULATE_USER);
+};
+
+export const adminCreatePatient = async ({ fullName, email, phone, bloodGroup }) => {
+  if (!fullName?.trim()) throw new ApiError(400, 'Ad Soyad tələb olunur');
+  if (!email?.trim())    throw new ApiError(400, 'E-poçt tələb olunur');
+
+  const existing = await User.findOne({ email: email.toLowerCase().trim() });
+  if (existing) throw new ApiError(409, 'Bu e-poçt ünvanı artıq qeydiyyatdadır');
+
+  const autoPassword = 'Patient' + Math.floor(1000 + Math.random() * 9000) + '!';
+  const user = await User.create({
+    fullName: fullName.trim(),
+    email:    email.toLowerCase().trim(),
+    phone:    phone?.trim() || '',
+    password: autoPassword,
+    role:     'PATIENT',
+  });
+
+  const patient = await Patient.create({ userId: user._id, bloodGroup: bloodGroup || undefined });
+  await patient.populate('userId', POPULATE_USER);
+  return patient;
 };
 
 // ─── Read ─────────────────────────────────────────────────────────────────────

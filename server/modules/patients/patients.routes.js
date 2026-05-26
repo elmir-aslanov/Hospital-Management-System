@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as patientsController from './patients.controller.js';
+
 import {
   validateCreatePatient,
   validateUpdatePatient,
@@ -38,6 +39,12 @@ router.use(authenticate);
  *       401:
  *         description: Unauthorized
  */
+router.post(
+  '/admin-create',
+  authorize('ADMIN', 'SUPER_ADMIN'),
+  patientsController.adminCreatePatient
+);
+
 router.get(
   '/search',
   authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'),
