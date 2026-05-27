@@ -41,6 +41,16 @@ export const toggleUserActive = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, user, 'User status updated'));
 });
 
+export const createUser = asyncHandler(async (req, res) => {
+  const user = await usersService.createUser(req.body);
+  res.status(201).json(new ApiResponse(201, user, 'User created'));
+});
+
+export const deleteUser = asyncHandler(async (req, res) => {
+  await usersService.deleteUser(req.params.id);
+  res.status(200).json(new ApiResponse(200, null, 'User deleted'));
+});
+
 export const uploadAvatar = asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, 'No file uploaded');
 

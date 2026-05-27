@@ -5,6 +5,9 @@ export const ROLES = Object.freeze({
   NURSE:          'NURSE',
   RECEPTIONIST:   'RECEPTIONIST',
   LAB_TECHNICIAN: 'LAB_TECHNICIAN',
+  STAFF:          'STAFF',
+  SOBE_MUDURU:    'SOBE_MUDURU',
+  BAS_HEKIM:      'BAS_HEKIM',
   PATIENT:        'PATIENT',
 });
 

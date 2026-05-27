@@ -27,7 +27,9 @@ import AdminDashboard       from './pages/admin/AdminDashboard';
 import AdminDoctors         from './pages/admin/AdminDoctors';
 import AdminPatients        from './pages/admin/AdminPatients';
 import AdminAppointments    from './pages/admin/AdminAppointments';
-import AdminMuraciet        from './pages/admin/AdminMuraciet';
+import AdminMuraciet        from './pages/admin/AdminMuraciet'
+import AdminUsers           from './pages/admin/AdminUsers'
+import AdminDepartments     from './pages/admin/AdminDepartments';
 import DoctorDashboard      from './pages/doctor/DoctorDashboard'
 import DoctorPatients       from './pages/doctor/DoctorPatients'
 import DoctorPrescriptions  from './pages/doctor/DoctorPrescriptions'
@@ -102,6 +104,8 @@ function Layout() {
         <Route path="/admin/patients"     element={<AdminPatients />} />
         <Route path="/admin/appointments" element={<AdminAppointments />} />
         <Route path="/admin/muraciet"     element={<AdminMuraciet />} />
+        <Route path="/admin/users"        element={<AdminUsers />} />
+        <Route path="/admin/departments"  element={<AdminDepartments />} />
         <Route path="/admin/inventory"    element={<AdminDashboard />} />
         <Route path="/admin/analytics"    element={<AdminDashboard />} />
         <Route path="/admin/settings"     element={<AdminDashboard />} />

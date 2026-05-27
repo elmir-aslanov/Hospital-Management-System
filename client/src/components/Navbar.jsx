@@ -103,13 +103,13 @@ export default function Navbar() {
   const { t, i18n } = useTranslation();
 
   const NAV_LINKS = [
-    { label: t('nav.home'),          href: '/' },
-    { label: t('nav.doctors'),       href: '/doctors' },
-    { label: t('nav.departments'),   href: '/departments', dropdown: ['Kardiologiya', 'Nevrologiya', 'Cərrahiyyə', 'Pediatriya'] },
-    { label: t('nav.services'),      href: '/services',    dropdown: ['Cərrahiyyə', 'Diaqnostika', 'Laboratoriya'] },
-    { label: t('nav.about'),         href: '/about',       dropdown: ['Komanda', 'Tərəfdaşlar', 'FAQ'] },
-    { label: t('nav.blog'),          href: '/blog',        dropdown: ['Məqalələr', 'Yeniliklər'] },
-    { label: t('nav.contact'),       href: '/contact' },
+    { label: t('nav.home'),        href: '/' },
+    { label: t('nav.doctors'),     href: '/hekimler' },
+    { label: t('nav.departments'), href: '/departments' },
+    { label: t('nav.services'),    href: '/services' },
+    { label: t('nav.about'),       href: '/about' },
+    { label: t('nav.blog'),        href: '/blog' },
+    { label: t('nav.contact'),     href: '/contact' },
   ];
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [hoveredNav, setHoveredNav]         = useState(null);
@@ -374,7 +374,7 @@ export default function Navbar() {
               <button key={key}
                 onClick={() => {
                   if (key === 'findDoctor') {
-                    navigate('/doctors');
+                    navigate('/hekimler');
                   } else if (key === 'appointment') {
                     navigate('/randevu');
                   } else if (key === 'patientPortal') {
@@ -608,7 +608,7 @@ export default function Navbar() {
                 <button key={btn}
                   onClick={() => {
                     if (btn === 'Randevu Al') navigate('/randevu');
-                    else if (btn === 'Həkim Tap') navigate('/doctors');
+                    else if (btn === 'Həkim Tap') navigate('/hekimler');
                     else if (btn === 'Pasiyent Portalı') {
                       if (isAuthenticated) navigate('/patient');
                       else navigate('/login');

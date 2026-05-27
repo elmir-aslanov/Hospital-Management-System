@@ -17,8 +17,10 @@ router.post('/avatar', uploadAvatar, usersController.uploadAvatar);
 
 // Admin routes
 router.get('/',       authorize('SUPER_ADMIN', 'ADMIN'), usersController.getUsers);
+router.post('/',      authorize('SUPER_ADMIN', 'ADMIN'), usersController.createUser);
 router.get('/:id',    authorize('SUPER_ADMIN', 'ADMIN'), usersController.getUserById);
 router.put('/:id',    authorize('SUPER_ADMIN', 'ADMIN'), validateUpdateUser, validate, usersController.updateUser);
+router.delete('/:id', authorize('SUPER_ADMIN', 'ADMIN'), usersController.deleteUser);
 router.patch('/:id/deactivate',     authorize('SUPER_ADMIN', 'ADMIN'), usersController.deactivateUser);
 router.patch('/:id/toggle-active',  authorize('SUPER_ADMIN', 'ADMIN'), usersController.toggleUserActive);
 

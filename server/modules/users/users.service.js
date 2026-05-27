@@ -1,5 +1,6 @@
 import User from '../../models/User.model.js';
 import ApiError from '../../utils/ApiError.js';
+import bcrypt from 'bcryptjs';
 
 const SAFE_SELECT = '-password -refreshToken';
 
@@ -63,6 +64,24 @@ export const toggleUserActive = async (targetUserId, requestingUserId) => {
 
 export const deactivateUser = async (id) => {
   const user = await User.findByIdAndUpdate(id, { isActive: false }, { new: true }).select(SAFE_SELECT);
+  if (!user) throw new ApiError(404, 'User not found');
+  return user;
+};
+
+export const createUser = async (data) => {
+  const { name, surname, email, password, role, ...rest } = data;
+  if (!email || !password || !role) throw new ApiError(400, 'Email, şifrə və rol məcburidir');
+  const exists = await User.findOne({ email: email.toLowerCase() });
+  if (exists) throw new ApiError(409, 'Bu email artıq istifadə olunur');
+  // fullName is synced in pre-save hook; set it now so legacy readers work immediately
+  const fullName = name && surname ? `${name} ${surname}`.trim() : (name || surname || '');
+  const user = new User({ name, surname, fullName, email, password, role, ...rest });
+  await user.save();
+  return User.findById(user._id).select(SAFE_SELECT);
+};
+
+export const deleteUser = async (id) => {
+  const user = await User.findByIdAndDelete(id);
   if (!user) throw new ApiError(404, 'User not found');
   return user;
 };

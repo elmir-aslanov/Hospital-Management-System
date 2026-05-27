@@ -4,19 +4,45 @@ import { ROLES } from '../config/constants.js';
 
 const userSchema = new mongoose.Schema(
   {
-    fullName: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true, minlength: 6, select: false },
-    role: { type: String, enum: Object.values(ROLES), required: true },
-    phone: { type: String, trim: true },
-    avatar: { type: String, default: '' },
-    isActive: { type: Boolean, default: true },
-    refreshToken: { type: String, select: false },
+    // New split-name fields
+    name:        { type: String, trim: true },
+    surname:     { type: String, trim: true },
+    // Legacy full-name field — kept for existing users
+    fullName:    { type: String, trim: true },
+
+    sexiyyatId:  { type: String, trim: true },
+    age:         { type: Number, min: 0 },
+    email:       { type: String, required: true, unique: true, lowercase: true, trim: true },
+    address:     { type: String, trim: true },
+    phone:       { type: String, trim: true },
+    password:    { type: String, required: true, minlength: 6, select: false },
+    role:        { type: String, enum: Object.values(ROLES), required: true, default: 'STAFF' },
+    department:  { type: String, trim: true },
+    photoUrl:    { type: String, default: '' },
+    avatar:      { type: String, default: '' },   // kept for backward compat
+    isActive:    { type: Boolean, default: true },
+    refreshToken:{ type: String, select: false },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON:   { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
+// Virtual: prefer name+surname; fall back to stored fullName
+userSchema.virtual('displayName').get(function () {
+  if (this.name && this.surname) return `${this.name} ${this.surname}`;
+  if (this.name)    return this.name;
+  if (this.surname) return this.surname;
+  return this.fullName || '';
+});
+
 userSchema.pre('save', async function (next) {
+  // Sync fullName from name+surname for code that still reads fullName
+  if ((this.isModified('name') || this.isModified('surname')) && (this.name || this.surname)) {
+    this.fullName = `${this.name || ''} ${this.surname || ''}`.trim();
+  }
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
