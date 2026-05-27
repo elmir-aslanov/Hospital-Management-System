@@ -44,8 +44,24 @@ export default function Login() {
       .then(data => {
         if (data.token) {
           localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user || data));
-          navigate('/');
+          const user = data.user || data;
+          localStorage.setItem('user', JSON.stringify(user));
+          const role = user.role?.toUpperCase();
+          if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminUser', JSON.stringify(user));
+            navigate('/admin/dashboard');
+          } else if (role === 'DOCTOR') {
+            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminUser', JSON.stringify(user));
+            navigate('/doctor/dashboard');
+          } else if (['STAFF', 'SOBE_MUDURU', 'BAS_HEKIM'].includes(role)) {
+            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminUser', JSON.stringify(user));
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/');
+          }
         } else {
           setError(data.message || 'E-poçt və ya şifrə yanlışdır');
         }
