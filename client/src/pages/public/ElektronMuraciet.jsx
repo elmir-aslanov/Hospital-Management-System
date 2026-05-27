@@ -117,7 +117,7 @@ export default function ElektronMuraciet() {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/v1/muraciet', {
+      const res = await fetch('http://localhost:5000/api/v1/muraciet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ad, soyad, ataAdi, epoct, telefon, unvan, metn }),

@@ -17,8 +17,8 @@ export default function AdminMuraciet() {
     const muracietReq = fetch(`${BASE}/api/v1/muraciet`, { headers })
       .then(r => r.json())
       .then(d => {
-        const list = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : d.result || []
-        return list.map(m => ({ ...m, _type: 'muraciet' }))
+        const list = Array.isArray(d.data) ? d.data : d.data?.muracietler || d.muracietler || d.data || []
+        return (Array.isArray(list) ? list : []).map(m => ({ ...m, _type: 'muraciet' }))
       })
       .catch(() => [])
 

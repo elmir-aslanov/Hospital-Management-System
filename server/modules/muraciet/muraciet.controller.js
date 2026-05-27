@@ -14,3 +14,8 @@ export const create = asyncHandler(async (req, res) => {
   const doc = await Muraciet.create({ ad, soyad, ataAdi, epoct, telefon, unvan, metn });
   res.status(201).json(new ApiResponse(201, doc, 'Müraciət qəbul edildi'));
 });
+
+export const getAll = asyncHandler(async (req, res) => {
+  const muracietler = await Muraciet.find().sort({ createdAt: -1 });
+  res.status(200).json(new ApiResponse(200, muracietler));
+});

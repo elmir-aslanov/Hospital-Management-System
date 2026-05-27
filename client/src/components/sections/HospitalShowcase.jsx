@@ -64,30 +64,6 @@ export default function HospitalShowcase() {
               }}>
                 Xəstəxanamız
               </span>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={prev}
-                  aria-label="Əvvəlki"
-                  style={{
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    border: '1px solid #ccc', background: 'white',
-                    color: TEAL, fontSize: '16px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: FONT,
-                  }}
-                >←</button>
-                <button
-                  onClick={next}
-                  aria-label="Növbəti"
-                  style={{
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    border: '1px solid #ccc', background: 'white',
-                    color: TEAL, fontSize: '16px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: FONT,
-                  }}
-                >→</button>
-              </div>
             </div>
 
             {/* Thumbnails */}
