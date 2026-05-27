@@ -61,7 +61,7 @@ function ColHead({ children }) {
       }}>
         {children}
       </h3>
-      <div style={{ width: 28, height: 2, background: TEAL, margin: '8px 0 18px', borderRadius: 2, opacity: 0.7 }} />
+      <div style={{ width: 24, height: 2, background: TEAL, margin: '8px 0 18px', borderRadius: 2, opacity: 0.7 }} />
     </>
   );
 }
@@ -146,11 +146,11 @@ export default function Footer() {
       {/* Wave */}
       <div style={{ background: 'white', lineHeight: 0 }}>
         <svg viewBox="0 0 1440 120" preserveAspectRatio="none"
-          style={{ display: 'block', width: '100%', height: isMobile ? 60 : 120 }}>
+          style={{ display: 'block', width: '100%', height: isMobile ? 50 : 90 }}>
           <path d="M0,40 C180,100 360,0 540,60 C720,120 900,20 1080,70 C1260,115 1380,45 1440,60 L1440,120 L0,120 Z"
-            fill="rgba(175,199,214,0.45)"/>
+            fill="rgba(175,199,214,0.35)"/>
           <path d="M0,60 C200,20 400,100 600,55 C800,10 1000,85 1200,50 C1340,25 1410,65 1440,55 L1440,120 L0,120 Z"
-            fill="rgba(18,42,74,0.65)"/>
+            fill="rgba(18,42,74,0.55)"/>
           <path d="M0,80 C240,40 480,110 720,65 C960,20 1200,90 1440,70 L1440,120 L0,120 Z"
             fill={BG}/>
         </svg>
@@ -172,7 +172,8 @@ export default function Footer() {
               style={{
                 height: 56, display: 'block',
                 filter: 'brightness(1.1)',
-                borderRadius: 6,
+                borderRadius: 12,
+                boxShadow: '0 2px 12px rgba(0,0,0,0.28)',
               }}
               onError={e => e.currentTarget.style.display = 'none'}
             />
@@ -219,9 +220,18 @@ export default function Footer() {
               +994 50 836 36 94
             </a>
 
-            <ContactRow icon="✉" text="info@aslanmedical.az" />
-            <ContactRow icon="📍" text="Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı" />
-            <ContactRow icon="🕐" text="Hər gün: 24/7" />
+            <ContactRow
+              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
+              text="info@aslanmedical.az"
+            />
+            <ContactRow
+              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>}
+              text="Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı"
+            />
+            <ContactRow
+              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+              text="Hər gün: 24/7"
+            />
 
             <button
               onClick={() => navigate('/randevu')}
@@ -256,7 +266,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '1px solid rgba(255,255,255,0.12)',
           marginTop: 48, padding: '20px 0',
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 12,
