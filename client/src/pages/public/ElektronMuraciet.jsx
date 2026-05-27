@@ -72,6 +72,27 @@ const ICON_MAP = {
   unvan:   <IconMapPin />,
 }
 
+/* ── Field row — defined OUTSIDE main component to prevent remount on each render ── */
+function FieldGroup({ label, name, type = 'text', form, onChange }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label} *</label>
+      <div style={{ position: 'relative' }}>
+        {ICON_MAP[name] && <span style={iconPos}>{ICON_MAP[name]}</span>}
+        <input
+          type={type}
+          name={name}
+          value={form[name]}
+          onChange={onChange}
+          style={inputBase}
+          onFocus={focusIn}
+          onBlur={focusOut}
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function ElektronMuraciet() {
   const isMobile = window.innerWidth < 768
 
@@ -112,27 +133,6 @@ export default function ElektronMuraciet() {
     }
   }
 
-  /* ── Field row helper ──────────────────────────────────────────────── */
-  function FieldGroup({ label, name, type = 'text' }) {
-    return (
-      <div>
-        <label style={labelStyle}>{label} *</label>
-        <div style={{ position: 'relative' }}>
-          {ICON_MAP[name] && <span style={iconPos}>{ICON_MAP[name]}</span>}
-          <input
-            type={type}
-            name={name}
-            value={form[name]}
-            onChange={handleChange}
-            style={inputBase}
-            onFocus={focusIn}
-            onBlur={focusOut}
-          />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '40px 0', fontFamily: FONT }}>
 
@@ -167,9 +167,9 @@ export default function ElektronMuraciet() {
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
               gap: 24, marginBottom: 24,
             }}>
-              <FieldGroup label="Ad"     name="ad" />
-              <FieldGroup label="Soyad"  name="soyad" />
-              <FieldGroup label="Ata adı" name="ataAdi" />
+              <FieldGroup label="Ad"      name="ad"     form={form} onChange={handleChange} />
+              <FieldGroup label="Soyad"  name="soyad"  form={form} onChange={handleChange} />
+              <FieldGroup label="Ata adı" name="ataAdi" form={form} onChange={handleChange} />
             </div>
 
             {/* Row 2 — E-poçt, Telefon, Ünvan */}
@@ -178,9 +178,9 @@ export default function ElektronMuraciet() {
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
               gap: 24, marginBottom: 24,
             }}>
-              <FieldGroup label="E-poçt"  name="epoct"   type="email" />
-              <FieldGroup label="Telefon" name="telefon" type="tel" />
-              <FieldGroup label="Ünvan"   name="unvan" />
+              <FieldGroup label="E-poçt"  name="epoct"   type="email" form={form} onChange={handleChange} />
+              <FieldGroup label="Telefon" name="telefon" type="tel"   form={form} onChange={handleChange} />
+              <FieldGroup label="Ünvan"   name="unvan"               form={form} onChange={handleChange} />
             </div>
 
             {/* Row 3 — Mətn */}
