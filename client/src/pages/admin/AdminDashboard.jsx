@@ -302,7 +302,7 @@ export default function AdminDashboard() {
                 Bugün {stats.appointments} randevu var, {stats.muraciet} yeni müraciət gözləyir
               </p>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button style={{ background: 'white', color: '#00848e', border: 'none', borderRadius: 10, padding: '10px 22px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => navigate('/admin/appointments?new=true')} style={{ background: 'white', color: '#00848e', border: 'none', borderRadius: 10, padding: '10px 22px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   ＋ Yeni randevu
                 </button>
                 <button style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '10px 22px', fontSize: 13, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)' }}>

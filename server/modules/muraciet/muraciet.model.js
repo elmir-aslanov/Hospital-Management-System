@@ -8,6 +8,8 @@ const muracietSchema = new mongoose.Schema({
   telefon:{ type: String, required: true, trim: true },
   unvan:  { type: String, required: true, trim: true },
   metn:   { type: String, required: true, trim: true },
+  isRead:  { type: Boolean, default: false },
+  status:  { type: String, enum: ['yeni', 'baxildi', 'cavablandirildi'], default: 'yeni' },
 }, { timestamps: true });
 
 export default mongoose.model('Muraciet', muracietSchema);

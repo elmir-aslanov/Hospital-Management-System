@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const NAV = [
   { key: 'dashboard',    label: 'Ana səhifə',   path: '/admin/dashboard',    icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
@@ -17,7 +17,22 @@ const NAV = [
 export default function AdminLayout({ children, activePage }) {
   const navigate   = useNavigate()
   const [search, setSearch] = useState('')
+  const [unreadMuraciet, setUnreadMuraciet] = useState(0)
   const adminUser  = JSON.parse(localStorage.getItem('adminUser') || '{}')
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return
+    fetch('http://localhost:5000/api/v1/muraciet', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d.data) ? d.data : []
+        setUnreadMuraciet(list.filter(i => !i.isRead).length)
+      })
+      .catch(() => {})
+  }, [])
   const initial    = adminUser?.fullName?.[0]?.toUpperCase() || 'A'
 
   const handleLogout = () => {
@@ -66,6 +81,9 @@ export default function AdminLayout({ children, activePage }) {
               >
                 {item.icon}
                 <span style={{ flex: 1 }}>{item.label}</span>
+                {item.key === 'muraciet' && unreadMuraciet > 0 && !active && (
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444' }} />
+                )}
                 {active && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00848e' }} />}
               </div>
             )

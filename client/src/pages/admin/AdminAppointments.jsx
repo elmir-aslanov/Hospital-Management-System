@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 const BASE = 'http://localhost:5000'
@@ -8,7 +9,16 @@ const STATUS_COLORS = {
   confirmed: { bg: '#dcfce7', color: '#16a34a', label: 'Təsdiqləndi' },
   completed: { bg: '#e0f2fe', color: '#0369a1', label: 'Tamamlandı' },
   cancelled: { bg: '#fef2f2', color: '#dc2626', label: 'Ləğv edildi' },
+  gözləyir:  { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir' },
 }
+
+const inputStyle = {
+  width: '100%', border: '1px solid #e2e8f0', borderRadius: 9,
+  padding: '9px 12px', fontSize: 13, color: '#334155',
+  outline: 'none', boxSizing: 'border-box', background: 'white',
+}
+
+const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 
 export default function AdminAppointments() {
   const [appts, setAppts]         = useState([])
@@ -16,11 +26,23 @@ export default function AdminAppointments() {
   const [statusFilter, setStatus] = useState('all')
   const [dateFilter, setDate]     = useState('')
   const [modal, setModal]         = useState(false)
-  const [form, setForm]           = useState({ patientName: '', doctorName: '', date: '', time: '', notes: '' })
   const [saving, setSaving]       = useState(false)
   const [patchId, setPatchId]     = useState(null)
+  const [searchParams]            = useSearchParams()
 
-  const token = localStorage.getItem('adminToken')
+  /* ── modal form state ── */
+  const [patientSearch,   setPatientSearch]   = useState('')
+  const [patientResults,  setPatientResults]  = useState([])
+  const [selectedPatient, setSelectedPatient] = useState(null)
+  const [doctors,         setDoctors]         = useState([])
+  const [selectedDoctor,  setSelectedDoctor]  = useState('')
+  const [apptDate,        setApptDate]        = useState('')
+  const [apptTime,        setApptTime]        = useState('')
+  const [note,            setNote]            = useState('')
+  const [formError,       setFormError]       = useState('')
+  const searchTimer = useRef(null)
+
+  const token   = localStorage.getItem('adminToken')
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   const load = () => {
@@ -37,32 +59,99 @@ export default function AdminAppointments() {
 
   useEffect(() => { load() }, [])
 
+  /* open modal if ?new=true on mount */
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      openModal()
+    }
+  }, [])
+
+  const openModal = () => {
+    setPatientSearch('')
+    setPatientResults([])
+    setSelectedPatient(null)
+    setSelectedDoctor('')
+    setApptDate('')
+    setApptTime('')
+    setNote('')
+    setFormError('')
+    setModal(true)
+    /* fetch doctors */
+    fetch(`${BASE}/api/v1/site-doctors/all`, { headers })
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d.data) ? d.data : d.data?.doctors || d.doctors || []
+        setDoctors(Array.isArray(list) ? list : [])
+      })
+      .catch(() => setDoctors([]))
+  }
+
+  const closeModal = () => { setModal(false) }
+
+  /* patient search with debounce */
+  const handlePatientSearch = (val) => {
+    setPatientSearch(val)
+    setSelectedPatient(null)
+    clearTimeout(searchTimer.current)
+    if (!val.trim()) { setPatientResults([]); return }
+    searchTimer.current = setTimeout(() => {
+      fetch(`${BASE}/api/v1/patients/search?q=${encodeURIComponent(val)}`, { headers })
+        .then(r => r.json())
+        .then(d => {
+          const list = Array.isArray(d.data) ? d.data : d.data?.patients || d.patients || []
+          setPatientResults(Array.isArray(list) ? list.slice(0, 6) : [])
+        })
+        .catch(() => setPatientResults([]))
+    }, 350)
+  }
+
+  const selectPatient = (p) => {
+    setSelectedPatient(p)
+    const name = p.userId?.fullName || p.fullName || p.name || ''
+    setPatientSearch(name)
+    setPatientResults([])
+  }
+
+  const handleSave = async () => {
+    if (!selectedPatient || !selectedDoctor || !apptDate || !apptTime) {
+      setFormError('Pasiyent, həkim, tarix və saat mütləqdir')
+      return
+    }
+    setFormError('')
+    setSaving(true)
+    try {
+      const res = await fetch(`${BASE}/api/v1/appointments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          patientId: selectedPatient._id,
+          doctorId:  selectedDoctor,
+          date:      new Date(apptDate).toISOString(),
+          time:      apptTime,
+          note,
+          status:    'gözləyir',
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setFormError(data.message || 'Xəta baş verdi'); return }
+      closeModal()
+      load()
+    } catch {
+      setFormError('Server xətası, yenidən cəhd edin')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleStatusPatch = async (id, status) => {
     setPatchId(id)
     try {
       await fetch(`${BASE}/api/v1/appointments/${id}/status`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ status }),
+        method: 'PATCH', headers, body: JSON.stringify({ status }),
       })
       setAppts(prev => prev.map(a => a._id === id ? { ...a, status } : a))
     } catch {}
     finally { setPatchId(null) }
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await fetch(`${BASE}/api/v1/appointments`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(form),
-      })
-      setModal(false)
-      setForm({ patientName: '', doctorName: '', date: '', time: '', notes: '' })
-      load()
-    } catch {}
-    finally { setSaving(false) }
   }
 
   const filtered = appts.filter(a => {
@@ -74,25 +163,11 @@ export default function AdminAppointments() {
     return true
   })
 
-  const getName = (a) => {
-    const p = a.patientId
-    if (!p) return '—'
-    return p.userId?.fullName || p.fullName || '—'
-  }
-
-  const getDoctor = (a) => {
-    const d = a.doctorId
-    if (!d) return '—'
-    return d.userId?.fullName || d.name || '—'
-  }
-
-  const getDate = (a) => {
-    const raw = a.date || a.appointmentDate || a.createdAt
-    if (!raw) return '—'
-    return new Date(raw).toLocaleDateString('az-AZ')
-  }
-
-  const getTime = (a) => a.time || a.timeSlot || '—'
+  const getName   = (a) => { const p = a.patientId; if (!p) return '—'; return p.userId?.fullName || p.fullName || '—' }
+  const getDoctor = (a) => { const d = a.doctorId;  if (!d) return '—'; return d.userId?.fullName || d.name || '—' }
+  const getDate   = (a) => { const raw = a.date || a.appointmentDate || a.createdAt; if (!raw) return '—'; return new Date(raw).toLocaleDateString('az-AZ') }
+  const getTime   = (a) => a.time || a.timeSlot || '—'
+  const todayStr  = new Date().toISOString().split('T')[0]
 
   return (
     <AdminLayout activePage="appointments">
@@ -102,7 +177,7 @@ export default function AdminAppointments() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Randevular</h1>
           <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{filtered.length} randevu göstərilir</p>
         </div>
-        <button onClick={() => setModal(true)} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button onClick={openModal} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Yeni randevu
         </button>
@@ -142,9 +217,7 @@ export default function AdminAppointments() {
                 const patching = patchId === a._id
                 return (
                   <tr key={a._id} style={{ borderBottom: '1px solid #f8fafc' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1b2d' }}>{getName(a)}</div>
-                    </td>
+                    <td style={{ padding: '12px 16px' }}><div style={{ fontSize: 13, fontWeight: 600, color: '#0f1b2d' }}>{getName(a)}</div></td>
                     <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getDoctor(a)}</td>
                     <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getDate(a)}</td>
                     <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getTime(a)}</td>
@@ -169,26 +242,111 @@ export default function AdminAppointments() {
 
       {/* New Appointment Modal */}
       {modal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) setModal(false) }}>
-          <div style={{ background: 'white', borderRadius: 16, width: 460, maxWidth: '95vw', padding: 28 }}>
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) closeModal() }}
+        >
+          <div style={{ background: 'white', borderRadius: 16, width: 500, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
               <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>Yeni randevu</h2>
-              <button onClick={() => setModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <MField label="Pasiyent adı" value={form.patientName} onChange={v => setForm(f => ({ ...f, patientName: v }))} />
-              <MField label="Həkim adı" value={form.doctorName} onChange={v => setForm(f => ({ ...f, doctorName: v }))} />
-              <MField label="Tarix" value={form.date} onChange={v => setForm(f => ({ ...f, date: v }))} type="date" />
-              <MField label="Saat" value={form.time} onChange={v => setForm(f => ({ ...f, time: v }))} type="time" />
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Qeyd</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+
+              {/* Patient search */}
+              <div style={{ gridColumn: '1/-1', position: 'relative' }}>
+                <label style={labelStyle}>Pasiyent <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  value={patientSearch}
+                  onChange={e => handlePatientSearch(e.target.value)}
+                  placeholder="Ad və ya soyad ilə axtar..."
+                  style={{ ...inputStyle, borderColor: selectedPatient ? '#00848e' : '#e2e8f0' }}
+                />
+                {selectedPatient && (
+                  <div style={{ fontSize: 11, color: '#00848e', marginTop: 4 }}>
+                    ✓ Seçildi: {selectedPatient.userId?.fullName || selectedPatient.fullName || selectedPatient.name}
+                  </div>
+                )}
+                {patientResults.length > 0 && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #e2e8f0', borderRadius: 9, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 100, maxHeight: 200, overflowY: 'auto' }}>
+                    {patientResults.map(p => {
+                      const name = p.userId?.fullName || p.fullName || p.name || '—'
+                      const pid  = p.patientId || p._id
+                      return (
+                        <div
+                          key={p._id}
+                          onClick={() => selectPatient(p)}
+                          style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, borderBottom: '1px solid #f8fafc' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f0fafb'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                        >
+                          <div style={{ fontWeight: 600, color: '#0f1b2d' }}>{name}</div>
+                          {pid && <div style={{ fontSize: 11, color: '#94a3b8' }}>{pid}</div>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Doctor select */}
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Həkim <span style={{ color: '#ef4444' }}>*</span></label>
+                <select
+                  value={selectedDoctor}
+                  onChange={e => setSelectedDoctor(e.target.value)}
+                  style={{ ...inputStyle, height: 38, cursor: 'pointer' }}
+                >
+                  <option value="">— Həkim seçin —</option>
+                  {doctors.map(d => {
+                    const name = d.name || d.userId?.fullName || d.fullName || '—'
+                    return <option key={d._id} value={d._id}>{name}{d.department ? ` (${d.department})` : ''}</option>
+                  })}
+                </select>
+              </div>
+
+              {/* Date */}
+              <div>
+                <label style={labelStyle}>Tarix <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  type="date"
+                  value={apptDate}
+                  min={todayStr}
+                  onChange={e => setApptDate(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Time */}
+              <div>
+                <label style={labelStyle}>Saat <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  type="time"
+                  value={apptTime}
+                  onChange={e => setApptTime(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Note */}
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Qeyd</label>
+                <textarea
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  rows={3}
+                  style={{ ...inputStyle, height: 'auto', padding: '9px 12px', resize: 'vertical', fontFamily: 'inherit' }}
+                />
               </div>
             </div>
 
+            {formError && (
+              <p style={{ color: '#dc2626', fontSize: 13, margin: '12px 0 0' }}>{formError}</p>
+            )}
+
             <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
-              <button onClick={() => setModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
+              <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
               <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Saxlanır...' : 'Yarat'}
               </button>
@@ -199,14 +357,5 @@ export default function AdminAppointments() {
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </AdminLayout>
-  )
-}
-
-function MField({ label, value, onChange, type = 'text' }) {
-  return (
-    <div>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
-    </div>
   )
 }
