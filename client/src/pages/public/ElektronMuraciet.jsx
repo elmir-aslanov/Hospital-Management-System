@@ -1,14 +1,85 @@
 import { useState } from 'react'
 
-const FONT = "'Source Sans 3', 'Raleway', sans-serif"
+const FONT  = "'Source Sans 3', 'Raleway', sans-serif"
+const TEAL  = '#1DB6A6'
+const TEAL_HVR = '#178f84'
+
+/* ── Inline SVG icons ──────────────────────────────────────────────────── */
+const IconUser = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+)
+const IconMail = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+  </svg>
+)
+const IconPhone = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+  </svg>
+)
+const IconMapPin = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+)
+const IconMsg = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+)
+const IconSend = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+  </svg>
+)
+
+/* ── Shared styles ─────────────────────────────────────────────────────── */
+const inputBase = {
+  width: '100%', height: 48, padding: '0 14px 0 38px',
+  borderRadius: 10, border: '1px solid #e2e8f0',
+  fontSize: 14, fontFamily: FONT, boxSizing: 'border-box',
+  outline: 'none', color: '#1a2b4a', background: '#fff',
+  transition: 'border-color 0.18s, box-shadow 0.18s',
+}
+const labelStyle = {
+  fontSize: 13, fontWeight: 500, color: '#374151',
+  marginBottom: 6, display: 'block', fontFamily: FONT,
+}
+const iconPos = {
+  position: 'absolute', left: 12, top: '50%',
+  transform: 'translateY(-50%)', color: '#94a3b8',
+  pointerEvents: 'none', display: 'flex', alignItems: 'center',
+}
+const iconPosTop = {
+  position: 'absolute', left: 12, top: 14,
+  color: '#94a3b8', pointerEvents: 'none',
+  display: 'flex', alignItems: 'center',
+}
+
+function focusIn(e)  { e.target.style.borderColor = TEAL;   e.target.style.boxShadow = '0 0 0 3px rgba(29,182,166,0.12)' }
+function focusOut(e) { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }
+
+/* ── Icon map keyed by field name ──────────────────────────────────────── */
+const ICON_MAP = {
+  ad:      <IconUser />,
+  soyad:   <IconUser />,
+  ataAdi:  <IconUser />,
+  epoct:   <IconMail />,
+  telefon: <IconPhone />,
+  unvan:   <IconMapPin />,
+}
 
 export default function ElektronMuraciet() {
   const isMobile = window.innerWidth < 768
 
   const [form, setForm] = useState({ ad: '', soyad: '', ataAdi: '', epoct: '', telefon: '', unvan: '', metn: '' })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]     = useState('')
   const [success, setSuccess] = useState('')
+  const [hovering, setHovering] = useState(false)
 
   const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
 
@@ -41,110 +112,138 @@ export default function ElektronMuraciet() {
     }
   }
 
-  const inputStyle = {
-    width: '100%', border: '1px solid #ccc', borderRadius: '4px',
-    padding: '10px 12px', fontSize: '14px', boxSizing: 'border-box',
-    outline: 'none', fontFamily: FONT,
+  /* ── Field row helper ──────────────────────────────────────────────── */
+  function FieldGroup({ label, name, type = 'text' }) {
+    return (
+      <div>
+        <label style={labelStyle}>{label} *</label>
+        <div style={{ position: 'relative' }}>
+          {ICON_MAP[name] && <span style={iconPos}>{ICON_MAP[name]}</span>}
+          <input
+            type={type}
+            name={name}
+            value={form[name]}
+            onChange={handleChange}
+            style={inputBase}
+            onFocus={focusIn}
+            onBlur={focusOut}
+          />
+        </div>
+      </div>
+    )
   }
-  const labelStyle = { fontSize: '13px', color: '#333', marginBottom: '6px', display: 'block' }
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', fontFamily: FONT }}>
+    <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '40px 0', fontFamily: FONT }}>
 
-      {/* Top text section */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 48px' }}>
-        <h2 style={{ fontWeight: 700, fontSize: 20, marginBottom: 16, color: '#1a1a1a' }}>
+      {/* Info text section */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '0 16px 24px' : '0 48px 32px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0B1D34', marginBottom: 16, fontFamily: FONT }}>
           Hörmətli istifadəçi!
         </h2>
-        <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7, marginBottom: 12 }}>
+        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.8, marginBottom: 12 }}>
           Aslan Medical Center-ə olan müraciətlər "Vətəndaşların müraciətləri haqqında" Azərbaycan Respublikasının Qanunu və digər qanunvericilik aktlarına uyğun olaraq qeydiyyata alınır və baxılır. Müraciətin mətni oxunaqlı olmalı, müraciətdə edilən təklif və ya tələb aydın ifadə edilməli, təhqir və böhtana yol verilməməlidir.
         </p>
-        <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7, marginBottom: 12 }}>
+        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.8, marginBottom: 12 }}>
           Müraciətdə təhqir və böhtana yol verildikdə, yaxud müəllif özü barədə məlumatları dəqiq göstərmədikdə müraciətə baxılmır.
         </p>
-        <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7, marginBottom: 0 }}>
+        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.8, marginBottom: 0 }}>
           Aslan Medical Center təhlükəsizlik səbəbindən bu domenlərdən məktub qəbul etmir: yandex.ru, mail.ru, list.ru, inbox.ru, bk.ru, yahoo.com.
         </p>
       </div>
 
-      {/* Form section */}
-      <div style={{
-        maxWidth: '1280px', margin: '0 auto',
-        padding: '0 48px 60px',
-        border: '1px solid #e0e0e0', borderRadius: '4px',
-        boxSizing: 'border-box',
-      }}>
-        <form onSubmit={handleSubmit}>
+      {/* Form card */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '0 16px 40px' : '0 48px 60px' }}>
+        <div style={{
+          background: '#ffffff', borderRadius: 16, padding: isMobile ? 24 : 40,
+          border: '1px solid rgba(15,23,42,0.08)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+        }}>
+          <form onSubmit={handleSubmit}>
 
-          {/* Row 1 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
-            gap: '24px', marginBottom: '24px', paddingTop: '32px',
-          }}>
-            {[['Ad', 'ad'], ['Soyad', 'soyad'], ['Ata adı', 'ataAdi']].map(([label, name]) => (
-              <div key={name}>
-                <label style={labelStyle}>{label} *</label>
-                <input type="text" name={name} value={form[name]} onChange={handleChange} style={inputStyle} />
+            {/* Row 1 — Ad, Soyad, Ata adı */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
+              gap: 24, marginBottom: 24,
+            }}>
+              <FieldGroup label="Ad"     name="ad" />
+              <FieldGroup label="Soyad"  name="soyad" />
+              <FieldGroup label="Ata adı" name="ataAdi" />
+            </div>
+
+            {/* Row 2 — E-poçt, Telefon, Ünvan */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
+              gap: 24, marginBottom: 24,
+            }}>
+              <FieldGroup label="E-poçt"  name="epoct"   type="email" />
+              <FieldGroup label="Telefon" name="telefon" type="tel" />
+              <FieldGroup label="Ünvan"   name="unvan" />
+            </div>
+
+            {/* Row 3 — Mətn */}
+            <div style={{ marginBottom: 28 }}>
+              <label style={labelStyle}>Mətn *</label>
+              <div style={{ position: 'relative' }}>
+                <span style={iconPosTop}><IconMsg /></span>
+                <textarea
+                  name="metn"
+                  value={form.metn}
+                  onChange={handleChange}
+                  style={{
+                    ...inputBase,
+                    height: 'auto', minHeight: 200,
+                    padding: '12px 14px 12px 38px',
+                    resize: 'vertical',
+                  }}
+                  onFocus={focusIn}
+                  onBlur={focusOut}
+                />
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Row 2 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
-            gap: '24px', marginBottom: '24px',
-          }}>
-            {[['E-poçt', 'epoct', 'email'], ['Telefon', 'telefon', 'tel'], ['Ünvan', 'unvan', 'text']].map(([label, name, type]) => (
-              <div key={name}>
-                <label style={labelStyle}>{label} *</label>
-                <input type={type} name={name} value={form[name]} onChange={handleChange} style={inputStyle} />
+            {/* Bottom row — messages + button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: isMobile ? 'stretch' : 'flex-end',
+              alignItems: 'center',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: 16,
+            }}>
+              <div style={{ flex: 1 }}>
+                {error && (
+                  <p style={{ color: '#e53e3e', fontSize: 14, margin: 0 }}>{error}</p>
+                )}
+                {success && (
+                  <p style={{ color: '#38a169', fontSize: 14, margin: 0 }}>{success}</p>
+                )}
               </div>
-            ))}
-          </div>
 
-          {/* Row 3 — textarea */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={labelStyle}>Mətn *</label>
-            <textarea
-              name="metn"
-              value={form.metn}
-              onChange={handleChange}
-              style={{ ...inputStyle, minHeight: '200px', resize: 'vertical' }}
-            />
-          </div>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  background: loading ? '#7ec8cc' : (hovering ? TEAL_HVR : TEAL),
+                  color: '#fff', border: 'none',
+                  padding: '12px 32px', fontSize: 14, fontWeight: 600,
+                  borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer',
+                  fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 8,
+                  transition: 'background 0.2s',
+                  boxShadow: loading ? 'none' : '0 4px 14px rgba(29,182,166,0.3)',
+                  width: isMobile ? '100%' : 'auto',
+                  justifyContent: 'center',
+                }}
+                onMouseEnter={() => setHovering(true)}
+                onMouseLeave={() => setHovering(false)}
+              >
+                {loading ? 'Göndərilir...' : <><IconSend /> Müraciət et</>}
+              </button>
+            </div>
 
-          {/* Submit */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                background: loading ? '#aaa' : '#00848e',
-                color: 'white', border: 'none',
-                padding: '14px 48px', fontSize: '16px', borderRadius: '4px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontFamily: FONT, fontWeight: 500,
-              }}
-            >
-              {loading ? 'Göndərilir...' : 'Müraciət et'}
-            </button>
-          </div>
-
-          {/* Messages */}
-          {error && (
-            <p style={{ marginTop: '16px', color: '#e53e3e', fontSize: '14px', textAlign: 'right' }}>
-              {error}
-            </p>
-          )}
-          {success && (
-            <p style={{ marginTop: '16px', color: '#38a169', fontSize: '14px', textAlign: 'right' }}>
-              {success}
-            </p>
-          )}
-
-        </form>
+          </form>
+        </div>
       </div>
 
     </div>
