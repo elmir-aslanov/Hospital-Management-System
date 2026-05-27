@@ -72,8 +72,21 @@ export default function AdminLoginPage() {
     <div style={{
       minHeight: '100vh', background: '#0a1628',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: FONT,
+      fontFamily: FONT, position: 'relative',
     }}>
+      <a
+        onClick={() => navigate('/')}
+        style={{
+          position: 'absolute', top: '20px', left: '24px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          color: '#94a3b8', fontSize: '13px', cursor: 'pointer',
+          textDecoration: 'none',
+        }}
+        onMouseEnter={e => e.currentTarget.style.color = 'white'}
+        onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+      >
+        ← Ana səhifəyə qayıt
+      </a>
       <div style={{
         background: 'white', borderRadius: '16px', padding: '48px',
         width: '420px', maxWidth: '90vw',
