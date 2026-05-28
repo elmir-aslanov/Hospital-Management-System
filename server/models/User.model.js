@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema(
     fullName:    { type: String, trim: true },
 
     sexiyyatId:  { type: String, trim: true },
-    age:         { type: Number, min: 0 },
+    ataAdi:      { type: String, trim: true },
+    birthDate:   { type: Date },
     email:       { type: String, required: true, unique: true, lowercase: true, trim: true },
     address:     { type: String, trim: true },
     phone:       { type: String, trim: true },
@@ -36,6 +37,11 @@ userSchema.virtual('displayName').get(function () {
   if (this.name)    return this.name;
   if (this.surname) return this.surname;
   return this.fullName || '';
+});
+
+userSchema.virtual('age').get(function () {
+  if (!this.birthDate) return null;
+  return Math.floor((Date.now() - new Date(this.birthDate)) / 31557600000);
 });
 
 userSchema.pre('save', async function (next) {
