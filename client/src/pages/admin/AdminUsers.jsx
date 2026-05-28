@@ -1,68 +1,27 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
-import axios from 'axios'
-import { toast } from 'sonner'
 
-const API = 'http://localhost:5000/api/v1'
-
-const ROLES = [
-  { value: 'ADMIN',          label: 'Admin',         color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
-  { value: 'SUPER_ADMIN',    label: 'Baş Admin',     color: '#dc2626', bg: 'rgba(220,38,38,0.1)' },
-  { value: 'DOCTOR',         label: 'Həkim',         color: '#0891b2', bg: 'rgba(8,145,178,0.1)' },
-  { value: 'NURSE',          label: 'Tibb bacısı',   color: '#0d9488', bg: 'rgba(13,148,136,0.1)' },
-  { value: 'RECEPTIONIST',   label: 'Resepsionist',  color: '#d97706', bg: 'rgba(217,119,6,0.1)' },
-  { value: 'LAB_TECHNICIAN', label: 'Lab Texniki',   color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
-  { value: 'PATIENT',        label: 'Pasiyent',      color: '#64748b', bg: 'rgba(100,116,139,0.1)' },
-  { value: 'STAFF',          label: 'Staff',         color: '#475569', bg: 'rgba(71,85,105,0.1)' },
-  { value: 'SOBE_MUDURU',    label: 'Şöbə Müdürü',  color: '#b45309', bg: 'rgba(180,83,9,0.1)' },
-  { value: 'BAS_HEKIM',      label: 'Baş Həkim',     color: '#1d4ed8', bg: 'rgba(29,78,216,0.1)' },
-]
-
-const FILTER_TABS = [
-  { key: 'all',          label: 'Hamısı' },
-  { key: 'DOCTOR',       label: 'Həkim' },
-  { key: 'NURSE',        label: 'Tibb bacısı' },
-  { key: 'STAFF',        label: 'Staff' },
-  { key: 'SOBE_MUDURU',  label: 'Şöbə Müdürü' },
-  { key: 'BAS_HEKIM',    label: 'Baş Həkim' },
-]
-
-const EMPTY_FORM = {
-  name: '', surname: '', sexiyyatId: '', age: '', email: '',
-  phone: '', address: '', department: '', role: 'STAFF',
-  password: '', photoUrl: '', isActive: true,
+const ROLE_MAP = {
+  ADMIN:          { label: 'Admin',         color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+  SUPER_ADMIN:    { label: 'Baş Admin',     color: '#dc2626', bg: 'rgba(220,38,38,0.1)' },
+  DOCTOR:         { label: 'Həkim',         color: '#0891b2', bg: 'rgba(8,145,178,0.1)' },
+  NURSE:          { label: 'Tibb bacısı',   color: '#0d9488', bg: 'rgba(13,148,136,0.1)' },
+  RECEPTIONIST:   { label: 'Resepsionist',  color: '#d97706', bg: 'rgba(217,119,6,0.1)' },
+  LAB_TECHNICIAN: { label: 'Lab Texniki',   color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
+  PATIENT:        { label: 'Pasiyent',      color: '#64748b', bg: 'rgba(100,116,139,0.1)' },
+  STAFF:          { label: 'Staff',         color: '#475569', bg: 'rgba(71,85,105,0.1)' },
+  SOBE_MUDURU:    { label: 'Şöbə Müdürü',  color: '#b45309', bg: 'rgba(180,83,9,0.1)' },
+  BAS_HEKIM:      { label: 'Baş Həkim',     color: '#1d4ed8', bg: 'rgba(29,78,216,0.1)' },
 }
 
 function RoleBadge({ role }) {
-  const r = ROLES.find(x => x.value === role)
+  const r = ROLE_MAP[role]
   if (!r) return <span style={{ fontSize: 12, color: '#64748b' }}>{role}</span>
   return (
     <span style={{
       fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
       color: r.color, background: r.bg, whiteSpace: 'nowrap',
     }}>{r.label}</span>
-  )
-}
-
-const inputStyle = {
-  width: '100%', height: 42, border: '1px solid #e2e8f0', borderRadius: 9,
-  padding: '0 12px', fontSize: 13, color: '#0f172a', background: '#f8fafc',
-  outline: 'none', boxSizing: 'border-box',
-}
-const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4, display: 'block' }
-
-/* Field defined OUTSIDE Modal to prevent remount on every keystroke */
-function Field({ label, k, type = 'text', required, form, onChange }) {
-  return (
-    <div>
-      <label style={labelStyle}>{label}{required && <span style={{ color: '#ef4444' }}> *</span>}</label>
-      <input
-        type={type}
-        value={form[k] ?? ''}
-        onChange={e => onChange(k, e.target.value)}
-        style={inputStyle}
-      />
-    </div>
   )
 }
 
@@ -82,270 +41,194 @@ function Toggle({ checked, onChange }) {
   )
 }
 
-function Modal({ user, onClose, onSave }) {
-  const isEdit = !!user?._id
-  const [form, setForm] = useState(isEdit ? { ...EMPTY_FORM, ...user, password: '' } : { ...EMPTY_FORM })
-  const [saving, setSaving] = useState(false)
-  const [doctors, setDoctors] = useState([])
-
-  useEffect(() => {
-    const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
-    fetch('http://localhost:5000/api/v1/site-doctors/all', {
-      headers: { 'Authorization': 'Bearer ' + token },
-    })
-      .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
-        setDoctors(list)
-      })
-      .catch(() => {})
-  }, [])
-
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.surname || !form.email || !form.role) {
-      toast.error('Ad, soyad, email və rol mütləqdir')
-      return
-    }
-    if (!isEdit && !form.password) {
-      toast.error('Yeni istifadəçi üçün şifrə mütləqdir')
-      return
-    }
-    setSaving(true)
-    try {
-      const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
-      const authHeader = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
-      const body = { ...form }
-      if (!body.password) delete body.password
-      if (body.age === '' || body.age === undefined) delete body.age
-      else body.age = Number(body.age)
-      if (body.department) { body.doctorId = body.department }
-      delete body.department
-      if (isEdit) {
-        await axios.put(`${API}/users/${user._id}`, body, { headers: authHeader })
-        toast.success('İstifadəçi yeniləndi')
-      } else {
-        await axios.post(`${API}/users`, body, { headers: authHeader })
-        toast.success('İstifadəçi yaradıldı')
-      }
-      onSave()
-    } catch (e) {
-      toast.error(e?.response?.data?.message || 'Xəta baş verdi')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16,
-    }} onClick={onClose}>
-      <div style={{
-        background: 'white', borderRadius: 16, width: '100%', maxWidth: 640,
-        maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-      }} onClick={e => e.stopPropagation()}>
-
-        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
-            {isEdit ? 'İstifadəçini Redaktə Et' : 'Yeni İstifadəçi'}
-          </h3>
-          <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
-        </div>
-
-        <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Field label="Ad"           k="name"       required form={form} onChange={set} />
-          <Field label="Soyad"        k="surname"    required form={form} onChange={set} />
-          <Field label="Şəxsiyyət ID" k="sexiyyatId"          form={form} onChange={set} />
-          <Field label="Yaş"          k="age"        type="number" form={form} onChange={set} />
-          <Field label="Email"        k="email"      type="email" required form={form} onChange={set} />
-          <Field label="Telefon"      k="phone"                 form={form} onChange={set} />
-          <div style={{ gridColumn: '1/-1' }}>
-            <Field label="Ünvan"      k="address"               form={form} onChange={set} />
-          </div>
-          <div>
-            <label style={labelStyle}>Həkim (əlaqəli)</label>
-            <select
-              value={form.department}
-              onChange={e => set('department', e.target.value)}
-              style={{ ...inputStyle, height: 44 }}
-            >
-              <option value="">Seçin...</option>
-              {doctors.map(d => (
-                <option key={d._id} value={d._id}>{d.fullName} — {d.specialization}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Rol <span style={{ color: '#ef4444' }}>*</span></label>
-            <select value={form.role} onChange={e => set('role', e.target.value)} style={{ ...inputStyle, height: 42 }}>
-              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </div>
-
-          <div style={{ gridColumn: '1/-1' }}>
-            <Field label={isEdit ? 'Şifrə (boş qoyun — dəyişməsin)' : 'Şifrə'} k="password" type="password" required={!isEdit} form={form} onChange={set} />
-          </div>
-
-          <div style={{ gridColumn: '1/-1' }}>
-            <Field label="Şəkil URL" k="photoUrl" form={form} onChange={set} />
-          </div>
-
-          <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Toggle checked={form.isActive} onChange={() => set('isActive', !form.isActive)} />
-            <span style={{ fontSize: 13, color: '#475569' }}>Aktiv</span>
-          </div>
-        </div>
-
-        <div style={{ padding: '0 24px 24px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{
-            padding: '9px 20px', borderRadius: 9, border: '1px solid #e2e8f0',
-            background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569',
-          }}>Ləğv et</button>
-          <button onClick={handleSubmit} disabled={saving} style={{
-            padding: '9px 22px', borderRadius: 9, border: 'none',
-            background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            opacity: saving ? 0.7 : 1,
-          }}>{saving ? 'Saxlanılır...' : 'Saxla'}</button>
-        </div>
-      </div>
-    </div>
-  )
+const fieldStyle = {
+  width: '100%', height: 42, border: '1px solid #e2e8f0', borderRadius: 8,
+  padding: '0 12px', fontSize: 14, color: '#0f172a', background: '#fff',
+  outline: 'none', boxSizing: 'border-box',
 }
+const labelStyle = { fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 4, display: 'block' }
 
 export default function AdminUsers() {
-  const [users, setUsers]       = useState([])
-  const [total, setTotal]       = useState(0)
-  const [loading, setLoading]   = useState(true)
-  const [tab, setTab]           = useState('all')
-  const [search, setSearch]     = useState('')
-  const [modal, setModal]       = useState(null) // null | 'add' | user object
-  const [deleting, setDeleting] = useState(null)
-
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true)
-    console.log('token:', token)
-    try {
-      const params = { limit: 100 }
-      if (tab !== 'all') params.role = tab
-      const res = await axios.get(`${API}/users`, {
-        params,
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+  const [users,       setUsers]       = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [activeTab,   setActiveTab]   = useState('all')
+  const [search,      setSearch]      = useState('')
+  const [showModal,   setShowModal]   = useState(false)
+  const [editUser,    setEditUser]    = useState(null)
+
+  const [name,        setName]        = useState('')
+  const [surname,     setSurname]     = useState('')
+  const [sexiyyatId,  setSexiyyatId]  = useState('')
+  const [age,         setAge]         = useState('')
+  const [email,       setEmail]       = useState('')
+  const [phone,       setPhone]       = useState('')
+  const [address,     setAddress]     = useState('')
+  const [department,  setDepartment]  = useState('')
+  const [role,        setRole]        = useState('STAFF')
+  const [password,    setPassword]    = useState('')
+  const [isActive,    setIsActive]    = useState(true)
+  const [formError,   setFormError]   = useState('')
+  const [formLoading, setFormLoading] = useState(false)
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/v1/users', {
+      headers: { Authorization: 'Bearer ' + token },
+    })
+      .then(r => r.json())
+      .then(data => {
+        const list = data.data?.users || data.users || (Array.isArray(data.data) ? data.data : null) || []
+        setUsers(list)
       })
-      const raw = res.data
-      let list = []
-      if (Array.isArray(raw))                     list = raw
-      else if (Array.isArray(raw.users))          list = raw.users
-      else if (Array.isArray(raw.data))           list = raw.data
-      else if (Array.isArray(raw.data?.users))    list = raw.data.users
-      setUsers(list)
-      setTotal(raw.total ?? raw.data?.total ?? list.length)
-    } catch {
-      toast.error('İstifadəçilər yüklənmədi')
-    } finally {
-      setLoading(false)
-    }
-  }, [tab, token])
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false))
+  }, [])
 
-  useEffect(() => { fetchUsers() }, [fetchUsers])
-
-  const handleToggleActive = async (user) => {
-    try {
-      await axios.patch(`${API}/users/${user._id}/toggle-active`, {}, {
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      })
-      setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isActive: !u.isActive } : u))
-    } catch (e) {
-      toast.error(e?.response?.data?.message || 'Status dəyişdirilmədi')
+  useEffect(() => {
+    if (showModal) {
+      if (editUser) {
+        setName(editUser.name || '')
+        setSurname(editUser.surname || '')
+        setSexiyyatId(editUser.sexiyyatId || '')
+        setAge(editUser.age || '')
+        setEmail(editUser.email || '')
+        setPhone(editUser.phone || '')
+        setAddress(editUser.address || '')
+        setDepartment(editUser.department || '')
+        setRole(editUser.role || 'STAFF')
+        setPassword('')
+        setIsActive(editUser.isActive !== false)
+      } else {
+        setName(''); setSurname(''); setSexiyyatId(''); setAge('')
+        setEmail(''); setPhone(''); setAddress(''); setDepartment('')
+        setRole('STAFF'); setPassword(''); setIsActive(true)
+      }
+      setFormError('')
     }
-  }
-
-  const handleDelete = async (id) => {
-    setDeleting(id)
-    try {
-      await axios.delete(`${API}/users/${id}`, { headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } })
-      toast.success('İstifadəçi silindi')
-      setUsers(prev => prev.filter(u => u._id !== id))
-      setTotal(t => t - 1)
-    } catch (e) {
-      toast.error(e?.response?.data?.message || 'Silinmədi')
-    } finally {
-      setDeleting(null)
-    }
-  }
+  }, [showModal, editUser])
 
   const filtered = users.filter(u => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    const full = `${u.name || ''} ${u.surname || ''} ${u.fullName || ''} ${u.email || ''} ${u.department || ''}`.toLowerCase()
-    return full.includes(q)
+    const matchTab = activeTab === 'all' || u.role === activeTab
+    const matchSearch = !search ||
+      (u.name + ' ' + u.surname).toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase())
+    return matchTab && matchSearch
   })
 
+  const handleSubmit = async () => {
+    if (!name || !surname || !email) { setFormError('Ad, soyad və email məcburidir'); return }
+    if (!editUser && !password) { setFormError('Şifrə məcburidir'); return }
+    setFormLoading(true)
+    const body = { name, surname, sexiyyatId, age: Number(age) || 0, email, phone, address, department, role, isActive }
+    if (password) body.password = password
+    const url = editUser
+      ? 'http://localhost:5000/api/v1/users/' + editUser._id
+      : 'http://localhost:5000/api/v1/users'
+    const method = editUser ? 'PUT' : 'POST'
+    fetch(url, {
+      method,
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+      .then(r => r.json())
+      .then(data => {
+        const user = data.data || data.user
+        if (user && user._id) {
+          if (editUser) setUsers(prev => prev.map(u => u._id === editUser._id ? user : u))
+          else setUsers(prev => [user, ...prev])
+          setShowModal(false)
+          setEditUser(null)
+        } else {
+          setFormError(data.message || 'Xəta baş verdi')
+        }
+      })
+      .catch(() => setFormError('Xəta baş verdi'))
+      .finally(() => setFormLoading(false))
+  }
+
+  const handleDelete = (id) => {
+    if (!window.confirm('Bu istifadəçini silmək istəyirsiniz?')) return
+    fetch('http://localhost:5000/api/v1/users/' + id, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token },
+    }).then(() => setUsers(prev => prev.filter(u => u._id !== id)))
+  }
+
+  const handleToggle = (id) => {
+    fetch('http://localhost:5000/api/v1/users/' + id + '/toggle-active', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + token },
+    })
+      .then(r => r.json())
+      .then(data => {
+        const user = data.data || data.user
+        if (user) setUsers(prev => prev.map(u => u._id === id ? user : u))
+      })
+  }
+
+  const TABS = [
+    { key: 'all',        label: 'Hamısı' },
+    { key: 'DOCTOR',     label: 'Həkim' },
+    { key: 'STAFF',      label: 'Staff' },
+    { key: 'SOBE_MUDURU',label: 'Şöbə Müdürü' },
+    { key: 'BAS_HEKIM',  label: 'Baş Həkim' },
+  ]
+
   const thStyle = {
-    padding: '10px 14px', fontSize: 11, fontWeight: 600,
-    color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em',
-    textAlign: 'left', whiteSpace: 'nowrap',
+    padding: '12px 16px', fontSize: 11, fontWeight: 600,
+    color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left',
   }
-  const tdStyle = {
-    padding: '12px 14px', fontSize: 13, color: '#334155',
-    borderBottom: '1px solid #f1f5f9',
-  }
+  const tdStyle = { padding: '14px 16px', fontSize: 13, color: '#334155', borderBottom: '1px solid #f8fafc' }
 
   return (
     <AdminLayout activePage="users">
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a' }}>İstifadəçilər</h1>
-          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#94a3b8' }}>{total} istifadəçi</p>
+          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#94a3b8' }}>{users.length} istifadəçi</p>
         </div>
-        <button onClick={() => setModal('add')} style={{
-          display: 'flex', alignItems: 'center', gap: 7,
-          padding: '10px 18px', borderRadius: 10, border: 'none',
-          background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-        }}>
+        <button
+          onClick={() => { setEditUser(null); setShowModal(true) }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '10px 18px', borderRadius: 10, border: 'none',
+            background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Yeni İstifadəçi
         </button>
       </div>
 
-      {/* Filters row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 6, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: 4, flexWrap: 'wrap' }}>
-          {FILTER_TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{
-              padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13,
-              background: tab === t.key ? '#00848e' : 'transparent',
-              color: tab === t.key ? 'white' : '#64748b',
-              fontWeight: tab === t.key ? 600 : 400,
-              transition: 'all 0.15s',
-            }}>{t.label}</button>
-          ))}
-        </div>
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {TABS.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+            padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0',
+            background: activeTab === tab.key ? '#00848e' : 'white',
+            color: activeTab === tab.key ? 'white' : '#64748b',
+            fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          }}>{tab.label}</button>
+        ))}
+      </div>
 
-        <div style={{ marginLeft: 'auto', position: 'relative' }}>
-          <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
-            <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </div>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Axtar..."
-            style={{
-              height: 38, border: '1px solid #e2e8f0', borderRadius: 9,
-              padding: '0 12px 0 34px', fontSize: 13, color: '#334155',
-              background: 'white', outline: 'none', width: 220,
-            }}
-          />
+      {/* Search */}
+      <div style={{ marginBottom: 20, position: 'relative', width: 280 }}>
+        <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
+          <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </div>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Ad, email axtar..."
+          style={{ ...fieldStyle, paddingLeft: 34, height: 38, fontSize: 13 }}
+        />
       </div>
 
       {/* Table */}
-      <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', width: '100%', border: '1px solid #e2e8f0' }}>
         {loading ? (
           <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>Yüklənir...</div>
         ) : filtered.length === 0 ? (
@@ -358,34 +241,29 @@ export default function AdminUsers() {
                   <th style={thStyle}>Ad Soyad</th>
                   <th style={thStyle}>Rol</th>
                   <th style={thStyle}>Şöbə</th>
-                  <th style={thStyle}>Şəxsiyyət ID</th>
-                  <th style={thStyle}>Yaş</th>
                   <th style={thStyle}>Email</th>
+                  <th style={thStyle}>Telefon</th>
                   <th style={thStyle}>Status</th>
                   <th style={{ ...thStyle, textAlign: 'right' }}>Əməliyyatlar</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(u => {
+                  const initial = (u.name || u.fullName || '?')[0].toUpperCase()
                   const fullName = u.name && u.surname ? `${u.name} ${u.surname}` : u.fullName || u.email
-                  const initial = fullName?.[0]?.toUpperCase() || '?'
                   return (
-                    <tr key={u._id} style={{ transition: 'background 0.1s' }}
+                    <tr key={u._id}
                       onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {u.photoUrl ? (
-                            <img src={u.photoUrl} alt={fullName} style={{ width: 34, height: 34, borderRadius: 9, objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{
-                              width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                              background: 'linear-gradient(135deg,#00848e,#00a8b5)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: 'white', fontSize: 13, fontWeight: 700,
-                            }}>{initial}</div>
-                          )}
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                            background: 'linear-gradient(135deg,#00848e,#00a8b5)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', fontSize: 13, fontWeight: 700,
+                          }}>{initial}</div>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{fullName}</div>
                             {u.phone && <div style={{ fontSize: 11, color: '#94a3b8' }}>{u.phone}</div>}
@@ -394,31 +272,32 @@ export default function AdminUsers() {
                       </td>
                       <td style={tdStyle}><RoleBadge role={u.role} /></td>
                       <td style={tdStyle}><span style={{ fontSize: 13 }}>{u.department || '—'}</span></td>
-                      <td style={tdStyle}><span style={{ fontSize: 12, fontFamily: 'monospace', color: '#64748b' }}>{u.sexiyyatId || '—'}</span></td>
-                      <td style={tdStyle}>{u.age || '—'}</td>
-                      <td style={tdStyle}><span style={{ fontSize: 12, color: '#64748b' }}>{u.email}</span></td>
+                      <td style={tdStyle}><span style={{ fontSize: 13, color: '#64748b' }}>{u.email}</span></td>
+                      <td style={tdStyle}><span style={{ fontSize: 13, color: '#64748b' }}>{u.phone || '—'}</span></td>
                       <td style={tdStyle}>
-                        <Toggle checked={u.isActive} onChange={() => handleToggleActive(u)} />
+                        <Toggle checked={u.isActive} onChange={() => handleToggle(u._id)} />
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <button onClick={() => setModal(u)} style={{
-                            padding: '6px 12px', borderRadius: 7, border: '1px solid #e2e8f0',
-                            background: 'white', fontSize: 12, cursor: 'pointer', color: '#334155',
-                            display: 'flex', alignItems: 'center', gap: 5,
-                          }}>
+                          <button
+                            onClick={() => { setEditUser(u); setShowModal(true) }}
+                            style={{
+                              padding: '6px 12px', borderRadius: 7, border: '1px solid #e2e8f0',
+                              background: 'white', fontSize: 12, cursor: 'pointer', color: '#334155',
+                              display: 'flex', alignItems: 'center', gap: 5,
+                            }}
+                          >
                             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             Redaktə
                           </button>
                           <button
-                            onClick={() => { if (window.confirm('Bu istifadəçini silmək istəyirsiniz?')) handleDelete(u._id) }}
-                            disabled={deleting === u._id}
+                            onClick={() => handleDelete(u._id)}
                             style={{
                               padding: '6px 12px', borderRadius: 7, border: '1px solid #fee2e2',
                               background: 'white', fontSize: 12, cursor: 'pointer', color: '#ef4444',
                               display: 'flex', alignItems: 'center', gap: 5,
-                              opacity: deleting === u._id ? 0.5 : 1,
-                            }}>
+                            }}
+                          >
                             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             Sil
                           </button>
@@ -433,12 +312,123 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {modal && (
-        <Modal
-          user={modal === 'add' ? null : modal}
-          onClose={() => setModal(null)}
-          onSave={() => { setModal(null); fetchUsers() }}
-        />
+      {/* Modal */}
+      {showModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={() => { setShowModal(false); setEditUser(null) }}
+        >
+          <div
+            style={{
+              background: 'white', borderRadius: 16, padding: 32,
+              width: 560, maxWidth: '92vw', maxHeight: '90vh', overflowY: 'auto',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                {editUser ? 'İstifadəçini Redaktə Et' : 'Yeni İstifadəçi'}
+              </h3>
+              <button
+                onClick={() => { setShowModal(false); setEditUser(null) }}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}
+              >×</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {/* Ad */}
+              <div>
+                <label style={labelStyle}>Ad <span style={{ color: '#ef4444' }}>*</span></label>
+                <input value={name} onChange={e => setName(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Soyad */}
+              <div>
+                <label style={labelStyle}>Soyad <span style={{ color: '#ef4444' }}>*</span></label>
+                <input value={surname} onChange={e => setSurname(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Şəxsiyyət ID */}
+              <div>
+                <label style={labelStyle}>Şəxsiyyət ID</label>
+                <input value={sexiyyatId} onChange={e => setSexiyyatId(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Yaş */}
+              <div>
+                <label style={labelStyle}>Yaş</label>
+                <input type="number" value={age} onChange={e => setAge(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Email */}
+              <div>
+                <label style={labelStyle}>Email <span style={{ color: '#ef4444' }}>*</span></label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Telefon */}
+              <div>
+                <label style={labelStyle}>Telefon</label>
+                <input value={phone} onChange={e => setPhone(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Ünvan */}
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Ünvan</label>
+                <input value={address} onChange={e => setAddress(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Şöbə */}
+              <div>
+                <label style={labelStyle}>Şöbə</label>
+                <input value={department} onChange={e => setDepartment(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Rol */}
+              <div>
+                <label style={labelStyle}>Rol <span style={{ color: '#ef4444' }}>*</span></label>
+                <select value={role} onChange={e => setRole(e.target.value)} style={fieldStyle}>
+                  <option value="DOCTOR">Həkim</option>
+                  <option value="STAFF">Staff</option>
+                  <option value="SOBE_MUDURU">Şöbə Müdürü</option>
+                  <option value="BAS_HEKIM">Baş Həkim</option>
+                </select>
+              </div>
+              {/* Şifrə */}
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>
+                  {editUser ? 'Şifrə (dəyişdirmək üçün doldurun)' : <>Şifrə <span style={{ color: '#ef4444' }}>*</span></>}
+                </label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={fieldStyle} />
+              </div>
+              {/* Aktiv toggle */}
+              <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Toggle checked={isActive} onChange={() => setIsActive(v => !v)} />
+                <span style={{ fontSize: 13, color: '#475569' }}>Aktiv</span>
+              </div>
+            </div>
+
+            {formError && (
+              <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 8, marginTop: 16 }}>{formError}</p>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
+              <button
+                onClick={() => { setShowModal(false); setEditUser(null) }}
+                style={{
+                  padding: '9px 20px', borderRadius: 9, border: '1px solid #e2e8f0',
+                  background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569',
+                }}
+              >Ləğv et</button>
+              <button
+                onClick={handleSubmit}
+                disabled={formLoading}
+                style={{
+                  padding: '9px 22px', borderRadius: 9, border: 'none',
+                  background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600,
+                  cursor: formLoading ? 'not-allowed' : 'pointer', opacity: formLoading ? 0.7 : 1,
+                }}
+              >{formLoading ? 'Saxlanılır...' : 'Saxla'}</button>
+            </div>
+          </div>
+        </div>
       )}
     </AdminLayout>
   )
