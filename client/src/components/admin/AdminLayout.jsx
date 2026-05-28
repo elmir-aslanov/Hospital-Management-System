@@ -21,10 +21,11 @@ export default function AdminLayout({ children, activePage }) {
   const adminUser  = JSON.parse(localStorage.getItem('adminUser') || '{}')
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
+    const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    console.log('token:', token)
     if (!token) return
     fetch('http://localhost:5000/api/v1/muraciet', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { 'Authorization': 'Bearer ' + token },
     })
       .then(r => r.json())
       .then(d => {

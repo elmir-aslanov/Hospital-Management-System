@@ -4,7 +4,7 @@ import { ROLES } from '../config/constants.js';
 
 const userSchema = new mongoose.Schema(
   {
-    // New split-name fields
+    // New split-name fields  
     name:        { type: String, trim: true },
     surname:     { type: String, trim: true },
     // Legacy full-name field — kept for existing users

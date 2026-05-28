@@ -44,6 +44,28 @@ function RoleBadge({ role }) {
   )
 }
 
+const inputStyle = {
+  width: '100%', height: 42, border: '1px solid #e2e8f0', borderRadius: 9,
+  padding: '0 12px', fontSize: 13, color: '#0f172a', background: '#f8fafc',
+  outline: 'none', boxSizing: 'border-box',
+}
+const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4, display: 'block' }
+
+/* Field defined OUTSIDE Modal to prevent remount on every keystroke */
+function Field({ label, k, type = 'text', required, form, onChange }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}{required && <span style={{ color: '#ef4444' }}> *</span>}</label>
+      <input
+        type={type}
+        value={form[k] ?? ''}
+        onChange={e => onChange(k, e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+  )
+}
+
 function Toggle({ checked, onChange }) {
   return (
     <div onClick={onChange} style={{
@@ -78,15 +100,17 @@ function Modal({ user, onClose, onSave }) {
     }
     setSaving(true)
     try {
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+      const authHeader = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
       const body = { ...form }
       if (!body.password) delete body.password
-      if (body.age === '') delete body.age
+      if (body.age === '' || body.age === undefined) delete body.age
+      else body.age = Number(body.age)
       if (isEdit) {
-        await axios.put(`${API}/users/${user._id}`, body, { headers: { Authorization: `Bearer ${token}` } })
+        await axios.put(`${API}/users/${user._id}`, body, { headers: authHeader })
         toast.success('İstifadəçi yeniləndi')
       } else {
-        await axios.post(`${API}/users`, body, { headers: { Authorization: `Bearer ${token}` } })
+        await axios.post(`${API}/users`, body, { headers: authHeader })
         toast.success('İstifadəçi yaradıldı')
       }
       onSave()
@@ -96,25 +120,6 @@ function Modal({ user, onClose, onSave }) {
       setSaving(false)
     }
   }
-
-  const inputStyle = {
-    width: '100%', height: 42, border: '1px solid #e2e8f0', borderRadius: 9,
-    padding: '0 12px', fontSize: 13, color: '#0f172a', background: '#f8fafc',
-    outline: 'none', boxSizing: 'border-box',
-  }
-  const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4, display: 'block' }
-
-  const Field = ({ label, k, type = 'text', required }) => (
-    <div>
-      <label style={labelStyle}>{label}{required && <span style={{ color: '#ef4444' }}> *</span>}</label>
-      <input
-        type={type}
-        value={form[k]}
-        onChange={e => set(k, e.target.value)}
-        style={inputStyle}
-      />
-    </div>
-  )
 
   return (
     <div style={{
@@ -135,16 +140,16 @@ function Modal({ user, onClose, onSave }) {
         </div>
 
         <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Field label="Ad" k="name" required />
-          <Field label="Soyad" k="surname" required />
-          <Field label="Şəxsiyyət ID" k="sexiyyatId" />
-          <Field label="Yaş" k="age" type="number" />
-          <Field label="Email" k="email" type="email" required />
-          <Field label="Telefon" k="phone" />
+          <Field label="Ad"           k="name"       required form={form} onChange={set} />
+          <Field label="Soyad"        k="surname"    required form={form} onChange={set} />
+          <Field label="Şəxsiyyət ID" k="sexiyyatId"          form={form} onChange={set} />
+          <Field label="Yaş"          k="age"        type="number" form={form} onChange={set} />
+          <Field label="Email"        k="email"      type="email" required form={form} onChange={set} />
+          <Field label="Telefon"      k="phone"                 form={form} onChange={set} />
           <div style={{ gridColumn: '1/-1' }}>
-            <Field label="Ünvan" k="address" />
+            <Field label="Ünvan"      k="address"               form={form} onChange={set} />
           </div>
-          <Field label="Şöbə" k="department" />
+          <Field label="Şöbə"         k="department"            form={form} onChange={set} />
 
           <div>
             <label style={labelStyle}>Rol <span style={{ color: '#ef4444' }}>*</span></label>
@@ -154,11 +159,11 @@ function Modal({ user, onClose, onSave }) {
           </div>
 
           <div style={{ gridColumn: '1/-1' }}>
-            <Field label={isEdit ? 'Şifrə (boş qoyun — dəyişməsin)' : 'Şifrə'} k="password" type="password" required={!isEdit} />
+            <Field label={isEdit ? 'Şifrə (boş qoyun — dəyişməsin)' : 'Şifrə'} k="password" type="password" required={!isEdit} form={form} onChange={set} />
           </div>
 
           <div style={{ gridColumn: '1/-1' }}>
-            <Field label="Şəkil URL" k="photoUrl" />
+            <Field label="Şəkil URL" k="photoUrl" form={form} onChange={set} />
           </div>
 
           <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -192,21 +197,26 @@ export default function AdminUsers() {
   const [modal, setModal]       = useState(null) // null | 'add' | user object
   const [deleting, setDeleting] = useState(null)
 
-  const token = localStorage.getItem('adminToken')
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
+    console.log('token:', token)
     try {
       const params = { limit: 100 }
       if (tab !== 'all') params.role = tab
       const res = await axios.get(`${API}/users`, {
         params,
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       })
-      const data = res.data?.data
-      const list = Array.isArray(data) ? data : data?.users || []
+      const raw = res.data
+      let list = []
+      if (Array.isArray(raw))                     list = raw
+      else if (Array.isArray(raw.users))          list = raw.users
+      else if (Array.isArray(raw.data))           list = raw.data
+      else if (Array.isArray(raw.data?.users))    list = raw.data.users
       setUsers(list)
-      setTotal(data?.total ?? list.length)
+      setTotal(raw.total ?? raw.data?.total ?? list.length)
     } catch {
       toast.error('İstifadəçilər yüklənmədi')
     } finally {
@@ -219,7 +229,7 @@ export default function AdminUsers() {
   const handleToggleActive = async (user) => {
     try {
       await axios.patch(`${API}/users/${user._id}/toggle-active`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       })
       setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isActive: !u.isActive } : u))
     } catch (e) {
@@ -230,7 +240,7 @@ export default function AdminUsers() {
   const handleDelete = async (id) => {
     setDeleting(id)
     try {
-      await axios.delete(`${API}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      await axios.delete(`${API}/users/${id}`, { headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } })
       toast.success('İstifadəçi silindi')
       setUsers(prev => prev.filter(u => u._id !== id))
       setTotal(t => t - 1)
@@ -373,7 +383,7 @@ export default function AdminUsers() {
                             Redaktə
                           </button>
                           <button
-                            onClick={() => { if (window.confirm('Silmək istədiyinizə əminsiniz?')) handleDelete(u._id) }}
+                            onClick={() => { if (window.confirm('Bu istifadəçini silmək istəyirsiniz?')) handleDelete(u._id) }}
                             disabled={deleting === u._id}
                             style={{
                               padding: '6px 12px', borderRadius: 7, border: '1px solid #fee2e2',
