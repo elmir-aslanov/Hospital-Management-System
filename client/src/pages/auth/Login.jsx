@@ -42,21 +42,22 @@ export default function Login() {
     })
       .then(r => r.json())
       .then(data => {
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          const user = data.user || data;
+        const token = data.data?.accessToken;
+        const user  = data.data?.user;
+        if (token && user) {
+          localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(user));
           const role = user.role?.toUpperCase();
           if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
-            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminToken', token);
             localStorage.setItem('adminUser', JSON.stringify(user));
             navigate('/admin/dashboard');
           } else if (role === 'DOCTOR') {
-            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminToken', token);
             localStorage.setItem('adminUser', JSON.stringify(user));
             navigate('/doctor/dashboard');
           } else if (['STAFF', 'SOBE_MUDURU', 'BAS_HEKIM'].includes(role)) {
-            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminToken', token);
             localStorage.setItem('adminUser', JSON.stringify(user));
             navigate('/admin/dashboard');
           } else {

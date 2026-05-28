@@ -86,6 +86,20 @@ function Modal({ user, onClose, onSave }) {
   const isEdit = !!user?._id
   const [form, setForm] = useState(isEdit ? { ...EMPTY_FORM, ...user, password: '' } : { ...EMPTY_FORM })
   const [saving, setSaving] = useState(false)
+  const [doctors, setDoctors] = useState([])
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    fetch('http://localhost:5000/api/v1/site-doctors/all', {
+      headers: { 'Authorization': 'Bearer ' + token },
+    })
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []
+        setDoctors(list)
+      })
+      .catch(() => {})
+  }, [])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -106,6 +120,8 @@ function Modal({ user, onClose, onSave }) {
       if (!body.password) delete body.password
       if (body.age === '' || body.age === undefined) delete body.age
       else body.age = Number(body.age)
+      if (body.department) { body.doctorId = body.department }
+      delete body.department
       if (isEdit) {
         await axios.put(`${API}/users/${user._id}`, body, { headers: authHeader })
         toast.success('İstifadəçi yeniləndi')
@@ -149,7 +165,19 @@ function Modal({ user, onClose, onSave }) {
           <div style={{ gridColumn: '1/-1' }}>
             <Field label="Ünvan"      k="address"               form={form} onChange={set} />
           </div>
-          <Field label="Şöbə"         k="department"            form={form} onChange={set} />
+          <div>
+            <label style={labelStyle}>Həkim (əlaqəli)</label>
+            <select
+              value={form.department}
+              onChange={e => set('department', e.target.value)}
+              style={{ ...inputStyle, height: 44 }}
+            >
+              <option value="">Seçin...</option>
+              {doctors.map(d => (
+                <option key={d._id} value={d._id}>{d.fullName} — {d.specialization}</option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label style={labelStyle}>Rol <span style={{ color: '#ef4444' }}>*</span></label>
