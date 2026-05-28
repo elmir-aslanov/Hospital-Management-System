@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 const BASE      = 'http://localhost:5000'
 const PAGE_SIZE = 10
-const emptyForm = { name: '', surname: '', email: '', phone: '', address: '', age: '' }
+const emptyForm = { name: '', surname: '', email: '', phone: '', address: '', birthDate: '' }
 
 const fullName = (u) => {
   if (u.name && u.surname) return `${u.name} ${u.surname}`
@@ -11,8 +11,9 @@ const fullName = (u) => {
 }
 
 export default function AdminPatients() {
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+
   const [patients, setPatients]     = useState([])
-  const [allPatients, setAll]       = useState([])   // for client-side search
   const [total, setTotal]           = useState(0)
   const [page, setPage]             = useState(1)
   const [loading, setLoading]       = useState(true)
@@ -24,44 +25,40 @@ export default function AdminPatients() {
   const [form, setForm]             = useState(emptyForm)
   const [saving, setSaving]         = useState(false)
   const [formError, setFormError]   = useState('')
-  const debounceRef = useRef(null)
 
-  const token   = localStorage.getItem('adminToken')
   const headers = { Authorization: `Bearer ${token}` }
 
-  const load = useCallback(() => {
-    setLoading(true)
-    fetch(`${BASE}/api/v1/users?role=PATIENT&limit=200`, { headers })
+  useEffect(() => {
+    fetch(`${BASE}/api/v1/users?role=PATIENT`, {
+      headers: { Authorization: 'Bearer ' + token },
+    })
       .then(r => r.json())
       .then(data => {
         let list = []
-        if (Array.isArray(data))              list = data
-        else if (Array.isArray(data.users))   list = data.users
-        else if (Array.isArray(data.patients))list = data.patients
-        else if (Array.isArray(data.data))    list = data.data
-        setAll(list)
-        setTotal(data.total || list.length)
+        if (Array.isArray(data))                    list = data
+        else if (Array.isArray(data.data?.users))   list = data.data.users
+        else if (Array.isArray(data.users))         list = data.users
+        else if (Array.isArray(data.patients))      list = data.patients
+        else if (Array.isArray(data.data))          list = data.data
+        setPatients(list)
+        setTotal(data.total || data.data?.total || list.length)
       })
-      .catch(() => { setAll([]); setTotal(0) })
+      .catch(() => setPatients([]))
       .finally(() => setLoading(false))
   }, [])
 
-  useEffect(() => { load() }, [])
-
   /* client-side search + pagination */
-  const filtered = allPatients.filter(u => {
-    if (!search.trim()) return true
-    const q = search.toLowerCase()
-    return [u.name, u.surname, u.fullName, u.email, u.phone, u.sexiyyatId]
-      .filter(Boolean).join(' ').toLowerCase().includes(q)
-  })
+  const filtered = patients.filter(p =>
+    !search ||
+    ((p.name || '') + ' ' + (p.surname || '')).toLowerCase().includes(search.toLowerCase()) ||
+    (p.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.phone || '').includes(search)
+  )
   const pages    = Math.ceil(filtered.length / PAGE_SIZE) || 1
   const pagSlice = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const handleSearch = (val) => {
-    setSearch(val)
-    setPage(1)
-  }
+  const handleSearch = (val) => { setSearch(val); setPage(1) }
 
   const openDetail = (user) => {
     setSelected(user._id)
@@ -84,14 +81,14 @@ export default function AdminPatients() {
     setSaving(true); setFormError('')
     try {
       const body = {
-        name:     form.name.trim(),
-        surname:  form.surname.trim(),
-        email:    form.email.trim(),
-        password: 'Aslan123!',
-        phone:    form.phone.trim()   || undefined,
-        address:  form.address.trim() || undefined,
-        age:      form.age            ? Number(form.age) : undefined,
-        role:     'PATIENT',
+        name:      form.name.trim(),
+        surname:   form.surname.trim(),
+        email:     form.email.trim(),
+        password:  'Aslan123!',
+        phone:     form.phone.trim()     || undefined,
+        address:   form.address.trim()   || undefined,
+        birthDate: form.birthDate        || undefined,
+        role:      'PATIENT',
       }
       const r = await fetch(`${BASE}/api/v1/users`, {
         method: 'POST',
@@ -100,10 +97,22 @@ export default function AdminPatients() {
       })
       const data = await r.json()
       if (!r.ok) throw new Error(data.message || data.error || 'Xəta baş verdi')
+      const created = data.data || data.user || data
+      if (created && created._id) setPatients(prev => [created, ...prev])
       closeModal()
-      load()
     } catch (e) { setFormError(e.message) }
     finally { setSaving(false) }
+  }
+
+  const handleDelete = (id) => {
+    if (!window.confirm('Bu pasiyenti silmək istəyirsiniz?')) return
+    fetch(`${BASE}/api/v1/users/${id}`, {
+      method: 'DELETE',
+      headers,
+    }).then(() => {
+      setPatients(prev => prev.filter(p => p._id !== id))
+      if (selected === id) { setSelected(null); setDetail(null) }
+    })
   }
 
   return (
@@ -145,7 +154,7 @@ export default function AdminPatients() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    {['Ad Soyad', 'E-poçt', 'Telefon', 'Şəxsiyyət ID', 'Yaş', 'Status'].map(h => (
+                    {['Ad Soyad', 'E-poçt', 'Telefon', 'Ünvan', 'Doğum tarixi', 'Status', ''].map(h => (
                       <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -154,6 +163,9 @@ export default function AdminPatients() {
                   {pagSlice.map(u => {
                     const name       = fullName(u)
                     const isSelected = selected === u._id
+                    const dob        = u.birthDate
+                      ? new Date(u.birthDate).toLocaleDateString('az-AZ')
+                      : u.age ? `${u.age} yaş` : '—'
                     return (
                       <tr key={u._id} onClick={() => openDetail(u)}
                         style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer', background: isSelected ? '#f0fafb' : 'white', transition: 'background 0.1s' }}
@@ -170,12 +182,18 @@ export default function AdminPatients() {
                         </td>
                         <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{u.email || '—'}</td>
                         <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{u.phone || '—'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 12, color: '#00848e', fontWeight: 600, fontFamily: 'monospace' }}>{u.sexiyyatId || '—'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{u.age ? `${u.age} yaş` : '—'}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.address || '—'}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{dob}</td>
                         <td style={{ padding: '12px 16px' }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: u.isActive ? '#f0fdf4' : '#fef2f2', color: u.isActive ? '#16a34a' : '#dc2626' }}>
-                            {u.isActive ? 'Aktiv' : 'Deaktiv'}
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: u.isActive !== false ? '#f0fdf4' : '#fef2f2', color: u.isActive !== false ? '#16a34a' : '#dc2626' }}>
+                            {u.isActive !== false ? 'Aktiv' : 'Deaktiv'}
                           </span>
+                        </td>
+                        <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleDelete(u._id)}
+                            style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: 'white', fontSize: 11, cursor: 'pointer', color: '#ef4444' }}
+                          >Sil</button>
                         </td>
                       </tr>
                     )
@@ -217,17 +235,17 @@ export default function AdminPatients() {
                       {fullName(detail)?.[0]?.toUpperCase() || 'P'}
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#0f1b2d' }}>{fullName(detail)}</div>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: detail.isActive ? '#f0fdf4' : '#fef2f2', color: detail.isActive ? '#16a34a' : '#dc2626', display: 'inline-block', marginTop: 6 }}>
-                      {detail.isActive ? 'Aktiv' : 'Deaktiv'}
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: detail.isActive !== false ? '#f0fdf4' : '#fef2f2', color: detail.isActive !== false ? '#16a34a' : '#dc2626', display: 'inline-block', marginTop: 6 }}>
+                      {detail.isActive !== false ? 'Aktiv' : 'Deaktiv'}
                     </span>
                   </div>
 
-                  <InfoRow label="E-poçt"       value={detail.email || '—'} />
-                  <InfoRow label="Telefon"       value={detail.phone || '—'} />
-                  <InfoRow label="Ünvan"         value={detail.address || '—'} />
-                  <InfoRow label="Şəxsiyyət ID"  value={detail.sexiyyatId || '—'} />
-                  <InfoRow label="Yaş"           value={detail.age ? `${detail.age} yaş` : '—'} />
-                  <InfoRow label="Şöbə"          value={detail.department || '—'} />
+                  <InfoRow label="E-poçt"        value={detail.email || '—'} />
+                  <InfoRow label="Telefon"        value={detail.phone || '—'} />
+                  <InfoRow label="Ünvan"          value={detail.address || '—'} />
+                  <InfoRow label="FİN / Şəx. ID"  value={detail.sexiyyatId || '—'} />
+                  <InfoRow label="Doğum tarixi"   value={detail.birthDate ? new Date(detail.birthDate).toLocaleDateString('az-AZ') : detail.age ? `${detail.age} yaş` : '—'} />
+                  <InfoRow label="Şöbə"           value={detail.department || '—'} />
                 </>
               )}
             </div>
@@ -251,11 +269,11 @@ export default function AdminPatients() {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <MField label="Ad *"      value={form.name}    onChange={v => setForm(f => ({ ...f, name: v }))} />
-              <MField label="Soyad *"   value={form.surname} onChange={v => setForm(f => ({ ...f, surname: v }))} />
-              <MField label="E-poçt *"  value={form.email}   onChange={v => setForm(f => ({ ...f, email: v }))} type="email" />
-              <MField label="Telefon"   value={form.phone}   onChange={v => setForm(f => ({ ...f, phone: v }))} placeholder="0501234567" />
-              <MField label="Yaş"       value={form.age}     onChange={v => setForm(f => ({ ...f, age: v }))}  type="number" placeholder="30" />
+              <MField label="Ad *"           value={form.name}      onChange={v => setForm(f => ({ ...f, name: v }))} />
+              <MField label="Soyad *"        value={form.surname}   onChange={v => setForm(f => ({ ...f, surname: v }))} />
+              <MField label="E-poçt *"       value={form.email}     onChange={v => setForm(f => ({ ...f, email: v }))} type="email" />
+              <MField label="Telefon"        value={form.phone}     onChange={v => setForm(f => ({ ...f, phone: v }))} placeholder="0501234567" />
+              <MField label="Doğum tarixi"   value={form.birthDate} onChange={v => setForm(f => ({ ...f, birthDate: v }))} type="date" />
               <div style={{ gridColumn: 'span 2' }}>
                 <MField label="Ünvan" value={form.address} onChange={v => setForm(f => ({ ...f, address: v }))} placeholder="Bakı, Azərbaycan" />
               </div>
