@@ -47,15 +47,13 @@ export default function AdminDoctors() {
 
   // ─── Fetch doctors on mount ───────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${BASE}/api/v1/site-doctors/all`, {
-      headers: { Authorization: 'Bearer ' + token },
-    })
+    fetch(`${BASE}/api/v1/site-doctors/all`)
       .then(r => r.json())
       .then(data => {
         let list = []
-        if (Array.isArray(data))                   list = data
-        else if (Array.isArray(data.doctors))      list = data.doctors
-        else if (Array.isArray(data.data))         list = data.data
+        if (Array.isArray(data)) list = data
+        else if (Array.isArray(data.doctors)) list = data.doctors
+        else if (Array.isArray(data.data)) list = data.data
         setDoctors(list)
         setTotal(list.length)
       })
@@ -139,7 +137,7 @@ export default function AdminDoctors() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Həkimlər</h1>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{total} həkim qeydiyyatda</p>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{filtered.length} həkim qeydiyyatda</p>
         </div>
         <button
           onClick={() => { setEditDoctor(null); setError(''); setShowModal(true) }}
@@ -175,14 +173,14 @@ export default function AdminDoctors() {
                   <img src={doc.photoUrl} alt={doc.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-                    {(doc.fullName || 'D')[0].toUpperCase()}
+                    {(doc.fullName || doc.name || '?').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: doc.isActive ? '#22c55e' : '#94a3b8', boxShadow: doc.isActive ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
               </div>
               <div style={{ padding: '14px 16px' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{doc.fullName}</div>
-                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{doc.fullName || doc.name || 'Naməlum'}</div>
+                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || '—'}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>
                   {doc.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>
