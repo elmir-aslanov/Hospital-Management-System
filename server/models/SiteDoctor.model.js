@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const siteDoctorSchema = new mongoose.Schema({
+  userId:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name:       { type: String, required: true, trim: true },
   specialty:  { type: String, required: true, trim: true },
   department: { type: String, default: '', trim: true },

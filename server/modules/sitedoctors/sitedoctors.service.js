@@ -14,7 +14,10 @@ export const getPublicDoctors = (limit = 8) => {
 // ── Admin CRUD ────────────────────────────────────────────────────────────────
 
 export const getAllDoctors = () =>
-  SiteDoctor.find({}).sort({ order: 1, createdAt: -1 }).lean();
+  SiteDoctor.find({})
+    .populate('userId', 'fullName name surname email photoUrl phone')
+    .sort({ order: 1, createdAt: -1 })
+    .lean();
 
 export const createDoctor = (data) => SiteDoctor.create(data);
 

@@ -2,6 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
 import ApiError     from '../../utils/ApiError.js';
 import * as svc     from './sitedoctors.service.js';
+import SiteDoctor   from '../../models/SiteDoctor.model.js';
 
 export const getPublicDoctors = asyncHandler(async (req, res) => {
   const limit   = parseInt(req.query.limit) || 8;
@@ -12,8 +13,10 @@ export const getPublicDoctors = asyncHandler(async (req, res) => {
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 export const getAllDoctors = asyncHandler(async (_req, res) => {
-  const doctors = await svc.getAllDoctors();
-  res.json(new ApiResponse(200, doctors));
+  const doctors = await SiteDoctor.find()
+    .populate('userId', 'fullName name surname email photoUrl phone isActive')
+    .sort({ createdAt: -1 });
+  res.json(doctors);
 });
 
 export const createDoctor = asyncHandler(async (req, res) => {

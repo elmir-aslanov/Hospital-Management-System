@@ -6,6 +6,19 @@ const SPECIALTIES = ['Kardioloq','Neyroloq','Ortoped','Cərrah','Pediatr','Derma
 const DEPARTMENTS = ['Kardiologiya','Nevrologiya','Ortopediya','Cərrahiyyə','Pediatriya','Dermatoloq','Oftolmologiya','Ürologiya','Ginekologiya','Psixiatriya','Endokrinologiya','Pulmonologiya']
 
 export default function AdminDoctors() {
+  const getDoctorName = (doc) => {
+    if (doc.fullName) return doc.fullName
+    if (doc.name) return doc.name
+    if (doc.userId?.fullName) return doc.userId.fullName
+    if (doc.userId?.name) return (doc.userId.name + ' ' + (doc.userId.surname || '')).trim()
+    return 'Naməlum'
+  }
+
+  const getDoctorSpecialty = (doc) => doc.specialization || doc.specialty || '—'
+
+  const getDoctorActive = (doc) => doc.isActive ?? doc.isAvailable ?? true
+
+  const getDoctorPhoto = (doc) => doc.photoUrl || doc.userId?.photoUrl || null
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
 
   const [doctors,     setDoctors]     = useState([])
@@ -53,6 +66,7 @@ export default function AdminDoctors() {
         let list = []
         if (Array.isArray(data)) list = data
         else if (Array.isArray(data.doctors)) list = data.doctors
+        else if (Array.isArray(data.data?.doctors)) list = data.data.doctors
         else if (Array.isArray(data.data)) list = data.data
         setDoctors(list)
         setTotal(list.length)
@@ -118,8 +132,8 @@ export default function AdminDoctors() {
   // ─── Search ───────────────────────────────────────────────────────────────
   const filtered = doctors.filter(d =>
     !search ||
-    (d.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (d.specialization || '').toLowerCase().includes(search.toLowerCase()) ||
+    getDoctorName(d).toLowerCase().includes(search.toLowerCase()) ||
+    getDoctorSpecialty(d).toLowerCase().includes(search.toLowerCase()) ||
     (d.department || '').toLowerCase().includes(search.toLowerCase())
   )
 
@@ -169,18 +183,18 @@ export default function AdminDoctors() {
           {filtered.map(doc => (
             <div key={doc._id} style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
               <div style={{ height: 130, background: 'linear-gradient(135deg,#e8f6f8,#f0fafb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                {doc.photoUrl ? (
-                  <img src={doc.photoUrl} alt={doc.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {getDoctorPhoto(doc) ? (
+                  <img src={getDoctorPhoto(doc)} alt={getDoctorName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-                    {(doc.fullName || doc.name || '?').charAt(0).toUpperCase()}
+                    {getDoctorName(doc).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: doc.isActive ? '#22c55e' : '#94a3b8', boxShadow: doc.isActive ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
+                <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: getDoctorActive(doc) ? '#22c55e' : '#94a3b8', boxShadow: getDoctorActive(doc) ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
               </div>
               <div style={{ padding: '14px 16px' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{doc.fullName || doc.name || 'Naməlum'}</div>
-                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || '—'}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getDoctorName(doc)}</div>
+                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{getDoctorSpecialty(doc)}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>
                   {doc.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>

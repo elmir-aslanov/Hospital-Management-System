@@ -6,13 +6,12 @@ import authorize    from '../../middleware/rbac.middleware.js';
 const router = Router();
 
 // ── PUBLIC — no auth required ─────────────────────────────────────────────────
-router.get('/', ctrl.getPublicDoctors);
+router.get('/',    ctrl.getPublicDoctors);
+router.get('/all', ctrl.getAllDoctors);
 
 // ── ADMIN — auth + role check ─────────────────────────────────────────────────
 router.use(authenticate);
 router.use(authorize('ADMIN', 'SUPER_ADMIN'));
-
-router.get('/all',    ctrl.getAllDoctors);
 router.post('/',      ctrl.createDoctor);
 router.put('/:id',    ctrl.updateDoctor);
 router.delete('/:id', ctrl.deleteDoctor);
