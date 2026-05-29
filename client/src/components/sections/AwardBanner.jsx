@@ -17,7 +17,7 @@ export default function AwardBanner() {
   const gap = isMobile ? 32 : isTablet ? 40 : 64;
 
   return (
-    <section style={{ background: '#f6f9fa', paddingTop: py, paddingBottom: py, fontFamily: FONT }}>
+    <section style={{ background: '#f6f9fa', paddingTop: py, paddingBottom: py, fontFamily: FONT, width: '100%' }}>
       <div style={{ ...CONTAINER, paddingLeft: px, paddingRight: px, boxSizing: 'border-box' }}>
 
         {/* ── Two-column grid ───────────────────────────────────────────────── */}

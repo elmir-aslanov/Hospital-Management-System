@@ -99,7 +99,8 @@ export default function ServicesPage() {
   return (
     <main style={{ fontFamily: FONT }}>
       {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)', padding: '72px 32px 80px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)', padding: '72px 0 80px', textAlign: 'center', width: '100%' }}>
+        <div className="page-container">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(77,208,225,0.85)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14, fontFamily: FONT }}>
             Aslan Medical Center
@@ -111,6 +112,7 @@ export default function ServicesPage() {
             Geniş xidmət çeşidi ilə sağlamlığınızın hər aspektinə diqqət yetiririk.
           </p>
         </motion.div>
+        </div>
       </section>
 
       {/* Grid */}

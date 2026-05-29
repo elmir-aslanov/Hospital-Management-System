@@ -141,6 +141,7 @@ export default function Footer() {
       background: `linear-gradient(135deg, ${BG} 0%, ${NAVY2} 100%)`,
       margin: 0, padding: 0, fontFamily: FONT,
       boxShadow: 'inset 0 1px 0 rgba(29,182,166,0.15)',
+      width: '100%',
     }}>
 
       {/* Wave */}
@@ -157,7 +158,7 @@ export default function Footer() {
       </div>
 
       {/* Main grid */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '32px 20px 0' : '60px 40px 0' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '32px 20px 0' : '60px 40px 0' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 1.6fr',

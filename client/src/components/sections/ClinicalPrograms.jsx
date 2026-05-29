@@ -32,7 +32,7 @@ export default function ClinicalPrograms() {
   const smallCircle = isMobile ? 130 : isTablet ? 160 : 200;
 
   return (
-    <section style={{ background: '#ffffff', paddingTop: py, paddingBottom: py, fontFamily: FONT }}>
+    <section style={{ background: '#ffffff', paddingTop: py, paddingBottom: py, fontFamily: FONT, width: '100%' }}>
       <div style={{ ...CONTAINER, paddingLeft: px, paddingRight: px, boxSizing: 'border-box' }}>
         <div style={{
           display: 'grid',

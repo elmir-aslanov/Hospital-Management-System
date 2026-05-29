@@ -118,7 +118,8 @@ export default function ContactPage() {
   return (
     <main style={{ fontFamily: FONT }}>
       {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #1DB6A6 100%)', padding: '72px 32px 80px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #1DB6A6 100%)', padding: '72px 0 80px', textAlign: 'center', width: '100%' }}>
+        <div className="page-container">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(77,208,225,0.85)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14, fontFamily: FONT }}>
             Aslan Medical Center
@@ -130,11 +131,12 @@ export default function ContactPage() {
             Suallarınız üçün bizimlə əlaqə saxlayın. Ən qısa müddətdə cavab verəcəyik.
           </p>
         </motion.div>
+        </div>
       </section>
 
       {/* Content */}
       <section style={{ background: '#f8fafc', padding: '56px 0 64px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px', boxSizing: 'border-box' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 40, alignItems: 'start' }}>
 
             {/* Contact info panel */}

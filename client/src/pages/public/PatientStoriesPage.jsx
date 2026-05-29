@@ -18,9 +18,11 @@ export default function PatientStoriesPage() {
       {/* Hero */}
       <div style={{
         background: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)',
-        padding: '80px 6vw',
+        padding: '80px 0',
         textAlign: 'center',
+        width: '100%',
       }}>
+        <div className="page-container">
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -55,12 +57,13 @@ export default function PatientStoriesPage() {
         >
           {t('patientStoriesPage.subtitle')}
         </motion.p>
+        </div>
       </div>
 
       {/* Stories grid */}
       <div style={{
-        maxWidth: '1200px', margin: '0 auto',
-        padding: '80px 6vw',
+        maxWidth: '1280px', margin: '0 auto',
+        padding: '80px 24px',
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '32px',

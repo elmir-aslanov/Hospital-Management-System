@@ -91,10 +91,11 @@ export default function MedicalConsultation() {
       overflow: 'hidden',
       overflowX: 'hidden',
       fontFamily: FONT,
+      width: '100%',
     }}>
 
       <div style={{
-        maxWidth: '1200px',
+        maxWidth: '1280px',
         margin: '0 auto',
         padding: isMobile ? '0 20px' : '0 40px',
         display: 'grid',

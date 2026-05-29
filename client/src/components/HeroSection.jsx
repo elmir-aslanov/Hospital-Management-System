@@ -12,6 +12,7 @@ const HeroSection = () => {
   return (
     <div style={{
       position: 'relative',
+      zIndex: 1,
       width: '100%',
       height: isMobile ? 'calc(100svh - 60px)' : 'min(70vh, 700px)',
       minHeight: isMobile ? '480px' : '560px',

@@ -182,7 +182,7 @@ export default function HekimlerPage() {
       </div>
 
       <section style={{ background: '#f0f4f8', padding: '60px 0 80px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}

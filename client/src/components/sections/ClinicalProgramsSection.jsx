@@ -115,6 +115,7 @@ export default function ClinicalProgramsSection() {
       background: '#ffffff',
       padding: isMobile ? '64px 0' : '96px 0',
       fontFamily: FONT,
+      width: '100%',
     }}>
       <div style={{
         maxWidth: 1280,

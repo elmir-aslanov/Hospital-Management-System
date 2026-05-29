@@ -155,9 +155,10 @@ export default function Navbar() {
   return (
     <>
       <header style={{
-        position: 'sticky', top: 0, zIndex: 1000,
+        position: 'sticky', top: 0, zIndex: 1000, width: '100%',
+        background: 'white',
+        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.1)' : '0 1px 0 rgba(0,0,0,0.06)',
         fontFamily: FONT,
-        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.1)' : 'none',
         transition: 'box-shadow 0.3s ease',
       }}>
 
@@ -165,11 +166,13 @@ export default function Navbar() {
         <div className="mid-bar" style={{
           background: '#ffffff',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          padding: '10px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
+          width: '100%',
         }}>
+          <div style={{
+            maxWidth: '1280px', margin: '0 auto', padding: '10px 32px',
+            boxSizing: 'border-box',
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
 
           {/* 1. Logo */}
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
@@ -198,8 +201,8 @@ export default function Navbar() {
           {/* Divider after logo */}
           <span style={{ width: '1px', height: '24px', background: '#ddd', alignSelf: 'center', flexShrink: 0 }} />
 
-          {/* 2. Contact: phone + email */}
-          <div className="mid-social" style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+          {/* 2. Contact + Login */}
+          <div className="mid-social" style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <a href="tel:+994508363694" style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               color: '#1a2b4a', fontWeight: 600, fontSize: '13px',
@@ -214,6 +217,8 @@ export default function Navbar() {
               </svg>
               +994 50 836 36 94
             </a>
+
+            <span style={{ width: '1px', height: '18px', background: '#ddd', flexShrink: 0 }} />
 
             <a href="mailto:info@aslanmedical.az" style={{
               display: 'flex', alignItems: 'center', gap: '5px',
@@ -231,34 +236,8 @@ export default function Navbar() {
               info@aslanmedical.az
             </a>
 
-            {/* 3. Location */}
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: '4px',
-              color: TEAL, fontSize: '13px', fontFamily: FONT, whiteSpace: 'nowrap',
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              Xətai ray, A. Cəlilov, Bakı
-            </span>
+            <span style={{ width: '1px', height: '18px', background: '#ddd', flexShrink: 0 }} />
 
-            {/* 4. Social icons */}
-            {SOCIALS.map(({ Icon, label, href }) => (
-              <span key={label} aria-label={label}
-                onClick={() => openExternalLink(href, label)}
-                style={{ color: '#1a2b4a', lineHeight: 0, transition: 'color 0.2s, transform 0.2s', cursor: 'pointer', flexShrink: 0 }}
-                onMouseEnter={e => { e.currentTarget.style.color = TEAL; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#1a2b4a'; e.currentTarget.style.transform = 'scale(1)'; }}
-              ><Icon /></span>
-            ))}
-          </div>
-
-          {/* 5. Divider (before left button group) */}
-          <span style={{ width: '1px', height: '24px', background: '#ddd', alignSelf: 'center', flexShrink: 0 }} />
-
-          {/* 6. Left button group: login pill + E-Nəticə */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {isAuthenticated ? (
               <div className="mid-login" style={{ position: 'relative', flexShrink: 0 }}>
                 <div
@@ -353,21 +332,19 @@ export default function Navbar() {
                 </div>
               </div>
             )}
+          </div>
 
+          {/* 3. Right button group */}
+          <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             <button onClick={() => navigate('/e-netice')} style={{
               fontSize: '14px', fontWeight: 600, fontFamily: FONT,
               color: '#ffffff', border: 'none', cursor: 'pointer',
-              background: '#e8500a', padding: '8px 20px',
+              background: '#e8500a', padding: '8px 16px',
               borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0,
             }}>E-Nəticə</button>
-          </div>
-
-          {/* 7. Right button group */}
-          <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             {[
-              { key: 'findDoctor',     label: t('header.findDoctor') },
-              { key: 'appointment',   label: t('header.appointment') },
-              { key: 'patientPortal', label: t('header.patientPortal') },
+              { key: 'findDoctor',   label: t('header.findDoctor') },
+              { key: 'appointment',  label: t('header.appointment') },
             ].map(({ key, label }) => (
               <button key={key}
                 onClick={() => {
@@ -382,7 +359,7 @@ export default function Navbar() {
                 }}
                 style={{
                   fontSize: '14px', color: 'white', fontWeight: 600, fontFamily: FONT,
-                  padding: '8px 20px', borderRadius: '20px',
+                  padding: '8px 14px', borderRadius: '20px',
                   border: 'none', cursor: 'pointer',
                   background: '#00848e', whiteSpace: 'nowrap',
                   transition: 'opacity 0.2s',
@@ -405,6 +382,7 @@ export default function Navbar() {
             <motion.span animate={mobileOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
               style={{ display: 'block', width: '22px', height: '2px', background: '#1a2b4a', borderRadius: '2px' }} />
           </button>
+          </div>
         </div>
 
         {/* ══ LAYER 3 — Main Nav ════════════════════════ */}
@@ -413,11 +391,14 @@ export default function Navbar() {
           background: '#ffffff',
           borderTop: '1px solid rgba(0,0,0,0.06)',
           borderBottom: `3px solid ${TEAL}`,
-          padding: '0 48px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          boxSizing: 'border-box',
+          width: '100%',
         }}>
+          <div style={{
+            maxWidth: '1280px', margin: '0 auto', padding: '0 32px',
+            boxSizing: 'border-box', display: 'flex',
+            alignItems: 'center', justifyContent: 'space-between', height: '100%',
+          }}>
           <div style={{ display: 'flex', alignItems: 'stretch', height: '100%', flex: 1 }}>
             {NAV_LINKS.map((link) => {
               const open      = activeDropdown === link.label;
@@ -559,6 +540,7 @@ export default function Navbar() {
               </>
             )}
           </div>
+          </div>
         </nav>
       </header>
 
@@ -632,7 +614,8 @@ export default function Navbar() {
           .mid-login   { display: none !important; }
           .nav-hamburger { display: flex !important; }
           .nav-layer3  { display: none !important; }
-          .mid-bar     { height: 60px !important; padding: 0 16px !important; }
+          .mid-bar     { overflow: hidden; }
+          .mid-bar > div { height: 60px !important; padding: 0 16px !important; }
           .navbar-logo { height: 36px !important; }
         }
         @media (min-width: 768px) and (max-width: 1024px) {
