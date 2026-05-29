@@ -1,115 +1,100 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE        = 'http://localhost:5000'
-const SPECIALTIES = ['Kardioloq','Neyroloq','Ortoped','Cərrah','Pediatr','Dermatoloq','Oftolmoloq','Urologiya','Ginekologiya','Psixiatr','Endokrinoloq','Pulmonoloq']
-const DEPARTMENTS = ['Kardiologiya','Nevrologiya','Ortopediya','Cərrahiyyə','Pediatriya','Dermatoloq','Oftolmologiya','Ürologiya','Ginekologiya','Psixiatriya','Endokrinologiya','Pulmonologiya']
+const BASE = 'http://localhost:5000'
 
 export default function AdminDoctors() {
-  const getDoctorName = (doc) => {
-    if (doc.fullName) return doc.fullName
-    if (doc.name) return doc.name
-    if (doc.userId?.fullName) return doc.userId.fullName
-    if (doc.userId?.name) return (doc.userId.name + ' ' + (doc.userId.surname || '')).trim()
-    return 'Naməlum'
-  }
-
-  const getDoctorSpecialty = (doc) => doc.specialization || doc.specialty || '—'
-
-  const getDoctorActive = (doc) => doc.isActive ?? doc.isAvailable ?? true
-
-  const getDoctorPhoto = (doc) => doc.photoUrl || doc.userId?.photoUrl || null
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
 
-  const [doctors,     setDoctors]     = useState([])
-  const [total,       setTotal]       = useState(0)
-  const [loading,     setLoading]     = useState(true)
-  const [search,      setSearch]      = useState('')
-  const [showModal,   setShowModal]   = useState(false)
-  const [editDoctor,  setEditDoctor]  = useState(null)
-  const [saving,      setSaving]      = useState(false)
-  const [error,       setError]       = useState('')
-  const [success,     setSuccess]     = useState('')
+  const getName  = (doc) => {
+    const u = doc.userId
+    if (!u) return 'Naməlum'
+    if (u.fullName) return u.fullName
+    return ((u.name || '') + ' ' + (u.surname || '')).trim() || 'Naməlum'
+  }
+  const getPhoto = (doc) => doc.userId?.photoUrl || null
+
+  const [doctors,      setDoctors]      = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [search,       setSearch]       = useState('')
+  const [showModal,    setShowModal]    = useState(false)
+  const [editDoctor,   setEditDoctor]   = useState(null)
+  const [saving,       setSaving]       = useState(false)
+  const [error,        setError]        = useState('')
+  const [success,      setSuccess]      = useState('')
+  const [doctorUsers,  setDoctorUsers]  = useState([])
 
   // ─── Form fields ──────────────────────────────────────────────────────────
-  const [fullName,       setFullName]       = useState('')
+  const [userId,         setUserId]         = useState('')
   const [specialization, setSpecialization] = useState('')
-  const [department,     setDepartment]     = useState('')
+  const [licenseNumber,  setLicenseNumber]  = useState('')
   const [experience,     setExperience]     = useState('')
   const [bio,            setBio]            = useState('')
-  const [isActive,       setIsActive]       = useState(true)
+  const [isAvailable,    setIsAvailable]    = useState(true)
 
   const resetForm = () => {
-    setFullName(''); setSpecialization(''); setDepartment('')
-    setExperience(''); setBio(''); setIsActive(true)
+    setUserId(''); setSpecialization(''); setLicenseNumber('')
+    setExperience(''); setBio(''); setIsAvailable(true)
   }
 
-  // ─── Populate form when editDoctor changes ────────────────────────────────
-  useEffect(() => {
-    if (editDoctor) {
-      setFullName(editDoctor.fullName || '')
-      setSpecialization(editDoctor.specialization || '')
-      setDepartment(editDoctor.department || '')
-      setExperience(editDoctor.experience || '')
-      setBio(editDoctor.bio || '')
-      setIsActive(editDoctor.isActive !== false)
-    } else {
-      resetForm()
-    }
-  }, [editDoctor])
+  const populateForm = (doc) => {
+    setSpecialization(doc.specialization || '')
+    setLicenseNumber(doc.licenseNumber || '')
+    setExperience(doc.experience ?? '')
+    setBio(doc.bio || '')
+    setIsAvailable(doc.isAvailable !== false)
+  }
 
-  // ─── Fetch doctors on mount ───────────────────────────────────────────────
+  // ─── Fetch doctors ────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${BASE}/api/v1/site-doctors/all`)
+    fetch(`${BASE}/api/v1/doctors?limit=100`)
       .then(r => r.json())
       .then(data => {
-        let list = []
-        if (Array.isArray(data)) list = data
-        else if (Array.isArray(data.doctors)) list = data.doctors
-        else if (Array.isArray(data.data?.doctors)) list = data.data.doctors
-        else if (Array.isArray(data.data)) list = data.data
+        const list = data.data?.doctors || data.doctors || (Array.isArray(data) ? data : [])
         setDoctors(list)
-        setTotal(list.length)
       })
       .catch(() => setDoctors([]))
       .finally(() => setLoading(false))
   }, [])
 
-  // ─── Save (create or update) ──────────────────────────────────────────────
+  // ─── Open create modal — fetch DOCTOR-role users ──────────────────────────
+  const openCreate = () => {
+    resetForm(); setEditDoctor(null); setError('')
+    fetch(`${BASE}/api/v1/users?role=DOCTOR`, {
+      headers: { Authorization: 'Bearer ' + token },
+    })
+      .then(r => r.json())
+      .then(data => setDoctorUsers(data.data?.users || data.users || []))
+      .catch(() => setDoctorUsers([]))
+    setShowModal(true)
+  }
+
+  // ─── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!fullName.trim() || !specialization.trim()) { setError('Ad və ixtisas tələb olunur'); return }
+    if (!specialization.trim())              { setError('İxtisas tələb olunur'); return }
+    if (!editDoctor && !userId)              { setError('İstifadəçi seçilməlidir'); return }
+    if (!editDoctor && !licenseNumber.trim()) { setError('Lisenziya nömrəsi tələb olunur'); return }
     setSaving(true); setError('')
     try {
-      const body = {
-        fullName:       fullName.trim(),
-        specialization: specialization.trim(),
-        department:     department.trim(),
-        experience:     Number(experience) || 0,
-        bio:            bio.trim(),
-        isActive,
-      }
-      const url    = editDoctor ? `${BASE}/api/v1/site-doctors/${editDoctor._id}` : `${BASE}/api/v1/site-doctors`
+      const url    = editDoctor ? `${BASE}/api/v1/doctors/${editDoctor._id}` : `${BASE}/api/v1/doctors`
       const method = editDoctor ? 'PUT' : 'POST'
-      const r = await fetch(url, {
-        method,
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
+      const body   = editDoctor
+        ? { specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
+        : { userId, specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim() }
+
+      const r    = await fetch(url, { method, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await r.json()
       if (!r.ok) throw new Error(data.message || 'Xəta')
 
+      const saved = data.data || data
       if (editDoctor) {
-        const updated = data.doctor || data.data || data
-        setDoctors(prev => prev.map(d => d._id === editDoctor._id ? updated : d))
+        setDoctors(prev => prev.map(d => d._id === editDoctor._id ? saved : d))
         setSuccess('Həkim uğurla yeniləndi')
       } else {
-        const newDoc = data.doctor || data.data || data
-        setDoctors(prev => [newDoc, ...prev])
-        setTotal(t => t + 1)
+        setDoctors(prev => [saved, ...prev])
         setSuccess('Həkim uğurla əlavə edildi')
       }
-      setShowModal(false)
-      setEditDoctor(null)
+      setShowModal(false); setEditDoctor(null)
       setTimeout(() => setSuccess(''), 3000)
     } catch (e) { setError(e.message) }
     finally { setSaving(false) }
@@ -119,22 +104,19 @@ export default function AdminDoctors() {
   const handleDelete = async (id) => {
     if (!window.confirm('Bu həkimi silmək istəyirsiniz?')) return
     try {
-      const r = await fetch(`${BASE}/api/v1/site-doctors/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + token },
-      })
+      const r = await fetch(`${BASE}/api/v1/doctors/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } })
       if (!r.ok) { const d = await r.json(); throw new Error(d.message || 'Silmə zamanı xəta') }
       setDoctors(prev => prev.filter(d => d._id !== id))
-      setTotal(t => t - 1)
+      setSuccess('Həkim silindi'); setTimeout(() => setSuccess(''), 3000)
     } catch (e) { alert(e.message) }
   }
 
   // ─── Search ───────────────────────────────────────────────────────────────
   const filtered = doctors.filter(d =>
     !search ||
-    getDoctorName(d).toLowerCase().includes(search.toLowerCase()) ||
-    getDoctorSpecialty(d).toLowerCase().includes(search.toLowerCase()) ||
-    (d.department || '').toLowerCase().includes(search.toLowerCase())
+    getName(d).toLowerCase().includes(search.toLowerCase()) ||
+    (d.specialization || '').toLowerCase().includes(search.toLowerCase()) ||
+    (d.userId?.department || '').toLowerCase().includes(search.toLowerCase())
   )
 
   const closeModal = () => { setShowModal(false); setEditDoctor(null); setError('') }
@@ -154,7 +136,7 @@ export default function AdminDoctors() {
           <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{filtered.length} həkim qeydiyyatda</p>
         </div>
         <button
-          onClick={() => { setEditDoctor(null); setError(''); setShowModal(true) }}
+          onClick={openCreate}
           style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
         >
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -171,7 +153,7 @@ export default function AdminDoctors() {
           style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 14px 9px 36px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
       </div>
 
-      {/* Cards grid */}
+      {/* Cards */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
           <div style={{ width: 36, height: 36, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -183,29 +165,30 @@ export default function AdminDoctors() {
           {filtered.map(doc => (
             <div key={doc._id} style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
               <div style={{ height: 130, background: 'linear-gradient(135deg,#e8f6f8,#f0fafb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                {getDoctorPhoto(doc) ? (
-                  <img src={getDoctorPhoto(doc)} alt={getDoctorName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {getPhoto(doc) ? (
+                  <img src={getPhoto(doc)} alt={getName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
-                    {getDoctorName(doc).charAt(0).toUpperCase()}
+                    {getName(doc).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: getDoctorActive(doc) ? '#22c55e' : '#94a3b8', boxShadow: getDoctorActive(doc) ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
+                <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: doc.isAvailable ? '#22c55e' : '#94a3b8', boxShadow: doc.isAvailable ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
               </div>
               <div style={{ padding: '14px 16px' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getDoctorName(doc)}</div>
-                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{getDoctorSpecialty(doc)}</div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>
-                  {doc.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getName(doc)}</div>
+                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || '—'}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                  {doc.userId?.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>
+                {doc.licenseNumber && (
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>Lic: {doc.licenseNumber}</div>
+                )}
                 {doc.bio && (
-                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {doc.bio}
-                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{doc.bio}</div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    onClick={() => { setEditDoctor(doc); setError(''); setShowModal(true) }}
+                    onClick={() => { populateForm(doc); setEditDoctor(doc); setError(''); setShowModal(true) }}
                     style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', color: '#475569', cursor: 'pointer' }}
                   >Redaktə</button>
                   <button
@@ -219,7 +202,7 @@ export default function AdminDoctors() {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Modal */}
       {showModal && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -238,19 +221,38 @@ export default function AdminDoctors() {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <ModalField label="Ad Soyad *" value={fullName} onChange={setFullName} />
-              <ModalSelect label="İxtisas *" value={specialization} onChange={setSpecialization} options={SPECIALTIES} />
-              <ModalSelect label="Departament" value={department} onChange={setDepartment} options={DEPARTMENTS} />
-              <ModalField label="Təcrübə (il)" value={experience} onChange={setExperience} type="number" />
+              {/* userId — only for create */}
+              {!editDoctor && (
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={lbl}>İstifadəçi (Həkim) *</label>
+                  <select value={userId} onChange={e => setUserId(e.target.value)} style={inp}>
+                    <option value="">Seçin...</option>
+                    {doctorUsers.map(u => (
+                      <option key={u._id} value={u._id}>
+                        {u.fullName || ((u.name || '') + ' ' + (u.surname || '')).trim() || u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <MF label="İxtisas *" value={specialization} onChange={setSpecialization} />
+              <MF label="Lisenziya nömrəsi *" value={licenseNumber} onChange={setLicenseNumber} />
+              <MF label="Təcrübə (il)" value={experience} onChange={setExperience} type="number" />
+
               <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Bio</label>
+                <label style={lbl}>Bio</label>
                 <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
                   style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input type="checkbox" id="isActive" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#00848e' }} />
-                <label htmlFor="isActive" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>Aktiv həkim</label>
-              </div>
+
+              {/* isAvailable — only for edit */}
+              {editDoctor && (
+                <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input type="checkbox" id="isAvailable" checked={isAvailable} onChange={e => setIsAvailable(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#00848e' }} />
+                  <label htmlFor="isAvailable" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>Qəbul aparır (mövcuddur)</label>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
@@ -270,25 +272,14 @@ export default function AdminDoctors() {
   )
 }
 
-function ModalField({ label, value, onChange, type = 'text' }) {
-  return (
-    <div>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
-    </div>
-  )
-}
+const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
+const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
 
-function ModalSelect({ label, value, onChange, options }) {
+function MF({ label, value, onChange, type = 'text' }) {
   return (
     <div>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }}>
-        <option value="">Seçin...</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
+      <label style={lbl}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={inp} />
     </div>
   )
 }

@@ -3,7 +3,7 @@ import WorkSchedule from '../../models/WorkSchedule.model.js';
 import Appointment from '../../models/Appointment.model.js';
 import ApiError from '../../utils/ApiError.js';
 
-const POPULATE_USER = 'fullName email phone';
+const POPULATE_USER = 'fullName name surname email phone photoUrl department';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -83,6 +83,14 @@ export const updateDoctor = async (id, updateData) => {
 
   const doctor = await Doctor.findByIdAndUpdate(id, safe, { new: true, runValidators: true })
     .populate('userId', POPULATE_USER);
+  if (!doctor) throw new ApiError(404, 'Doctor not found');
+  return doctor;
+};
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+
+export const deleteDoctor = async (id) => {
+  const doctor = await Doctor.findByIdAndDelete(id);
   if (!doctor) throw new ApiError(404, 'Doctor not found');
   return doctor;
 };

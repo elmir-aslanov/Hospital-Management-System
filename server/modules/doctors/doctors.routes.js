@@ -242,4 +242,10 @@ router.put(
   doctorsController.updateDoctor
 );
 
+router.delete(
+  '/:id',
+  authenticate, authorize('ADMIN', 'SUPER_ADMIN'),
+  doctorsController.deleteDoctor
+);
+
 export default router;

@@ -106,8 +106,6 @@ export default function Navbar() {
     { label: t('nav.home'),        href: '/' },
     { label: t('nav.doctors'),     href: '/hekimler' },
     { label: t('nav.departments'), href: '/departments' },
-    { label: t('nav.services'),    href: '/services' },
-    { label: t('nav.about'),       href: '/about' },
     { label: t('nav.blog'),        href: '/blog' },
     { label: t('nav.contact'),     href: '/contact' },
   ];

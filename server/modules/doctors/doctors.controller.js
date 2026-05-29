@@ -13,6 +13,17 @@ export const getDoctors = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result));
 });
 
+export const getAllDoctors = asyncHandler(async (req, res) => {
+  const Doctor = (await import('../../models/Doctor.model.js')).default;
+  const doctors = await Doctor.find()
+    .populate({
+      path: 'userId',
+      select: 'fullName name surname email photoUrl phone'
+    })
+    .sort({ createdAt: -1 });
+  res.json(doctors);
+});
+
 export const getDoctorById = asyncHandler(async (req, res) => {
   const doctor = await doctorsService.getDoctorById(req.params.id);
   res.status(200).json(new ApiResponse(200, doctor));
@@ -21,6 +32,11 @@ export const getDoctorById = asyncHandler(async (req, res) => {
 export const updateDoctor = asyncHandler(async (req, res) => {
   const doctor = await doctorsService.updateDoctor(req.params.id, req.body);
   res.status(200).json(new ApiResponse(200, doctor, 'Doctor updated'));
+});
+
+export const deleteDoctor = asyncHandler(async (req, res) => {
+  await doctorsService.deleteDoctor(req.params.id);
+  res.status(200).json(new ApiResponse(200, null, 'Doctor deleted'));
 });
 
 export const getDoctorSchedule = asyncHandler(async (req, res) => {
