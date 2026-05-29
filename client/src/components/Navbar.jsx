@@ -203,6 +203,30 @@ export default function Navbar() {
 
           {/* 2. Contact + Login */}
           <div className="mid-social" style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            {/* Location */}
+            <a
+              className="mid-location"
+              href="https://maps.google.com/?q=Bakı,+Azərbaycan"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                color: '#1a2b4a', fontWeight: 500, fontSize: '13px',
+                fontFamily: FONT, textDecoration: 'none',
+                transition: 'color 0.2s', whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = TEAL}
+              onMouseLeave={e => e.currentTarget.style.color = '#1a2b4a'}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Xətai ray, A. Cəlilov, Bakı
+            </a>
+
+            <span className="mid-divider-loc" style={{ width: '1px', height: '18px', background: '#ddd', flexShrink: 0 }} />
+
             <a href="tel:+994508363694" style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               color: '#1a2b4a', fontWeight: 600, fontSize: '13px',
@@ -218,9 +242,9 @@ export default function Navbar() {
               +994 50 836 36 94
             </a>
 
-            <span style={{ width: '1px', height: '18px', background: '#ddd', flexShrink: 0 }} />
+            <span className="mid-divider-email" style={{ width: '1px', height: '18px', background: '#ddd', flexShrink: 0 }} />
 
-            <a href="mailto:info@aslanmedical.az" style={{
+            <a className="mid-email" href="mailto:info@aslanmedical.az" style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               color: '#1a2b4a', fontWeight: 500, fontSize: '13px',
               fontFamily: FONT, textDecoration: 'none',
@@ -622,6 +646,12 @@ export default function Navbar() {
           .top-bar     { display: none !important; }
           .mid-social  { display: none !important; }
           .mid-actions .pill-btn:nth-child(1) { display: none !important; }
+        }
+        @media (min-width: 1025px) and (max-width: 1280px) {
+          .mid-location       { display: none !important; }
+          .mid-email          { display: none !important; }
+          .mid-divider-loc    { display: none !important; }
+          .mid-divider-email  { display: none !important; }
         }
       `}</style>
 
