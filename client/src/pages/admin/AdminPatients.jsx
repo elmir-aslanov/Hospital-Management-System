@@ -80,15 +80,15 @@ export default function AdminPatients() {
   const closeModal = () => { setShowModal(false); setFormError('') }
 
   const handleSave = async () => {
-    if (!form.fullName.trim()) { setFormError('Ad Soyad tələb olunur'); return }
-    if (!form.email.trim())    { setFormError('E-poçt tələb olunur'); return }
+    if (!form.fullName?.trim()) { setFormError('Ad Soyad tələb olunur'); return }
+    if (!form.email?.trim())    { setFormError('E-poçt tələb olunur'); return }
     setSaving(true); setFormError('')
     try {
       const body = {
         fullName:   form.fullName.trim(),
         email:      form.email.trim(),
-        phone:      form.phone.trim()    || undefined,
-        bloodGroup: form.bloodGroup      || undefined,
+        phone:      form.phone?.trim()    || undefined,
+        bloodGroup: form.bloodGroup       || undefined,
       }
       const r = await fetch(`${BASE}/api/v1/patients/admin-create`, {
         method: 'POST',
@@ -98,7 +98,7 @@ export default function AdminPatients() {
       const data = await r.json()
       if (!r.ok) throw new Error(data.message || data.error || 'Xəta baş verdi')
       const created = data.data || data
-      if (created && created._id) setPatients(prev => [created, ...prev])
+      if (created?._id) setPatients(prev => [created, ...prev])
       closeModal()
     } catch (e) { setFormError(e.message) }
     finally { setSaving(false) }
