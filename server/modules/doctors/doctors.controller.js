@@ -2,6 +2,17 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import * as doctorsService from './doctors.service.js';
 
+export const getPublicDoctors = asyncHandler(async (req, res) => {
+  const limit = req.query.limit || 8;
+  const data  = await doctorsService.getPublicDoctors(limit);
+  res.json(new ApiResponse(200, data));
+});
+
+export const getAllPublicDoctors = asyncHandler(async (req, res) => {
+  const data = await doctorsService.getAllPublicDoctors();
+  res.json(new ApiResponse(200, data));
+});
+
 export const createDoctor = asyncHandler(async (req, res) => {
   const doctor = await doctorsService.createDoctor(req.body);
   res.status(201).json(new ApiResponse(201, doctor, 'Doctor profile created'));

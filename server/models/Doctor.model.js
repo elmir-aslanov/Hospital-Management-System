@@ -8,13 +8,21 @@ const doctorSchema = new mongoose.Schema(
     experience: { type: Number, min: 0, default: 0 },
     bio: { type: String, trim: true, default: '' },
     isAvailable:    { type: Boolean, default: true },
-    averageRating:  { type: Number, default: 0, min: 0, max: 5 },
-    totalRatings:   { type: Number, default: 0, min: 0 },
+    averageRating:   { type: Number, default: 0, min: 0, max: 5 },
+    totalRatings:    { type: Number, default: 0, min: 0 },
+    department:      { type: String, trim: true, default: '' },
+    image:           { type: String, default: '' },
+    order:           { type: Number, default: 0 },
+    isActive:        { type: Boolean, default: true },
+    consultationFee: { type: Number, default: 0, min: 0 },
+    languages:       [{ type: String, trim: true }],
   },
   { timestamps: true }
 );
 
 doctorSchema.index({ specialization: 1 });
+doctorSchema.index({ isActive: 1, order: 1 });
+doctorSchema.index({ department: 1 });
 
 const Doctor = mongoose.model('Doctor', doctorSchema);
 export default Doctor;

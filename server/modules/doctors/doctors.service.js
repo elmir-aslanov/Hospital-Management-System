@@ -5,6 +5,22 @@ import ApiError from '../../utils/ApiError.js';
 
 const POPULATE_USER = 'fullName name surname email phone photoUrl department';
 
+export const getPublicDoctors = async (limit = 8) => {
+  const lim = Math.min(20, Math.max(1, parseInt(limit) || 8));
+  return Doctor.find({ isActive: true, isAvailable: true })
+    .populate('userId', POPULATE_USER)
+    .sort({ order: 1, averageRating: -1 })
+    .limit(lim)
+    .lean();
+};
+
+export const getAllPublicDoctors = async () => {
+  return Doctor.find({ isActive: true })
+    .populate('userId', POPULATE_USER)
+    .sort({ order: 1, createdAt: -1 })
+    .lean();
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const timeToMinutes = (time) => {
@@ -45,7 +61,7 @@ export const createDoctor = async ({ userId, specialization, licenseNumber, expe
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
-export const getDoctors = async ({ specialization, isAvailable, page = 1, limit = 10 } = {}) => {
+export const getDoctors = async ({ specialization, isAvailable, department, page = 1, limit = 10 } = {}) => {
   const pg = Math.max(1, parseInt(page));
   const lim = Math.min(100, Math.max(1, parseInt(limit)));
   const skip = (pg - 1) * lim;
@@ -53,6 +69,7 @@ export const getDoctors = async ({ specialization, isAvailable, page = 1, limit 
   const filter = {};
   if (specialization) filter.specialization = { $regex: specialization, $options: 'i' };
   if (isAvailable !== undefined) filter.isAvailable = isAvailable === 'true' || isAvailable === true;
+  if (department)    filter.department    = { $regex: department, $options: 'i' };
 
   const [doctors, total] = await Promise.all([
     Doctor.find(filter)
@@ -75,7 +92,8 @@ export const getDoctorById = async (id) => {
 // ─── Update ───────────────────────────────────────────────────────────────────
 
 export const updateDoctor = async (id, updateData) => {
-  const allowed = ['specialization', 'licenseNumber', 'experience', 'bio', 'isAvailable'];
+  const allowed = ['specialization', 'licenseNumber', 'experience', 'bio', 'isAvailable',
+                   'department', 'image', 'order', 'isActive', 'consultationFee', 'languages'];
   const safe = {};
   for (const key of allowed) {
     if (updateData[key] !== undefined) safe[key] = updateData[key];

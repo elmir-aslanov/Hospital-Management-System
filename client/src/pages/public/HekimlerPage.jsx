@@ -25,7 +25,7 @@ const SPECIALTIES = [
 function DoctorCard({ doctor }) {
   const navigate  = useNavigate()
   const imgSrc    = resolveImage(doctor.image)
-  const fullName  = doctor.name || doctor.userId?.fullName || doctor.fullName || ''
+  const fullName  = doctor.userId?.fullName || doctor.fullName || doctor.name || ''
   const initials  = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
 
   return (
@@ -82,14 +82,14 @@ function DoctorCard({ doctor }) {
         </div>
 
         {/* Specialty badge */}
-        {doctor.specialty && (
+        {doctor.specialization || doctor.specialty && (
           <div style={{
             position: 'absolute', bottom: '12px', left: '12px',
             background: TEAL, color: 'white',
             fontSize: '11px', fontWeight: 600,
             padding: '4px 10px', borderRadius: '20px', fontFamily: FONT,
           }}>
-            {doctor.specialty}
+            {doctor.specialization || doctor.specialty}
           </div>
         )}
       </div>
@@ -150,7 +150,7 @@ export default function HekimlerPage() {
 
   useEffect(() => {
     // Public site-doctors endpoint — no auth required
-    api.get('/site-doctors')
+    api.get('/doctors/public/all')
       .then(res => {
         const data = res.data?.data ?? res.data
         setDoctors(Array.isArray(data) ? data : [])

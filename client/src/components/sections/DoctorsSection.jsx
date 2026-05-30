@@ -10,13 +10,15 @@ const PersonIcon = () => (
 )
 
 function DoctorCard({ doctor }) {
+  const name  = doctor.userId?.fullName || doctor.fullName || doctor.name || '—'
+  const photo = doctor.image || doctor.userId?.photoUrl || doctor.photo || null
   return (
     <div style={{ fontFamily: FONT }}>
       <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', borderRadius: '8px', marginBottom: '16px', background: '#f0f0f0' }}>
-        {doctor.photo ? (
+        {photo ? (
           <img
-            src={doctor.photo}
-            alt={doctor.fullName}
+            src={photo}
+            alt={name}
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
             onError={e => {
               e.currentTarget.style.display = 'none'
@@ -27,14 +29,14 @@ function DoctorCard({ doctor }) {
         <div style={{
           width: '100%', height: '100%',
           background: '#e8f6f8',
-          display: doctor.photo ? 'none' : 'flex',
+          display: photo ? 'none' : 'flex',
           alignItems: 'center', justifyContent: 'center',
         }}>
           <PersonIcon />
         </div>
       </div>
       <p style={{ fontSize: '16px', fontWeight: 700, color: '#0a1628', marginBottom: '4px', margin: '0 0 4px', fontFamily: FONT }}>
-        {doctor.fullName}
+        {name}
       </p>
       <p style={{ fontSize: '14px', color: '#888', fontWeight: 400, margin: 0, fontFamily: FONT }}>
         {doctor.specialization || doctor.department || 'Həkim'}
@@ -55,7 +57,7 @@ export default function DoctorsSection() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/site-doctors?limit=8')
+    fetch('http://localhost:5000/api/v1/doctors/public?limit=8')
       .then(r => r.json())
       .then(data => {
         let list = []

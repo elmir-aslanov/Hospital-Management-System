@@ -84,10 +84,10 @@ export default function AdminAppointments() {
     setFormError('')
     setModal(true)
     /* fetch doctors */
-    fetch(`${BASE}/api/v1/site-doctors/all`, { headers })
+    fetch(`${BASE}/api/v1/doctors?limit=200`, { headers })
       .then(r => r.json())
       .then(d => {
-        const list = Array.isArray(d.data) ? d.data : d.data?.doctors || d.doctors || []
+        const list = d.data?.doctors || d.doctors || []
         setDoctors(Array.isArray(list) ? list : [])
       })
       .catch(() => setDoctors([]))
@@ -373,7 +373,7 @@ export default function AdminAppointments() {
                   <option value="">— Həkim seçin —</option>
                   {doctors.map(d => {
                     const u = d.userId
-                    const name = (u?.fullName?.trim()) || ((u?.name || '') + ' ' + (u?.surname || '')).trim() || d.name || d.fullName || '—'
+                    const name = d.userId?.fullName || d.fullName || (u?.fullName?.trim()) || ((u?.name || '') + ' ' + (u?.surname || '')).trim() || d.name || '—'
                     return <option key={d._id} value={d._id}>{name}{d.department ? ` (${d.department})` : ''}</option>
                   })}
                 </select>

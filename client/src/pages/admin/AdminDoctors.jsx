@@ -36,10 +36,15 @@ export default function AdminDoctors() {
   const [experience,     setExperience]     = useState('')
   const [bio,            setBio]            = useState('')
   const [isAvailable,    setIsAvailable]    = useState(true)
+  const [department,      setDepartment]      = useState('')
+  const [consultationFee, setConsultationFee] = useState('')
+  const [order,           setOrder]           = useState(0)
+  const [isActive,        setIsActive]        = useState(true)
 
   const resetForm = () => {
     setUserId(''); setSpecialization(''); setLicenseNumber('')
     setExperience(''); setBio(''); setIsAvailable(true)
+    setDepartment(''); setConsultationFee(''); setOrder(0); setIsActive(true)
   }
 
   const populateForm = (doc) => {
@@ -48,6 +53,10 @@ export default function AdminDoctors() {
     setExperience(doc.experience ?? '')
     setBio(doc.bio || '')
     setIsAvailable(doc.isAvailable !== false)
+    setDepartment(doc.department || '')
+    setConsultationFee(doc.consultationFee || '')
+    setOrder(doc.order || 0)
+    setIsActive(doc.isActive !== false)
   }
 
   // ─── Fetch doctors ────────────────────────────────────────────────────────
@@ -88,7 +97,14 @@ export default function AdminDoctors() {
       const url    = editDoctor ? `${BASE}/api/v1/doctors/${editDoctor._id}` : `${BASE}/api/v1/doctors`
       const method = editDoctor ? 'PUT' : 'POST'
       const body   = editDoctor
-        ? { specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
+        ? (() => {
+            const updates = { specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
+            if (department.trim())       updates.department      = department.trim()
+            if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
+            updates.order    = Number(order)
+            updates.isActive = isActive
+            return updates
+          })()
         : { userId, specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim() }
 
       const r    = await fetch(url, { method, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -181,13 +197,20 @@ export default function AdminDoctors() {
                     {getName(doc).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: doc.isAvailable ? '#22c55e' : '#94a3b8', boxShadow: doc.isAvailable ? '0 0 6px rgba(34,197,94,0.5)' : 'none' }} />
+                <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 5 }}>
+                  {doc.isActive === false && (
+                    <span style={{ fontSize: 10, fontWeight: 600, background: '#fef2f2', color: '#dc2626', borderRadius: 6, padding: '2px 6px' }}>
+                      Deaktiv
+                    </span>
+                  )}
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: doc.isAvailable ? '#22c55e' : '#94a3b8', boxShadow: doc.isAvailable ? '0 0 6px rgba(34,197,94,0.5)' : 'none', marginTop: 1 }} />
+                </div>
               </div>
               <div style={{ padding: '14px 16px' }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getName(doc)}</div>
                 <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || '—'}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
-                  {doc.userId?.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
+                  {doc.department || doc.userId?.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>
                 {doc.licenseNumber && (
                   <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>Lic: {doc.licenseNumber}</div>
@@ -289,6 +312,23 @@ export default function AdminDoctors() {
                   style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
               </div>
 
+              <MF label="Şöbə" value={department} onChange={setDepartment} placeholder="məs. Kardiologiya" />
+              <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" placeholder="0" />
+              <MF label="Sıra nömrəsi" value={order} onChange={setOrder} type="number" placeholder="0" />
+
+              <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={isActive}
+                  onChange={e => setIsActive(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: '#00848e' }}
+                />
+                <label htmlFor="isActive" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>
+                  Saytda göstər (aktiv)
+                </label>
+              </div>
+
               {/* isAvailable — only for edit */}
               {editDoctor && (
                 <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -318,11 +358,11 @@ export default function AdminDoctors() {
 const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
 
-function MF({ label, value, onChange, type = 'text' }) {
+function MF({ label, value, onChange, type = 'text', placeholder = '' }) {
   return (
     <div>
       <label style={lbl}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={inp} />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inp} />
     </div>
   )
 }

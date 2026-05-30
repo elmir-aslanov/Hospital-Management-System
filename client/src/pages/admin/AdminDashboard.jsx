@@ -76,11 +76,11 @@ export default function AdminDashboard() {
     if (!token) { navigate('/admin'); return }
     const headers = { Authorization: `Bearer ${token}` }
 
-    const p1 = fetch(`${API}/site-doctors/all`, { headers })
+    const p1 = fetch(`${API}/doctors?limit=200`, { headers })
       .then(r => r.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data : data.doctors || data.data || []
-        setStats(prev => ({ ...prev, doctors: list.length }))
+      .then(d1 => {
+        const doctorList = d1.data?.doctors || d1.doctors || []
+        setStats(prev => ({ ...prev, doctors: doctorList.length }))
       })
       .catch(() => {})
 

@@ -11,6 +11,10 @@ import authorize from '../../middleware/rbac.middleware.js';
 
 const router = Router();
 
+// Public routes — no auth
+router.get('/public',     doctorsController.getPublicDoctors);
+router.get('/public/all', doctorsController.getAllPublicDoctors);
+
 /**
  * @swagger
  * tags:
