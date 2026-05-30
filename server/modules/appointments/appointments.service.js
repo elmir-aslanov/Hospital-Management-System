@@ -4,6 +4,8 @@ import Doctor from '../../models/Doctor.model.js';
 import WorkSchedule from '../../models/WorkSchedule.model.js';
 import ApiError from '../../utils/ApiError.js';
 import { APPOINTMENT_STATUS, APPOINTMENT_TRANSITIONS } from '../../config/constants.js';
+import { createNotification } from '../notifications/notifications.service.js';
+import User from '../../models/User.model.js';
 
 // ─── Population helpers ───────────────────────────────────────────────────────
 
@@ -57,6 +59,33 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
 
   // Step 5 — create
   const appointment = await Appointment.create({ patientId, doctorId, date: apptDate, startTime, endTime, reason });
+
+  // Notify patient
+  try {
+    const patientUser = await User.findById(patient.userId);
+    const doctorUser  = await User.findById(doctor.userId);
+    const dateStr     = new Date(date).toLocaleDateString('az-AZ');
+    if (patientUser) {
+      await createNotification({
+        userId:  patientUser._id,
+        title:   'Randevunuz təsdiqləndi',
+        message: `${dateStr} tarixində saat ${startTime}–${endTime} arası Dr. ${doctorUser?.fullName || 'Həkim'} ilə randevunuz yaradıldı.`,
+        type:    'appointment',
+        link:    '/patient/appointments',
+      });
+    }
+    // Notify doctor
+    if (doctorUser) {
+      await createNotification({
+        userId:  doctorUser._id,
+        title:   'Yeni randevu',
+        message: `${patientUser?.fullName || 'Pasiyent'} — ${dateStr} saat ${startTime} üçün randevu yaratdı.`,
+        type:    'appointment',
+        link:    '/doctor/appointments',
+      });
+    }
+  } catch (_) {}
+
   return populateAppointment(Appointment.findById(appointment._id));
 };
 
@@ -140,6 +169,28 @@ export const updateAppointmentStatus = async (appointmentId, status, userId) => 
   if (status === APPOINTMENT_STATUS.CANCELLED) appointment.cancelledBy = userId;
   await appointment.save();
 
+  // Notify patient on key status changes
+  try {
+    const patient = await Patient.findById(appointment.patientId);
+    const patientUser = patient ? await User.findById(patient.userId) : null;
+    const STATUS_MESSAGES = {
+      confirmed:   { title: 'Randevunuz təsdiqləndi',  message: 'Randevunuz həkim tərəfindən təsdiqləndi.' },
+      completed:   { title: 'Müayinəniz tamamlandı',   message: 'Müayinəniz uğurla tamamlandı.' },
+      cancelled:   { title: 'Randevunuz ləğv edildi',  message: 'Randevunuz ləğv edildi.' },
+      in_progress: { title: 'Müayinəniz başladı',      message: 'Növbəniz gəldi, müayinəniz başlayır.' },
+    };
+    const msg = STATUS_MESSAGES[status];
+    if (patientUser && msg) {
+      await createNotification({
+        userId:  patientUser._id,
+        title:   msg.title,
+        message: msg.message,
+        type:    'appointment',
+        link:    '/patient/appointments',
+      });
+    }
+  } catch (_) {}
+
   return populateAppointment(Appointment.findById(appointment._id));
 };
 
@@ -155,6 +206,22 @@ export const cancelAppointment = async (appointmentId, userId, cancelReason) => 
   appointment.cancelledBy  = userId;
   appointment.cancelReason = cancelReason || '';
   await appointment.save();
+
+  try {
+    const patient     = await Patient.findById(appointment.patientId);
+    const patientUser = patient ? await User.findById(patient.userId) : null;
+    if (patientUser) {
+      await createNotification({
+        userId:  patientUser._id,
+        title:   'Randevunuz ləğv edildi',
+        message: cancelReason
+          ? `Randevunuz ləğv edildi. Səbəb: ${cancelReason}`
+          : 'Randevunuz ləğv edildi.',
+        type:    'appointment',
+        link:    '/patient/appointments',
+      });
+    }
+  } catch (_) {}
 
   return populateAppointment(Appointment.findById(appointment._id));
 };

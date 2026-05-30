@@ -1,6 +1,9 @@
 import Invoice from '../../models/Invoice.model.js';
 import Payment from '../../models/Payment.model.js';
 import ApiError from '../../utils/ApiError.js';
+import { createNotification } from '../notifications/notifications.service.js';
+import User    from '../../models/User.model.js';
+import Patient from '../../models/Patient.model.js';
 
 const POPULATE_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POPULATE_ISSUER  = { path: 'issuedBy', select: 'fullName name surname' };
@@ -33,6 +36,20 @@ export const createInvoice = async (data, userId) => {
     notes:       data.notes     || undefined,
     insuranceId: data.insuranceId || undefined,
   });
+  try {
+    const patient     = await Patient.findById(data.patientId);
+    const patientUser = patient ? await User.findById(patient.userId) : null;
+    if (patientUser && data.status !== 'draft') {
+      await createNotification({
+        userId:  patientUser._id,
+        title:   'Yeni faktura',
+        message: `${total.toFixed(2)} AZN məbləğində faktura kəsildi.`,
+        type:    'billing',
+        link:    '/patient/billing',
+      });
+    }
+  } catch (_) {}
+
   return invoice.populate([POPULATE_PATIENT, POPULATE_ISSUER]);
 };
 
@@ -85,6 +102,24 @@ export const addPayment = async ({ invoiceId, amount, method, transactionId, not
     invoice.status = 'partially_paid';
   }
   await invoice.save();
+
+  try {
+    const patient     = await Patient.findById(invoice.patientId);
+    const patientUser = patient ? await User.findById(patient.userId) : null;
+    if (patientUser) {
+      const msg = invoice.status === 'paid'
+        ? 'Fakturanız tam ödənildi. Təşəkkür edirik!'
+        : `${amount} AZN ödəniş qeyd edildi.`;
+      await createNotification({
+        userId:  patientUser._id,
+        title:   invoice.status === 'paid' ? 'Ödəniş tamamlandı' : 'Ödəniş qeyd edildi',
+        message: msg,
+        type:    'billing',
+        link:    '/patient/billing',
+      });
+    }
+  } catch (_) {}
+
   return payment;
 };
 

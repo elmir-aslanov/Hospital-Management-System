@@ -1,6 +1,7 @@
 import Patient from '../../models/Patient.model.js';
 import User    from '../../models/User.model.js';
 import ApiError from '../../utils/ApiError.js';
+import { createNotification } from '../notifications/notifications.service.js';
 
 const POPULATE_USER = 'fullName email phone';
 
@@ -32,6 +33,17 @@ export const adminCreatePatient = async ({ fullName, email, phone, bloodGroup })
 
   const patient = await Patient.create({ userId: user._id, bloodGroup: bloodGroup || undefined });
   await patient.populate('userId', POPULATE_USER);
+
+  try {
+    await createNotification({
+      userId:  user._id,
+      title:   'Xoş gəldiniz, ' + fullName.trim() + '!',
+      message: `Aslan Medical sisteminə qeydiyyatınız tamamlandı. Pasiyent ID: ${patient.patientId || ''}`,
+      type:    'general',
+      link:    '/patient',
+    });
+  } catch (_) {}
+
   return patient;
 };
 
