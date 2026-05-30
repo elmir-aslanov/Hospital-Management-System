@@ -81,6 +81,7 @@ const EyeOffIcon = (
 
 export default function AdminUsers() {
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+  const BASE  = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
   // ─── List state ───────────────────────────────────────────────────────────
   const [users,        setUsers]        = useState([])
@@ -114,7 +115,7 @@ export default function AdminUsers() {
 
   // ─── Fetch users on mount ─────────────────────────────────────────────────
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/users', {
+    fetch(`${BASE}/api/v1/users`, {
       headers: { Authorization: 'Bearer ' + token },
     })
       .then(r => r.json())
@@ -206,7 +207,7 @@ export default function AdminUsers() {
     if (department.trim()) body.department = department.trim()
     if (password)          body.password   = password
 
-    const url    = editUser ? `http://localhost:5000/api/v1/users/${editUser._id}` : 'http://localhost:5000/api/v1/users'
+    const url    = editUser ? `${BASE}/api/v1/users/${editUser._id}` : `${BASE}/api/v1/users`
     const method = editUser ? 'PUT' : 'POST'
 
     fetch(url, {
@@ -232,7 +233,7 @@ export default function AdminUsers() {
   // ─── Delete ───────────────────────────────────────────────────────────────
   const handleDelete = (id) => {
     if (!window.confirm('Bu istifadəçini silmək istəyirsiniz?')) return
-    fetch(`http://localhost:5000/api/v1/users/${id}`, {
+    fetch(`${BASE}/api/v1/users/${id}`, {
       method: 'DELETE',
       headers: { Authorization: 'Bearer ' + token },
     }).then(() => setUsers(prev => prev.filter(u => u._id !== id)))
@@ -240,7 +241,7 @@ export default function AdminUsers() {
 
   // ─── Toggle active ────────────────────────────────────────────────────────
   const handleToggle = (id) => {
-    fetch(`http://localhost:5000/api/v1/users/${id}/toggle-active`, {
+    fetch(`${BASE}/api/v1/users/${id}/toggle-active`, {
       method: 'PATCH',
       headers: { Authorization: 'Bearer ' + token },
     })

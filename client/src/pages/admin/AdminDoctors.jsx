@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE = 'http://localhost:5000'
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 export default function AdminDoctors() {
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
@@ -9,8 +9,11 @@ export default function AdminDoctors() {
   const getName  = (doc) => {
     const u = doc.userId
     if (!u) return 'Naməlum'
-    if (u.fullName) return u.fullName
-    return ((u.name || '') + ' ' + (u.surname || '')).trim() || 'Naməlum'
+    if (u.fullName?.trim()) return u.fullName.trim()
+    const ns = ((u.name || '') + ' ' + (u.surname || '')).trim()
+    if (ns) return ns
+    if (u.email) return u.email.split('@')[0]
+    return 'Naməlum'
   }
   const getPhoto = (doc) => doc.userId?.photoUrl || null
 

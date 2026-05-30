@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE = 'http://localhost:5000'
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 const STATUS_COLORS = {
   pending:   { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir' },
@@ -163,8 +163,20 @@ export default function AdminAppointments() {
     return true
   })
 
-  const getName   = (a) => { const p = a.patientId; if (!p) return '—'; return p.userId?.fullName || p.fullName || '—' }
-  const getDoctor = (a) => { const d = a.doctorId;  if (!d) return '—'; return d.userId?.fullName || d.name || '—' }
+  const getName   = (a) => {
+    const p = a.patientId
+    if (!p) return '—'
+    return p.userId?.fullName || p.fullName || '—'
+  }
+  const getDoctor = (a) => {
+    const d = a.doctorId
+    if (!d) return '—'
+    const u = d.userId
+    if (u?.fullName?.trim()) return u.fullName.trim()
+    const ns = ((u?.name || '') + ' ' + (u?.surname || '')).trim()
+    if (ns) return ns
+    return d.name || d.fullName || '—'
+  }
   const getDate   = (a) => { const raw = a.date || a.appointmentDate || a.createdAt; if (!raw) return '—'; return new Date(raw).toLocaleDateString('az-AZ') }
   const getTime   = (a) => a.time || a.timeSlot || '—'
   const todayStr  = new Date().toISOString().split('T')[0]
@@ -300,7 +312,8 @@ export default function AdminAppointments() {
                 >
                   <option value="">— Həkim seçin —</option>
                   {doctors.map(d => {
-                    const name = d.name || d.userId?.fullName || d.fullName || '—'
+                    const u = d.userId
+                    const name = (u?.fullName?.trim()) || ((u?.name || '') + ' ' + (u?.surname || '')).trim() || d.name || d.fullName || '—'
                     return <option key={d._id} value={d._id}>{name}{d.department ? ` (${d.department})` : ''}</option>
                   })}
                 </select>

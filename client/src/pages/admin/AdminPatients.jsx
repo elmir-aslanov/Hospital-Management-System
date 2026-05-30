@@ -4,7 +4,12 @@ import AdminLayout from '../../components/admin/AdminLayout'
 const BASE     = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const emptyForm = { fullName: '', email: '', phone: '', bloodGroup: '' }
 
-const fullName = (p) => p?.userId?.fullName || '—'
+const fullName = (p) => {
+  if (!p) return '—'
+  if (p.userId?.fullName) return p.userId.fullName
+  if (p.fullName) return p.fullName
+  return '—'
+}
 const getEmail  = (p) => p?.userId?.email   || '—'
 const getPhone  = (p) => p?.userId?.phone   || '—'
 
@@ -26,42 +31,30 @@ export default function AdminPatients() {
 
   const headers = { Authorization: `Bearer ${token}` }
 
-  const loadPatients = (pg) => {
-    setLoading(true)
-    fetch(`${BASE}/api/v1/patients?page=${pg}&limit=10`, { headers })
+  useEffect(() => {
+    fetch(`${BASE}/api/v1/patients?page=1&limit=100`, {
+      headers: { Authorization: 'Bearer ' + token },
+    })
       .then(r => r.json())
       .then(data => {
-        setPatients(data.data?.patients || [])
-        setTotal(data.data?.total || 0)
+        const list = data.data?.patients || data.patients || []
+        setPatients(list)
+        setTotal(data.data?.total || list.length)
       })
       .catch(() => setPatients([]))
       .finally(() => setLoading(false))
-  }
+  }, [])
 
-  /* fetch whenever search or page changes */
-  useEffect(() => {
-    if (!search.trim()) {
-      loadPatients(page)
-      return
-    }
-    const t = setTimeout(() => {
-      setLoading(true)
-      fetch(
-        `${BASE}/api/v1/patients/search?q=${encodeURIComponent(search)}&page=1&limit=10`,
-        { headers }
-      )
-        .then(r => r.json())
-        .then(data => {
-          setPatients(data.data?.patients || [])
-          setTotal(data.data?.total || 0)
-        })
-        .catch(() => setPatients([]))
-        .finally(() => setLoading(false))
-    }, 400)
-    return () => clearTimeout(t)
-  }, [search, page])
+  const filtered = patients.filter(p =>
+    !search ||
+    fullName(p).toLowerCase().includes(search.toLowerCase()) ||
+    (p.userId?.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.userId?.phone || '').includes(search) ||
+    (p.patientId || '').toLowerCase().includes(search.toLowerCase())
+  )
 
-  const pages = Math.ceil(total / 10) || 1
+  const pages    = Math.ceil(filtered.length / 10) || 1
+  const pagSlice = filtered.slice((page - 1) * 10, page * 10)
 
   const handleSearch = (val) => { setSearch(val); setPage(1) }
 
@@ -104,12 +97,13 @@ export default function AdminPatients() {
     finally { setSaving(false) }
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = (patient) => {
     if (!window.confirm('Bu pasiyenti silmək istəyirsiniz?')) return
-    fetch(`${BASE}/api/v1/users/${id}`, { method: 'DELETE', headers })
+    const uid = patient.userId?._id || patient._id
+    fetch(`${BASE}/api/v1/users/${uid}`, { method: 'DELETE', headers })
       .then(() => {
-        setPatients(prev => prev.filter(p => p.userId?._id !== id))
-        if (selected && detail?.userId?._id === id) { setSelected(null); setDetail(null) }
+        setPatients(prev => prev.filter(p => p._id !== patient._id))
+        if (selected === patient._id) { setSelected(null); setDetail(null) }
       })
   }
 
@@ -124,7 +118,7 @@ export default function AdminPatients() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Pasiyentlər</h1>
-              <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{total} pasiyent</p>
+              <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{search ? filtered.length : total} pasiyent</p>
             </div>
             <button onClick={openModal} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -146,7 +140,7 @@ export default function AdminPatients() {
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <div style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </div>
-            ) : patients.length === 0 ? (
+            ) : pagSlice.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8', fontSize: 14 }}>Pasiyent tapılmadı</div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -158,7 +152,7 @@ export default function AdminPatients() {
                   </tr>
                 </thead>
                 <tbody>
-                  {patients.map(p => {
+                  {pagSlice.map(p => {
                     const name       = fullName(p)
                     const isSelected = selected === p._id
                     return (
@@ -191,7 +185,7 @@ export default function AdminPatients() {
                         </td>
                         <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
                           <button
-                            onClick={() => handleDelete(p.userId?._id)}
+                            onClick={() => handleDelete(p)}
                             style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: 'white', fontSize: 11, cursor: 'pointer', color: '#ef4444' }}
                           >Sil</button>
                         </td>

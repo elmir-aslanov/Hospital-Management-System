@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-const API = 'http://localhost:5000/api/v1'
+const API = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1`
 
 const NAV_ITEMS = [
   { label: 'Ana səhifə',  path: '/admin/dashboard',     icon: HomeIcon },
@@ -357,8 +357,8 @@ export default function AdminDashboard() {
                     <tr><td colSpan={4} style={{ padding: 28, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>Məlumat yoxdur</td></tr>
                   ) : (appointments || []).map((a, i) => {
                     const s = STATUS[a.status || 'scheduled'] || STATUS.scheduled
-                    const pName = a.patientId?.fullName || a.patient?.fullName || a.patientName || '—'
-                    const dName = a.doctorId?.fullName  || a.doctor?.fullName  || a.doctorName  || '—'
+                    const pName = a.patientId?.userId?.fullName || a.patientId?.fullName || a.patient?.fullName || a.patientName || '—'
+                    const dName = a.doctorId?.userId?.fullName  || a.doctorId?.fullName  || a.doctor?.fullName  || a.doctorName  || '—'
                     const dSpec = a.doctorId?.specialization || a.doctor?.specialization || a.specialization || ''
                     return (
                       <tr key={a._id || i} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.1s' }}
