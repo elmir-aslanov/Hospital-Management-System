@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 const BASE = 'http://localhost:5000'
 
 export default function AdminDoctors() {
+  const navigate = useNavigate()
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
 
   const getName  = (doc) => {
@@ -232,20 +234,47 @@ export default function AdminDoctors() {
               {!editDoctor && (
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={lbl}>İstifadəçi (Həkim) *</label>
-                  <select value={userId} onChange={e => setUserId(e.target.value)} style={inp}>
-                    <option value="">Seçin...</option>
-                    {doctorUsers.map(u => (
-                      <option key={u._id} value={u._id}>
-                        {u.fullName || ((u.name || '') + ' ' + (u.surname || '')).trim() || u.email}
-                        {u.email ? ` — ${u.email}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  {doctorUsers.length === 0 && !editDoctor && (
-                    <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>
-                      Bütün DOCTOR rollu istifadəçilərə artıq profil təyin edilib.
-                      Əvvəlcə İstifadəçilər bölməsindən yeni DOCTOR rollu istifadəçi yaradın.
-                    </p>
+                  {doctorUsers.length === 0 && !editDoctor ? (
+                    <div style={{
+                      background: '#f0fafb', border: '1px dashed #00848e', borderRadius: 10,
+                      padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 12,
+                    }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00848e" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#0f1b2d' }}>
+                          Əvvəlcə DOCTOR rollu istifadəçi yaradın
+                        </p>
+                        <p style={{ margin: '4px 0 10px', fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+                          Bütün DOCTOR rollu istifadəçilərə artıq həkim profili təyin edilib
+                          və ya heç bir DOCTOR rollu istifadəçi yoxdur.
+                        </p>
+                        <button
+                          onClick={() => { setShowModal(false); navigate('/admin/users') }}
+                          style={{
+                            fontSize: 12, fontWeight: 600, color: 'white', background: '#00848e',
+                            border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+                          }}
+                        >
+                          İstifadəçilər bölməsinə get →
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      value={userId}
+                      onChange={e => setUserId(e.target.value)}
+                      style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', height: 38, cursor: 'pointer' }}
+                    >
+                      <option value="">Seçin...</option>
+                      {doctorUsers.map(u => (
+                        <option key={u._id} value={u._id}>
+                          {u.fullName || ((u.name || '') + ' ' + (u.surname || '')).trim() || u.email}
+                          {u.email ? ` — ${u.email}` : ''}
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </div>
               )}
