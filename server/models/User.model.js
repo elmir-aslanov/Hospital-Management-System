@@ -45,9 +45,15 @@ userSchema.virtual('age').get(function () {
 });
 
 userSchema.pre('save', async function (next) {
-  // Sync fullName from name+surname for code that still reads fullName
+  // Sync: if name/surname set → update fullName
   if ((this.isModified('name') || this.isModified('surname')) && (this.name || this.surname)) {
     this.fullName = `${this.name || ''} ${this.surname || ''}`.trim();
+  }
+  // Sync reverse: if fullName set directly and name/surname empty → split into name/surname
+  if (this.isModified('fullName') && this.fullName && !this.name && !this.surname) {
+    const parts = this.fullName.trim().split(/\s+/);
+    this.name    = parts[0] || '';
+    this.surname = parts.slice(1).join(' ') || '';
   }
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);

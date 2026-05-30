@@ -94,8 +94,7 @@ export default function AdminUsers() {
   const [editUser,     setEditUser]     = useState(null)
 
   // ─── Form fields ──────────────────────────────────────────────────────────
-  const [name,         setName]         = useState('')
-  const [surname,      setSurname]      = useState('')
+  const [fullName,     setFullName]     = useState('')
   const [ataAdi,       setAtaAdi]       = useState('')
   const [sexiyyatId,   setSexiyyatId]   = useState('')
   const [birthDate,    setBirthDate]    = useState('')
@@ -134,8 +133,7 @@ export default function AdminUsers() {
     setFormError('')
     setShowPassword(false)
     if (editUser) {
-      setName(editUser.name || '')
-      setSurname(editUser.surname || '')
+      setFullName(editUser.fullName || `${editUser.name || ''} ${editUser.surname || ''}`.trim() || '')
       setAtaAdi(editUser.ataAdi || '')
       setSexiyyatId(editUser.sexiyyatId || '')
       setBirthDate(editUser.birthDate ? editUser.birthDate.split('T')[0] : '')
@@ -147,7 +145,7 @@ export default function AdminUsers() {
       setPassword('')
       setIsActive(editUser.isActive !== false)
     } else {
-      setName(''); setSurname(''); setAtaAdi(''); setSexiyyatId(''); setBirthDate('')
+      setFullName(''); setAtaAdi(''); setSexiyyatId(''); setBirthDate('')
       setEmail(''); setPhone(''); setAddress(''); setDepartment('')
       setRole('STAFF'); setPassword(''); setIsActive(true)
     }
@@ -160,7 +158,7 @@ export default function AdminUsers() {
   const filtered = users.filter(u => {
     const matchTab    = activeTab === 'all' || u.role === activeTab
     const matchSearch = !search ||
-      `${u.name || ''} ${u.surname || ''}`.toLowerCase().includes(search.toLowerCase()) ||
+      (u.fullName || `${u.name || ''} ${u.surname || ''}`).toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase())
     return matchTab && matchSearch
   })
@@ -168,8 +166,7 @@ export default function AdminUsers() {
   // ─── Validation ───────────────────────────────────────────────────────────
   const validate = () => {
     const e = {}
-    if (!name.trim())    e.name    = 'Ad daxil edilməlidir'
-    if (!surname.trim()) e.surname = 'Soyad daxil edilməlidir'
+    if (!fullName.trim()) e.fullName = 'Ad Soyad daxil edilməlidir'
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
       e.email = 'Düzgün e-poçt ünvanı daxil edin'
     if (!role) e.role = 'Rol seçilməlidir'
@@ -193,8 +190,9 @@ export default function AdminUsers() {
     setFormLoading(true)
 
     const body = {
-      name:    name.trim(),
-      surname: surname.trim(),
+      fullName: fullName.trim(),
+      name:     fullName.trim().split(/\s+/)[0] || '',
+      surname:  fullName.trim().split(/\s+/).slice(1).join(' ') || '',
       email:   email.trim().toLowerCase(),
       role,
       isActive,
@@ -325,8 +323,8 @@ export default function AdminUsers() {
               </thead>
               <tbody>
                 {filtered.map(u => {
-                  const initial  = (u.name || u.fullName || '?')[0].toUpperCase()
-                  const fullName = u.name && u.surname ? `${u.name} ${u.surname}` : u.fullName || u.email
+                  const displayName = u.fullName || `${u.name || ''} ${u.surname || ''}`.trim() || u.email || '—'
+                  const initial     = displayName[0].toUpperCase()
                   return (
                     <tr key={u._id}
                       onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
@@ -338,7 +336,7 @@ export default function AdminUsers() {
                             {initial}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{fullName}</div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{displayName}</div>
                             {u.phone && <div style={{ fontSize: 11, color: '#94a3b8' }}>{u.phone}</div>}
                           </div>
                         </div>
@@ -396,12 +394,16 @@ export default function AdminUsers() {
               {/* A — Şəxsi məlumatlar */}
               <SectionTitle>Şəxsi məlumatlar</SectionTitle>
               <div style={grid2}>
-                <FieldBlock label="Ad" required error={errors.name}>
-                  <input value={name} onChange={e => setName(e.target.value)} placeholder="məs. Əli" style={inputSt(errors.name)} />
-                </FieldBlock>
-                <FieldBlock label="Soyad" required error={errors.surname}>
-                  <input value={surname} onChange={e => setSurname(e.target.value)} placeholder="məs. Əliyev" style={inputSt(errors.surname)} />
-                </FieldBlock>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <FieldBlock label="Ad Soyad" required error={errors.fullName}>
+                    <input
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      placeholder="məs. Əli Əliyev"
+                      style={inputSt(errors.fullName)}
+                    />
+                  </FieldBlock>
+                </div>
                 <FieldBlock label="Ata adı">
                   <input value={ataAdi} onChange={e => setAtaAdi(e.target.value)} placeholder="məs. Əliməmməd" style={inputSt()} />
                 </FieldBlock>

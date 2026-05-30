@@ -45,8 +45,22 @@ export const getUserById = async (id) => {
   return user;
 };
 
-export const updateUser = async (id, updates) => {
-  const user = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).select(SAFE_SELECT);
+export const updateUser = async (id, data) => {
+  const existingUser = await User.findById(id).select('name surname');
+  if (!existingUser) throw new ApiError(404, 'User not found');
+
+  // Sync name fields
+  if (data.name !== undefined || data.surname !== undefined) {
+    const n = data.name    ?? existingUser.name    ?? '';
+    const s = data.surname ?? existingUser.surname ?? '';
+    data.fullName = `${n} ${s}`.trim();
+  } else if (data.fullName !== undefined && !data.name && !data.surname) {
+    const parts = data.fullName.trim().split(/\s+/);
+    data.name    = parts[0] || '';
+    data.surname = parts.slice(1).join(' ') || '';
+  }
+
+  const user = await User.findByIdAndUpdate(id, data, { new: true, runValidators: true }).select(SAFE_SELECT);
   if (!user) throw new ApiError(404, 'User not found');
   return user;
 };
@@ -74,7 +88,8 @@ export const createUser = async (data) => {
   const exists = await User.findOne({ email: email.toLowerCase() });
   if (exists) throw new ApiError(409, 'Bu email artıq istifadə olunur');
   // fullName is synced in pre-save hook; set it now so legacy readers work immediately
-  const fullName = name && surname ? `${name} ${surname}`.trim() : (name || surname || '');
+  const fullName = data.fullName?.trim() ||
+    (name && surname ? `${name} ${surname}`.trim() : (name || surname || ''));
   const user = new User({ name, surname, fullName, email, password, role, ...rest });
   await user.save();
   return User.findById(user._id).select(SAFE_SELECT);
