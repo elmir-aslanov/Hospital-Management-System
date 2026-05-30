@@ -67,7 +67,11 @@ export default function AdminDoctors() {
       headers: { Authorization: 'Bearer ' + token },
     })
       .then(r => r.json())
-      .then(data => setDoctorUsers(data.data?.users || data.users || []))
+      .then(data => {
+        const allUsers = data.data?.users || data.users || []
+        const usedIds  = new Set(doctors.map(d => d.userId?._id?.toString() || d.userId?.toString()))
+        setDoctorUsers(allUsers.filter(u => !usedIds.has(u._id?.toString())))
+      })
       .catch(() => setDoctorUsers([]))
     setShowModal(true)
   }
@@ -233,9 +237,16 @@ export default function AdminDoctors() {
                     {doctorUsers.map(u => (
                       <option key={u._id} value={u._id}>
                         {u.fullName || ((u.name || '') + ' ' + (u.surname || '')).trim() || u.email}
+                        {u.email ? ` — ${u.email}` : ''}
                       </option>
                     ))}
                   </select>
+                  {doctorUsers.length === 0 && !editDoctor && (
+                    <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>
+                      Bütün DOCTOR rollu istifadəçilərə artıq profil təyin edilib.
+                      Əvvəlcə İstifadəçilər bölməsindən yeni DOCTOR rollu istifadəçi yaradın.
+                    </p>
+                  )}
                 </div>
               )}
 
