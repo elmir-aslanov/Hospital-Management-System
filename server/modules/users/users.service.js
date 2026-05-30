@@ -46,13 +46,12 @@ export const getUserById = async (id) => {
 };
 
 export const updateUser = async (id, data) => {
-  const existingUser = await User.findById(id).select('name surname');
-  if (!existingUser) throw new ApiError(404, 'User not found');
+  const existing = await User.findById(id);
+  if (!existing) throw new ApiError(404, 'User not found');
 
-  // Sync name fields
   if (data.name !== undefined || data.surname !== undefined) {
-    const n = data.name    ?? existingUser.name    ?? '';
-    const s = data.surname ?? existingUser.surname ?? '';
+    const n = data.name    ?? existing.name    ?? '';
+    const s = data.surname ?? existing.surname ?? '';
     data.fullName = `${n} ${s}`.trim();
   } else if (data.fullName !== undefined && !data.name && !data.surname) {
     const parts = data.fullName.trim().split(/\s+/);
@@ -60,9 +59,9 @@ export const updateUser = async (id, data) => {
     data.surname = parts.slice(1).join(' ') || '';
   }
 
-  const user = await User.findByIdAndUpdate(id, data, { new: true, runValidators: true }).select(SAFE_SELECT);
-  if (!user) throw new ApiError(404, 'User not found');
-  return user;
+  Object.assign(existing, data);
+  await existing.save();
+  return existing;
 };
 
 export const toggleUserActive = async (targetUserId, requestingUserId) => {
