@@ -202,6 +202,12 @@ router.get(
  *         description: Appointment not found
  */
 router.patch(
+  '/:id/reschedule',
+  authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'),
+  appointmentsController.rescheduleAppointment
+);
+
+router.patch(
   '/:id/status',
   authorize('ADMIN', 'DOCTOR', 'RECEPTIONIST'),
   validateUpdateStatus, validate,

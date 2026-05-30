@@ -50,3 +50,10 @@ export const getDoctorAppointments = asyncHandler(async (req, res) => {
   );
   res.status(200).json(new ApiResponse(200, result));
 });
+
+export const rescheduleAppointment = asyncHandler(async (req, res) => {
+  const appointment = await appointmentsService.rescheduleAppointment(
+    req.params.id, req.body, req.user.id || req.user._id
+  );
+  res.json(new ApiResponse(200, appointment, 'Appointment rescheduled'));
+});

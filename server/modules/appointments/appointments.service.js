@@ -158,3 +158,34 @@ export const cancelAppointment = async (appointmentId, userId, cancelReason) => 
 
   return populateAppointment(Appointment.findById(appointment._id));
 };
+
+export const rescheduleAppointment = async (appointmentId, { date, startTime, endTime }, userId) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+
+  const cancellable = ['completed', 'cancelled', 'missed'];
+  if (cancellable.includes(appointment.status)) {
+    throw new ApiError(400, `Cannot reschedule an appointment with status '${appointment.status}'`);
+  }
+
+  // Conflict check — same doctor, same date, overlapping time, excluding this appointment
+  const conflict = await Appointment.findOne({
+    _id:      { $ne: appointmentId },
+    doctorId: appointment.doctorId,
+    date:     new Date(date),
+    status:   { $nin: ['cancelled', 'missed'] },
+    $or: [
+      { startTime: { $lt: endTime,   $gte: startTime } },
+      { endTime:   { $gt: startTime, $lte: endTime   } },
+      { startTime: { $lte: startTime }, endTime: { $gte: endTime } },
+    ],
+  });
+  if (conflict) throw new ApiError(409, 'Bu vaxt aralığında həkim məşğuldur');
+
+  appointment.date      = new Date(date);
+  appointment.startTime = startTime;
+  appointment.endTime   = endTime;
+  appointment.status    = 'scheduled';
+  await appointment.save();
+  return populateAppointment(Appointment.findById(appointment._id));
+};

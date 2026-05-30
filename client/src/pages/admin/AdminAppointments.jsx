@@ -28,6 +28,13 @@ export default function AdminAppointments() {
   const [modal, setModal]         = useState(false)
   const [saving, setSaving]       = useState(false)
   const [patchId, setPatchId]     = useState(null)
+  const [rescheduleModal,  setRescheduleModal]  = useState(false)
+  const [rescheduleAppt,   setRescheduleAppt]   = useState(null)
+  const [rescheduleDate,   setRescheduleDate]   = useState('')
+  const [rescheduleStart,  setRescheduleStart]  = useState('')
+  const [rescheduleEnd,    setRescheduleEnd]    = useState('')
+  const [rescheduleErr,    setRescheduleErr]    = useState('')
+  const [rescheduleSaving, setRescheduleSaving] = useState(false)
   const [searchParams]            = useSearchParams()
 
   /* ── modal form state ── */
@@ -181,6 +188,43 @@ export default function AdminAppointments() {
   const getTime   = (a) => a.time || a.timeSlot || '—'
   const todayStr  = new Date().toISOString().split('T')[0]
 
+  const openReschedule = (appt) => {
+    setRescheduleAppt(appt)
+    const d = appt.date ? new Date(appt.date).toISOString().split('T')[0] : ''
+    setRescheduleDate(d)
+    setRescheduleStart(appt.startTime || '')
+    setRescheduleEnd(appt.endTime || '')
+    setRescheduleErr('')
+    setRescheduleModal(true)
+  }
+
+  const handleReschedule = async () => {
+    if (!rescheduleDate || !rescheduleStart || !rescheduleEnd) {
+      setRescheduleErr('Tarix, başlama və bitmə vaxtı mütləqdir')
+      return
+    }
+    if (rescheduleStart >= rescheduleEnd) {
+      setRescheduleErr('Bitmə vaxtı başlama vaxtından sonra olmalıdır')
+      return
+    }
+    setRescheduleSaving(true); setRescheduleErr('')
+    try {
+      const res = await fetch(`${BASE}/api/v1/appointments/${rescheduleAppt._id}/reschedule`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ date: rescheduleDate, startTime: rescheduleStart, endTime: rescheduleEnd }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setRescheduleErr(data.message || 'Xəta baş verdi'); return }
+      setAppts(prev => prev.map(a => a._id === rescheduleAppt._id
+        ? { ...a, date: rescheduleDate, startTime: rescheduleStart, endTime: rescheduleEnd, status: 'scheduled' }
+        : a
+      ))
+      setRescheduleModal(false)
+    } catch { setRescheduleErr('Server xətası') }
+    finally { setRescheduleSaving(false) }
+  }
+
   return (
     <AdminLayout activePage="appointments">
       {/* Header */}
@@ -236,13 +280,29 @@ export default function AdminAppointments() {
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: sc.bg, color: sc.color }}>{sc.label}</span>
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <select disabled={patching} value={a.status || 'pending'} onChange={e => handleStatusPatch(a._id, e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 8px', fontSize: 12, color: '#334155', outline: 'none', background: 'white', cursor: patching ? 'not-allowed' : 'pointer', opacity: patching ? 0.5 : 1 }}>
+                    <td style={{ padding: '12px 16px', display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <select
+                        disabled={patching}
+                        value={a.status || 'pending'}
+                        onChange={e => handleStatusPatch(a._id, e.target.value)}
+                        style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 8px', fontSize: 12, color: '#334155', outline: 'none', background: 'white', cursor: patching ? 'not-allowed' : 'pointer', opacity: patching ? 0.5 : 1 }}
+                      >
                         <option value="pending">Gözləyir</option>
                         <option value="confirmed">Təsdiqləndi</option>
                         <option value="completed">Tamamlandı</option>
                         <option value="cancelled">Ləğv edildi</option>
                       </select>
+                      {!['completed','cancelled','missed'].includes(a.status) && (
+                        <button
+                          onClick={() => openReschedule(a)}
+                          title="Vaxtı dəyiş"
+                          style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid #e2e8f0', background: 'white', fontSize: 11, fontWeight: 600, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = '#00848e'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}
+                        >
+                          📅 Dəyiş
+                        </button>
+                      )}
                     </td>
                   </tr>
                 )
@@ -362,6 +422,63 @@ export default function AdminAppointments() {
               <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
               <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Saxlanır...' : 'Yarat'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rescheduleModal && rescheduleAppt && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) setRescheduleModal(false) }}
+        >
+          <div style={{ background: 'white', borderRadius: 16, width: 420, maxWidth: '100%', padding: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>Vaxtı Dəyiş</h2>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: '#94a3b8' }}>
+                  {getName(rescheduleAppt)} — {getDoctor(rescheduleAppt)}
+                </p>
+              </div>
+              <button onClick={() => setRescheduleModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Yeni tarix <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setRescheduleDate(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Başlama vaxtı <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input type="time" value={rescheduleStart} onChange={e => setRescheduleStart(e.target.value)} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Bitmə vaxtı <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input type="time" value={rescheduleEnd} onChange={e => setRescheduleEnd(e.target.value)} style={inputStyle} />
+                </div>
+              </div>
+            </div>
+
+            {rescheduleErr && (
+              <div style={{ background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginTop: 14 }}>
+                {rescheduleErr}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+              <button onClick={() => setRescheduleModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>
+                Ləğv et
+              </button>
+              <button onClick={handleReschedule} disabled={rescheduleSaving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: rescheduleSaving ? 'not-allowed' : 'pointer', opacity: rescheduleSaving ? 0.7 : 1 }}>
+                {rescheduleSaving ? 'Saxlanır...' : 'Təsdiqlə'}
               </button>
             </div>
           </div>
