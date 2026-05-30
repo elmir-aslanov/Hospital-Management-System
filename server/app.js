@@ -41,6 +41,7 @@ import contactRoutes        from './modules/contact/contact.routes.js';
 import muracietRoutes       from './modules/muraciet/muraciet.routes.js';
 import adminRoutes          from './modules/admin/admin.routes.js';
 import doctorDashRoutes     from './modules/doctor/doctor.routes.js';
+import billingRoutes        from './modules/billing/billing.routes.js';
 
 const app = express();
 
@@ -137,6 +138,7 @@ app.use(`${API}/contact`,        contactRoutes);
 app.use(`${API}/muraciet`,       muracietRoutes);
 app.use(`${API}/admin`,         adminRoutes);
 app.use(`${API}/doctor`,        doctorDashRoutes);
+app.use(`${API}/billing`,       billingRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
