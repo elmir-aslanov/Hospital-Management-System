@@ -18,6 +18,10 @@ export default function AdminLayout({ children, activePage }) {
   const navigate   = useNavigate()
   const [search, setSearch] = useState('')
   const [unreadMuraciet, setUnreadMuraciet] = useState(0)
+  const [notifs, setNotifs]               = useState([])
+  const [unreadCount, setUnreadCount]     = useState(0)
+  const [notifOpen, setNotifOpen]         = useState(false)
+  const [notifLoading, setNotifLoading]   = useState(false)
   const adminUser  = JSON.parse(localStorage.getItem('adminUser') || '{}')
 
   useEffect(() => {
@@ -34,6 +38,24 @@ export default function AdminLayout({ children, activePage }) {
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    if (!t) return
+    fetch('http://localhost:5000/api/v1/notifications?page=1&limit=20', {
+      headers: { Authorization: `Bearer ${t}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        const list = d.data?.notifications || []
+        const now  = Date.now()
+        const last24 = list.filter(n => now - new Date(n.createdAt).getTime() < 86400000)
+        setNotifs(last24)
+        setUnreadCount(d.data?.unreadCount || 0)
+      })
+      .catch(() => {})
+  }, [])
+
   const initial    = adminUser?.fullName?.[0]?.toUpperCase() || 'A'
 
   const handleLogout = () => {
@@ -42,8 +64,46 @@ export default function AdminLayout({ children, activePage }) {
     navigate('/admin')
   }
 
+  const markAllRead = () => {
+    const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    fetch('http://localhost:5000/api/v1/notifications/read-all', {
+      method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
+    }).then(() => {
+      setNotifs(prev => prev.map(n => ({ ...n, isRead: true })))
+      setUnreadCount(0)
+    }).catch(() => {})
+  }
+
+  const markOneRead = (id) => {
+    const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    fetch(`http://localhost:5000/api/v1/notifications/${id}/read`, {
+      method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
+    }).then(() => {
+      setNotifs(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    }).catch(() => {})
+  }
+
+  const typeColor = (type) => ({
+    appointment: { bg: '#eff6ff', color: '#2563eb', label: 'Randevu' },
+    lab:         { bg: '#f0fdf4', color: '#16a34a', label: 'Lab' },
+    billing:     { bg: '#fefce8', color: '#ca8a04', label: 'Ödəniş' },
+    admission:   { bg: '#fdf4ff', color: '#9333ea', label: 'Qəbul' },
+    general:     { bg: '#f8fafc', color: '#64748b', label: 'Ümumi' },
+  }[type] || { bg: '#f8fafc', color: '#64748b', label: 'Ümumi' })
+
+  const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const m = Math.floor(diff / 60000)
+    if (m < 1)  return 'İndicə'
+    if (m < 60) return `${m} dəq əvvəl`
+    const h = Math.floor(m / 60)
+    if (h < 24) return `${h} saat əvvəl`
+    return `${Math.floor(h / 24)} gün əvvəl`
+  }
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }} onClick={() => notifOpen && setNotifOpen(false)}>
 
       {/* SIDEBAR */}
       <aside style={{
@@ -114,10 +174,69 @@ export default function AdminLayout({ children, activePage }) {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Axtar..." style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 14px 8px 36px', fontSize: 13, color: '#64748b', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button style={{ width: 34, height: 34, background: 'white', border: '1px solid #e2e8f0', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              <div style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, background: '#ef4444', borderRadius: '50%', border: '1.5px solid white' }} />
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setNotifOpen(o => !o)}
+                style={{ width: 34, height: 34, background: 'white', border: '1px solid #e2e8f0', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {unreadCount > 0 && (
+                  <div style={{ position: 'absolute', top: 4, right: 4, minWidth: 16, height: 16, background: '#ef4444', borderRadius: 8, border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', padding: '0 3px' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </button>
+
+              {notifOpen && (
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{ position: 'absolute', top: 42, right: 0, width: 340, background: 'white', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid #f1f5f9', zIndex: 999, overflow: 'hidden' }}
+                >
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0f1b2d' }}>Bildirişlər</span>
+                      <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 6 }}>Son 24 saat</span>
+                    </div>
+                    {unreadCount > 0 && (
+                      <button onClick={markAllRead} style={{ fontSize: 11, color: '#00848e', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                        Hamısını oxu
+                      </button>
+                    )}
+                  </div>
+
+                  {/* List */}
+                  <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+                    {notifs.length === 0 ? (
+                      <div style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+                        Son 24 saatda bildiriş yoxdur
+                      </div>
+                    ) : notifs.map(n => {
+                      const tc = typeColor(n.type)
+                      return (
+                        <div
+                          key={n._id}
+                          onClick={() => !n.isRead && markOneRead(n._id)}
+                          style={{ display: 'flex', gap: 10, padding: '11px 16px', borderBottom: '1px solid #f8fafc', background: n.isRead ? 'white' : '#f0fafb', cursor: n.isRead ? 'default' : 'pointer', transition: 'background 0.15s' }}
+                          onMouseEnter={e => { if (!n.isRead) e.currentTarget.style.background = '#e6f7f8' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = n.isRead ? 'white' : '#f0fafb' }}
+                        >
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: n.isRead ? 'transparent' : '#00848e', marginTop: 5, flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: '#0f1b2d' }}>{n.title}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: tc.bg, color: tc.color, flexShrink: 0 }}>{tc.label}</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: 11, color: '#64748b', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.message}</p>
+                            <span style={{ fontSize: 10, color: '#94a3b8', marginTop: 3, display: 'block' }}>{timeAgo(n.createdAt)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '5px 12px 5px 5px' }}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>{initial}</div>
               <div>
