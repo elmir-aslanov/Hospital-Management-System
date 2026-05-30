@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-const API = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1`
+const API = 'http://localhost:5000/api/v1'
 
 const NAV_ITEMS = [
   { label: 'Ana səhifə',  path: '/admin/dashboard',     icon: HomeIcon },

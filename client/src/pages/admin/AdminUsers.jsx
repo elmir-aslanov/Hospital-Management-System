@@ -81,7 +81,7 @@ const EyeOffIcon = (
 
 export default function AdminUsers() {
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
-  const BASE  = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+  const BASE  = 'http://localhost:5000'
 
   // ─── List state ───────────────────────────────────────────────────────────
   const [users,        setUsers]        = useState([])

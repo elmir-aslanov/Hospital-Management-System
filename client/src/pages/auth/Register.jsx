@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import api from '../../api/axios';
 
@@ -35,6 +36,7 @@ function maskEmail(email) {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
   const inputRefs = useRef([]);
 
   const [form, setForm]           = useState({ firstName: '', lastName: '', age: '', idCode: '', email: '', password: '' });
@@ -133,6 +135,7 @@ export default function Register() {
       const { accessToken, user } = res.data.data;
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
+      authLogin(accessToken, user);
       window.dispatchEvent(new Event('storage'));
       toast.success('Qeydiyyat tamamlandı! Xoş gəldiniz.');
       navigate('/patient');

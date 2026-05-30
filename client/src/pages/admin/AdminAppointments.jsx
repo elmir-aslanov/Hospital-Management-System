@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const BASE = 'http://localhost:5000'
 
 const STATUS_COLORS = {
   pending:   { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir' },

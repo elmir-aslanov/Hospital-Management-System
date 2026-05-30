@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -24,6 +25,7 @@ function focusOut(e) {
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
 
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
@@ -47,6 +49,7 @@ export default function Login() {
         if (token && user) {
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(user));
+          authLogin(token, user);
           const role = user.role?.toUpperCase();
           if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
             localStorage.setItem('adminToken', token);
