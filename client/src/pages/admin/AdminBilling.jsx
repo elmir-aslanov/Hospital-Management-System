@@ -494,43 +494,100 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
       {/* ════ ADD PAYMENT MODAL ════════════════════════════════════════ */}
       {showPayModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowPayModal(false) }}>
-          <div style={{ background: 'white', borderRadius: 16, width: 420, maxWidth: '95vw', padding: 28 }}>
+          onClick={e => { if (e.target === e.currentTarget) closePayModal() }}>
+          <div style={{ background: 'white', borderRadius: 16, width: 440, maxWidth: '95vw', maxHeight: '90vh', overflow: 'auto', padding: 28 }}>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>Ödəniş Qeyd Et</h2>
-              <button onClick={() => setShowPayModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 22 }}>×</button>
-            </div>
+            {/* ── Receipt view after success ── */}
+            {paySuccess ? (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 24 }}>✓</div>
+                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#16a34a' }}>Ödəniş qeyd edildi!</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>{new Date(paySuccess.createdAt).toLocaleString('az-AZ')}</p>
+                </div>
 
-            {payErr && <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{payErr}</div>}
+                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+                  {[
+                    ['Faktura №',      paySuccess.invoiceNumber || '—'],
+                    ['Pasiyent',       paySuccess.patientName],
+                    ['Ödəniş üsulu',   METHOD_LABELS[paySuccess.method]],
+                    ['Sənəd / Ref №',  paySuccess.txId || '—'],
+                    ['Ətraflı',        paySuccess.extraNote || '—'],
+                    ['Məbləğ',         `${fmt(paySuccess.amount)} AZN`],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ color: '#64748b' }}>{k}</span>
+                      <span style={{ fontWeight: k === 'Məbləğ' ? 700 : 500, color: k === 'Məbləğ' ? '#16a34a' : '#0f1b2d', maxWidth: '55%', textAlign: 'right' }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={lbl}>Məbləğ (AZN) *</label>
-                <input style={inp} type="number" min="0" step="0.01" value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} />
-              </div>
-              <div>
-                <label style={lbl}>Ödəniş üsulu *</label>
-                <select style={inp} value={payForm.method} onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))}>
-                  {Object.entries(METHOD_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>Tranzaksiya ID</label>
-                <input style={inp} value={payForm.transactionId} onChange={e => setPayForm(f => ({ ...f, transactionId: e.target.value }))} placeholder="Opsional..." />
-              </div>
-              <div>
-                <label style={lbl}>Qeyd</label>
-                <input style={inp} value={payForm.note} onChange={e => setPayForm(f => ({ ...f, note: e.target.value }))} placeholder="Opsional..." />
-              </div>
-            </div>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button onClick={closePayModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Bağla</button>
+                  <button onClick={printReceipt} style={{ padding: '10px 20px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Çap et
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* ── Form view ── */
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>Ödəniş Qeyd Et</h2>
+                    {detail && <p style={{ margin: '3px 0 0', fontSize: 12, color: '#64748b' }}>{detail.invoiceNumber} — {fmt(detail.total)} AZN</p>}
+                  </div>
+                  <button onClick={closePayModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 22 }}>×</button>
+                </div>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowPayModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
-              <button onClick={savePayment} disabled={paySaving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: paySaving ? 'not-allowed' : 'pointer', opacity: paySaving ? 0.7 : 1 }}>
-                {paySaving ? 'Qeyd edilir...' : 'Ödənişi Qeyd Et'}
-              </button>
-            </div>
+                {payErr && <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{payErr}</div>}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {/* Amount */}
+                  <div>
+                    <label style={lbl}>Məbləğ (AZN) *</label>
+                    <input style={inp} type="number" min="0" step="0.01" value={payForm.amount}
+                      onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} />
+                  </div>
+
+                  {/* Method */}
+                  <div>
+                    <label style={lbl}>Ödəniş üsulu *</label>
+                    <select style={inp} value={payForm.method}
+                      onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))}>
+                      {Object.entries(METHOD_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Method-specific fields */}
+                  {(METHOD_FIELDS[payForm.method] || []).map(f => (
+                    <div key={f.key}>
+                      <label style={lbl}>{f.label}</label>
+                      <input style={inp} value={payForm[f.key]}
+                        placeholder={f.placeholder || ''}
+                        onChange={e => setPayForm(prev => ({ ...prev, [f.key]: e.target.value }))} />
+                    </div>
+                  ))}
+
+                  {/* Note */}
+                  <div>
+                    <label style={lbl}>Əlavə qeyd</label>
+                    <input style={inp} value={payForm.note}
+                      onChange={e => setPayForm(f => ({ ...f, note: e.target.value }))}
+                      placeholder="Opsional..." />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
+                  <button onClick={closePayModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
+                  <button onClick={savePayment} disabled={paySaving}
+                    style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: paySaving ? 'not-allowed' : 'pointer', opacity: paySaving ? 0.7 : 1 }}>
+                    {paySaving ? 'Qeyd edilir...' : 'Ödənişi Qeyd Et'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
