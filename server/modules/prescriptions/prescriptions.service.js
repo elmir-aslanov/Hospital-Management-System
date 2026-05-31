@@ -1,7 +1,7 @@
 import Prescription from '../../models/Prescription.model.js';
 import Visit from '../../models/Visit.model.js';
 import ApiError from '../../utils/ApiError.js';
-import checkDrugAllergies from '../../utils/drugInteractionCheck.js';
+import checkDrugAllergies, { checkDrugInteractions } from '../../utils/drugInteractionCheck.js';
 import logAction from '../../utils/auditLogger.js';
 
 const populatePrescription = (query) =>
@@ -29,6 +29,19 @@ export const createPrescription = async ({ visitId, patientId, medications, note
   if (!allergyCheck.safe) {
     throw new ApiError(400, 'Drug allergy conflict detected', allergyCheck.conflicts);
   }
+
+  // Drug interaction check
+  try {
+    const drugNames = (medications || []).map(m => m.name || m.drugName || m.medicine);
+    if (drugNames.length > 1) {
+      const interactions = await checkDrugInteractions(drugNames);
+      if (interactions?.hasInteraction) {
+        console.warn(`Drug interaction warning for patient ${patientId}:`, interactions.details);
+        // Don't block — just log. Doctor is responsible.
+        data.interactionWarning = interactions.details || 'Potensial dərman qarşılıqlı təsiri aşkar edildi';
+      }
+    }
+  } catch (_) {}
 
   const prescription = await Prescription.create({ visitId, patientId, medications, notes, prescribedBy: doctorId });
 
