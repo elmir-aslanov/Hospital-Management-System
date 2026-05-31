@@ -1,7 +1,8 @@
-import Vitals from '../../models/Vitals.model.js';
-import Patient from '../../models/Patient.model.js';
-import Visit from '../../models/Visit.model.js';
-import ApiError from '../../utils/ApiError.js';
+import Vitals    from '../../models/Vitals.model.js';
+import Patient   from '../../models/Patient.model.js';
+import Visit     from '../../models/Visit.model.js';
+import ApiError  from '../../utils/ApiError.js';
+import logAction from '../../utils/auditLogger.js';
 
 const paginate = (page = 1, limit = 10) => {
   const pg  = Math.max(1, parseInt(page));
@@ -18,7 +19,9 @@ export const recordVitals = async (data, recordedBy) => {
   if (!visit)   throw new ApiError(404, 'Visit not found');
   if (visit.status === 'closed') throw new ApiError(400, 'Visit is closed');
 
-  return Vitals.create({ ...data, recordedBy });
+  const vitals = await Vitals.create({ ...data, recordedBy });
+  try { logAction({ userId: recordedBy, action: 'RECORD_VITALS', resourceType: 'Vitals', resourceId: vitals._id, description: `Vitals recorded for patient ${vitals.patientId}` }); } catch (_) {}
+  return vitals;
 };
 
 export const getVitalsByVisit = async (visitId) => {

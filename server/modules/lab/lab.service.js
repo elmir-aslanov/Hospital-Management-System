@@ -1,6 +1,7 @@
 import LabOrder  from '../../models/LabOrder.model.js';
 import LabResult from '../../models/LabResult.model.js';
 import ApiError  from '../../utils/ApiError.js';
+import logAction from '../../utils/auditLogger.js';
 
 const POP_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POP_DOCTOR  = { path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } };
@@ -9,6 +10,7 @@ const POP_PERF    = { path: 'performedBy', select: 'fullName name surname' };
 // ── Orders ───────────────────────────────────────────────────
 export const createOrder = async (data, doctorId) => {
   const order = await LabOrder.create({ ...data, doctorId });
+  try { logAction({ userId: doctorId, action: 'CREATE_LAB_ORDER', resourceType: 'LabOrder', resourceId: order._id, description: `Lab order ${order.orderNumber} created` }); } catch (_) {}
   return order.populate([POP_PATIENT, POP_DOCTOR]);
 };
 
@@ -71,6 +73,7 @@ export const createResult = async (data, userId) => {
   const result = await LabResult.create({ ...data, patientId: order.patientId, performedBy: userId });
   order.status = 'completed';
   await order.save();
+  try { logAction({ userId, action: 'CREATE_LAB_RESULT', resourceType: 'LabResult', resourceId: result._id, description: `Result entered for order ${data.labOrderId}` }); } catch (_) {}
   return result.populate([POP_PERF]);
 };
 
@@ -92,6 +95,7 @@ export const verifyResult = async (resultId, userId) => {
   result.verifiedBy = userId;
   result.verifiedAt = new Date();
   await result.save();
+  try { logAction({ userId, action: 'VERIFY_LAB_RESULT', resourceType: 'LabResult', resourceId: resultId, description: 'Lab result verified' }); } catch (_) {}
   return result;
 };
 

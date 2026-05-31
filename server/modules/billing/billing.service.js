@@ -2,8 +2,9 @@ import Invoice from '../../models/Invoice.model.js';
 import Payment from '../../models/Payment.model.js';
 import ApiError from '../../utils/ApiError.js';
 import { createNotification } from '../notifications/notifications.service.js';
-import User    from '../../models/User.model.js';
-import Patient from '../../models/Patient.model.js';
+import User      from '../../models/User.model.js';
+import Patient   from '../../models/Patient.model.js';
+import logAction from '../../utils/auditLogger.js';
 
 const POPULATE_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POPULATE_ISSUER  = { path: 'issuedBy', select: 'fullName name surname' };
@@ -36,6 +37,8 @@ export const createInvoice = async (data, userId) => {
     notes:       data.notes     || undefined,
     insuranceId: data.insuranceId || undefined,
   });
+  try { logAction({ userId, action: 'CREATE_INVOICE', resourceType: 'Invoice', resourceId: invoice._id, description: `Invoice ${invoice.invoiceNumber} created, total: ${total} AZN` }); } catch (_) {}
+
   try {
     const patient     = await Patient.findById(data.patientId);
     const patientUser = patient ? await User.findById(patient.userId) : null;
@@ -130,6 +133,8 @@ export const addPayment = async ({ invoiceId, amount, method, transactionId, not
       link:    '/admin/billing',
     })));
   } catch (_) {}
+
+  try { logAction({ userId, action: 'CREATE_PAYMENT', resourceType: 'Payment', resourceId: payment._id, description: `Payment ${amount} AZN recorded for invoice ${invoiceId}` }); } catch (_) {}
 
   return payment;
 };

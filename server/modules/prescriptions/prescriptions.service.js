@@ -47,12 +47,9 @@ export const createPrescription = async ({ visitId, patientId, medications, note
 
   await Visit.findByIdAndUpdate(visitId, { $push: { prescriptions: prescription._id } });
 
-  logAction({
-    userId: doctorId, action: 'PRESCRIPTION_CREATE',
-    resourceType: 'Prescription', resourceId: prescription._id,
-    description: `Prescription created for patient ${patientId}`,
-    req,
-  });
+  try {
+    logAction({ userId: doctorId, action: 'PRESCRIPTION_CREATE', resourceType: 'Prescription', resourceId: prescription._id, description: `Prescription created for patient ${patientId}`, req });
+  } catch (_) {}
 
   return populatePrescription(Prescription.findById(prescription._id));
 };
