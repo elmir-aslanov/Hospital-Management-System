@@ -24,7 +24,16 @@ const paginate = (page = 1, limit = 10) => {
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
-export const createAppointment = async ({ patientId, doctorId, date, startTime, endTime, reason }) => {
+export const createAppointment = async ({ patientId, doctorId, date, startTime, endTime, reason, time, note }) => {
+  // Normalize fields — frontend may send time/note instead of startTime/endTime/reason
+  if (!startTime && time) { startTime = time; }
+  if (!endTime   && time) {
+    const [h, m] = time.split(':').map(Number);
+    endTime = `${String(h).padStart(2,'0')}:${String((m + 30) % 60).padStart(2,'0')}`;
+    if (m + 30 >= 60) endTime = `${String(h + 1).padStart(2,'0')}:${String((m + 30) % 60).padStart(2,'0')}`;
+  }
+  if (!reason) reason = note || 'Müayinə';
+
   // Step 1 & 2 — verify patient and doctor exist
   const [patient, doctor] = await Promise.all([
     Patient.findById(patientId),

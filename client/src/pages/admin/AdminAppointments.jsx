@@ -5,11 +5,15 @@ import AdminLayout from '../../components/admin/AdminLayout'
 const BASE = 'http://localhost:5000'
 
 const STATUS_COLORS = {
-  pending:   { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir' },
-  confirmed: { bg: '#dcfce7', color: '#16a34a', label: 'Təsdiqləndi' },
-  completed: { bg: '#e0f2fe', color: '#0369a1', label: 'Tamamlandı' },
-  cancelled: { bg: '#fef2f2', color: '#dc2626', label: 'Ləğv edildi' },
-  gözləyir:  { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir' },
+  scheduled:   { bg: '#f0fafb', color: '#00848e', label: 'Planlandı'   },
+  pending:     { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir'    },
+  waiting:     { bg: '#fff7ed', color: '#ea580c', label: 'Növbədə'     },
+  in_progress: { bg: '#eff6ff', color: '#2563eb', label: 'Müayinədə'   },
+  confirmed:   { bg: '#dcfce7', color: '#16a34a', label: 'Təsdiqləndi' },
+  completed:   { bg: '#e0f2fe', color: '#0369a1', label: 'Tamamlandı'  },
+  cancelled:   { bg: '#fef2f2', color: '#dc2626', label: 'Ləğv edildi' },
+  missed:      { bg: '#f8fafc', color: '#94a3b8', label: 'Buraxıldı'   },
+  gözləyir:    { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir'    },
 }
 
 const inputStyle = {
@@ -45,6 +49,8 @@ export default function AdminAppointments() {
   const [selectedDoctor,  setSelectedDoctor]  = useState('')
   const [apptDate,        setApptDate]        = useState('')
   const [apptTime,        setApptTime]        = useState('')
+  const [startTime,       setStartTime]       = useState('')
+  const [endTime,         setEndTime]         = useState('')
   const [note,            setNote]            = useState('')
   const [formError,       setFormError]       = useState('')
   const searchTimer = useRef(null)
@@ -80,6 +86,8 @@ export default function AdminAppointments() {
     setSelectedDoctor('')
     setApptDate('')
     setApptTime('')
+    setStartTime('')
+    setEndTime('')
     setNote('')
     setFormError('')
     setModal(true)
@@ -120,7 +128,7 @@ export default function AdminAppointments() {
   }
 
   const handleSave = async () => {
-    if (!selectedPatient || !selectedDoctor || !apptDate || !apptTime) {
+    if (!selectedPatient || !selectedDoctor || !apptDate || (!apptTime && !startTime)) {
       setFormError('Pasiyent, həkim, tarix və saat mütləqdir')
       return
     }
@@ -133,10 +141,15 @@ export default function AdminAppointments() {
         body: JSON.stringify({
           patientId: selectedPatient._id,
           doctorId:  selectedDoctor,
-          date:      new Date(apptDate).toISOString(),
-          time:      apptTime,
-          note,
-          status:    'gözləyir',
+          date:      apptDate,
+          startTime: startTime || apptTime,
+          endTime:   endTime   || (() => {
+            if (!apptTime) return '';
+            const [h, m] = apptTime.split(':').map(Number);
+            const em = m + 30;
+            return `${String(em >= 60 ? h + 1 : h).padStart(2,'0')}:${String(em % 60).padStart(2,'0')}`;
+          })(),
+          reason:    note || 'Müayinə',
         }),
       })
       const data = await res.json()
@@ -185,7 +198,10 @@ export default function AdminAppointments() {
     return d.name || d.fullName || '—'
   }
   const getDate   = (a) => { const raw = a.date || a.appointmentDate || a.createdAt; if (!raw) return '—'; return new Date(raw).toLocaleDateString('az-AZ') }
-  const getTime   = (a) => a.time || a.timeSlot || '—'
+  const getTime   = (a) => {
+    if (a.startTime && a.endTime) return `${a.startTime}–${a.endTime}`
+    return a.startTime || a.time || a.timeSlot || '—'
+  }
   const todayStr  = new Date().toISOString().split('T')[0]
 
   const openReschedule = (appt) => {
@@ -242,7 +258,15 @@ export default function AdminAppointments() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          {[['all', 'Hamısı'], ['pending', 'Gözləyir'], ['confirmed', 'Təsdiqləndi'], ['completed', 'Tamamlandı'], ['cancelled', 'Ləğv edildi']].map(([v, l]) => (
+          {[
+          ['all',         'Hamısı'      ],
+          ['scheduled',   'Planlandı'   ],
+          ['waiting',     'Növbədə'     ],
+          ['in_progress', 'Müayinədə'   ],
+          ['confirmed',   'Təsdiqləndi' ],
+          ['completed',   'Tamamlandı'  ],
+          ['cancelled',   'Ləğv edildi' ],
+        ].map(([v, l]) => (
             <button key={v} onClick={() => setStatus(v)} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderColor: statusFilter === v ? '#00848e' : '#e2e8f0', background: statusFilter === v ? '#00848e' : 'white', color: statusFilter === v ? 'white' : '#475569' }}>{l}</button>
           ))}
         </div>
@@ -287,10 +311,13 @@ export default function AdminAppointments() {
                         onChange={e => handleStatusPatch(a._id, e.target.value)}
                         style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 8px', fontSize: 12, color: '#334155', outline: 'none', background: 'white', cursor: patching ? 'not-allowed' : 'pointer', opacity: patching ? 0.5 : 1 }}
                       >
-                        <option value="pending">Gözləyir</option>
+                        <option value="scheduled">Planlandı</option>
+                        <option value="waiting">Növbədə</option>
+                        <option value="in_progress">Müayinədə</option>
                         <option value="confirmed">Təsdiqləndi</option>
                         <option value="completed">Tamamlandı</option>
                         <option value="cancelled">Ləğv edildi</option>
+                        <option value="missed">Buraxıldı</option>
                       </select>
                       {!['completed','cancelled','missed'].includes(a.status) && (
                         <button
@@ -391,20 +418,31 @@ export default function AdminAppointments() {
                 />
               </div>
 
-              {/* Time */}
+              {/* Start time */}
               <div>
-                <label style={labelStyle}>Saat <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>Başlama saatı <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="time"
-                  value={apptTime}
-                  onChange={e => setApptTime(e.target.value)}
+                  value={startTime || apptTime}
+                  onChange={e => { setStartTime(e.target.value); setApptTime(e.target.value) }}
                   style={inputStyle}
                 />
               </div>
 
-              {/* Note */}
+              {/* End time */}
+              <div>
+                <label style={labelStyle}>Bitmə saatı <span style={{ color: '#ef4444' }}>*</span></label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Reason */}
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Qeyd</label>
+                <label style={labelStyle}>Səbəb / Müayinə məqsədi</label>
                 <textarea
                   value={note}
                   onChange={e => setNote(e.target.value)}
