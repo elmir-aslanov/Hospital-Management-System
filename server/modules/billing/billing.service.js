@@ -120,6 +120,17 @@ export const addPayment = async ({ invoiceId, amount, method, transactionId, not
     }
   } catch (_) {}
 
+  try {
+    const admins = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'] }, isActive: true }).select('_id');
+    await Promise.all(admins.map(a => createNotification({
+      userId:  a._id,
+      title:   invoice.status === 'paid' ? 'Faktura tam ödənildi' : 'Ödəniş qəbul edildi',
+      message: `${amount} AZN ödəniş qəbul edildi.`,
+      type:    'billing',
+      link:    '/admin/billing',
+    })));
+  } catch (_) {}
+
   return payment;
 };
 

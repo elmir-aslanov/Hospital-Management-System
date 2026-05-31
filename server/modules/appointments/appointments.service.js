@@ -95,6 +95,18 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
     }
   } catch (_) {}
 
+  try {
+    const admins  = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'] }, isActive: true }).select('_id');
+    const dateStr = new Date(apptDate).toLocaleDateString('az-AZ');
+    await Promise.all(admins.map(a => createNotification({
+      userId:  a._id,
+      title:   'Yeni randevu yaradıldı',
+      message: `${dateStr} saat ${startTime}–${endTime} üçün yeni randevu əlavə edildi.`,
+      type:    'appointment',
+      link:    '/admin/appointments',
+    })));
+  } catch (_) {}
+
   return populateAppointment(Appointment.findById(appointment._id));
 };
 
@@ -230,6 +242,17 @@ export const cancelAppointment = async (appointmentId, userId, cancelReason) => 
         link:    '/patient/appointments',
       });
     }
+  } catch (_) {}
+
+  try {
+    const admins = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'] }, isActive: true }).select('_id');
+    await Promise.all(admins.map(a => createNotification({
+      userId:  a._id,
+      title:   'Randevu ləğv edildi',
+      message: cancelReason ? `Randevu ləğv edildi. Səbəb: ${cancelReason}` : 'Randevu ləğv edildi.',
+      type:    'appointment',
+      link:    '/admin/appointments',
+    })));
   } catch (_) {}
 
   return populateAppointment(Appointment.findById(appointment._id));

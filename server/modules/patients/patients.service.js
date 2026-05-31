@@ -44,6 +44,17 @@ export const adminCreatePatient = async ({ fullName, email, phone, bloodGroup })
     });
   } catch (_) {}
 
+  try {
+    const admins = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN'] }, isActive: true }).select('_id');
+    await Promise.all(admins.map(a => createNotification({
+      userId:  a._id,
+      title:   'Yeni pasiyent qeydiyyatı',
+      message: `${fullName.trim()} sistemə yeni pasiyent kimi əlavə edildi.`,
+      type:    'general',
+      link:    '/admin/patients',
+    })));
+  } catch (_) {}
+
   return patient;
 };
 
