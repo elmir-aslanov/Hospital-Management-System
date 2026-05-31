@@ -22,12 +22,6 @@ const STATUS = {
   missed:      { bg: '#f3f4f6', color: '#374151', label: 'Buraxıldı' },
 }
 
-const SCHEDULE = [
-  { time: '10:00', name: 'Dr. Nigar Əliyeva',   type: 'Kardiologiya' },
-  { time: '11:30', name: 'Dr. Tural Qasımov',   type: 'Nevrologiya' },
-  { time: '14:00', name: 'Dr. Elnur Məmmədov',  type: 'Cərrahiyyə' },
-  { time: '16:00', name: 'Dr. Nigar Əliyeva',   type: 'Müayinə' },
-]
 
 /* ─── SVG Icons ─── */
 function HomeIcon() {
@@ -71,6 +65,9 @@ export default function AdminDashboard() {
   const [appointments, setAppointments] = useState([])
   const [search, setSearch]  = useState('')
   const [loading, setLoading] = useState(true)
+  const [billing,    setBilling]    = useState({ totalRevenue: 0, todayRevenue: 0 })
+  const [labSummary, setLabSummary] = useState({ todayOrders: 0, byStatus: [] })
+  const [todayAppts, setTodayAppts] = useState([])
 
   useEffect(() => {
     if (!token) { navigate('/admin'); return }
@@ -84,18 +81,19 @@ export default function AdminDashboard() {
       })
       .catch(() => {})
 
-    const p2 = fetch(`${API}/patients`, { headers })
+    const p2 = fetch(`${API}/patients?page=1&limit=1`, { headers })
       .then(r => r.json())
       .then(data => {
-        const count = data.total || data.count || (Array.isArray(data) ? data.length : 0) || (Array.isArray(data.patients) ? data.patients.length : 0)
+        const count = data.data?.total || data.total || 0
         setStats(prev => ({ ...prev, patients: count }))
       })
       .catch(() => {})
 
-    const p3 = fetch(`${API}/appointments`, { headers })
+    const today = new Date().toISOString().split('T')[0]
+    const p3 = fetch(`${API}/appointments?limit=1`, { headers })
       .then(r => r.json())
       .then(data => {
-        const count = data.total || data.count || (Array.isArray(data) ? data.length : 0) || (Array.isArray(data.appointments) ? data.appointments.length : 0)
+        const count = data.data?.total || data.total || 0
         setStats(prev => ({ ...prev, appointments: count }))
       })
       .catch(() => {})
@@ -128,7 +126,25 @@ export default function AdminDashboard() {
       })
       .catch(() => setAppointments([]))
 
-    Promise.allSettled([p1, p2, p3, p4, p5]).finally(() => setLoading(false))
+    const p6 = fetch(`${API}/billing/summary`, { headers })
+      .then(r => r.json())
+      .then(d => setBilling({ totalRevenue: d.data?.totalRevenue || 0, todayRevenue: d.data?.todayRevenue || 0 }))
+      .catch(() => {})
+
+    const p7 = fetch(`${API}/lab/summary`, { headers })
+      .then(r => r.json())
+      .then(d => setLabSummary({ todayOrders: d.data?.todayOrders || 0, byStatus: d.data?.byStatus || [] }))
+      .catch(() => {})
+
+    const p8 = fetch(`${API}/appointments?date=${today}&limit=10`, { headers })
+      .then(r => r.json())
+      .then(d => {
+        const list = d.data?.appointments || d.appointments || []
+        setTodayAppts(list)
+      })
+      .catch(() => {})
+
+    Promise.allSettled([p1, p2, p3, p4, p5, p6, p7, p8]).finally(() => setLoading(false))
   }, [navigate, token])
 
   const handleLogout = () => {
@@ -139,11 +155,17 @@ export default function AdminDashboard() {
 
   const initial = adminUser?.fullName?.[0]?.toUpperCase() || 'A'
 
+  const labPending = labSummary.byStatus.find(s => s._id === 'pending')?.count || 0
+
   const STAT_CARDS = [
-    { label: 'Həkimlər',    value: stats.doctors,      grad: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)', color: '#00848e', delta: '+18%' },
-    { label: 'Pasiyentlər', value: stats.patients,     grad: 'linear-gradient(135deg,#e8f5e9,#c8e6c9)', color: '#2e7d32', delta: '+24%' },
-    { label: 'Randevular',  value: stats.appointments, grad: 'linear-gradient(135deg,#ede7f6,#d1c4e9)', color: '#6b21a8', delta: '+8%'  },
-    { label: 'Müraciətlər', value: stats.muraciet,     grad: 'linear-gradient(135deg,#fff8e1,#ffecb3)', color: '#b45309', delta: '+12%' },
+    { label: 'Həkimlər',      value: stats.doctors,                        grad: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)', color: '#00848e', sub: 'aktiv həkim'  },
+    { label: 'Pasiyentlər',   value: stats.patients,                       grad: 'linear-gradient(135deg,#e8f5e9,#c8e6c9)', color: '#2e7d32', sub: 'qeydiyyatlı'  },
+    { label: 'Randevular',    value: stats.appointments,                   grad: 'linear-gradient(135deg,#ede7f6,#d1c4e9)', color: '#6b21a8', sub: 'ümumi'        },
+    { label: 'Müraciətlər',   value: stats.muraciet,                       grad: 'linear-gradient(135deg,#fff8e1,#ffecb3)', color: '#b45309', sub: 'gözləyir'     },
+    { label: 'Bu gün gəlir',  value: billing.todayRevenue.toFixed(0)+' ₼', grad: 'linear-gradient(135deg,#fce7f3,#fbcfe8)', color: '#be185d', sub: 'gündəlik'    },
+    { label: 'Ümumi gəlir',   value: billing.totalRevenue.toFixed(0)+' ₼', grad: 'linear-gradient(135deg,#ecfdf5,#d1fae5)', color: '#065f46', sub: 'ödənilmiş'   },
+    { label: 'Lab sifarişi',  value: labSummary.todayOrders,               grad: 'linear-gradient(135deg,#eff6ff,#dbeafe)', color: '#1d4ed8', sub: 'bu gün'       },
+    { label: 'Lab gözləyir',  value: labPending,                           grad: 'linear-gradient(135deg,#fff7ed,#fed7aa)', color: '#c2410c', sub: 'icrada'       },
   ]
 
   if (loading) return (
@@ -327,7 +349,7 @@ export default function AdminDashboard() {
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: c.color }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '3px 8px', background: '#dcfce7', color: '#166534' }}>{c.delta}</span>
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>{c.sub}</span>
                 </div>
                 <p style={{ fontSize: 32, fontWeight: 800, color: '#0f1b2d', margin: '16px 0 4px', lineHeight: 1 }}>{c.value}</p>
                 <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{c.label}</p>
@@ -400,15 +422,23 @@ export default function AdminDashboard() {
               {/* Schedule card */}
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', padding: 24 }}>
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#0f1b2d', marginBottom: 16 }}>Bu günün cədvəli</p>
-                {SCHEDULE.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < SCHEDULE.length - 1 ? '1px solid #f8fafc' : 'none' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, background: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)', color: '#00848e', borderRadius: 8, padding: '4px 10px', flexShrink: 0 }}>{s.time}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#0f1b2d' }}>{s.name}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{s.type}</div>
+                {todayAppts.length === 0 ? (
+                  <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '16px 0' }}>Bu gün randevu yoxdur</p>
+                ) : todayAppts.slice(0, 6).map((a, i) => {
+                  const dName = a.doctorId?.userId?.fullName || a.doctorId?.fullName || 'Həkim'
+                  const pName = a.patientId?.userId?.fullName || a.patientId?.fullName || 'Pasiyent'
+                  const spec  = a.doctorId?.specialization || ''
+                  const time  = a.startTime || a.time || '—'
+                  return (
+                    <div key={a._id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < Math.min(todayAppts.length, 6) - 1 ? '1px solid #f8fafc' : 'none' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, background: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)', color: '#00848e', borderRadius: 8, padding: '4px 10px', flexShrink: 0 }}>{time}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#0f1b2d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pName}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>{dName}{spec ? ` · ${spec}` : ''}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* Quick Actions */}
