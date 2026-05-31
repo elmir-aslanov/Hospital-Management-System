@@ -65,7 +65,7 @@ export default function HekimProfilPage() {
       fetch(`${BASE}/api/v1/doctors/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
       }).then(r => { if (!r.ok) throw new Error(); return r.json() }),
-      fetch(`${BASE}/api/v1/doctor-ratings?doctorId=${id}`).then(r => r.ok ? r.json() : { data: [] }),
+      fetch(`${BASE}/api/v1/ratings/doctor/${id}`).then(r => r.ok ? r.json() : { data: [] }),
       fetch(`${BASE}/api/v1/doctors/${id}/schedule`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
       }).then(r => r.ok ? r.json() : { data: [] }),
@@ -73,7 +73,11 @@ export default function HekimProfilPage() {
       if (docRes.status === 'rejected') { setError(true); return }
       const docData = docRes.value?.data || docRes.value
       setDoctor(docData)
-      setRatings(ratingRes.value?.data || [])
+      const ratingData = ratingRes.value
+      setRatings(
+        ratingData?.data?.ratings || ratingData?.data ||
+        ratingData?.ratings || (Array.isArray(ratingData) ? ratingData : [])
+      )
       const schedData = schedRes.value?.data
       setSchedule(Array.isArray(schedData) ? schedData : [])
     }).finally(() => setLoading(false))
