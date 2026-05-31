@@ -31,8 +31,15 @@ const patientSchema = new mongoose.Schema(
 
 patientSchema.pre('save', async function (next) {
   if (this.patientId) return next();
-  const count = await mongoose.model('Patient').countDocuments();
-  this.patientId = `P-${String(count + 1).padStart(4, '0')}`;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id;
+  let attempts = 0;
+  do {
+    id = 'P-' + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    attempts++;
+    if (attempts > 20) { id = `P-${Date.now().toString(36).toUpperCase()}`; break; }
+  } while (await mongoose.model('Patient').exists({ patientId: id }));
+  this.patientId = id;
   next();
 });
 
