@@ -34,6 +34,7 @@ function DoctorCard({ doctor }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4 }}
+      onClick={() => navigate('/hekimler/' + doctor._id)}
       style={{
         background: '#ffffff',
         borderRadius: '16px',
@@ -42,6 +43,7 @@ function DoctorCard({ doctor }) {
         border: '1px solid #e8eef4',
         display: 'flex',
         flexDirection: 'column',
+        cursor: 'pointer',
         transition: 'box-shadow 0.2s, transform 0.2s',
       }}
       onMouseEnter={e => {
@@ -124,7 +126,7 @@ function DoctorCard({ doctor }) {
         )}
 
         <button
-          onClick={() => navigate('/randevu')}
+          onClick={e => { e.stopPropagation(); navigate('/randevu?doctorId=' + doctor._id) }}
           style={{
             display: 'inline-block', padding: '9px 20px', borderRadius: '22px',
             border: `2px solid ${TEAL}`, background: 'transparent', color: TEAL,

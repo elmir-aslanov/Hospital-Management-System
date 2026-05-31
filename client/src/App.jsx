@@ -16,6 +16,7 @@ import RandevuPage      from './pages/public/RandevuPage';
 import ComingSoon            from './pages/public/ComingSoon';
 import PatientStoriesPage   from './pages/public/PatientStoriesPage';
 import HekimlerPage          from './pages/public/HekimlerPage';
+import HekimProfilPage       from './pages/public/HekimProfilPage';
 import DepartmentsPage       from './pages/public/DepartmentsPage';
 import ServicesPage          from './pages/public/ServicesPage';
 import BlogPage              from './pages/public/BlogPage';
@@ -96,6 +97,7 @@ function Layout() {
         <Route path="/contact"     element={<ContactPage />} />
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
         <Route path="/hekimler"            element={<HekimlerPage />} />
+        <Route path="/hekimler/:id"        element={<HekimProfilPage />} />
         <Route path="/randevu"             element={<RandevuPage />} />
         <Route path="/e-netice"            element={<ENeticePage />} />
         <Route path="/elektron-muraciet"   element={<ElektronMuraciet />} />
