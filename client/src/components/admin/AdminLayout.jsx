@@ -33,9 +33,8 @@ export default function AdminLayout({ children, activePage }) {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
-    console.log('token:', token)
     if (!token) return
-    fetch(`${BASE}/api/v1/muraciet', {
+    fetch(`${BASE}/api/v1/muraciet`, {
       headers: { 'Authorization': 'Bearer ' + token },
     })
       .then(r => r.json())
@@ -49,7 +48,7 @@ export default function AdminLayout({ children, activePage }) {
   useEffect(() => {
     const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
     if (!t) return
-    fetch(`${BASE}/api/v1/notifications?page=1&limit=20', {
+    fetch(`${BASE}/api/v1/notifications?page=1&limit=20`, {
       headers: { Authorization: `Bearer ${t}` },
     })
       .then(r => r.json())
@@ -73,7 +72,7 @@ export default function AdminLayout({ children, activePage }) {
 
   const markAllRead = () => {
     const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
-    fetch(`${BASE}/api/v1/notifications/read-all', {
+    fetch(`${BASE}/api/v1/notifications/read-all`, {
       method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
     }).then(() => {
       setNotifs(prev => prev.map(n => ({ ...n, isRead: true })))
