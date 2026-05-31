@@ -38,7 +38,6 @@ export const createPrescription = async ({ visitId, patientId, medications, note
       if (interactions?.hasInteraction) {
         console.warn(`Drug interaction warning for patient ${patientId}:`, interactions.details);
         // Don't block — just log. Doctor is responsible.
-        data.interactionWarning = interactions.details || 'Potensial dərman qarşılıqlı təsiri aşkar edildi';
       }
     }
   } catch (_) {}

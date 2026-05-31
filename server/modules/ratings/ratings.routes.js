@@ -8,6 +8,7 @@ import authorize    from '../../middleware/rbac.middleware.js';
 const router = Router();
 router.use(authenticate);
 
+router.get('/',                  authorize('ADMIN', 'SUPER_ADMIN'),                          ratingsController.getAllRatings);
 router.get('/my',                authorize('PATIENT'),                                       ratingsController.getMyRatings);
 router.get('/doctor/:doctorId',  authorize('ADMIN', 'DOCTOR', 'PATIENT', 'RECEPTIONIST'),   ratingsController.getDoctorRatings);
 router.post('/',                 authorize('PATIENT'), validateCreateRating, validate,        ratingsController.createRating);

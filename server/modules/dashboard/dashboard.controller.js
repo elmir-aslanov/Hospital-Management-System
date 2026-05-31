@@ -57,7 +57,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     Appointment.countDocuments(),
     Admission.countDocuments({ status: ADMISSION_STATUS.ADMITTED }),
 
-    // Beds
+    // Beds — real-time, no cache
     Bed.countDocuments(),
     Bed.countDocuments({ status: BED_STATUS.AVAILABLE }),
     Bed.countDocuments({ status: BED_STATUS.OCCUPIED }),

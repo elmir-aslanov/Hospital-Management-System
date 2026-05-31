@@ -28,7 +28,14 @@
       "Bash(node -e \"import\\('jsonwebtoken'\\).then\\(jwt => console.log\\(JSON.stringify\\(jwt.default.decode\\('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTE0YzcyMWVkY2YxMDMzMmQ2NjUyNDMiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NzkxNjkzMjUiLCJleHAiOjE2MTc4MzkyNTc2M30.DtW-PDYkGCC3XYReoXy1NeZpnkBdd8KVUCkNbgr_opM'\\), null, 2\\)\\)\\)\")",
       "Bash(curl -s http://localhost:5000/api/v1/site-doctors/all)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\\\\server\" -Recurse -File -Filter \"*.js\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\\\\server\" -Recurse -Filter \"*.js\")",
+      "Bash(Sort-Object)",
+      "Bash(grep -E \"\\\\.\\(jsx?|tsx?\\)$\")",
+      "Bash(read d *)",
+      "Bash([ -f \"$d/controller.js\" ])",
+      "Bash([ ! -f \"$d/service.js\" ])",
+      "Bash(echo 'Missing service: __TRACKED_VAR__')"
     ]
   }
 }

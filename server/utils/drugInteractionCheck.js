@@ -54,3 +54,13 @@ const checkDrugAllergies = async (patientId, medications) => {
 };
 
 export default checkDrugAllergies;
+
+/**
+ * Check for known drug-drug interactions.
+ * Stub — returns no interactions. Extend with a real DB/API when available.
+ * @param {string[]} drugNames
+ * @returns {Promise<{ hasInteraction: boolean, details: string | null }>}
+ */
+export const checkDrugInteractions = async (drugNames) => {
+  return { hasInteraction: false, details: null };
+};

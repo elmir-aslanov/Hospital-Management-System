@@ -21,6 +21,11 @@ export const getDoctorRatings = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result));
 });
 
+export const getAllRatings = asyncHandler(async (req, res) => {
+  const data = await ratingsService.getAllRatings(req.query);
+  res.json(new ApiResponse(200, data));
+});
+
 export const getMyRatings = asyncHandler(async (req, res) => {
   const patientId = await resolvePatientId(req.user.id);
   const result = await ratingsService.getMyRatings(patientId, req.query);

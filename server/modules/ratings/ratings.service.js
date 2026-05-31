@@ -73,6 +73,21 @@ export const getDoctorRatings = async (doctorId, { page, limit } = {}) => {
   };
 };
 
+export const getAllRatings = async ({ doctorId, page = 1, limit = 20 } = {}) => {
+  const filter = {};
+  if (doctorId) filter.doctorId = doctorId;
+  const pg  = Math.max(1, parseInt(page));
+  const lim = Math.min(100, parseInt(limit));
+  const [ratings, total] = await Promise.all([
+    DoctorRating.find(filter)
+      .populate({ path: 'doctorId',  populate: { path: 'userId', select: 'fullName' }, select: 'userId specialization averageRating' })
+      .populate({ path: 'patientId', populate: { path: 'userId', select: 'fullName' } })
+      .sort({ createdAt: -1 }).skip((pg - 1) * lim).limit(lim),
+    DoctorRating.countDocuments(filter),
+  ]);
+  return { ratings, total, page: pg, limit: lim };
+};
+
 export const getMyRatings = async (patientId, { page, limit } = {}) => {
   const { pg, lim, skip } = paginate(page, limit);
   const [ratings, total] = await Promise.all([
