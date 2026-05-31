@@ -11,6 +11,7 @@ const doctorSchema = new mongoose.Schema(
     averageRating:   { type: Number, default: 0, min: 0, max: 5 },
     totalRatings:    { type: Number, default: 0, min: 0 },
     department:      { type: String, trim: true, default: '' },
+    departmentId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Department', default: null },
     image:           { type: String, default: '' },
     order:           { type: Number, default: 0 },
     isActive:        { type: Boolean, default: true },
@@ -23,6 +24,7 @@ const doctorSchema = new mongoose.Schema(
 doctorSchema.index({ specialization: 1 });
 doctorSchema.index({ isActive: 1, order: 1 });
 doctorSchema.index({ department: 1 });
+doctorSchema.index({ departmentId: 1 });
 
 const Doctor = mongoose.model('Doctor', doctorSchema);
 export default Doctor;

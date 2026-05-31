@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
-
 import { BASE } from '../../api/config.js'
+import AvatarUpload from '../../components/common/AvatarUpload'
 
 export default function AdminDoctors() {
   const navigate = useNavigate()
@@ -20,6 +20,7 @@ export default function AdminDoctors() {
   const getPhoto = (doc) => doc.userId?.photoUrl || null
 
   const [doctors,      setDoctors]      = useState([])
+  const [departments,  setDepartments]  = useState([])
   const [loading,      setLoading]      = useState(true)
   const [search,       setSearch]       = useState('')
   const [showModal,    setShowModal]    = useState(false)
@@ -37,14 +38,17 @@ export default function AdminDoctors() {
   const [bio,            setBio]            = useState('')
   const [isAvailable,    setIsAvailable]    = useState(true)
   const [department,      setDepartment]      = useState('')
+  const [departmentId,    setDepartmentId]    = useState('')
   const [consultationFee, setConsultationFee] = useState('')
   const [order,           setOrder]           = useState(0)
   const [isActive,        setIsActive]        = useState(true)
+  const [doctorPhoto,     setDoctorPhoto]     = useState('')
 
   const resetForm = () => {
     setUserId(''); setSpecialization(''); setLicenseNumber('')
     setExperience(''); setBio(''); setIsAvailable(true)
-    setDepartment(''); setConsultationFee(''); setOrder(0); setIsActive(true)
+    setDepartment(''); setDepartmentId(''); setConsultationFee(''); setOrder(0); setIsActive(true)
+    setDoctorPhoto('')
   }
 
   const populateForm = (doc) => {
@@ -54,9 +58,11 @@ export default function AdminDoctors() {
     setBio(doc.bio || '')
     setIsAvailable(doc.isAvailable !== false)
     setDepartment(doc.department || '')
+    setDepartmentId(doc.departmentId?._id || doc.departmentId || '')
     setConsultationFee(doc.consultationFee || '')
     setOrder(doc.order || 0)
     setIsActive(doc.isActive !== false)
+    setDoctorPhoto(doc.userId?.photoUrl || '')
   }
 
   // ─── Fetch doctors ────────────────────────────────────────────────────────
@@ -69,6 +75,13 @@ export default function AdminDoctors() {
       })
       .catch(() => setDoctors([]))
       .finally(() => setLoading(false))
+
+    fetch(`${BASE}/api/v1/departments/admin/all`, {
+      headers: { Authorization: 'Bearer ' + token },
+    })
+      .then(r => r.json())
+      .then(d => setDepartments(d.data || []))
+      .catch(() => {})
   }, [])
 
   // ─── Open create modal — fetch DOCTOR-role users ──────────────────────────
@@ -100,6 +113,7 @@ export default function AdminDoctors() {
         ? (() => {
             const updates = { specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
             if (department.trim())       updates.department      = department.trim()
+            if (departmentId)            updates.departmentId    = departmentId
             if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
             updates.order    = Number(order)
             updates.isActive = isActive
@@ -210,7 +224,7 @@ export default function AdminDoctors() {
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getName(doc)}</div>
                 <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || '—'}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
-                  {doc.department || doc.userId?.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
+                  {doc.departmentId?.name || doc.department || doc.userId?.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>
                 {doc.licenseNumber && (
                   <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>Lic: {doc.licenseNumber}</div>
@@ -302,6 +316,15 @@ export default function AdminDoctors() {
                 </div>
               )}
 
+              <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                <AvatarUpload
+                  currentUrl={doctorPhoto}
+                  userName={doctorUsers.find(u => u._id === userId)?.fullName || ''}
+                  size={80}
+                  onSuccess={(url) => setDoctorPhoto(url)}
+                />
+              </div>
+
               <MF label="İxtisas *" value={specialization} onChange={setSpecialization} />
               <MF label="Lisenziya nömrəsi *" value={licenseNumber} onChange={setLicenseNumber} />
               <MF label="Təcrübə (il)" value={experience} onChange={setExperience} type="number" />
@@ -312,7 +335,23 @@ export default function AdminDoctors() {
                   style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
               </div>
 
-              <MF label="Şöbə" value={department} onChange={setDepartment} placeholder="məs. Kardiologiya" />
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={lbl}>Şöbə</label>
+                <select
+                  value={departmentId}
+                  onChange={e => {
+                    setDepartmentId(e.target.value)
+                    const d = departments.find(d => d._id === e.target.value)
+                    if (d) setDepartment(d.name)
+                  }}
+                  style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', height: 38 }}
+                >
+                  <option value="">— Şöbə seçin —</option>
+                  {departments.map(d => (
+                    <option key={d._id} value={d._id}>{d.icon} {d.name}</option>
+                  ))}
+                </select>
+              </div>
               <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" placeholder="0" />
               <MF label="Sıra nömrəsi" value={order} onChange={setOrder} type="number" placeholder="0" />
 

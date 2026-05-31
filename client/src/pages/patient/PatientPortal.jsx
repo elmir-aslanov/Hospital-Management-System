@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/axios';
+import AvatarUpload from '../../components/common/AvatarUpload';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -65,6 +66,7 @@ export default function PatientPortal() {
   const [notifs,      setNotifs]        = useState([]);
   const [unreadCount, setUnreadCount]   = useState(0);
   const [notifOpen,   setNotifOpen]     = useState(false);
+  const [userPhoto,   setUserPhoto]     = useState(user.photoUrl || '');
 
   useEffect(() => {
     if (!user._id) { setLoading(false); return; }
@@ -538,6 +540,20 @@ export default function PatientPortal() {
             {/* Profile */}
             <Card>
               <SectionTitle>Profil</SectionTitle>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                <AvatarUpload
+                  currentUrl={userPhoto}
+                  userName={user.fullName || ''}
+                  size={72}
+                  onSuccess={(url) => {
+                    setUserPhoto(url)
+                    try {
+                      const u = JSON.parse(localStorage.getItem('user') || '{}')
+                      localStorage.setItem('user', JSON.stringify({ ...u, photoUrl: url }))
+                    } catch {}
+                  }}
+                />
+              </div>
               <div>
                 {[
                   ['Ad Soyad',     user.fullName || '—'],

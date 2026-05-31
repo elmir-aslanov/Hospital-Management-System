@@ -14,6 +14,7 @@ const router = Router();
 // Public routes — no auth
 router.get('/public',     doctorsController.getPublicDoctors);
 router.get('/public/all', doctorsController.getAllPublicDoctors);
+router.get('/by-department/:departmentId', doctorsController.getDoctorsByDepartment);
 
 /**
  * @swagger

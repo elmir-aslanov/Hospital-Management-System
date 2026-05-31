@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { BASE } from '../../api/config.js'
+import AvatarUpload from '../common/AvatarUpload'
 
 const NAV = [
   { key: 'dashboard',    label: 'Ana səhifə',   path: '/admin/dashboard',    icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
@@ -26,6 +27,9 @@ export default function AdminLayout({ children, activePage }) {
   const [notifOpen, setNotifOpen]         = useState(false)
   const [notifLoading, setNotifLoading]   = useState(false)
   const adminUser  = JSON.parse(localStorage.getItem('adminUser') || '{}')
+  const [adminPhoto, setAdminPhoto] = useState(
+    (() => { try { return JSON.parse(localStorage.getItem('user') || '{}').photoUrl || '' } catch { return '' } })()
+  )
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
@@ -241,7 +245,18 @@ export default function AdminLayout({ children, activePage }) {
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '5px 12px 5px 5px' }}>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>{initial}</div>
+              <AvatarUpload
+                currentUrl={adminPhoto}
+                userName={adminUser?.fullName || 'Admin'}
+                size={34}
+                onSuccess={(url) => {
+                  setAdminPhoto(url)
+                  try {
+                    const u = JSON.parse(localStorage.getItem('user') || '{}')
+                    localStorage.setItem('user', JSON.stringify({ ...u, photoUrl: url }))
+                  } catch {}
+                }}
+              />
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1b2d' }}>{adminUser?.fullName || 'Admin'}</div>
                 <div style={{ fontSize: 10, color: '#94a3b8' }}>{adminUser?.email || ''}</div>

@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import * as doctorsService from './doctors.service.js';
+import Doctor from '../../models/Doctor.model.js';
 
 export const getPublicDoctors = asyncHandler(async (req, res) => {
   const limit = req.query.limit || 8;
@@ -63,4 +64,12 @@ export const updateDoctorSchedule = asyncHandler(async (req, res) => {
 export const getDoctorAvailability = asyncHandler(async (req, res) => {
   const availability = await doctorsService.getDoctorAvailability(req.params.id, req.query.date);
   res.status(200).json(new ApiResponse(200, availability));
+});
+
+export const getDoctorsByDepartment = asyncHandler(async (req, res) => {
+  const doctors = await Doctor.find({ departmentId: req.params.departmentId, isActive: true })
+    .populate('userId', 'fullName name surname email phone photoUrl')
+    .populate({ path: 'departmentId', select: 'name slug icon' })
+    .sort({ order: 1, averageRating: -1 });
+  res.json(new ApiResponse(200, doctors));
 });

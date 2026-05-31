@@ -70,6 +70,8 @@ export default function AdminDepartments() {
 
   const deptDoctors = apptDept
     ? doctors.filter(d =>
+        d.departmentId?._id === apptDept._id ||
+        d.departmentId === apptDept._id ||
         (d.specialization || '').toLowerCase().includes(apptDept.name.toLowerCase()) ||
         apptDept.name.toLowerCase().includes((d.specialization || '').toLowerCase())
       )

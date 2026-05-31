@@ -1,14 +1,17 @@
+import mongoose from 'mongoose';
 import Doctor from '../../models/Doctor.model.js';
 import WorkSchedule from '../../models/WorkSchedule.model.js';
 import Appointment from '../../models/Appointment.model.js';
 import ApiError from '../../utils/ApiError.js';
 
-const POPULATE_USER = 'fullName name surname email phone photoUrl department';
+const POPULATE_USER = 'fullName name surname email phone photoUrl department role';
+const POPULATE_DEPT = { path: 'departmentId', select: 'name slug icon _id' };
 
 export const getPublicDoctors = async (limit = 8) => {
   const lim = Math.min(20, Math.max(1, parseInt(limit) || 8));
   return Doctor.find({ isActive: true, isAvailable: true })
     .populate('userId', POPULATE_USER)
+    .populate(POPULATE_DEPT)
     .sort({ order: 1, averageRating: -1 })
     .limit(lim)
     .lean();
@@ -17,6 +20,7 @@ export const getPublicDoctors = async (limit = 8) => {
 export const getAllPublicDoctors = async () => {
   return Doctor.find({ isActive: true })
     .populate('userId', POPULATE_USER)
+    .populate(POPULATE_DEPT)
     .sort({ order: 1, createdAt: -1 })
     .lean();
 };
@@ -74,6 +78,7 @@ export const getDoctors = async ({ specialization, isAvailable, department, page
   const [doctors, total] = await Promise.all([
     Doctor.find(filter)
       .populate('userId', POPULATE_USER)
+      .populate(POPULATE_DEPT)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(lim),
@@ -84,7 +89,9 @@ export const getDoctors = async ({ specialization, isAvailable, department, page
 };
 
 export const getDoctorById = async (id) => {
-  const doctor = await Doctor.findById(id).populate('userId', POPULATE_USER);
+  const doctor = await Doctor.findById(id)
+    .populate('userId', POPULATE_USER)
+    .populate(POPULATE_DEPT);
   if (!doctor) throw new ApiError(404, 'Doctor not found');
   return doctor;
 };
@@ -93,14 +100,21 @@ export const getDoctorById = async (id) => {
 
 export const updateDoctor = async (id, updateData) => {
   const allowed = ['specialization', 'licenseNumber', 'experience', 'bio', 'isAvailable',
-                   'department', 'image', 'order', 'isActive', 'consultationFee', 'languages'];
+                   'department', 'departmentId', 'image', 'order', 'isActive', 'consultationFee', 'languages'];
   const safe = {};
   for (const key of allowed) {
     if (updateData[key] !== undefined) safe[key] = updateData[key];
   }
 
+  if (safe.departmentId) {
+    const dept = await mongoose.model('Department').findById(safe.departmentId);
+    if (!dept) throw new ApiError(404, 'Department not found');
+    safe.department = dept.name;
+  }
+
   const doctor = await Doctor.findByIdAndUpdate(id, safe, { new: true, runValidators: true })
-    .populate('userId', POPULATE_USER);
+    .populate('userId', POPULATE_USER)
+    .populate(POPULATE_DEPT);
   if (!doctor) throw new ApiError(404, 'Doctor not found');
   return doctor;
 };
