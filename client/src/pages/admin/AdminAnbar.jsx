@@ -61,7 +61,7 @@ export default function AdminAnbar() {
     const params = new URLSearchParams({ page: pg, limit: 20 })
     if (q)   params.set('search', q)
     if (cat) params.set('category', cat)
-    fetch(`${BASE}/api/v1/inventory?${params}`, { headers: hdrs() })
+    fetch(`${BASE}/api/v1/inventory/medicines?${params}`, { headers: hdrs() })
       .then(r => r.json())
       .then(d => { setItems(d.data?.items || []); setTotal(d.data?.total || 0) })
       .catch(() => {})
@@ -71,7 +71,7 @@ export default function AdminAnbar() {
   /* mount: parallel load */
   useEffect(() => {
     fetchItems(1, '', '')
-    fetch(`${BASE}/api/v1/inventory/low-stock`, { headers: hdrs() })
+    fetch(`${BASE}/api/v1/inventory/medicines/low-stock`, { headers: hdrs() })
       .then(r => r.json())
       .then(d => setLowStockItems(d.data || []))
       .catch(() => {})
@@ -106,7 +106,7 @@ export default function AdminAnbar() {
     if (!form.name.trim()) { setFormErr('Məhsul adı tələb olunur'); return }
     setSaving(true); setFormErr('')
     try {
-      const url    = editItem ? `${BASE}/api/v1/inventory/${editItem._id}` : `${BASE}/api/v1/inventory`
+      const url    = editItem ? `${BASE}/api/v1/inventory/medicines/${editItem._id}` : `${BASE}/api/v1/inventory/medicines`
       const method = editItem ? 'PUT' : 'POST'
       const body   = { ...form, quantity: Number(form.quantity), minStock: Number(form.minStock), unitPrice: Number(form.unitPrice) }
       const r    = await fetch(url, { method, headers: { ...hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -126,7 +126,7 @@ export default function AdminAnbar() {
   /* ── delete ────────────────────────────────────────────────── */
   const handleDelete = async (item) => {
     if (!window.confirm(`"${item.name}" silinsin?`)) return
-    await fetch(`${BASE}/api/v1/inventory/${item._id}`, { method: 'DELETE', headers: hdrs() })
+    await fetch(`${BASE}/api/v1/inventory/medicines/${item._id}`, { method: 'DELETE', headers: hdrs() })
     setItems(prev => prev.filter(i => i._id !== item._id)); setTotal(t => t - 1)
   }
 
@@ -141,7 +141,7 @@ export default function AdminAnbar() {
     setStockSaving(true); setStockErr('')
     try {
       const endpoint = stockType === 'in' ? 'stock-in' : 'stock-out'
-      const r    = await fetch(`${BASE}/api/v1/inventory/${stockItem._id}/${endpoint}`, {
+      const r    = await fetch(`${BASE}/api/v1/inventory/medicines/${stockItem._id}/${endpoint}`, {
         method: 'POST',
         headers: { ...hdrs(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: Number(stockQty), note: stockNote }),
