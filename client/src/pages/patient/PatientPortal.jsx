@@ -60,6 +60,8 @@ export default function PatientPortal() {
   const [vitals, setVitals]             = useState(null);
   const [loading, setLoading]           = useState(true);
   const [notFound, setNotFound]         = useState(false);
+  const [labResults,  setLabResults]    = useState([]);
+  const [invoices,    setInvoices]      = useState([]);
   const [notifs,      setNotifs]        = useState([]);
   const [unreadCount, setUnreadCount]   = useState(0);
   const [notifOpen,   setNotifOpen]     = useState(false);
@@ -77,11 +79,13 @@ export default function PatientPortal() {
           api.get(`/appointments/patient/${pid}`, { params: { limit: 10 } }),
           api.get(`/prescriptions/patient/${pid}`, { params: { limit: 5 } }),
           api.get(`/vitals/patient/${pid}/latest`),
+          api.get(`/lab/results/patient/${pid}`),
+          api.get(`/billing/patient/${pid}`),
         ]);
       })
       .then(results => {
         if (!results) return;
-        const [apptR, presR, vitR] = results;
+        const [apptR, presR, vitR, labR, billR] = results;
 
         if (apptR.status === 'fulfilled') {
           const d = apptR.value.data?.data;
@@ -94,6 +98,14 @@ export default function PatientPortal() {
         if (vitR.status === 'fulfilled') {
           const d = vitR.value.data?.data;
           setVitals(d?.vitals ?? d ?? null);
+        }
+        if (labR.status === 'fulfilled') {
+          const d = labR.value.data?.data;
+          setLabResults(Array.isArray(d) ? d : []);
+        }
+        if (billR.status === 'fulfilled') {
+          const d = billR.value.data?.data;
+          setInvoices(Array.isArray(d) ? d : []);
         }
       })
       .catch(err => {
@@ -136,11 +148,15 @@ export default function PatientPortal() {
   const completedAppts  = appointments.filter(a => a.status === 'completed').sort((a, b) => new Date(b.date) - new Date(a.date));
   const nextAppt        = [...upcomingAppts].sort((a, b) => new Date(a.date) - new Date(b.date))[0];
 
+  const unpaidTotal = invoices
+    .filter(inv => ['issued', 'partially_paid', 'overdue'].includes(inv.status))
+    .reduce((s, inv) => s + (inv.total || 0), 0);
+
   const STATS = [
-    { label: 'Gözləyən Randevular', value: upcomingAppts.length,           color: TEAL },
-    { label: 'Aktiv Reseptlər',      value: prescriptions.length,            color: TEAL },
-    { label: 'Son Randevu',           value: fmt(completedAppts[0]?.date),   color: TEAL },
-    { label: 'Növbəti Randevu',       value: fmt(nextAppt?.date),            color: TEAL },
+    { label: 'Gözləyən Randevular', value: upcomingAppts.length,                                        color: TEAL      },
+    { label: 'Aktiv Reseptlər',     value: prescriptions.length,                                         color: TEAL      },
+    { label: 'Lab Nəticəsi',        value: labResults.length,                                            color: '#2563eb' },
+    { label: 'Ödənilməmiş',        value: unpaidTotal > 0 ? unpaidTotal.toFixed(0) + ' ₼' : '—',       color: unpaidTotal > 0 ? '#dc2626' : '#16a34a' },
   ];
 
   const markAllRead = () => {
@@ -437,6 +453,60 @@ export default function PatientPortal() {
                 </div>
               )}
             </Card>
+
+            {/* Lab Results */}
+            <Card>
+              <SectionTitle>Lab Nəticələrim</SectionTitle>
+              {labResults.length === 0 ? (
+                <p style={{ color: '#9ca3af', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>
+                  Lab nəticəsi tapılmadı
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {labResults.slice(0, 5).map((r, i) => {
+                    const orderNum = r.labOrderId?.orderNumber || '—'
+                    const date     = r.createdAt ? new Date(r.createdAt).toLocaleDateString('az-AZ') : '—'
+                    const verified = r.isVerified
+                    return (
+                      <div key={r._id || i} style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{orderNum}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
+                              background: verified ? '#f0fdf4' : '#fefce8',
+                              color:      verified ? '#16a34a' : '#ca8a04' }}>
+                              {verified ? '✓ Təsdiqləndi' : 'Gözləyir'}
+                            </span>
+                            <span style={{ fontSize: 11, color: '#9ca3af', fontFamily: FONT }}>{date}</span>
+                          </div>
+                        </div>
+                        {r.results?.slice(0, 3).map((res, j) => {
+                          const statusColor = { normal: '#16a34a', low: '#2563eb', high: '#ea580c', critical: '#dc2626' }[res.status] || '#64748b'
+                          return (
+                            <div key={j} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderTop: j > 0 ? '1px solid #f1f5f9' : 'none' }}>
+                              <span style={{ fontSize: 12, color: '#475569', fontFamily: FONT }}>{res.testName}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: NAVY, fontFamily: FONT }}>
+                                  {res.value} {res.unit || ''}
+                                </span>
+                                <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 8, background: statusColor + '18', color: statusColor }}>
+                                  {({ normal: 'Normal', low: 'Aşağı', high: 'Yüksək', critical: 'Kritik' })[res.status] || res.status}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {r.results?.length > 3 && (
+                          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, fontFamily: FONT }}>
+                            +{r.results.length - 3} daha...
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* ── RIGHT ── */}
@@ -483,6 +553,48 @@ export default function PatientPortal() {
                   </div>
                 ))}
               </div>
+            </Card>
+
+            {/* Billing */}
+            <Card>
+              <SectionTitle>Ödənişlərim</SectionTitle>
+              {invoices.length === 0 ? (
+                <p style={{ color: '#9ca3af', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>
+                  Faktura tapılmadı
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {invoices.slice(0, 5).map((inv, i) => {
+                    const STATUS_INV = {
+                      draft:          { label: 'Qaralama', bg: '#f8fafc', color: '#64748b' },
+                      issued:         { label: 'Kəsildi',  bg: '#eff6ff', color: '#2563eb' },
+                      paid:           { label: 'Ödənildi', bg: '#f0fdf4', color: '#16a34a' },
+                      partially_paid: { label: 'Qismən',   bg: '#fefce8', color: '#ca8a04' },
+                      cancelled:      { label: 'Ləğv',     bg: '#fef2f2', color: '#dc2626' },
+                      overdue:        { label: 'Gecikmiş', bg: '#fff7ed', color: '#ea580c' },
+                    }
+                    const s    = STATUS_INV[inv.status] || STATUS_INV.draft
+                    const date = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('az-AZ') : '—'
+                    return (
+                      <div key={inv._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{inv.invoiceNumber || '—'}</div>
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, fontFamily: FONT }}>{date}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: TEAL, fontFamily: FONT }}>{inv.total} ₼</span>
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: s.bg, color: s.color }}>{s.label}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {invoices.length > 5 && (
+                    <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', margin: '4px 0 0', fontFamily: FONT }}>
+                      Ümumi {invoices.length} faktura
+                    </p>
+                  )}
+                </div>
+              )}
             </Card>
           </div>
         </div>
