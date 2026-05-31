@@ -43,6 +43,7 @@ import adminRoutes          from './modules/admin/admin.routes.js';
 import doctorDashRoutes     from './modules/doctor/doctor.routes.js';
 import billingRoutes        from './modules/billing/billing.routes.js';
 import labRoutes            from './modules/lab/lab.routes.js';
+import priceListRoutes      from './modules/pricelist/pricelist.routes.js';
 
 const app = express();
 
@@ -141,6 +142,7 @@ app.use(`${API}/admin`,         adminRoutes);
 app.use(`${API}/doctor`,        doctorDashRoutes);
 app.use(`${API}/billing`,       billingRoutes);
 app.use(`${API}/lab`,           labRoutes);
+app.use(`${API}/pricelist`,     priceListRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
