@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DoctorLayout from '../../components/doctor/DoctorLayout'
 
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 
 const STATUS_STYLE = {
   scheduled:   { background: '#fef9c3', color: '#854d0e', label: 'Gözləyir' },

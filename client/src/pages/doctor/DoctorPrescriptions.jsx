@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import DoctorLayout from '../../components/doctor/DoctorLayout'
 
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 
 function getToken() {
   return localStorage.getItem('adminToken') || localStorage.getItem('doctorToken') || ''

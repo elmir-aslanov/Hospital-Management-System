@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-
-const API = 'http://localhost:5000/api/v1'
+import { API_URL as API } from '../../api/config.js'
 
 const NAV_ITEMS = [
   { label: 'Ana səhifə',  path: '/admin/dashboard',     icon: HomeIcon },

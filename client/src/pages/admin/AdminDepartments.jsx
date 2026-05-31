@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE  = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
 const hdrs  = () => ({ Authorization: `Bearer ${token()}` })
 

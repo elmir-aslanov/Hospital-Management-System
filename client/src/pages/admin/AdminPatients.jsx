@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 const emptyForm = { fullName: '', email: '', phone: '', bloodGroup: '' }
 
 const fullName = (p) => {

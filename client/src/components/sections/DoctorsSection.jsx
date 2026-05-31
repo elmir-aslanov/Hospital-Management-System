@@ -57,7 +57,7 @@ export default function DoctorsSection() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/doctors/public?limit=8')
+    fetch(`${import.meta.env.VITE_API_URL?.replace('/api/v1','') || 'http://localhost:5000'}/api/v1/doctors/public?limit=8`)
       .then(r => r.json())
       .then(data => {
         let list = []

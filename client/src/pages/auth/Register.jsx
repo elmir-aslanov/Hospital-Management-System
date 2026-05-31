@@ -135,6 +135,9 @@ export default function Register() {
       const { accessToken, user } = res.data.data;
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
+      if (res.data.data?.refreshToken) {
+        localStorage.setItem('refreshToken', res.data.data.refreshToken);
+      }
       authLogin(accessToken, user);
       window.dispatchEvent(new Event('storage'));
       toast.success('Qeydiyyat tamamlandı! Xoş gəldiniz.');

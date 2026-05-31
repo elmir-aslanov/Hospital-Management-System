@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 
 const STATUS = {
   draft:          { label: 'Qaralama', bg: '#f8fafc', color: '#64748b' },

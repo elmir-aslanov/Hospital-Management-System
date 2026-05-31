@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import DoctorLayout from '../../components/doctor/DoctorLayout'
 
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 const TABS = ['Analizlər', 'Reseptlər', 'Tarix']
 
 const STATUS_STYLE = {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { BASE } from '../../api/config.js'
 
 const ROLE_MAP = {
   ADMIN:          { label: 'Admin',         color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
@@ -81,7 +82,6 @@ const EyeOffIcon = (
 
 export default function AdminUsers() {
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
-  const BASE  = 'http://localhost:5000'
 
   // ─── List state ───────────────────────────────────────────────────────────
   const [users,        setUsers]        = useState([])

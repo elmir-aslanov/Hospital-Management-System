@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
-
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 
 const STATUS_COLORS = {
   scheduled:   { bg: '#f0fafb', color: '#00848e', label: 'Planlandı'   },

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-const BASE = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 
 export default function AdminDoctors() {
   const navigate = useNavigate()

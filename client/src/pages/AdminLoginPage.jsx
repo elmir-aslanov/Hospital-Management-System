@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BASE } from '../api/config.js'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TABS = ['Admin', 'Staff', 'Həkim']
@@ -29,7 +30,7 @@ export default function AdminLoginPage() {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('http://localhost:5000/api/v1/auth/login', {
+      const res = await fetch(`${BASE}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

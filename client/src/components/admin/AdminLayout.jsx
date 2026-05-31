@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { BASE } from '../../api/config.js'
 
 const NAV = [
   { key: 'dashboard',    label: 'Ana səhifə',   path: '/admin/dashboard',    icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
@@ -30,7 +31,7 @@ export default function AdminLayout({ children, activePage }) {
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
     console.log('token:', token)
     if (!token) return
-    fetch('http://localhost:5000/api/v1/muraciet', {
+    fetch(`${BASE}/api/v1/muraciet', {
       headers: { 'Authorization': 'Bearer ' + token },
     })
       .then(r => r.json())
@@ -44,7 +45,7 @@ export default function AdminLayout({ children, activePage }) {
   useEffect(() => {
     const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
     if (!t) return
-    fetch('http://localhost:5000/api/v1/notifications?page=1&limit=20', {
+    fetch(`${BASE}/api/v1/notifications?page=1&limit=20', {
       headers: { Authorization: `Bearer ${t}` },
     })
       .then(r => r.json())
@@ -68,7 +69,7 @@ export default function AdminLayout({ children, activePage }) {
 
   const markAllRead = () => {
     const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
-    fetch('http://localhost:5000/api/v1/notifications/read-all', {
+    fetch(`${BASE}/api/v1/notifications/read-all', {
       method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
     }).then(() => {
       setNotifs(prev => prev.map(n => ({ ...n, isRead: true })))
@@ -78,7 +79,7 @@ export default function AdminLayout({ children, activePage }) {
 
   const markOneRead = (id) => {
     const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
-    fetch(`http://localhost:5000/api/v1/notifications/${id}/read`, {
+    fetch(`${BASE}/api/v1/notifications/${id}/read`, {
       method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
     }).then(() => {
       setNotifs(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n))

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { BASE } from '../../api/config.js';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -37,7 +38,7 @@ export default function Login() {
     if (!email || !password) { setError('Bütün sahələri doldurun'); return; }
     setError('');
     setLoading(true);
-    fetch('http://localhost:5000/api/v1/auth/login', {
+    fetch(`${BASE}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -49,6 +50,9 @@ export default function Login() {
         if (token && user) {
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(user));
+          if (data.data?.refreshToken || data.refreshToken) {
+            localStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken);
+          }
           authLogin(token, user);
           const role = user.role?.toUpperCase();
           if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
