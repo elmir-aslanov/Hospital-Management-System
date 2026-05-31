@@ -19,8 +19,9 @@ export const createRecord = asyncHandler(async (req, res) => {
 });
 
 export const getRecordsByPatient = asyncHandler(async (req, res) => {
-  const records = await ehrService.getRecordsByPatient(req.params.patientId, req.query);
-  res.status(200).json(new ApiResponse(200, records));
+  const { type, search, limit, page } = req.query;
+  const result = await ehrService.getRecordsByPatient(req.params.patientId, { type, search, limit, page });
+  res.status(200).json(new ApiResponse(200, result));
 });
 
 export const getRecordById = asyncHandler(async (req, res) => {

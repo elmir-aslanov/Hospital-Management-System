@@ -20,7 +20,13 @@ const withLowStockFlag = (med) => ({
 export const addMedicine = async (data) => {
   const existing = await Medicine.findOne({ name: data.name });
   if (existing) throw new ApiError(409, 'Medicine name already exists');
-  return Medicine.create(data);
+  // Normalise frontend field aliases
+  const payload = { ...data };
+  if (payload.quantity     !== undefined && payload.stock         === undefined) payload.stock         = Number(payload.quantity);
+  if (payload.minStock     !== undefined && payload.minStockLevel === undefined) payload.minStockLevel = Number(payload.minStock);
+  delete payload.quantity;
+  delete payload.minStock;
+  return Medicine.create(payload);
 };
 
 export const getMedicines = async ({ category, isActive, lowStock, page, limit } = {}) => {
@@ -34,7 +40,8 @@ export const getMedicines = async ({ category, isActive, lowStock, page, limit }
     Medicine.find(filter).sort({ name: 1 }).skip(skip).limit(lim),
     Medicine.countDocuments(filter),
   ]);
-  return { medicines: medicines.map(withLowStockFlag), total, page: pg, limit: lim };
+  const items = medicines.map(withLowStockFlag);
+  return { items, medicines: items, total, page: pg, limit: lim };
 };
 
 export const getMedicineById = async (id) => {
@@ -55,7 +62,8 @@ export const updateMedicine = async (id, data) => {
 
 // ─── Stock operations ─────────────────────────────────────────────────────────
 
-export const stockIn = async (medicineId, { quantity, reason }, userId) => {
+export const stockIn = async (medicineId, { quantity, reason, note }, userId) => {
+  reason = reason || note || 'Stok girişi';
   const medicine = await Medicine.findById(medicineId);
   if (!medicine) throw new ApiError(404, 'Medicine not found');
 
@@ -70,7 +78,8 @@ export const stockIn = async (medicineId, { quantity, reason }, userId) => {
   return { medicine: withLowStockFlag(medicine), transaction };
 };
 
-export const stockOut = async (medicineId, { quantity, reason }, userId) => {
+export const stockOut = async (medicineId, { quantity, reason, note }, userId) => {
+  reason = reason || note || 'Stok çıxışı';
   const medicine = await Medicine.findById(medicineId);
   if (!medicine) throw new ApiError(404, 'Medicine not found');
   if (medicine.stock < quantity) throw new ApiError(400, `Insufficient stock. Available: ${medicine.stock}`);

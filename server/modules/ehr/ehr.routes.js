@@ -16,9 +16,9 @@ router.use(authenticate);
 router.post('/', authorize('DOCTOR', 'LAB_TECHNICIAN'), validateCreateRecord, validate, ehrController.createRecord);
 
 // Get all records for a patient
-router.get('/patient/:patientId', authorize('DOCTOR', 'NURSE', 'ADMIN'), validateEHRParam, validate, ehrController.getRecordsByPatient);
+router.get('/patient/:patientId', authorize('ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'), validateEHRParam, validate, ehrController.getRecordsByPatient);
 
 // Get a single record
-router.get('/:id', authorize('DOCTOR', 'NURSE', 'ADMIN'), ehrController.getRecordById);
+router.get('/:id', authorize('ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE'), ehrController.getRecordById);
 
 export default router;

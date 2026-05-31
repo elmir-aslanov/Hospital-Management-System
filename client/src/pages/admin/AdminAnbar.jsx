@@ -18,8 +18,10 @@ const CATEGORY_COLOR = {
 const EMPTY_FORM = { name: '', category: 'medicine', quantity: 0, unit: 'ədəd', minStock: 5, unitPrice: 0, description: '' }
 
 const stockStatus = (item) => {
-  if (item.quantity === 0)              return { label: 'Tükənib', bg: '#fef2f2', color: '#dc2626' }
-  if (item.quantity <= item.minStock)   return { label: 'Az stok', bg: '#fff7ed', color: '#ea580c' }
+  const qty = item.stock ?? item.quantity ?? 0
+  const min = item.minStockLevel ?? item.minStock ?? 0
+  if (qty === 0)        return { label: 'Tükənib', bg: '#fef2f2', color: '#dc2626' }
+  if (qty <= min)       return { label: 'Az stok', bg: '#fff7ed', color: '#ea580c' }
   return { label: 'Normal', bg: '#f0fdf4', color: '#16a34a' }
 }
 
@@ -97,7 +99,7 @@ export default function AdminAnbar() {
   }
   const openEdit = (item) => {
     setEditItem(item)
-    setForm({ name: item.name, category: item.category, quantity: item.quantity, unit: item.unit, minStock: item.minStock, unitPrice: item.unitPrice, description: item.description || '' })
+    setForm({ name: item.name, category: item.category, quantity: item.stock ?? item.quantity ?? 0, unit: item.unit, minStock: item.minStockLevel ?? item.minStock ?? 0, unitPrice: item.unitPrice, description: item.description || '' })
     setFormErr(''); setShowModal(true)
   }
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -137,7 +139,7 @@ export default function AdminAnbar() {
 
   const handleStock = async () => {
     if (!stockQty || stockQty < 1) { setStockErr('Miqdar 1-dən az ola bilməz'); return }
-    if (stockType === 'out' && stockQty > stockItem.quantity) { setStockErr('Çıxış miqdarı mövcud stokdan çox ola bilməz'); return }
+    if (stockType === 'out' && stockQty > (stockItem.stock ?? stockItem.quantity ?? 0)) { setStockErr('Çıxış miqdarı mövcud stokdan çox ola bilməz'); return }
     setStockSaving(true); setStockErr('')
     try {
       const endpoint = stockType === 'in' ? 'stock-in' : 'stock-out'
@@ -318,7 +320,7 @@ export default function AdminAnbar() {
             {/* current qty highlight */}
             <div style={{ background: '#f0fafb', border: '1px solid #bae6ea', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 13, color: '#475569' }}>Mövcud stok</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: '#00848e' }}>{stockItem.quantity} {stockItem.unit}</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#00848e' }}>{(stockItem.stock ?? stockItem.quantity ?? 0)} {stockItem.unit}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -326,12 +328,12 @@ export default function AdminAnbar() {
                 <label style={lbl}>Miqdar *</label>
                 <input
                   type="number" min="1"
-                  max={stockType === 'out' ? stockItem.quantity : undefined}
+                  max={stockType === 'out' ? (stockItem.stock ?? stockItem.quantity ?? 0) : undefined}
                   style={inp}
                   value={stockQty}
                   onChange={e => setStockQty(Number(e.target.value))}
                 />
-                {stockType === 'out' && stockQty > stockItem.quantity && (
+                {stockType === 'out' && stockQty > (stockItem.stock ?? stockItem.quantity ?? 0) && (
                   <p style={{ margin: '5px 0 0', fontSize: 12, color: '#dc2626' }}>⚠️ Mövcud stokdan çox ola bilməz</p>
                 )}
               </div>
@@ -401,11 +403,11 @@ function ItemTable({ items, loading, onStockIn, onStockOut, onEdit, onDelete, he
                       {CATEGORY_AZ[item.category] || item.category}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, fontWeight: 700, color: item.quantity === 0 ? '#dc2626' : '#0f1b2d' }}>
-                    {item.quantity} <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 11 }}>{item.unit}</span>
+                  <td style={{ ...tdStyle, fontWeight: 700, color: (item.stock ?? item.quantity) === 0 ? '#dc2626' : '#0f1b2d' }}>
+                    {item.stock ?? item.quantity} <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 11 }}>{item.unit}</span>
                   </td>
                   <td style={{ ...tdStyle, color: '#64748b' }}>
-                    {item.minStock} <span style={{ color: '#94a3b8', fontSize: 11 }}>{item.unit}</span>
+                    {item.minStockLevel ?? item.minStock} <span style={{ color: '#94a3b8', fontSize: 11 }}>{item.unit}</span>
                   </td>
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{Number(item.unitPrice).toFixed(2)} ₼</td>
                   <td style={tdStyle}>
