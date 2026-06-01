@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
 
-const ACTION_PILLS = ['Həkim Tap', 'Randevu Al', 'Pasiyent Portalı'];
+const ACTION_PILLS = ['Randevu Al', 'Pasiyent Portalı'];
 
 const LANGUAGES = [
   { code: 'AZ', flag: '🇦🇿', label: 'Azərbaycan' },
@@ -220,6 +220,43 @@ export default function Navbar() {
         transition: 'box-shadow 0.3s ease',
       }}>
 
+        {/* ══ TOP BAR — Social links ══════════════════════ */}
+        <div className="top-bar" style={{
+          background: '#0a1628',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          height: 36,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          padding: '0 32px',
+          gap: 4,
+        }}>
+          {SOCIALS.map(({ Icon, label, href }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                color: 'rgba(255,255,255,0.8)',
+                transition: 'color 0.2s, background 0.2s',
+                textDecoration: 'none',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#4DD0E1'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; e.currentTarget.style.background = 'transparent'; }}
+            >
+              <Icon />
+            </a>
+          ))}
+        </div>
+
         {/* ══ LAYER 2 — Middle Bar ═══════════════════════ */}
         <div className="mid-bar" style={{
           background: '#ffffff',
@@ -425,7 +462,6 @@ export default function Navbar() {
               borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0,
             }}>E-Nəticə</button>
             {[
-              { key: 'findDoctor',   label: t('header.findDoctor') },
               { key: 'appointment',  label: t('header.appointment') },
             ].map(({ key, label }) => (
               <button key={key}
@@ -744,7 +780,7 @@ export default function Navbar() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
-          .top-bar     { display: none !important; }
+          .top-bar     { display: none !important; padding: 0 !important; }
           .mid-social  { display: none !important; }
           .mid-actions { display: none !important; }
           .mid-login   { display: none !important; }
