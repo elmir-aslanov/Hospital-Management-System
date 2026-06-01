@@ -243,6 +243,20 @@ export default function DoctorDashboard() {
 
   return (
     <DoctorLayout activePage="dashboard">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+        {[
+          { label: 'Bu gün',        value: stats.todayCount     || 0, color: '#00848e' },
+          { label: 'Gözləyir',      value: stats.pendingCount   || 0, color: '#f59e0b' },
+          { label: 'Tamamlandı',    value: stats.completedCount || 0, color: '#22c55e' },
+          { label: 'Ümumi randevu', value: stats.totalCount     || 0, color: '#6366f1' },
+        ].map((c, i) => (
+          <div key={i} style={{ background: 'white', borderRadius: 12, padding: '16px 18px', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: c.color }}>{c.value}</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{c.label}</div>
+          </div>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
         {/* LEFT — Today's appointments */}

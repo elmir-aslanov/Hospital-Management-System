@@ -162,13 +162,13 @@ export default function DoctorPatients() {
     setLoading(true)
     const url = q
       ? `${BASE}/api/v1/patients/search?query=${encodeURIComponent(q)}&limit=50`
-      : `${BASE}/api/v1/patients?limit=50`
+      : `${BASE}/api/v1/doctor/my-patients`
     fetch(url, { headers })
       .then(r => r.json())
       .then(d => {
-        const list = Array.isArray(d) ? d : d.patients || d.data || []
+        const list = d.data?.patients || d.patients || d.data || (Array.isArray(d) ? d : [])
         setPatients(list)
-        setTotal(d.total || list.length)
+        setTotal(d.data?.total || d.total || list.length)
       })
       .catch(() => { setPatients([]); setTotal(0) })
       .finally(() => setLoading(false))
