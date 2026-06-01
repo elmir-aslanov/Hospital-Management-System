@@ -14,6 +14,7 @@ const GRADIENTS = [
 ];
 
 function StoryCard({ story, gridStyle, animDelay }) {
+  if (!story) return null;
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -26,7 +27,7 @@ function StoryCard({ story, gridStyle, animDelay }) {
         overflow: 'hidden',
         cursor: 'pointer',
         borderRadius: '20px',
-        background: story.gradient,
+        background: story.gradient || 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)',
         ...gridStyle,
       }}
     >
@@ -46,6 +47,8 @@ export default function PatientStories() {
   const { isMobile, isTablet } = useBreakpoint();
 
   const [stories, setStories] = useState([]);
+
+  const safeStories = [stories[0], stories[1], stories[2]];
 
   useEffect(() => {
     fetch(`${BASE_URL}/api/v1/consultations?status=closed&limit=6`)
@@ -123,21 +126,21 @@ export default function PatientStories() {
           width: '100%',
           maxWidth: '480px',
         }}>
-          <StoryCard story={stories[0]} animDelay={0} gridStyle={isMobile ? {
+          <StoryCard story={safeStories[0]} animDelay={0} gridStyle={isMobile ? {
             width: '100%', height: '220px', borderRadius: '16px',
             boxShadow: '0 8px 28px rgba(0,0,0,0.1)',
           } : {
             gridColumn: '1', gridRow: '1', height: '240px',
             boxShadow: '0 8px 28px rgba(0,0,0,0.1)', transform: 'translateY(0px)',
           }} />
-          <StoryCard story={stories[1]} animDelay={0.15} gridStyle={isMobile ? {
+          <StoryCard story={safeStories[1]} animDelay={0.15} gridStyle={isMobile ? {
             width: '100%', height: '220px', borderRadius: '16px',
             boxShadow: '0 12px 36px rgba(0,0,0,0.12)',
           } : {
             gridColumn: '2', gridRow: '1', height: '240px',
             boxShadow: '0 12px 36px rgba(0,0,0,0.12)', transform: 'translateY(0px)',
           }} />
-          <StoryCard story={stories[2]} animDelay={0.3} gridStyle={isMobile ? {
+          <StoryCard story={safeStories[2]} animDelay={0.3} gridStyle={isMobile ? {
             width: '100%', height: '220px', borderRadius: '16px',
             boxShadow: '0 8px 28px rgba(0,0,0,0.1)',
           } : {
