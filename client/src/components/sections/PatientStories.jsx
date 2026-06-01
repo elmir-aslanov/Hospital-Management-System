@@ -1,33 +1,17 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import api from '../../api/axios';
 
-const defaultStories = [
-  {
-    id: 1,
-    name: 'Pasiyent 1',
-    condition: 'Müalicə, Bakı',
-    image: '/pasiyent1.jpeg',
-    gradient: 'linear-gradient(135deg, #0a1628 0%, #006b74 100%)',
-  },
-  {
-    id: 2,
-    name: 'Pasiyent 2',
-    condition: 'Müalicə, Bakı',
-    image: '/pasiyent2.jpeg',
-    gradient: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)',
-  },
-  {
-    id: 3,
-    name: 'Pasiyent 3',
-    condition: 'Cərrahiyyə, Bakı',
-    image: '/pasiyent3.jpeg',
-    gradient: 'linear-gradient(135deg, #023e5e 0%, #00848e 100%)',
-  },
+const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+
+const GRADIENTS = [
+  'linear-gradient(135deg, #0a1628 0%, #006b74 100%)',
+  'linear-gradient(135deg, #0a1628 0%, #00848e 100%)',
+  'linear-gradient(135deg, #023e5e 0%, #00848e 100%)',
 ];
-
-const defaultContent = null;
 
 function StoryCard({ story, gridStyle, animDelay }) {
   return (
@@ -56,10 +40,33 @@ function StoryCard({ story, gridStyle, animDelay }) {
   );
 }
 
-export default function PatientStories({ stories = defaultStories }) {
+export default function PatientStories() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isMobile, isTablet } = useBreakpoint();
+
+  const [stories, setStories] = useState([]);
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/v1/consultations?status=closed&limit=6`)
+      .then(r => r.json())
+      .then(d => {
+        const list = d.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          setStories(list.map((c, i) => ({
+            id:        c._id || i,
+            name:      c.name || `Pasiyent ${i + 1}`,
+            condition: c.subject || 'Müalicə',
+            image:     `/pasiyent${(i % 3) + 1}.jpeg`,
+            gradient:  GRADIENTS[i % 3],
+          })));
+        } else {
+          // No API data — show empty (section hides itself)
+          setStories([]);
+        }
+      })
+      .catch(() => setStories([]))
+  }, []);
   const overline      = t('patientStories.overline');
   const title         = t('patientStories.title1');
   const titleHighlight= t('patientStories.title2');

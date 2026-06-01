@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import api from '../../api/axios';
@@ -62,37 +64,31 @@ const iconPosTop = {
 function focusIn(e)  { e.target.style.borderColor = TEAL; e.target.style.boxShadow = '0 0 0 3px rgba(29,182,166,0.12)'; }
 function focusOut(e) { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }
 
-/* ── Contact info panel data ─────────────────────────────────────────────── */
-const CONTACT_INFO = [
-  {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-    label: 'Ünvan',
-    value: 'Bakı, Azərbaycan',
-  },
-  {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>,
-    label: 'Telefon',
-    value: '+994 50 836 36 94',
-    href: 'tel:+994508363694',
-  },
-  {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-    label: 'E-poçt',
-    value: 'info@aslanmedical.az',
-    href: 'mailto:info@aslanmedical.az',
-  },
-  {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-    label: 'İş saatları',
-    value: 'Həftə içi: 09:00 – 18:00  |  Təcili: 24/7',
-  },
-];
-
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function ContactPage() {
   const [form, setForm]       = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [clinicInfo, setClinicInfo] = useState({
+    clinic_address: 'Bakı, Azərbaycan',
+    clinic_phone:   '+994 50 836 36 94',
+    clinic_email:   'info@aslanmedical.az',
+    work_hours:     'Həftə içi: 09:00 – 18:00  |  Təcili: 24/7',
+  });
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/v1/settings?group=clinic`)
+      .then(r => r.json())
+      .then(d => { if (d.data) setClinicInfo(prev => ({ ...prev, ...d.data })) })
+      .catch(() => {})
+  }, []);
+
+  const CONTACT_INFO = [
+    { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, label: 'Ünvan',      value: clinicInfo.clinic_address },
+    { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>, label: 'Telefon',    value: clinicInfo.clinic_phone,   href: `tel:${clinicInfo.clinic_phone?.replace(/\s/g,'')}` },
+    { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, label: 'E-poçt',     value: clinicInfo.clinic_email,   href: `mailto:${clinicInfo.clinic_email}` },
+    { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label: 'İş saatları', value: clinicInfo.work_hours },
+  ];
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 

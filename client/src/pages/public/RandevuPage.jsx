@@ -233,7 +233,7 @@ function GuestForm({ doctors, loadingDoctors, preselectedDoctorId, navigate }) {
               <option value="">{loadingDoctors ? 'Yüklənir...' : 'Həkim seçin...'}</option>
               {doctors.map(d => (
                 <option key={d._id} value={d._id}>
-                  {d.userId?.fullName || 'Həkim'} — {d.specialization || ''}
+                  {d.userId?.fullName || d.fullName || d.name || 'Həkim'} — {d.specialization || d.specialty || ''}
                 </option>
               ))}
             </select>
@@ -412,7 +412,7 @@ function LoggedInForm({ doctors, loadingDoctors, isMobile, preselectedDoctorId, 
           <select value={form.doctorId} onChange={e => set('doctorId', e.target.value)} style={{ ...iStyle, appearance: 'none', cursor: 'pointer' }} onFocus={focusB} onBlur={blurB}>
             <option value="">{loadingDoctors ? 'Həkimlər yüklənir...' : 'Həkim seçin...'}</option>
             {doctors.map(doc => (
-              <option key={doc._id} value={doc._id}>{doc.userId?.fullName} — {doc.specialization}</option>
+              <option key={doc._id} value={doc._id}>{doc.userId?.fullName || doc.fullName || doc.name || 'Həkim'} — {doc.specialization || doc.specialty || ''}</option>
             ))}
           </select>
         </Field>
@@ -464,10 +464,11 @@ export default function RandevuPage() {
   const [loadingDoctors, setLoadingDoctors] = useState(true);
 
   useEffect(() => {
-    api.get('/doctors/public/all')
-      .then(res => {
-        const data = res.data?.data ?? res.data ?? [];
-        setDoctors(Array.isArray(data) ? data : []);
+    fetch(`${BASE}/api/v1/doctors/public/all`)
+      .then(r => r.json())
+      .then(d => {
+        const list = d.data || [];
+        setDoctors(Array.isArray(list) ? list : []);
       })
       .catch(() => {})
       .finally(() => setLoadingDoctors(false));

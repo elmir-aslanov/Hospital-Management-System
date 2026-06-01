@@ -7,10 +7,12 @@ const DEFAULTS = {
   clinic_email:     { value: 'info@aslanmedical.az',        group: 'clinic', label: 'E-poçt' },
   clinic_website:   { value: 'https://aslanmedical.az',     group: 'clinic', label: 'Veb sayt' },
   work_hours:       { value: '08:00 - 20:00',               group: 'clinic', label: 'İş saatları' },
-  social_twitter:   { value: 'https://twitter.com',         group: 'social', label: 'Twitter' },
-  social_instagram: { value: 'https://instagram.com',       group: 'social', label: 'Instagram' },
-  social_linkedin:  { value: 'https://linkedin.com',        group: 'social', label: 'LinkedIn' },
-  social_facebook:  { value: 'https://facebook.com',        group: 'social', label: 'Facebook' },
+  social_twitter:   { value: 'https://twitter.com',           group: 'social', label: 'Twitter' },
+  social_instagram: { value: 'https://instagram.com',         group: 'social', label: 'Instagram' },
+  social_linkedin:  { value: 'https://linkedin.com',          group: 'social', label: 'LinkedIn' },
+  social_facebook:  { value: 'https://facebook.com',          group: 'social', label: 'Facebook' },
+  social_youtube:   { value: 'https://youtube.com',           group: 'social', label: 'YouTube' },
+  social_whatsapp:  { value: 'https://wa.me/994508363694',    group: 'social', label: 'WhatsApp' },
 };
 
 export const getSettings = async (group) => {

@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+
+const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
 const BG      = '#0B1D34';
 const NAVY2   = '#122A4A';
@@ -42,13 +45,7 @@ const WaIcon = () => (
   </svg>
 );
 
-const SOCIALS = [
-  { Icon: IgIcon, label: 'Instagram', href: 'https://instagram.com' },
-  { Icon: FbIcon, label: 'Facebook',  href: 'https://facebook.com' },
-  { Icon: LiIcon, label: 'LinkedIn',  href: 'https://linkedin.com' },
-  { Icon: YtIcon, label: 'YouTube',   href: 'https://youtube.com'  },
-  { Icon: WaIcon, label: 'WhatsApp',  href: 'https://wa.me/994508363694' },
-];
+/* SOCIALS — built dynamically inside component from API */
 
 /* ── Reusable sub-components ─────────────────────────────────────────────── */
 function ColHead({ children }) {
@@ -136,6 +133,39 @@ export default function Footer() {
   const navigate = useNavigate();
   const { isMobile } = useBreakpoint();
 
+  const [social, setSocial]   = useState({
+    social_instagram: 'https://instagram.com',
+    social_facebook:  'https://facebook.com',
+    social_linkedin:  'https://linkedin.com',
+    social_youtube:   'https://youtube.com',
+    social_whatsapp:  'https://wa.me/994508363694',
+  });
+  const [clinic, setClinic]   = useState({
+    clinic_phone:   '+994 50 836 36 94',
+    clinic_email:   'info@aslanmedical.az',
+    clinic_address: 'Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı',
+    work_hours:     'Hər gün: 24/7',
+  });
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/v1/settings`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.data) return;
+        setSocial(prev => ({ ...prev, ...d.data }));
+        setClinic(prev => ({ ...prev, ...d.data }));
+      })
+      .catch(() => {})
+  }, []);
+
+  const SOCIALS = [
+    { Icon: IgIcon, label: 'Instagram', href: social.social_instagram },
+    { Icon: FbIcon, label: 'Facebook',  href: social.social_facebook  },
+    { Icon: LiIcon, label: 'LinkedIn',  href: social.social_linkedin  },
+    { Icon: YtIcon, label: 'YouTube',   href: social.social_youtube   },
+    { Icon: WaIcon, label: 'WhatsApp',  href: social.social_whatsapp  },
+  ];
+
   return (
     <footer style={{
       background: `linear-gradient(135deg, ${BG} 0%, ${NAVY2} 100%)`,
@@ -208,7 +238,7 @@ export default function Footer() {
           <div>
             <ColHead>ƏLAQƏ</ColHead>
 
-            <a href="tel:+994508363694" style={{
+            <a href={`tel:${clinic.clinic_phone?.replace(/\s/g,'')}`} style={{
               color: WHITE, fontSize: 24, fontWeight: 800,
               display: 'block', marginBottom: 18,
               textDecoration: 'none', fontFamily: FONT,
@@ -218,20 +248,20 @@ export default function Footer() {
               onMouseEnter={e => e.currentTarget.style.color = TEAL}
               onMouseLeave={e => e.currentTarget.style.color = WHITE}
             >
-              +994 50 836 36 94
+              {clinic.clinic_phone}
             </a>
 
             <ContactRow
               icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
-              text="info@aslanmedical.az"
+              text={clinic.clinic_email}
             />
             <ContactRow
               icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>}
-              text="Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı"
+              text={clinic.clinic_address}
             />
             <ContactRow
               icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-              text="Hər gün: 24/7"
+              text={clinic.work_hours}
             />
 
             <button
