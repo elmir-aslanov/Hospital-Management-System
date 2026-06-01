@@ -119,10 +119,10 @@ export default function Navbar() {
   });
 
   const SOCIALS = [
-    { Icon: IconX,  label: 'Twitter',   href: socialLinks.social_twitter   },
-    { Icon: IconIG, label: 'Instagram', href: socialLinks.social_instagram },
-    { Icon: IconLI, label: 'LinkedIn',  href: socialLinks.social_linkedin  },
-    { Icon: IconFB, label: 'Facebook',  href: socialLinks.social_facebook  },
+    { Icon: IconX,  label: 'Twitter / X', href: socialLinks.social_twitter   },
+    { Icon: IconIG, label: 'Instagram',   href: socialLinks.social_instagram },
+    { Icon: IconLI, label: 'LinkedIn',    href: socialLinks.social_linkedin  },
+    { Icon: IconFB, label: 'Facebook',    href: socialLinks.social_facebook  },
   ];
 
   const [searchQuery,   setSearchQuery]   = useState('');
@@ -232,12 +232,11 @@ export default function Navbar() {
           gap: 4,
         }}>
           {SOCIALS.map(({ Icon, label, href }) => (
-            <a
+            <button
               key={label}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => openExternalLink(href, label)}
               aria-label={label}
+              title={label}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -246,14 +245,16 @@ export default function Navbar() {
                 height: 32,
                 borderRadius: 8,
                 color: 'rgba(255,255,255,0.8)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
                 transition: 'color 0.2s, background 0.2s',
-                textDecoration: 'none',
               }}
               onMouseEnter={e => { e.currentTarget.style.color = '#4DD0E1'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
               onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; e.currentTarget.style.background = 'transparent'; }}
             >
               <Icon />
-            </a>
+            </button>
           ))}
         </div>
 
