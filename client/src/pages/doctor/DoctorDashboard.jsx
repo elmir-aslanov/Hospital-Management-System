@@ -211,6 +211,7 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = useState([])
   const [selectedPatient, setSelected]  = useState(null)
   const [loading, setLoading]           = useState(true)
+  const [stats, setStats]               = useState({})
 
   const token = localStorage.getItem('adminToken') || localStorage.getItem('doctorToken')
   const headers = { Authorization: `Bearer ${token}` }
@@ -220,14 +221,19 @@ export default function DoctorDashboard() {
     const u = localStorage.getItem('adminUser') || localStorage.getItem('doctorUser')
     if (u) { try { setDoctor(JSON.parse(u)) } catch {} }
 
-    fetch(`${BASE}/api/v1/doctor/appointments/today`, { headers })
+    fetch(`${BASE}/api/v1/doctor/appointments?date=${new Date().toISOString().split('T')[0]}`, { headers })
       .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d) ? d : d.data || d.appointments || []
-        setAppointments(list)
-      })
+      .then(d => setAppointments(d.data?.appointments || d.appointments || []))
       .catch(() => setAppointments([]))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    if (!token) return
+    fetch(`${BASE}/api/v1/doctor/stats`, { headers })
+      .then(r => r.json())
+      .then(d => setStats(d.data || {}))
+      .catch(() => {})
   }, [])
 
   const getAge = (dob) => {
