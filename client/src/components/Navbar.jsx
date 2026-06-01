@@ -213,49 +213,56 @@ export default function Navbar() {
   return (
     <>
       <header style={{
-        position: 'sticky', top: 0, zIndex: 1000, width: '100%',
+        position: 'sticky', top: 36, zIndex: 1000, width: '100%',
         background: 'white',
         boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.1)' : '0 1px 0 rgba(0,0,0,0.06)',
         fontFamily: FONT,
         transition: 'box-shadow 0.3s ease',
       }}>
 
-        {/* ══ TOP BAR — Social links ══════════════════════ */}
+        {/* ══ TOP BAR — Work hours + Social links ════════════ */}
         <div className="top-bar" style={{
           background: '#0a1628',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
           height: 36,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           padding: '0 32px',
-          gap: 4,
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          zIndex: 999,
         }}>
-          {SOCIALS.map(({ Icon, label, href }) => (
-            <button
-              key={label}
-              onClick={() => openExternalLink(href, label)}
-              aria-label={label}
-              title={label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                color: 'rgba(255,255,255,0.8)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'color 0.2s, background 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#4DD0E1'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; e.currentTarget.style.background = 'transparent'; }}
-            >
-              <Icon />
-            </button>
-          ))}
+          {/* Left — work hours */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'rgba(255,255,255,0.65)', fontSize: 13, fontFamily: "'Source Sans 3', sans-serif" }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            İş saatları: 09:00 – 19:00
+          </div>
+
+          {/* Right — social icons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {SOCIALS.map(({ Icon, label, href }) => (
+              <button
+                key={label}
+                onClick={() => openExternalLink(href, label)}
+                aria-label={label}
+                title={label}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 32, height: 32, borderRadius: 6,
+                  color: 'rgba(255,255,255,0.7)',
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  transition: 'color 0.2s, background 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; e.currentTarget.style.background = 'transparent'; }}
+              >
+                <Icon />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ══ LAYER 2 — Middle Bar ═══════════════════════ */}

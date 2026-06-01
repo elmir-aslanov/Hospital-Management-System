@@ -264,31 +264,6 @@ export default function Footer() {
               text={clinic.work_hours}
             />
 
-            <button
-              onClick={() => navigate('/randevu')}
-              style={{
-                marginTop: 20,
-                border: `1.5px solid ${TEAL}`,
-                borderRadius: 8, padding: '10px 22px',
-                color: WHITE, background: 'transparent',
-                fontSize: 14, fontWeight: 600,
-                cursor: 'pointer', fontFamily: FONT,
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                transition: 'background 0.25s, color 0.25s',
-                letterSpacing: '0.2px',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = TEAL;
-                e.currentTarget.style.color = BG;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = WHITE;
-              }}
-            >
-              Randevu Al →
-            </button>
-
             <div style={{ marginTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {SOCIALS.map(s => <SocialBtn key={s.label} {...s} />)}
             </div>
