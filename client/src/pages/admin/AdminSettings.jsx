@@ -187,20 +187,48 @@ function TabPassword() {
 /* ════════════════════════════════════════════════════════════════
    TAB 3 — Sistem
 ════════════════════════════════════════════════════════════════ */
-const CLINIC_DEF = { name: '', address: '', phone: '', email: '', website: '', hoursFrom: '09:00', hoursTo: '18:00', logoUrl: '' }
+const CLINIC_DEF = { name: '', address: '', phone: '', email: '', website: '', workHours: '08:00 - 20:00' }
 
 function TabSystem() {
-  const [form, setForm] = useState(CLINIC_DEF)
-  const [ok,   setOk]   = useState('')
+  const [form,           setForm]           = useState(CLINIC_DEF)
+  const [settingsLoading, setSettingsLoading] = useState(false)
+  const [settingsSaved,   setSettingsSaved]   = useState(false)
 
   useEffect(() => {
-    try { setForm({ ...CLINIC_DEF, ...JSON.parse(localStorage.getItem('clinicSettings') || '{}') }) } catch {}
+    fetch(`${BASE}/api/v1/settings?group=clinic`)
+      .then(r => r.json())
+      .then(d => {
+        const s = d.data || {}
+        setForm({
+          name:      s.clinic_name    || '',
+          address:   s.clinic_address || '',
+          phone:     s.clinic_phone   || '',
+          email:     s.clinic_email   || '',
+          website:   s.clinic_website || '',
+          workHours: s.work_hours     || '08:00 - 20:00',
+        })
+      })
+      .catch(() => {})
   }, [])
 
-  const save = () => {
-    localStorage.setItem('clinicSettings', JSON.stringify(form))
-    setOk('Yadda saxlandı ✓')
-    setTimeout(() => setOk(''), 3000)
+  const saveClinicSettings = () => {
+    setSettingsLoading(true)
+    fetch(`${BASE}/api/v1/settings`, {
+      method: 'PUT',
+      headers: hdrs(),
+      body: JSON.stringify({
+        clinic_name:    form.name,
+        clinic_address: form.address,
+        clinic_phone:   form.phone,
+        clinic_email:   form.email,
+        clinic_website: form.website,
+        work_hours:     form.workHours,
+      }),
+    })
+      .then(r => r.json())
+      .then(() => { setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 3000) })
+      .catch(() => {})
+      .finally(() => setSettingsLoading(false))
   }
 
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -230,20 +258,17 @@ function TabSystem() {
           <input style={inp} value={form.website} onChange={e => setF('website', e.target.value)} placeholder="https://aslanmedical.az" />
         </div>
         <div>
-          <label style={lbl}>Logo URL</label>
-          <input style={inp} value={form.logoUrl} onChange={e => setF('logoUrl', e.target.value)} placeholder="https://..." />
-        </div>
-        <div>
-          <label style={lbl}>Açılış vaxtı</label>
-          <input type="time" style={inp} value={form.hoursFrom} onChange={e => setF('hoursFrom', e.target.value)} />
-        </div>
-        <div>
-          <label style={lbl}>Bağlanış vaxtı</label>
-          <input type="time" style={inp} value={form.hoursTo} onChange={e => setF('hoursTo', e.target.value)} />
+          <label style={lbl}>İş saatları</label>
+          <input style={inp} value={form.workHours} onChange={e => setF('workHours', e.target.value)} placeholder="08:00 - 20:00" />
         </div>
       </div>
-      <SaveBtn onClick={save} saving={false} />
-      <OK msg={ok} />
+      <button
+        onClick={saveClinicSettings}
+        disabled={settingsLoading}
+        style={{ padding: '10px 24px', background: settingsSaved ? '#16a34a' : TEAL, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: settingsLoading ? 'not-allowed' : 'pointer', opacity: settingsLoading ? 0.7 : 1, transition: 'background 0.3s', marginTop: 20 }}
+      >
+        {settingsLoading ? 'Saxlanır...' : settingsSaved ? '✓ Saxlandı' : 'Yadda saxla'}
+      </button>
     </div>
   )
 }

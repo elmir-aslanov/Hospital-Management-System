@@ -1,16 +1,41 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import api from '../../api/axios';
+
+const FALLBACK_STORIES = [
+  { id: 1, name: 'Pasiyent A.', condition: 'Kardiologiya', image: '/pasiyent1.jpeg', story: 'Müalicədən sonra özümü çox yaxşı hiss edirəm. Həkimlər peşəkar və mehriban idi.' },
+  { id: 2, name: 'Pasiyent B.', condition: 'Ortopediya',   image: '/pasiyent2.jpeg', story: 'Əməliyyat uğurla keçdi. Klinikanın xidmət keyfiyyəti çox yüksəkdir.' },
+  { id: 3, name: 'Pasiyent C.', condition: 'Nevrologiya',  image: '/pasiyent3.jpeg', story: 'Diaqnoz tez qoyuldu, müalicə effektiv oldu. Tövsiyə edirəm.' },
+];
 
 export default function PatientStoriesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [stories,  setStories]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
 
-  const fullStories = [
-    { id: 1, name: 'Pasiyent 1', condition: t('patientStoriesPage.condition'), image: '/pasiyent1.jpeg', story: t('patientStoriesPage.story1') },
-    { id: 2, name: 'Pasiyent 2', condition: t('patientStoriesPage.condition'), image: '/pasiyent2.jpeg', story: t('patientStoriesPage.story2') },
-    { id: 3, name: 'Pasiyent 3', condition: t('patientStoriesPage.condition3'), image: '/pasiyent3.jpeg', story: t('patientStoriesPage.story3') },
-  ];
+  useEffect(() => {
+    api.get('/consultations?status=closed&limit=6')
+      .then(res => {
+        const list = res.data?.data || res.data || [];
+        const mapped = Array.isArray(list) && list.length > 0
+          ? list.map((c, i) => ({
+              id:        c._id || i,
+              name:      c.name || `Pasiyent ${i + 1}`,
+              condition: c.subject || 'Müalicə',
+              image:     `/pasiyent${(i % 3) + 1}.jpeg`,
+              story:     c.aiResponse || c.message || '',
+            }))
+          : FALLBACK_STORIES;
+        setStories(mapped);
+      })
+      .catch(() => setStories(FALLBACK_STORIES))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const fullStories = stories;
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
@@ -68,7 +93,11 @@ export default function PatientStoriesPage() {
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '32px',
       }}>
-        {fullStories.map((story, i) => (
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} style={{ height: 380, borderRadius: 20, background: 'linear-gradient(90deg,#e8eef4 25%,#f0f4f8 50%,#e8eef4 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite' }} />
+          ))
+        ) : fullStories.map((story, i) => (
           <motion.div
             key={story.id}
             initial={{ opacity: 0, y: 30 }}
@@ -125,6 +154,7 @@ export default function PatientStoriesPage() {
           </motion.div>
         ))}
       </div>
+      <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
 
       {/* Back button */}
       <div style={{ textAlign: 'center', paddingBottom: '80px' }}>

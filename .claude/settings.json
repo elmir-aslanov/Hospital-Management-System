@@ -35,7 +35,8 @@
       "Bash(read d *)",
       "Bash([ -f \"$d/controller.js\" ])",
       "Bash([ ! -f \"$d/service.js\" ])",
-      "Bash(echo 'Missing service: __TRACKED_VAR__')"
+      "Bash(echo 'Missing service: __TRACKED_VAR__')",
+      "Bash(xargs grep -l \"change-password\\\\|changePassword\")"
     ]
   }
 }

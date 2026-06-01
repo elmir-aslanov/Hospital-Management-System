@@ -168,6 +168,9 @@ router.post('/forgot-password', authLimiter, validateForgotPassword, validate, a
  */
 router.post('/reset-password', authLimiter, validateResetPassword, validate, authController.resetPasswordHandler);
 
+// Change password (authenticated)
+router.post('/change-password', authenticate, authController.changePassword);
+
 // Email OTP patient login
 router.post('/request-email-otp', authLimiter, requestEmailOtp);
 router.post('/verify-email-otp',  authLimiter, verifyEmailOtp);

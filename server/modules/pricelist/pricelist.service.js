@@ -6,6 +6,7 @@ export const getPrices = async ({ category, search, page = 1, limit = 50 } = {})
   if (category) filter.category = category;
   if (search)   filter.$or = [
     { name:        { $regex: search, $options: 'i' } },
+    { serviceName: { $regex: search, $options: 'i' } },
     { serviceCode: { $regex: search, $options: 'i' } },
   ];
   const pg  = Math.max(1, parseInt(page));

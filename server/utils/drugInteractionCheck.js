@@ -62,5 +62,7 @@ export default checkDrugAllergies;
  * @returns {Promise<{ hasInteraction: boolean, details: string | null }>}
  */
 export const checkDrugInteractions = async (drugNames) => {
+  if (!drugNames || drugNames.length < 2) return { hasInteraction: false };
+  // Stub — replace with real API (e.g. OpenFDA) when available
   return { hasInteraction: false, details: null };
 };

@@ -37,7 +37,7 @@ export default function DoctorProfile() {
   const load = async () => {
     setLoading(true)
     try {
-      const r = await fetch(`${BASE}/api/v1/doctors/profile`, {
+      const r = await fetch(`${BASE}/api/v1/doctor/me`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       })
       if (r.ok) {
@@ -49,7 +49,7 @@ export default function DoctorProfile() {
           email:          doc.userId?.email    || doc.email    || localUser.email    || '',
           phone:          doc.userId?.phone    || doc.phone    || localUser.phone    || '',
           specialization: doc.specialization   || localUser.specialization || '',
-          department:     doc.department       || localUser.department     || '',
+          department:     doc.departmentId?.name || doc.department || localUser.department || '',
           experience:     String(doc.experience || localUser.experience || ''),
           role:           doc.userId?.role     || localUser.role          || 'DOCTOR',
           licenseNumber:  doc.licenseNumber    || '',
@@ -101,7 +101,9 @@ export default function DoctorProfile() {
         specialization: form.specialization.trim(),
         bio:            form.bio.trim(),
       }
-      const r = await fetch(`${BASE}/api/v1/doctors/profile`, {
+      const doctorId = profile?._id
+      if (!doctorId) throw new Error('Doctor profile ID tapılmadı')
+      const r = await fetch(`${BASE}/api/v1/doctors/${doctorId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify(body)

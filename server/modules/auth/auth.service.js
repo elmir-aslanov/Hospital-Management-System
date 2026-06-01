@@ -4,6 +4,15 @@ import ApiError from '../../utils/ApiError.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/generateTokens.js';
 import logAction from '../../utils/auditLogger.js';
 
+export const changePassword = async (userId, currentPassword, newPassword) => {
+  const user = await User.findById(userId).select('+password');
+  if (!user) throw new ApiError(404, 'User not found');
+  const correct = await user.comparePassword(currentPassword);
+  if (!correct) throw new ApiError(401, 'Current password is incorrect');
+  user.password = newPassword;
+  await user.save();
+};
+
 export const registerUser = async ({ fullName, email, password, role }, req) => {
   const existing = await User.findOne({ email });
   if (existing) throw new ApiError(409, 'Email already registered');

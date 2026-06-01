@@ -28,6 +28,14 @@ export const logout = asyncHandler(async (req, res) => {
     .status(200).json(new ApiResponse(200, null, 'Logged out successfully'));
 });
 
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) throw new ApiError(400, 'currentPassword and newPassword required');
+  if (newPassword.length < 8) throw new ApiError(400, 'New password must be at least 8 characters');
+  await authService.changePassword(req.user._id, currentPassword, newPassword);
+  res.json(new ApiResponse(200, null, 'Password changed successfully'));
+});
+
 export const refreshToken = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken || req.body.refreshToken;
   const data = await authService.refreshAccessToken(token);
