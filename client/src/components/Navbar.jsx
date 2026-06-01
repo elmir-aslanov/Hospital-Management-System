@@ -118,6 +118,12 @@ export default function Navbar() {
   );
   const [langOpen, setLangOpen]             = useState(false);
 
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOpen,    setSearchOpen]    = useState(false);
+  const searchRef = useRef(null);
+
   useEffect(() => {
     const saved = localStorage.getItem('aslanmedic_lang');
     if (saved) {
@@ -151,6 +157,44 @@ export default function Navbar() {
   const onEnter = (label) => { clearTimeout(closeTimer.current); setActiveDropdown(label); };
   const onLeave = () => { closeTimer.current = setTimeout(() => setActiveDropdown(null), 120); };
   const isActive = (href) => location.pathname === href;
+
+  const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchResults([]);
+      setSearchOpen(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const [doctors, depts] = await Promise.all([
+          fetch(`${BASE_URL}/api/v1/doctors/public/all`).then(r => r.json()),
+          fetch(`${BASE_URL}/api/v1/departments`).then(r => r.json()),
+        ]);
+        const q = searchQuery.toLowerCase();
+        const doctorList = (doctors.data || [])
+          .filter(d => (d.userId?.fullName || '').toLowerCase().includes(q) || (d.specialization || '').toLowerCase().includes(q))
+          .slice(0, 4)
+          .map(d => ({ type: 'doctor', label: d.userId?.fullName || '—', sub: d.specialization || '', id: d._id }));
+        const deptList = (depts.data || [])
+          .filter(d => (d.name || '').toLowerCase().includes(q))
+          .slice(0, 3)
+          .map(d => ({ type: 'dept', label: d.name, sub: 'Şöbə', id: d._id, slug: d.slug }));
+        setSearchResults([...doctorList, ...deptList]);
+        setSearchOpen(true);
+      } catch { setSearchResults([]); }
+      finally { setSearchLoading(false); }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const close = () => setSearchOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, []);
 
   return (
     <>
@@ -463,6 +507,59 @@ export default function Navbar() {
             })}
           </div>
 
+          {/* ── Search ──────────────────────────────────── */}
+          <div ref={searchRef} style={{ position: 'relative', marginRight: 8 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '6px 12px', minWidth: 200 }}>
+              {searchLoading ? (
+                <div style={{ width: 14, height: 14, border: '2px solid #e2e8f0', borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+              ) : (
+                <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+              )}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+                placeholder="Həkim, şöbə axtar..."
+                style={{ border: 'none', outline: 'none', fontSize: 13, color: '#334155', background: 'transparent', width: '100%', fontFamily: FONT }}
+              />
+              {searchQuery && (
+                <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(false); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+              )}
+            </div>
+
+            {searchOpen && searchResults.length > 0 && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 6, background: 'white', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid #f1f5f9', zIndex: 999, overflow: 'hidden' }}>
+                {searchResults.map((r, i) => (
+                  <div key={i}
+                    onClick={() => {
+                      setSearchOpen(false); setSearchQuery('');
+                      if (r.type === 'doctor') navigate(`/hekimler/${r.id}`);
+                      else if (r.type === 'dept') navigate(`/departments`);
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', borderBottom: i < searchResults.length - 1 ? '1px solid #f8fafc' : 'none', transition: 'background 0.1s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f0fafb'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                  >
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: r.type === 'doctor' ? '#e0f7fa' : '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {r.type === 'doctor'
+                        ? <svg width="14" height="14" fill="none" stroke="#00848e" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        : <svg width="14" height="14" fill="none" stroke="#7c3aed" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                      }
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1b2d' }}>{r.label}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{r.sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* ── Language Switcher — always visible ── */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <button
@@ -631,6 +728,7 @@ export default function Navbar() {
       </AnimatePresence>
 
       <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
           .top-bar     { display: none !important; }
           .mid-social  { display: none !important; }
