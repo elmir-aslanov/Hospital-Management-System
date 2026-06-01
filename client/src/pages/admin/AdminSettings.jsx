@@ -28,6 +28,7 @@ const TABS = [
   { key: 'profile',  label: 'Profil' },
   { key: 'password', label: 'Şifrə' },
   { key: 'system',   label: 'Sistem' },
+  { key: 'social',   label: 'Sosial' },
   { key: 'notif',    label: 'Bildiriş' },
   { key: 'security', label: 'Təhlükəsizlik' },
 ]
@@ -329,6 +330,79 @@ function TabNotif() {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   TAB 4b — Sosial
+════════════════════════════════════════════════════════════════ */
+function TabSocial() {
+  const [socialForm,    setSocialForm]    = useState({ twitter: '', instagram: '', linkedin: '', facebook: '' })
+  const [socialSaved,   setSocialSaved]   = useState(false)
+  const [socialLoading, setSocialLoading] = useState(false)
+
+  useEffect(() => {
+    fetch(`${BASE}/api/v1/settings?group=social`, { headers: hdrs() })
+      .then(r => r.json())
+      .then(d => {
+        const s = d.data || {}
+        setSocialForm({
+          twitter:   s.social_twitter   || '',
+          instagram: s.social_instagram || '',
+          linkedin:  s.social_linkedin  || '',
+          facebook:  s.social_facebook  || '',
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  const save = () => {
+    setSocialLoading(true)
+    fetch(`${BASE}/api/v1/settings`, {
+      method: 'PUT',
+      headers: hdrs(),
+      body: JSON.stringify({
+        social_twitter:   socialForm.twitter,
+        social_instagram: socialForm.instagram,
+        social_linkedin:  socialForm.linkedin,
+        social_facebook:  socialForm.facebook,
+      }),
+    })
+      .then(() => { setSocialSaved(true); setTimeout(() => setSocialSaved(false), 3000) })
+      .catch(() => {})
+      .finally(() => setSocialLoading(false))
+  }
+
+  return (
+    <div style={card}>
+      <h2 style={{ margin: '0 0 22px', fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>Sosial Media Linklər</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 480 }}>
+        {[
+          { key: 'twitter',   label: 'Twitter / X', placeholder: 'https://twitter.com/aslanmedical' },
+          { key: 'instagram', label: 'Instagram',   placeholder: 'https://instagram.com/aslanmedical' },
+          { key: 'linkedin',  label: 'LinkedIn',    placeholder: 'https://linkedin.com/company/aslanmedical' },
+          { key: 'facebook',  label: 'Facebook',    placeholder: 'https://facebook.com/aslanmedical' },
+        ].map(f => (
+          <div key={f.key}>
+            <label style={lbl}>{f.label}</label>
+            <input
+              type="url"
+              value={socialForm[f.key]}
+              onChange={e => setSocialForm(p => ({ ...p, [f.key]: e.target.value }))}
+              placeholder={f.placeholder}
+              style={inp}
+            />
+          </div>
+        ))}
+        <button
+          onClick={save}
+          disabled={socialLoading}
+          style={{ alignSelf: 'flex-start', padding: '10px 24px', background: socialSaved ? '#16a34a' : TEAL, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: socialLoading ? 'not-allowed' : 'pointer', opacity: socialLoading ? 0.7 : 1, transition: 'background 0.3s', marginTop: 4 }}
+        >
+          {socialLoading ? 'Saxlanır...' : socialSaved ? '✓ Saxlandı' : 'Yadda saxla'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════
    TAB 5 — Təhlükəsizlik
 ════════════════════════════════════════════════════════════════ */
 function TabSecurity() {
@@ -391,6 +465,7 @@ export default function AdminSettings() {
     profile:  <TabProfile />,
     password: <TabPassword />,
     system:   <TabSystem />,
+    social:   <TabSocial />,
     notif:    <TabNotif />,
     security: <TabSecurity />,
   }

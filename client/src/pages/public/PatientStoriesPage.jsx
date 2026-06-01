@@ -5,9 +5,27 @@ import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
 
 const FALLBACK_STORIES = [
-  { id: 1, name: 'Pasiyent A.', condition: 'Kardiologiya', image: '/pasiyent1.jpeg', story: 'Müalicədən sonra özümü çox yaxşı hiss edirəm. Həkimlər peşəkar və mehriban idi.' },
-  { id: 2, name: 'Pasiyent B.', condition: 'Ortopediya',   image: '/pasiyent2.jpeg', story: 'Əməliyyat uğurla keçdi. Klinikanın xidmət keyfiyyəti çox yüksəkdir.' },
-  { id: 3, name: 'Pasiyent C.', condition: 'Nevrologiya',  image: '/pasiyent3.jpeg', story: 'Diaqnoz tez qoyuldu, müalicə effektiv oldu. Tövsiyə edirəm.' },
+  {
+    id: 1,
+    name: 'Aytən Məmmədova',
+    condition: 'Kardiologiya',
+    image: '/pasiyent1.jpeg',
+    story: 'Aslan Medical Mərkəzinin kardiologiya şöbəsindəki müalicəmdən çox razı qaldım. Həkimlər çox peşəkar və diqqətliydi. Müayinə prosesi tam şəffaf idi və hər addımda məni məlumatlandırdılar. İndi özümü çox yaxşı hiss edirəm.',
+  },
+  {
+    id: 2,
+    name: 'Rauf Həsənov',
+    condition: 'Ortopediya',
+    image: '/pasiyent2.jpeg',
+    story: 'Diz əməliyyatından sonra Aslan Medical-ın reabilitasiya proqramı sayəsində çox sürətli sağaldım. Fizioterapevt komandası inanılmaz dərəcədə köməkçi idi. Bu mərkəzi bütün ailə üzvlərimə tövsiyə edirəm.',
+  },
+  {
+    id: 3,
+    name: 'Günel Əliyeva',
+    condition: 'Nevrologiya',
+    image: '/pasiyent3.jpeg',
+    story: 'Uzun müddət baş ağrısından əziyyət çəkirdim. Aslan Medical-da nevroloq həkim dərhal düzgün diaqnoz qoydu və müalicə planı hazırladı. Bir ay ərzində şikayətlərim tamamilə keçdi. Peşəkar yanaşma üçün çox sağ olun.',
+  },
 ];
 
 export default function PatientStoriesPage() {

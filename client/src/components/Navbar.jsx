@@ -49,13 +49,6 @@ const IconSearch = () => (
   </svg>
 );
 
-const SOCIALS = [
-  { Icon: IconX,  label: 'Twitter',   href: 'https://twitter.com' },
-  { Icon: IconIG, label: 'Instagram', href: 'https://instagram.com' },
-  { Icon: IconLI, label: 'LinkedIn',  href: 'https://linkedin.com' },
-  { Icon: IconFB, label: 'Facebook',  href: 'https://facebook.com' },
-];
-
 /* ── Dropdown ─────────────────────────────────────────── */
 function Dropdown({ items, open }) {
   return (
@@ -117,6 +110,20 @@ export default function Navbar() {
     (localStorage.getItem('aslanmedic_lang') || 'az').toUpperCase()
   );
   const [langOpen, setLangOpen]             = useState(false);
+
+  const [socialLinks, setSocialLinks] = useState({
+    social_twitter:   'https://twitter.com',
+    social_instagram: 'https://instagram.com',
+    social_linkedin:  'https://linkedin.com',
+    social_facebook:  'https://facebook.com',
+  });
+
+  const SOCIALS = [
+    { Icon: IconX,  label: 'Twitter',   href: socialLinks.social_twitter   },
+    { Icon: IconIG, label: 'Instagram', href: socialLinks.social_instagram },
+    { Icon: IconLI, label: 'LinkedIn',  href: socialLinks.social_linkedin  },
+    { Icon: IconFB, label: 'Facebook',  href: socialLinks.social_facebook  },
+  ];
 
   const [searchQuery,   setSearchQuery]   = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -194,6 +201,13 @@ export default function Navbar() {
     const close = () => setSearchOpen(false);
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
+  }, []);
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/v1/settings?group=social`)
+      .then(r => r.json())
+      .then(d => { if (d.data) setSocialLinks(prev => ({ ...prev, ...d.data })) })
+      .catch(() => {})
   }, []);
 
   return (
