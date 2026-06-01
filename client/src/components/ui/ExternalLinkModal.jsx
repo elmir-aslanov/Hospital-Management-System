@@ -45,9 +45,13 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
           </svg>
         </div>
 
+        <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0a1628', marginBottom: '8px', fontFamily: FONT }}>
+          Xarici keçid
+        </h3>
+
         <p style={{ fontSize: '15px', color: '#4a5568', lineHeight: 1.6, marginBottom: '24px' }}>
-          <strong style={{ color: '#0a1628' }}>Aslan Medical Clinic</strong> {t('modal.leaving')}<br />
-          {t('modal.redirect')} <strong style={{ color: '#0a1628' }}>{siteName}</strong> {t('modal.redirectSuffix')}
+          <strong style={{ color: '#0a1628' }}>Aslan Medical</strong> saytından ayrılırsınız.<br />
+          Sizi <strong style={{ color: '#0a1628' }}>{siteName}</strong> xarici saytına yönləndiririk.
         </p>
 
         <div style={{
@@ -68,7 +72,7 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
             onMouseLeave={e => e.currentTarget.style.background = 'white'}
-          >{t('modal.cancel')}</button>
+          >Bağla</button>
 
           <button onClick={onConfirm} style={{
             padding: '10px 24px', borderRadius: '8px',
@@ -78,7 +82,7 @@ export default function ExternalLinkModal({ url, siteName, isOpen, onConfirm, on
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#006b74'}
             onMouseLeave={e => e.currentTarget.style.background = '#00848e'}
-          >{t('modal.confirm')}</button>
+          >Davam et</button>
         </div>
       </div>
     </>

@@ -250,7 +250,7 @@ export default function Navbar() {
                 textDecoration: 'none',
               }}
               onMouseEnter={e => { e.currentTarget.style.color = '#4DD0E1'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; e.currentTarget.style.background = 'transparent'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; e.currentTarget.style.background = 'transparent'; }}
             >
               <Icon />
             </a>
