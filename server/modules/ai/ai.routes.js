@@ -12,8 +12,33 @@ const FALLBACK = (name) =>
   `Sualınız üçün +994 50 836 36 94 nömrəsinə zəng edə və ya info@aslanmedical.az ünvanına ` +
   `email göndərə bilərsiniz. Aslan Medical Clinic komandası sizə kömək etməkdən məmnun olar.`;
 
-// POST /api/v1/ai/medical-consult
-// Rate-limited to 5 requests / 15 min per IP (via authLimiter)
+/**
+ * @swagger
+ * /api/v1/ai/medical-consult:
+ *   post:
+ *     summary: Get AI medical advice
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 example: "Baş ağrısı, qızdırma"
+ *               name:
+ *                 type: string
+ *                 example: "Əli"
+ *     responses:
+ *       200:
+ *         description: AI medical advice
+ *       400:
+ *         description: Message is missing or too long
+ */
 router.post('/medical-consult', authLimiter, asyncHandler(async (req, res) => {
   const { message, name } = req.body;
 
