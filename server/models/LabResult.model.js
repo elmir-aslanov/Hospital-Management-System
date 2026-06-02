@@ -23,6 +23,5 @@ const labResultSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 labResultSchema.index({ patientId: 1, createdAt: -1 });
-labResultSchema.index({ labOrderId: 1 });
 
 export default mongoose.model('LabResult', labResultSchema);

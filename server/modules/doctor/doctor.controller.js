@@ -72,7 +72,7 @@ export const createPrescription = asyncHandler(async (req, res) => {
 // ─── New doctor-specific endpoints ───────────────────────────────────────────
 
 export const getMyProfile = asyncHandler(async (req, res) => {
-  const doctor = await Doctor.findOne({ userId: req.user._id })
+  const doctor = await Doctor.findOne({ userId: req.user.id })
     .populate('userId', 'fullName name surname email phone photoUrl')
     .populate('departmentId', 'name slug');
   if (!doctor) throw new ApiError(404, 'Doctor profile not found');
@@ -80,7 +80,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 });
 
 export const getMyPatients = asyncHandler(async (req, res) => {
-  const doctor = await getDoctorDoc(req.user._id);
+  const doctor = await getDoctorDoc(req.user.id);
 
   const patientIds = await Appointment.find({ doctorId: doctor._id }).distinct('patientId');
 
@@ -92,7 +92,7 @@ export const getMyPatients = asyncHandler(async (req, res) => {
 });
 
 export const getMyAppointments = asyncHandler(async (req, res) => {
-  const doctor = await getDoctorDoc(req.user._id);
+  const doctor = await getDoctorDoc(req.user.id);
 
   const { status, date, page = 1, limit = 20 } = req.query;
   const filter = { doctorId: doctor._id };
@@ -117,7 +117,7 @@ export const getMyAppointments = asyncHandler(async (req, res) => {
 });
 
 export const getMyStats = asyncHandler(async (req, res) => {
-  const doctor = await getDoctorDoc(req.user._id);
+  const doctor = await getDoctorDoc(req.user.id);
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
@@ -137,13 +137,13 @@ export const getMyStats = asyncHandler(async (req, res) => {
 });
 
 export const createLabOrder = asyncHandler(async (req, res) => {
-  const doctor = await getDoctorDoc(req.user._id);
+  const doctor = await getDoctorDoc(req.user.id);
   const order = await LabOrder.create({ ...req.body, doctorId: doctor._id });
   res.status(201).json(new ApiResponse(201, order, 'Lab order created'));
 });
 
 export const getMyLabOrders = asyncHandler(async (req, res) => {
-  const doctor = await getDoctorDoc(req.user._id);
+  const doctor = await getDoctorDoc(req.user.id);
 
   const { status, page = 1, limit = 20 } = req.query;
   const filter = { doctorId: doctor._id };

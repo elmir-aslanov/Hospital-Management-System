@@ -1,10 +1,12 @@
 import { Router }    from 'express';
 import authenticate  from '../../middleware/auth.middleware.js';
+import authorize     from '../../middleware/rbac.middleware.js';
 import * as ctrl from './doctor.controller.js';
 
 const router = Router();
 
 router.use(authenticate);
+router.use(authorize('DOCTOR', 'ADMIN', 'SUPER_ADMIN'));
 
 // Existing routes
 router.get('/appointments/today',            ctrl.getTodayAppointments);

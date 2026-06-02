@@ -7,7 +7,6 @@ const settingSchema = new mongoose.Schema({
   label: { type: String, trim: true },
 }, { timestamps: true });
 
-settingSchema.index({ key: 1 }, { unique: true });
 settingSchema.index({ group: 1 });
 
 export default mongoose.model('Setting', settingSchema);

@@ -4,6 +4,15 @@ import ApiError from '../../utils/ApiError.js';
 import Patient from '../../models/Patient.model.js';
 import * as patientsService from './patients.service.js';
 
+const ensurePatientOwnership = (req, patient) => {
+  if (req.user.role !== 'PATIENT') return;
+
+  const ownerId = patient?.userId?._id || patient?.userId;
+  if (!ownerId || String(ownerId) !== String(req.user.id)) {
+    throw new ApiError(403, 'Forbidden: patient record does not belong to you');
+  }
+};
+
 export const createPatient = asyncHandler(async (req, res) => {
   const patient = await patientsService.createPatient(req.body);
   res.status(201).json(new ApiResponse(201, patient, 'Patient profile created'));
@@ -23,6 +32,7 @@ export const getPatients = asyncHandler(async (req, res) => {
 
 export const getPatientById = asyncHandler(async (req, res) => {
   const patient = await patientsService.getPatientById(req.params.id);
+  ensurePatientOwnership(req, patient);
   res.status(200).json(new ApiResponse(200, patient));
 });
 
@@ -53,6 +63,10 @@ export const searchPublic = asyncHandler(async (req, res) => {
 });
 
 export const getPatientByUserId = asyncHandler(async (req, res) => {
+  if (req.user.role === 'PATIENT' && String(req.params.userId) !== String(req.user.id)) {
+    throw new ApiError(403, 'Forbidden: patient record does not belong to you');
+  }
+
   const patient = await Patient.findOne({ userId: req.params.userId })
     .populate('userId', 'fullName email avatar phone')
     .lean();

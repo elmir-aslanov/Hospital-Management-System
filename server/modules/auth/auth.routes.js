@@ -31,9 +31,9 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password, role]
+ *             required: [fullName, email, password]
  *             properties:
- *               name:
+ *               fullName:
  *                 type: string
  *                 example: Elmir Aslanov
  *               email:
@@ -41,11 +41,7 @@ const router = Router();
  *                 example: elmir@hms.com
  *               password:
  *                 type: string
- *                 example: Admin123!
- *               role:
- *                 type: string
- *                 enum: [ADMIN, DOCTOR, NURSE, RECEPTIONIST, PATIENT]
- *                 example: PATIENT
+ *                 example: StrongPass123!
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -76,7 +72,7 @@ router.post('/register', authLimiter, validateRegister, validate, authController
  *                 example: admin@hms.com
  *               password:
  *                 type: string
- *                 example: Admin123!
+ *                 example: StrongPass123!
  *     responses:
  *       200:
  *         description: Login successful, returns accessToken and user

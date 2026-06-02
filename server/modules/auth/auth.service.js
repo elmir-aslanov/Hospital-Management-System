@@ -13,10 +13,11 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
   await user.save();
 };
 
-export const registerUser = async ({ fullName, email, password, role }, req) => {
+export const registerUser = async ({ fullName, email, password }, req) => {
   const existing = await User.findOne({ email });
   if (existing) throw new ApiError(409, 'Email already registered');
 
+  const role = 'PATIENT';
   const user = await User.create({ fullName, email, password, role });
   const accessToken  = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id);

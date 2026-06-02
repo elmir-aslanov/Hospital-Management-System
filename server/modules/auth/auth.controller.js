@@ -1,5 +1,6 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
+import ApiError from '../../utils/ApiError.js';
 import * as authService from './auth.service.js';
 import { forgotPassword, resetPassword } from './passwordReset.service.js';
 
@@ -32,7 +33,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) throw new ApiError(400, 'currentPassword and newPassword required');
   if (newPassword.length < 8) throw new ApiError(400, 'New password must be at least 8 characters');
-  await authService.changePassword(req.user._id, currentPassword, newPassword);
+  await authService.changePassword(req.user.id, currentPassword, newPassword);
   res.json(new ApiResponse(200, null, 'Password changed successfully'));
 });
 

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node --input-type=module)"
+      "Bash(node --input-type=module)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\\\\server\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)"
     ]
   }
 }
