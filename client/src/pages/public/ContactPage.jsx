@@ -43,13 +43,13 @@ export default function ContactPage() {
   }
 
   return (
-    <main style={{ background: '#eef2f7', fontFamily: FONT }}>
+    <main style={{ background: '#eef2f7', fontFamily: FONT, paddingTop: 110 }}>
 
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 40px 16px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'start' }}>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 40px 16px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'center' }}>
 
         {/* LEFT — circular photo */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-          style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
 
           <div style={{
             width: '100%',
