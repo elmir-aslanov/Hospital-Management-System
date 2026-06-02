@@ -212,6 +212,79 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
     win.focus()
   }
 
+  /* ── print invoice ─────────────────────────────────────────────────── */
+  const printInvoice = (invoice) => {
+    const win = window.open('', '_blank')
+    const items = invoice.items?.map(it => `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9">${it.description}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center">${it.quantity}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right">${it.unitPrice} ₼</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600">${it.total} ₼</td>
+      </tr>
+    `).join('') || ''
+
+    const patientName = invoice.patientId?.userId?.fullName || invoice.patientId?.fullName || '—'
+    const date = new Date(invoice.createdAt).toLocaleDateString('az-AZ')
+
+    win.document.write(`
+      <!DOCTYPE html><html><head>
+      <title>Faktura ${invoice.invoiceNumber}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 32px; color: #0a1628; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 2px solid #00848e; }
+        .logo { font-size: 22px; font-weight: 900; color: #0a1628; }
+        .logo span { color: #00848e; font-size: 11px; display: block; letter-spacing: 0.1em; text-transform: uppercase; }
+        .invoice-no { font-size: 18px; font-weight: 700; color: #00848e; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+        .info-box h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
+        .info-box p { margin: 0; font-size: 14px; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+        th:last-child, td:last-child { text-align: right; }
+        .totals { float: right; width: 260px; }
+        .totals table { width: 100%; }
+        .totals td { padding: 6px 0; font-size: 14px; }
+        .totals .total-row td { font-weight: 700; font-size: 16px; color: #00848e; border-top: 2px solid #00848e; padding-top: 10px; }
+        .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 12px; color: #94a3b8; }
+        @media print { body { padding: 16px; } }
+      </style>
+      </head><body>
+      <div class="header">
+        <div class="logo">ASLAN <span>Medical Center</span></div>
+        <div>
+          <div class="invoice-no">${invoice.invoiceNumber}</div>
+          <div style="font-size:13px;color:#64748b;margin-top:4px">${date}</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-box"><h4>Pasiyent</h4><p>${patientName}</p></div>
+        <div class="info-box"><h4>Status</h4><p>${invoice.status}</p></div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Xidmət</th><th style="text-align:center">Miqdar</th>
+          <th style="text-align:right">Vahid qiyməti</th><th style="text-align:right">Cəmi</th>
+        </tr></thead>
+        <tbody>${items}</tbody>
+      </table>
+      <div class="totals">
+        <table>
+          <tr><td>Ara cəm</td><td>${invoice.subtotal} ₼</td></tr>
+          ${invoice.discount ? `<tr><td>Endirim</td><td>-${invoice.discount} ₼</td></tr>` : ''}
+          ${invoice.tax ? `<tr><td>Vergi</td><td>${invoice.tax} ₼</td></tr>` : ''}
+          <tr class="total-row"><td>CƏMİ</td><td>${invoice.total} ₼</td></tr>
+        </table>
+      </div>
+      <div style="clear:both"></div>
+      <div class="footer">Aslan Medical Center • info@aslanmedical.az • +994 50 836 36 94</div>
+      </body></html>
+    `)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print(); win.close() }, 500)
+  }
+
   /* ── summary counts ─────────────────────────────────────────────────── */
   const unpaidCount    = invoices.filter(i => i.status === 'issued' || i.status === 'overdue').length
   const cancelledCount = invoices.filter(i => i.status === 'cancelled').length
@@ -385,6 +458,18 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                   <button onClick={() => { setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}
                     style={{ marginTop: 16, width: '100%', padding: '10px', background: '#00848e', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     Ödəniş əlavə et
+                  </button>
+                  <button
+                    onClick={() => printInvoice(detail)}
+                    style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#00848e'; e.currentTarget.style.color = '#00848e' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569' }}
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                      <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    Çap et / PDF
                   </button>
                 </>
               )}

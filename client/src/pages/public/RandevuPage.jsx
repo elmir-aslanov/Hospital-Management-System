@@ -1,3 +1,4 @@
+import usePageTitle from '../../hooks/usePageTitle'
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -453,6 +454,7 @@ function Spinner() {
    PAGE
 ════════════════════════════════════════════════════════════════ */
 export default function RandevuPage() {
+  usePageTitle('Randevu Al', 'Onlayn randevu sistemi ilə həkimə görüş təyin edin.')
   const navigate       = useNavigate();
   const [searchParams] = useSearchParams();
   const { isMobile }   = useBreakpoint();

@@ -1,3 +1,4 @@
+import usePageTitle from '../../hooks/usePageTitle'
 import { useState } from 'react';
 import api from '../../api/axios';
 
@@ -40,6 +41,7 @@ function Spinner() {
 }
 
 export default function ENeticePage() {
+  usePageTitle('E-Nəticə', 'Tibbi nəticənizi pasiyent ID ilə yoxlayın.')
   const [patientId, setPatientId] = useState('');
   const [dateOfBirth, setDob]     = useState('');
   const [loading, setLoading]     = useState(false);

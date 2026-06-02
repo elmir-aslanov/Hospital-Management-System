@@ -1,3 +1,4 @@
+import usePageTitle from '../../hooks/usePageTitle'
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
@@ -79,6 +80,7 @@ function DepartmentCard({ dept, index }) {
 }
 
 export default function DepartmentsPage() {
+  usePageTitle('Şöbələr', 'Tibbi mərkəzimizin ixtisaslaşmış şöbələri.')
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(false);

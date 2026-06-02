@@ -1,3 +1,4 @@
+import usePageTitle from '../../hooks/usePageTitle'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -144,6 +145,7 @@ function DoctorCard({ doctor }) {
 }
 
 export default function HekimlerPage() {
+  usePageTitle('Həkimlər', 'Aslan Medical Center-in peşəkar həkim heyəti ilə tanış olun.')
   const [doctors, setDoctors]       = useState([])
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(false)

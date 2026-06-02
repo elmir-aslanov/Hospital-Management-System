@@ -1,302 +1,120 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useBreakpoint } from '../hooks/useBreakpoint';
+import { Link } from 'react-router-dom'
 
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+const FONT = "'Source Sans 3', 'Raleway', sans-serif"
+const TEAL = '#00848e'
+const NAVY = '#0a1628'
 
-const BG      = '#0B1D34';
-const NAVY2   = '#122A4A';
-const TEAL    = '#1DB6A6';
-const MUTED   = '#AFC7D6';
-const LIGHT   = '#E6EDF3';
-const WHITE   = '#FFFFFF';
-const FONT    = "'Source Sans 3', 'Raleway', sans-serif";
-
-/* ── Social SVG icons ─────────────────────────────────────────────────────── */
-const IgIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5"/>
-    <circle cx="12" cy="12" r="4"/>
-    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-  </svg>
-);
-const FbIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-  </svg>
-);
-const LiIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/>
-    <circle cx="4" cy="4" r="2"/>
-  </svg>
-);
-const YtIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
-    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill={NAVY2}/>
-  </svg>
-);
-const WaIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.944-1.418A9.959 9.959 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
-  </svg>
-);
-
-/* SOCIALS — built dynamically inside component from API */
-
-/* ── Reusable sub-components ─────────────────────────────────────────────── */
-function ColHead({ children }) {
-  return (
-    <>
-      <h3 style={{
-        margin: 0, fontSize: 11, fontWeight: 700,
-        letterSpacing: '2.5px', textTransform: 'uppercase',
-        color: TEAL, fontFamily: FONT,
-      }}>
-        {children}
-      </h3>
-      <div style={{ width: 24, height: 2, background: TEAL, margin: '8px 0 18px', borderRadius: 2, opacity: 0.7 }} />
-    </>
-  );
-}
-
-function FooterLink({ to, children }) {
-  return (
-    <Link
-      to={to}
-      style={{
-        color: LIGHT, fontSize: 14, display: 'block',
-        padding: '5px 0', textDecoration: 'none',
-        fontFamily: FONT, transition: 'color 0.25s',
-      }}
-      onMouseEnter={e => e.currentTarget.style.color = TEAL}
-      onMouseLeave={e => e.currentTarget.style.color = LIGHT}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function ContactRow({ icon, text }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 12 }}>
-      <div style={{
-        width: 30, height: 30, borderRadius: '50%',
-        background: 'rgba(255,255,255,0.08)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, fontSize: 13, color: TEAL,
-      }}>
-        {icon}
-      </div>
-      <span style={{ color: MUTED, fontSize: 13, fontFamily: FONT, lineHeight: 1.6, paddingTop: 5 }}>{text}</span>
-    </div>
-  );
-}
-
-function SocialBtn({ Icon, label, href }) {
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-      style={{
-        width: 40, height: 40, borderRadius: 9,
-        background: 'rgba(255,255,255,0.07)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        color: LIGHT,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', textDecoration: 'none',
-        transition: 'background 0.25s, color 0.25s, border-color 0.25s, transform 0.2s',
-        flexShrink: 0,
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = TEAL;
-        e.currentTarget.style.color = BG;
-        e.currentTarget.style.borderColor = TEAL;
-        e.currentTarget.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-        e.currentTarget.style.color = LIGHT;
-        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      <Icon />
-    </a>
-  );
-}
-
-/* ── Footer ──────────────────────────────────────────────────────────────── */
 export default function Footer() {
-  const navigate = useNavigate();
-  const { isMobile } = useBreakpoint();
-
-  const [social, setSocial]   = useState({
-    social_instagram: 'https://instagram.com',
-    social_facebook:  'https://facebook.com',
-    social_linkedin:  'https://linkedin.com',
-    social_youtube:   'https://youtube.com',
-    social_whatsapp:  'https://wa.me/994508363694',
-  });
-  const [clinic, setClinic]   = useState({
-    clinic_phone:   '+994 50 836 36 94',
-    clinic_email:   'info@aslanmedical.az',
-    clinic_address: 'Xətai ray, Afiyəddin Cəlilov küçəsi, Bakı',
-    work_hours:     'Hər gün: 24/7',
-  });
-
-  useEffect(() => {
-    fetch(`${BASE_URL}/api/v1/settings`)
-      .then(r => r.json())
-      .then(d => {
-        if (!d.data) return;
-        setSocial(prev => ({ ...prev, ...d.data }));
-        setClinic(prev => ({ ...prev, ...d.data }));
-      })
-      .catch(() => {})
-  }, []);
-
-  const SOCIALS = [
-    { Icon: IgIcon, label: 'Instagram', href: social.social_instagram },
-    { Icon: FbIcon, label: 'Facebook',  href: social.social_facebook  },
-    { Icon: LiIcon, label: 'LinkedIn',  href: social.social_linkedin  },
-    { Icon: YtIcon, label: 'YouTube',   href: social.social_youtube   },
-    { Icon: WaIcon, label: 'WhatsApp',  href: social.social_whatsapp  },
-  ];
-
+  const year = new Date().getFullYear()
   return (
-    <footer style={{
-      background: `linear-gradient(135deg, ${BG} 0%, ${NAVY2} 100%)`,
-      margin: 0, padding: 0, fontFamily: FONT,
-      boxShadow: 'inset 0 1px 0 rgba(29,182,166,0.15)',
-      width: '100%',
-    }}>
+    <footer style={{ background: NAVY, color: 'white', fontFamily: FONT }}>
 
-      {/* Wave */}
-      <div style={{ background: 'white', lineHeight: 0 }}>
-        <svg viewBox="0 0 1440 120" preserveAspectRatio="none"
-          style={{ display: 'block', width: '100%', height: isMobile ? 50 : 90 }}>
-          <path d="M0,40 C180,100 360,0 540,60 C720,120 900,20 1080,70 C1260,115 1380,45 1440,60 L1440,120 L0,120 Z"
-            fill="rgba(175,199,214,0.35)"/>
-          <path d="M0,60 C200,20 400,100 600,55 C800,10 1000,85 1200,50 C1340,25 1410,65 1440,55 L1440,120 L0,120 Z"
-            fill="rgba(18,42,74,0.55)"/>
-          <path d="M0,80 C240,40 480,110 720,65 C960,20 1200,90 1440,70 L1440,120 L0,120 Z"
-            fill={BG}/>
-        </svg>
-      </div>
+      {/* Main footer grid */}
+      <div style={{ maxWidth: 1140, margin: '0 auto', padding: '52px 32px 36px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr', gap: 48 }}>
 
-      {/* Main grid */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '32px 20px 0' : '60px 40px 0' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 1.6fr',
-          gap: isMobile ? 32 : 48,
-        }}>
-
-          {/* Col 1 — Brand */}
-          <div>
-            <img
-              src="/logo.png"
-              alt="Aslan Medical"
-              style={{
-                height: 56, display: 'block',
-                filter: 'brightness(1.1)',
-                borderRadius: 12,
-                boxShadow: '0 2px 12px rgba(0,0,0,0.28)',
-              }}
-              onError={e => e.currentTarget.style.display = 'none'}
-            />
-            <p style={{
-              fontSize: 14, color: MUTED,
-              fontStyle: 'italic', marginTop: 16, marginBottom: 0,
-              lineHeight: 1.7, fontFamily: FONT,
-            }}>
-              Sağlamlığınız üçün etibarlı tərəfdaş
-            </p>
-          </div>
-
-          {/* Col 2 — Klinika */}
-          <div>
-            <ColHead>KLİNİKA</ColHead>
-            <FooterLink to="/about">Haqqımızda</FooterLink>
-            <FooterLink to="/services">Xidmətlər</FooterLink>
-            <FooterLink to="/hekimler">Həkimlər</FooterLink>
-            <FooterLink to="/contact">Əlaqə</FooterLink>
-          </div>
-
-          {/* Col 3 — Pasiyent */}
-          <div>
-            <ColHead>PASİYENT</ColHead>
-            <FooterLink to="/services">Xidmətlər</FooterLink>
-            <FooterLink to="/randevu">Randevu</FooterLink>
-            <FooterLink to="/about">Məlumatlar</FooterLink>
-          </div>
-
-          {/* Col 4 — Əlaqə */}
-          <div>
-            <ColHead>ƏLAQƏ</ColHead>
-
-            <a href={`tel:${clinic.clinic_phone?.replace(/\s/g,'')}`} style={{
-              color: WHITE, fontSize: 24, fontWeight: 800,
-              display: 'block', marginBottom: 18,
-              textDecoration: 'none', fontFamily: FONT,
-              transition: 'color 0.25s',
-              letterSpacing: '-0.3px',
-            }}
-              onMouseEnter={e => e.currentTarget.style.color = TEAL}
-              onMouseLeave={e => e.currentTarget.style.color = WHITE}
-            >
-              {clinic.clinic_phone}
-            </a>
-
-            <ContactRow
-              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
-              text={clinic.clinic_email}
-            />
-            <ContactRow
-              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>}
-              text={clinic.clinic_address}
-            />
-            <ContactRow
-              icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-              text={clinic.work_hours}
-            />
-
-            <div style={{ marginTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {SOCIALS.map(s => <SocialBtn key={s.label} {...s} />)}
+        {/* Col 1 — Brand */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <img src="/logo.png" alt="Aslan Medical" style={{ height: 36, width: 36, objectFit: 'contain' }} onError={e => (e.target.style.display = 'none')} />
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.08em' }}>ASLAN</div>
+              <div style={{ fontSize: 9, color: TEAL, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>MEDICAL CENTER</div>
             </div>
+          </div>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, margin: '0 0 20px', maxWidth: 260 }}>
+            Azərbaycanda ən müasir tibbi texnologiyalar və peşəkar həkim heyəti ilə xidmətinizdəyik.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { label: 'X',        href: 'https://x.com',         svg: <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+              { label: 'Instagram', href: 'https://instagram.com', svg: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg> },
+              { label: 'LinkedIn',  href: 'https://linkedin.com',  svg: <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg> },
+              { label: 'Facebook',  href: 'https://facebook.com',  svg: <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg> },
+            ].map(s => (
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = 'white' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
+              >{s.svg}</a>
+            ))}
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.12)',
-          marginTop: 48, padding: '20px 0',
-          display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', flexWrap: 'wrap', gap: 12,
-        }}>
-          <span style={{ fontSize: 13, color: MUTED, fontFamily: FONT }}>
-            © 2026 Aslan Medical Center
+        {/* Col 2 — Quick links */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>Keçidlər</h4>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { label: 'Ana Səhifə', to: '/'            },
+              { label: 'Həkimlər',   to: '/hekimler'    },
+              { label: 'Şöbələr',    to: '/departments'  },
+              { label: 'Bloq',       to: '/blog'         },
+              { label: 'Əlaqə',      to: '/contact'      },
+            ].map(l => (
+              <Link key={l.to} to={l.to}
+                style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = TEAL)}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
+              >{l.label}</Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Col 3 — Services */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>Xidmətlər</h4>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {['Randevu Al', 'E-Nəticə', 'Laboratoriya', 'Kardiologiya', 'Nevrologiya', 'Cərrahiyyə'].map(s => (
+              <span key={s} style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{s}</span>
+            ))}
+          </nav>
+        </div>
+
+        {/* Col 4 — Contact */}
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>Əlaqə</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { icon: <svg width="14" height="14" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, text: 'Xətai ray., A. Cəlilov küçəsi, Bakı' },
+              { icon: <svg width="14" height="14" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>, text: '+994 50 836 36 94', href: 'tel:+994508363694' },
+              { icon: <svg width="14" height="14" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>, text: 'info@aslanmedical.az', href: 'mailto:info@aslanmedical.az' },
+              { icon: <svg width="14" height="14" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, text: 'B.E–Cümə: 08:00–20:00' },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <span style={{ marginTop: 1, flexShrink: 0 }}>{item.icon}</span>
+                {item.href
+                  ? <a href={item.href}
+                      style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', transition: 'color 0.2s', lineHeight: 1.5 }}
+                      onMouseEnter={e => (e.currentTarget.style.color = TEAL)}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
+                    >{item.text}</a>
+                  : <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>{item.text}</span>
+                }
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Bottom bar */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '18px 32px' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+            © {year} Aslan Medical Center. Bütün hüquqlar qorunur.
           </span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {['Məxfilik', 'Şərtlər', 'Əlaqə'].map((label, i) => (
-              <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {i > 0 && <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12 }}>|</span>}
-                <a href="#" style={{
-                  fontSize: 13, color: MUTED,
-                  textDecoration: 'none', fontFamily: FONT,
-                  transition: 'color 0.25s',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.color = TEAL}
-                  onMouseLeave={e => e.currentTarget.style.color = MUTED}
-                >{label}</a>
-              </span>
+          <div style={{ display: 'flex', gap: 20 }}>
+            {[['Məxfilik Siyasəti', '/gizlilik'], ['Xidmət Şərtləri', '/xidmet-shertleri']].map(([label, to]) => (
+              <Link key={to} to={to}
+                style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = TEAL)}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
+              >{label}</Link>
             ))}
           </div>
         </div>
       </div>
+
     </footer>
-  );
+  )
 }

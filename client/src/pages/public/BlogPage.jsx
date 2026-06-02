@@ -1,3 +1,4 @@
+import usePageTitle from '../../hooks/usePageTitle'
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
@@ -101,6 +102,7 @@ function BlogCard({ post, index }) {
 }
 
 export default function BlogPage() {
+  usePageTitle('Bloq', 'Tibbi məqalələr, sağlamlıq məsləhətləri.')
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);

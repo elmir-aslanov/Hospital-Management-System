@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { exportToCsv } from '../../utils/exportCsv'
 
 import { BASE } from '../../api/config.js'
 const emptyForm = { fullName: '', email: '', phone: '', bloodGroup: '' }
@@ -120,10 +121,29 @@ export default function AdminPatients() {
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Pasiyentlər</h1>
               <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{search ? filtered.length : total} pasiyent</p>
             </div>
-            <button onClick={openModal} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Yeni Pasiyent
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => exportToCsv('pasiyentler.csv',
+                  patients.map(p => [
+                    p.patientId || '',
+                    p.userId?.fullName || p.fullName || '',
+                    p.userId?.email || '',
+                    p.userId?.phone || '',
+                    p.bloodGroup || '',
+                    new Date(p.createdAt).toLocaleDateString('az-AZ'),
+                  ]),
+                  ['Pasiyent ID', 'Ad Soyad', 'E-poçt', 'Telefon', 'Qan qrupu', 'Tarix']
+                )}
+                style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+              <button onClick={openModal} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Yeni Pasiyent
+              </button>
+            </div>
           </div>
 
           {/* Search */}

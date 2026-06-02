@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
+import usePageTitle from '../../hooks/usePageTitle'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
 const NAVY = '#0a1628'
 
 export default function NotFoundPage() {
+  usePageTitle('Səhifə tapılmadı')
   const navigate = useNavigate()
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, padding: 24 }}>

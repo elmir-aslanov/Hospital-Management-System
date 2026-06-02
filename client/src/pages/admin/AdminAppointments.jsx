@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { exportToCsv } from '../../utils/exportCsv'
 import { BASE } from '../../api/config.js'
 
 const STATUS_COLORS = {
@@ -271,6 +272,23 @@ export default function AdminAppointments() {
         </div>
         <input type="date" value={dateFilter} onChange={e => setDate(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: 9, padding: '6px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white' }} />
         {dateFilter && <button onClick={() => setDate('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 12 }}>Təmizlə</button>}
+        <button
+          onClick={() => exportToCsv('randevular.csv',
+            appts.map(a => [
+              getName(a),
+              getDoctor(a),
+              a.date ? new Date(a.date).toLocaleDateString('az-AZ') : '',
+              getTime(a),
+              a.status || '',
+              a.reason || '',
+            ]),
+            ['Pasiyent', 'Həkim', 'Tarix', 'Saat', 'Status', 'Səbəb']
+          )}
+          style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV
+        </button>
       </div>
 
       {/* Table */}

@@ -1,3 +1,4 @@
+import usePageTitle from '../../hooks/usePageTitle'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -8,6 +9,7 @@ const TEAL = '#00848e'
 const NAVY = '#0a1628'
 
 export default function ContactPage() {
+  usePageTitle('Əlaqə', 'Aslan Medical Center ilə əlaqə saxlayın. Bakı, Azərbaycan.')
   const [form, setForm]       = useState({ name: '', email: '', message: '', agreed: false })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
