@@ -1,3 +1,5 @@
+// ⚠️  DEVELOPMENT ONLY — Never run this in production.
+// This file deletes all users and re-seeds the database.
 import dns from 'dns'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
@@ -6,6 +8,11 @@ dotenv.config()
 dns.setServers(['8.8.8.8', '8.8.4.4'])
 
 import User from './models/User.model.js'
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ SEED REJECTED: Cannot run seed in production environment.');
+  process.exit(1);
+}
 
 const seed = async () => {
   try {
@@ -21,6 +28,7 @@ const seed = async () => {
     await mongoose.connect(process.env.MONGODB_URI)
     console.log('MongoDB connected')
 
+    console.warn('⚠️  WARNING: About to delete all users. NODE_ENV =', process.env.NODE_ENV);
     await User.deleteMany({})
     console.log('Users cleared')
 
