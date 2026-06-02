@@ -45,23 +45,15 @@ export default function ContactPage() {
   return (
     <main style={{ background: '#eef2f7', minHeight: '100vh', fontFamily: FONT }}>
 
-      <section style={{
-        maxWidth: 1140,
-        margin: '0 auto',
-        padding: '28px 32px 28px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 52,
-        alignItems: 'center',
-      }}>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 40px 28px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'start' }}>
 
         {/* LEFT — circular photo */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
-          style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingBottom: 56 }}>
+          style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
           <div style={{
             width: '100%',
-            maxWidth: 360,
+            maxWidth: 380,
             aspectRatio: '1 / 1',
             borderRadius: '50%',
             overflow: 'hidden',
@@ -74,7 +66,7 @@ export default function ContactPage() {
 
           {/* Logo card */}
           <div style={{
-            position: 'absolute', bottom: 0, left: 0,
+            position: 'absolute', bottom: 12, left: 12,
             background: 'white', borderRadius: 14,
             padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
             boxShadow: '0 8px 32px rgba(0,0,0,0.14)', minWidth: 190,
@@ -90,7 +82,7 @@ export default function ContactPage() {
         </motion.div>
 
         {/* RIGHT — form */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} style={{ paddingTop: 8 }}>
 
 <h1 style={{ fontSize: 40, fontWeight: 900, color: NAVY, margin: '0 0 18px', lineHeight: 1.05, fontFamily: "'Raleway', sans-serif" }}>
             Bizimlə<br />Əlaqə
