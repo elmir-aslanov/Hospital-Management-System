@@ -1,9 +1,10 @@
-import HeroSection      from '../../components/HeroSection';
-import AboutDirector   from '../../components/sections/AboutDirector';
+import HeroSection       from '../../components/HeroSection';
+import AboutDirector    from '../../components/sections/AboutDirector';
 import HospitalShowcase from '../../components/sections/HospitalShowcase';
-import DoctorsSection  from '../../components/sections/DoctorsSection';
-import ContactBanner   from '../../components/sections/ContactBanner';
-import PatientStories  from '../../components/sections/PatientStories';
+import DoctorsSection   from '../../components/sections/DoctorsSection';
+import ContactBanner    from '../../components/sections/ContactBanner';
+import PatientStories   from '../../components/sections/PatientStories';
+import PartnersCarousel from '../../components/sections/PartnersCarousel';
 
 export default function HomePage() {
   return (
@@ -13,6 +14,7 @@ export default function HomePage() {
       <HospitalShowcase />
       <DoctorsSection />
       <PatientStories />
+      <PartnersCarousel />
       <ContactBanner />
     </main>
   );
