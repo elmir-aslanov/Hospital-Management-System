@@ -13,6 +13,7 @@ import ProtectedRoute   from './components/ui/ProtectedRoute';
 /* Public */
 import HomePage         from './pages/public/HomePage';
 import UserProfilePage  from './pages/public/UserProfilePage';
+import NotFoundPage     from './pages/public/NotFoundPage';
 import RandevuPage      from './pages/public/RandevuPage';
 import ComingSoon            from './pages/public/ComingSoon';
 import PatientStoriesPage   from './pages/public/PatientStoriesPage';
@@ -157,8 +158,8 @@ function Layout() {
           <Route path="doctors" element={<SiteDoctorsPage />} />
         </Route>
 
-        {/* ── Catch-all — unknown paths redirect to homepage ── */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* ── Catch-all ── */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <Toaster
