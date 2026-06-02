@@ -30,7 +30,7 @@ export default function ContactPage() {
   }
 
   const inputStyle = {
-    width: '100%', height: 42, padding: '0 40px 0 14px',
+    width: '100%', height: 38, padding: '0 40px 0 14px',
     border: '1px solid #d1d5db', borderRadius: 10,
     fontSize: 13.5, fontFamily: FONT, outline: 'none',
     boxSizing: 'border-box', background: 'white', color: '#1f2937',
@@ -43,9 +43,9 @@ export default function ContactPage() {
   }
 
   return (
-    <main style={{ background: '#eef2f7', minHeight: '100vh', fontFamily: FONT }}>
+    <main style={{ background: '#eef2f7', fontFamily: FONT }}>
 
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 40px 28px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'start' }}>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 40px 16px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'start' }}>
 
         {/* LEFT — circular photo */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
@@ -53,7 +53,7 @@ export default function ContactPage() {
 
           <div style={{
             width: '100%',
-            maxWidth: 380,
+            maxWidth: 300,
             aspectRatio: '1 / 1',
             borderRadius: '50%',
             overflow: 'hidden',
@@ -84,7 +84,7 @@ export default function ContactPage() {
         {/* RIGHT — form */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} style={{ paddingTop: 8 }}>
 
-<h1 style={{ fontSize: 40, fontWeight: 900, color: NAVY, margin: '0 0 18px', lineHeight: 1.05, fontFamily: "'Raleway', sans-serif" }}>
+<h1 style={{ fontSize: 32, fontWeight: 900, color: NAVY, margin: '0 0 14px', lineHeight: 1.05, fontFamily: "'Raleway', sans-serif" }}>
             Bizimlə<br />Əlaqə
           </h1>
 
@@ -94,7 +94,7 @@ export default function ContactPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
             {/* Name */}
             <div>
@@ -130,7 +130,7 @@ export default function ContactPage() {
               <textarea value={form.message} onChange={e => set('message', e.target.value)}
                 placeholder="Sizə necə kömək edə bilərik?"
                 rows={3}
-                style={{ ...inputStyle, height: 'auto', padding: '10px 14px', resize: 'none', minHeight: 76 }}
+                style={{ ...inputStyle, height: 'auto', padding: '10px 14px', resize: 'none', minHeight: 68 }}
                 onFocus={e => e.target.style.borderColor = TEAL}
                 onBlur={e => e.target.style.borderColor = '#d1d5db'} />
             </div>
@@ -150,7 +150,7 @@ export default function ContactPage() {
             {/* Submit */}
             <button onClick={handleSubmit} disabled={loading}
               style={{
-                width: '100%', height: 46, background: loading ? '#6b7280' : TEAL,
+                width: '100%', height: 42, background: loading ? '#6b7280' : TEAL,
                 color: 'white', border: 'none', borderRadius: 10,
                 fontSize: 13.5, fontWeight: 700, fontFamily: FONT,
                 cursor: loading ? 'not-allowed' : 'pointer',
