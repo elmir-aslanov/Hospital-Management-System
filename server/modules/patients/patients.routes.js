@@ -12,6 +12,9 @@ import authorize from '../../middleware/rbac.middleware.js';
 
 const router = Router();
 
+// Public — no auth required
+router.get('/search-public', patientsController.searchPublic);
+
 router.use(authenticate);
 
 /**

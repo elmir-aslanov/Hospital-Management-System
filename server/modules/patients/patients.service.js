@@ -182,3 +182,27 @@ export const searchPatients = async ({ query, condition, page = 1, limit = 10 } 
   const total = countResult[0]?.total ?? 0;
   return { patients, total, page: pg, limit: lim };
 };
+
+export const searchPublic = async ({ patientId, birthDate }) => {
+  if (!patientId?.trim()) throw new ApiError(400, 'Pasiyent ID tələb olunur');
+  if (!birthDate)         throw new ApiError(400, 'Doğum tarixi tələb olunur');
+
+  const patient = await Patient.findOne({ patientId: patientId.trim().toUpperCase() })
+    .populate('userId', 'fullName name surname email birthDate');
+  if (!patient) throw new ApiError(404, 'Bu ID ilə pasiyent tapılmadı');
+
+  const userBirth = patient.userId?.birthDate;
+  if (!userBirth) throw new ApiError(404, 'Pasiyent məlumatları tam deyil');
+
+  const inputDate  = new Date(birthDate).toDateString();
+  const storedDate = new Date(userBirth).toDateString();
+  if (inputDate !== storedDate) throw new ApiError(401, 'Doğum tarixi uyğun gəlmir');
+
+  return {
+    patientId:      patient.patientId,
+    fullName:       patient.userId?.fullName || '',
+    bloodGroup:     patient.bloodGroup || null,
+    allergies:      patient.allergies  || [],
+    medicalHistory: patient.medicalHistory?.slice(-3) || [],
+  };
+};

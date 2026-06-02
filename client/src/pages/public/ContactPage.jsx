@@ -45,7 +45,7 @@ export default function ContactPage() {
   return (
     <main style={{ background: '#eef2f7', fontFamily: FONT, paddingTop: 110 }}>
 
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 40px 16px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'center' }}>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0px 40px 16px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'center' }}>
 
         {/* LEFT — circular photo */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
@@ -172,6 +172,52 @@ export default function ContactPage() {
 
           </div>
         </motion.div>
+      </section>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 40px 40px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+
+        <div style={{ background: 'white', borderRadius: 16, padding: '20px 20px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <svg width="20" height="20" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
+          </div>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>ZƏNG EDİN</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {['+994 50 836 36 94'].map(p => (
+              <a key={p} href={`tel:${p.replace(/\s/g,'')}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4b5563', fontSize: 13, textDecoration: 'none', fontFamily: "'Source Sans 3', sans-serif" }}>
+                <svg width="12" height="12" fill="none" stroke="#00848e" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
+                {p}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: 16, padding: '20px 20px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <svg width="20" height="20" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>ÜNVAN</h3>
+          <p style={{ color: '#4b5563', fontSize: 13, margin: 0, lineHeight: 1.65, fontFamily: "'Source Sans 3', sans-serif" }}>
+            Xətai ray., A. Cəlilov küçəsi<br />Bakı, Azərbaycan
+          </p>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: 16, padding: '20px 20px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <svg width="20" height="20" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>İŞ SAATLARİ</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { day: 'B.E – Cümə', hours: '09:00 – 19:00', closed: false },
+            ].map(r => (
+              <div key={r.day} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: "'Source Sans 3', sans-serif" }}>
+                <span style={{ color: '#6b7280', fontWeight: 500 }}>{r.day}</span>
+                <span style={{ fontWeight: 700, color: r.closed ? '#ef4444' : '#111827' }}>{r.hours}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </section>
     </main>
   )

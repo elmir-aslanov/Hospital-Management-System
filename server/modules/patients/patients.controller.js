@@ -47,6 +47,11 @@ export const searchPatients = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, result));
 });
 
+export const searchPublic = asyncHandler(async (req, res) => {
+  const data = await patientsService.searchPublic(req.query);
+  res.json(new ApiResponse(200, data));
+});
+
 export const getPatientByUserId = asyncHandler(async (req, res) => {
   const patient = await Patient.findOne({ userId: req.params.userId })
     .populate('userId', 'fullName email avatar phone')
