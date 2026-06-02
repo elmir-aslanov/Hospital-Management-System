@@ -12,6 +12,7 @@ import ProtectedRoute   from './components/ui/ProtectedRoute';
 
 /* Public */
 import HomePage         from './pages/public/HomePage';
+import UserProfilePage  from './pages/public/UserProfilePage';
 import RandevuPage      from './pages/public/RandevuPage';
 import ComingSoon            from './pages/public/ComingSoon';
 import PatientStoriesPage   from './pages/public/PatientStoriesPage';
@@ -104,6 +105,7 @@ function Layout() {
         <Route path="/randevu"             element={<RandevuPage />} />
         <Route path="/e-netice"            element={<ENeticePage />} />
         <Route path="/elektron-muraciet"   element={<ElektronMuraciet />} />
+        <Route path="/profile"             element={<UserProfilePage />} />
 
         {/* ── Admin ── */}
         <Route path="/admin"              element={<AdminLoginPage />} />

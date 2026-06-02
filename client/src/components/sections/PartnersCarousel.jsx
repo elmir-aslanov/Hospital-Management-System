@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 const TEAL = '#00848e'
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const SLIDE_MS = 420
-const INTERVAL_MS = 3000
+const INTERVAL_MS = 2500
 
 const PARTNERS = [
   { name: 'AzerGold',               logo: '/AzerGold.jpeg'                              },
@@ -116,18 +116,6 @@ export default function PartnersCarousel() {
       }
     }, SLIDE_MS)
   }, [snapIfNeeded])
-
-  // ── dot click: instant snap (no slide) ───────────────────────────────────
-  const goTo = useCallback((i) => {
-    if (lockRef.current) return
-    const target = N + i
-    posRef.current = target
-    setAnimated(false)
-    setPos(target)
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => setAnimated(true))
-    )
-  }, [])
 
   // ── auto-advance ─────────────────────────────────────────────────────────
   useEffect(() => {

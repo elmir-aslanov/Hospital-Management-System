@@ -410,7 +410,7 @@ export default function Navbar() {
                       border: '1px solid rgba(0,0,0,0.06)',
                     }}>
                       {[
-                        { label: 'Profilim', icon: '👤', action: () => { setUserMenuOpen(false); navigate('/patient'); } },
+                        { label: 'Profilim', icon: '👤', action: () => { setUserMenuOpen(false); navigate('/profile'); } },
                         { label: 'Çıxış', icon: '🚪', action: async () => { setUserMenuOpen(false); await authLogout(); navigate('/'); toast.success('Çıxış edildi.'); } },
                       ].map(item => (
                         <div
