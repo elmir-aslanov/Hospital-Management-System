@@ -54,9 +54,15 @@ export const createPrescription = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'patientId, medicine, dose və duration tələb olunur');
   }
 
-  // visitId is optional from dashboard — use a sentinel or require from body
   const visitId = req.body.visitId;
   if (!visitId) throw new ApiError(400, 'visitId tələb olunur');
+
+  const Visit = (await import('../../models/Visit.model.js')).default;
+  const visit = await Visit.findById(visitId);
+  if (!visit) throw new ApiError(404, 'Visit tapılmadı');
+  if (visit.doctorId?.toString() !== doctor._id.toString()) {
+    throw new ApiError(403, 'Bu visit sizə aid deyil');
+  }
 
   const prescription = await Prescription.create({
     visitId,

@@ -27,7 +27,7 @@ export const validateResetPassword = [
     .isLength({ min: 6, max: 6 }).withMessage('OTP must be exactly 6 digits')
     .isNumeric().withMessage('OTP must contain only digits'),
   body('newPassword').notEmpty().withMessage('New password is required')
-    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
 ];
 
 export const validateRequestEmailOtp = [
