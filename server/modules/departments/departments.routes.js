@@ -5,11 +5,11 @@ import authorize    from '../../middleware/rbac.middleware.js';
 
 const router = Router();
 
-// ── Public ─────────────────────────────────────────────────────────────────────
-router.get('/',           ctrl.getPublic);
+// ── Public — no auth ───────────────────────────────────────────────────────────
+router.get('/',           ctrl.getAll);
 router.get('/:slug',      ctrl.getBySlug);
 
-// ── Admin ──────────────────────────────────────────────────────────────────────
+// ── Protected — ADMIN only ─────────────────────────────────────────────────────
 router.use(authenticate);
 router.use(authorize('ADMIN', 'SUPER_ADMIN'));
 
