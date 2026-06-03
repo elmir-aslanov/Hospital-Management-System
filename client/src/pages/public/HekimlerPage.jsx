@@ -19,8 +19,9 @@ function resolveImage(src) {
 }
 
 const SPECIALTIES = [
-  'Hamısı', 'Kardioloq', 'Nevroloq', 'Cərrah',
-  'Pediatr', 'Ortoped', 'Dermatoloq', 'Göz həkimi',
+  'Hamısı', 'Kardiologiya', 'Nevrologiya', 'Cərrahiyyə',
+  'Pediatriya', 'Ortopediya', 'Dermatologiya', 'Göz həkimi',
+  'Ginekologiya', 'Endokrinologiya', 'Dişçilik', 'Laboratoriya', 'Radiodiaqnostika',
 ]
 
 function DoctorCard({ doctor }) {
@@ -85,7 +86,7 @@ function DoctorCard({ doctor }) {
         </div>
 
         {/* Specialty badge */}
-        {doctor.specialization || doctor.specialty && (
+        {(doctor.specialization || doctor.specialty) && (
           <div style={{
             position: 'absolute', bottom: '12px', left: '12px',
             background: TEAL, color: 'white',
@@ -168,10 +169,13 @@ export default function HekimlerPage() {
     const name = d.name || ''
     const matchSearch = !search ||
       name.toLowerCase().includes(search.toLowerCase()) ||
-      d.specialty?.toLowerCase().includes(search.toLowerCase()) ||
+      d.specialization?.toLowerCase().includes(search.toLowerCase()) ||
+      d.userId?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+      d.userId?.specialization?.toLowerCase().includes(search.toLowerCase()) ||
       d.department?.toLowerCase().includes(search.toLowerCase())
     const matchSpec = activeSpec === 'Hamısı' ||
-      d.specialty?.toLowerCase().includes(activeSpec.toLowerCase())
+      d.specialization?.toLowerCase().includes(activeSpec.toLowerCase()) ||
+      d.userId?.specialization?.toLowerCase().includes(activeSpec.toLowerCase())
     return matchSearch && matchSpec
   })
 

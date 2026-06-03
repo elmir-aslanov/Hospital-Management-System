@@ -217,6 +217,228 @@
     "today": "Today",
     "total": "Total"
   },
+  "adminLogin": {
+    "backHome": "Back to homepage",
+    "aria": "Aslan Medical Center system login",
+    "welcomeTitle": "Welcome!",
+    "welcomeText": "Sign in to the Aslan Medical Center management system",
+    "title": "System Login",
+    "subtitle": "Choose your account",
+    "roleAria": "Account role",
+    "roles": {
+      "admin": "Admin",
+      "staff": "Staff",
+      "doctor": "Doctor"
+    },
+    "emailLabel": "Email address",
+    "emailPlaceholder": "Enter your email address",
+    "passwordLabel": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "loading": "Loading...",
+    "secure": "Secure login protected by SSL",
+    "errors": {
+      "generic": "Email or password is incorrect",
+      "request": "An error occurred",
+      "adminRole": "This account is not an admin account",
+      "staffRole": "This account is not a staff account",
+      "doctorRole": "This account is not a doctor account"
+    }
+  },
+  "staffLogin": {
+    "backHome": "Back to homepage",
+    "title": "Staff Login",
+    "subtitle": "Aslan Medical Center — Internal Portal",
+    "roles": {
+      "doctor": "Doctor",
+      "staff": "Staff",
+      "admin": "Admin"
+    },
+    "email": "Email address",
+    "password": "Password",
+    "forgot": "Forgot password?",
+    "submit": "Sign In",
+    "loading": "Loading…",
+    "patientQuestion": "Are you a patient?",
+    "patientLogin": "Patient login →",
+    "validation": "Please fill in all required fields.",
+    "welcome": "Welcome, {{name}}!",
+    "roleDenied": "You do not have permission for this account. (Account role: {{role}})",
+    "errors": {
+      "notFound": "No account was found with this email.",
+      "wrongPassword": "Password is incorrect.",
+      "disabled": "Your account has been disabled. Please contact the administrator.",
+      "server": "Server connection error. Please try again later."
+    }
+  },
+  "adminLayout": {
+    "panel": "Admin Panel",
+    "search": "Search...",
+    "logout": "Sign out",
+    "notifications": "Notifications",
+    "last24": "Last 24 hours",
+    "markAllRead": "Mark all read",
+    "emptyNotifications": "No notifications in the last 24 hours",
+    "nav": {
+      "dashboard": "Home",
+      "doctors": "Doctors",
+      "patients": "Patients",
+      "appointments": "Appointments",
+      "users": "Users",
+      "departments": "Departments",
+      "muraciet": "Requests",
+      "billing": "Billing",
+      "pricelist": "Prices",
+      "lab": "Laboratory",
+      "inventory": "Inventory",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "types": {
+      "appointment": "Appointment",
+      "lab": "Lab",
+      "billing": "Payment",
+      "admission": "Admission",
+      "general": "General"
+    },
+    "time": {
+      "now": "Just now",
+      "minutesAgo": "{{count}} min ago",
+      "hoursAgo": "{{count}} hours ago",
+      "daysAgo": "{{count}} days ago"
+    }
+  },
+  "doctorLayout": {
+    "panel": "Doctor Panel",
+    "fallbackDoctor": "Doctor",
+    "logout": "Sign out",
+    "nav": {
+      "dashboard": "Dashboard",
+      "patients": "My patients",
+      "prescriptions": "Prescriptions",
+      "analyses": "Analyses",
+      "profile": "My profile"
+    }
+  },
+  "randevuPage": {
+    "pageTitle": "Book Appointment",
+    "pageDescription": "Schedule a doctor's appointment with the online appointment system.",
+    "headline": "Get a free\nprofessional\nconsultation",
+    "weekdays": "Mon–Friday",
+    "weekend": "Saturday–Sunday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "closed": "Closed",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "addressLine": "Khatai district, Afiyaddin Jalilov street",
+    "cityCountry": "Baku, Azerbaijan",
+    "benefitsTitle": "💡 Benefits of registration:",
+    "benefitsText": "✓ Track your appointments<br/>✓ Keep your medical history<br/>✓ View results online",
+    "backHome": "Home",
+    "orderTitle": "Book Appointment",
+    "guestSubtitle": "Send an appointment request without registration",
+    "loggedSubtitle": "Schedule a visit with our doctor",
+    "steps": {
+      "personal": "Personal information",
+      "details": "Appointment details",
+      "confirm": "Confirm"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "doctorOptional": "Select doctor (optional)",
+      "departmentDoctor": "Department / Doctor",
+      "dateWanted": "Preferred date",
+      "timeWanted": "Preferred time",
+      "date": "Date",
+      "time": "Time",
+      "doctor": "Doctor",
+      "reason": "Reason for visit",
+      "message": "Message"
+    },
+    "placeholders": {
+      "fullName": "Your first and last name",
+      "email": "email@example.com",
+      "doctorLoading": "Loading doctors...",
+      "doctorSelect": "Select doctor...",
+      "reason": "Your complaint or purpose of the visit...",
+      "message": "Additional notes or complaint..."
+    },
+    "validation": {
+      "fullNameRequired": "Full name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Email format is invalid.",
+      "phoneRequired": "Phone is required",
+      "dateRequired": "Date is required",
+      "requiredFields": "Please fill in all required fields.",
+      "futureRange": "Appointments can only be booked for the next 90 days.",
+      "sundayClosed": "Appointments are not accepted on Sunday.",
+      "doctorUnavailable": "The doctor has no working hours for the selected date.",
+      "scheduleLoading": "Checking the doctor's working hours. Please wait.",
+      "invalidWorkingTime": "The selected time is outside working hours.",
+      "pastTimeToday": "Past times cannot be selected for today.",
+      "noSlots": "Please choose a time within working hours."
+    },
+    "summaryText": "Review your information and submit.",
+    "noDoctor": "Not selected",
+    "noValue": "—",
+    "success": {
+      "guestTitle": "Your request has been received!",
+      "loggedTitle": "Your appointment has been received!",
+      "contactSoon": "We will contact you shortly.",
+      "moreInfo": "For more information:"
+    },
+    "buttons": {
+      "login": "Log in",
+      "register": "Register",
+      "back": "← Back",
+      "next": "Next →",
+      "sending": "Sending...",
+      "send": "Send ✓",
+      "newAppointment": "New Appointment",
+      "patientPortal": "Go to Patient Portal",
+      "order": "Book Appointment →"
+    },
+    "authQuestion": "Already have an account?",
+    "errors": {
+      "generic": "An error occurred",
+      "slotBooked": "This time slot is already booked.",
+      "loginRequired": "Please log in.",
+      "badData": "The information is invalid.",
+      "retry": "An error occurred. Please try again."
+    },
+    "selectTime": "Select time...",
+    "selectDateFirst": "Select a date first...",
+    "pastDate": "Past dates cannot be selected",
+    "timeRequired": "Time is required",
+    "phonePlaceholder": "+994XXXXXXXXX"
+  },
+  "hospitalShowcase": {
+    "title": "Advanced medical technologies shaped into quality healthcare with expert doctors!",
+    "label": "Our Hospital",
+    "locations": {
+      "baku": "Baku",
+      "ankara": "Ankara",
+      "samsun": "Samsun"
+    },
+    "descriptions": {
+      "bakuDesc": "Serving in the center of Baku with a multidisciplinary approach to healthcare, modern infrastructure, and advanced technology capabilities.",
+      "ankaraDesc": "Providing quality healthcare with modern medical equipment and a professional team.",
+      "samsunDesc": "Offering diagnostics and treatment services across a wide range of specialties."
+    }
+  },
+  "contactBanner": {
+    "badge": "Your feedback is valuable to us",
+    "titleLine1": "We are happy to listen to",
+    "titleLine2": "your suggestions and requests",
+    "subtitle": "Share your feedback and suggestions with us so we can improve our service quality together.",
+    "button": "Send an electronic request"
+  },
   "footer": {
     "quickLinks": "Quick Links",
     "services": "Services",

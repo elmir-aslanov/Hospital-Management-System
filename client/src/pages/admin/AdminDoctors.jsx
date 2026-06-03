@@ -141,6 +141,7 @@ export default function AdminDoctors() {
       if (!newFullName.trim())     { setError('Ad Soyad tələb olunur'); return }
       if (!newEmail.trim())        { setError('E-poçt tələb olunur'); return }
       if (!specialization.trim())  { setError('İxtisas tələb olunur'); return }
+      if (!departmentId && !department.trim()) { setError('Şöbə seçilməlidir'); return }
 
       setSaving(true); setError('')
       try {
@@ -414,7 +415,7 @@ export default function AdminDoctors() {
               </div>
 
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={lbl}>Şöbə</label>
+                <label style={lbl}>Şöbə *</label>
                 <select
                   value={departmentId}
                   onChange={e => {
@@ -431,7 +432,7 @@ export default function AdminDoctors() {
                 </select>
               </div>
               <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" placeholder="0" />
-              <MF label="Sıra nömrəsi" value={order} onChange={setOrder} type="number" placeholder="0" />
+              <MF label="Göstərilmə sırası" value={order} onChange={setOrder} type="number" placeholder="0" />
 
               <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <input
@@ -442,7 +443,7 @@ export default function AdminDoctors() {
                   style={{ width: 16, height: 16, accentColor: '#00848e' }}
                 />
                 <label htmlFor="isActive" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>
-                  Saytda göstər (aktiv)
+                  Profil ictimai saytda görünsün
                 </label>
               </div>
 

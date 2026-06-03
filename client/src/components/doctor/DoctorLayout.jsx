@@ -1,4 +1,5 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const NAV = [
   { key: 'dashboard',     label: 'Dashboard',    path: '/doctor/dashboard',     icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
@@ -8,16 +9,9 @@ const NAV = [
   { key: 'profile',       label: 'Profilim',     path: '/doctor/profile',       icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
 ]
 
-const PAGE_TITLES = {
-  dashboard:     'Dashboard',
-  patients:      'Xəstələrim',
-  prescriptions: 'Reseptlər',
-  analyses:      'Analizlər',
-  profile:       'Profilim',
-}
-
 export default function DoctorLayout({ children, activePage }) {
   const navigate  = useNavigate()
+  const { t } = useTranslation()
   const doctorUser = JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('doctorUser') || '{}')
   const initial   = doctorUser?.fullName?.[0]?.toUpperCase() || 'D'
 
@@ -44,7 +38,7 @@ export default function DoctorLayout({ children, activePage }) {
           </div>
           <div>
             <div style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>Aslan Medical</div>
-            <div style={{ color: '#475569', fontSize: 10 }}>Həkim Paneli</div>
+            <div style={{ color: '#475569', fontSize: 10 }}>{t('doctorLayout.panel')}</div>
           </div>
         </div>
 
@@ -67,7 +61,7 @@ export default function DoctorLayout({ children, activePage }) {
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 {item.icon}
-                <span style={{ flex: 1 }}>{item.label}</span>
+                <span style={{ flex: 1 }}>{t(`doctorLayout.nav.${item.key}`)}</span>
                 {active && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00848e' }} />}
               </div>
             )
@@ -80,7 +74,7 @@ export default function DoctorLayout({ children, activePage }) {
             onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent' }}
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Çıxış</span>
+            <span>{t('doctorLayout.logout')}</span>
           </div>
         </div>
       </aside>
@@ -90,11 +84,11 @@ export default function DoctorLayout({ children, activePage }) {
 
         {/* TOPBAR */}
         <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(241,245,249,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f1b2d' }}>{PAGE_TITLES[activePage] || 'Həkim Paneli'}</h1>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f1b2d' }}>{t(`doctorLayout.nav.${activePage}`, { defaultValue: t('doctorLayout.panel') })}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '5px 14px 5px 6px' }}>
             <div style={{ width: 30, height: 30, borderRadius: 7, background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 700 }}>{initial}</div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1b2d' }}>{doctorUser?.fullName || 'Həkim'}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1b2d' }}>{doctorUser?.fullName || t('doctorLayout.fallbackDoctor')}</div>
               <div style={{ fontSize: 10, color: '#94a3b8' }}>{doctorUser?.specialization || doctorUser?.role || 'DOCTOR'}</div>
             </div>
           </div>

@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import User from '../../models/User.model.js';
+import OTP from '../../models/OTP.model.js';
 import ApiError from '../../utils/ApiError.js';
+import sendEmail from '../../utils/sendEmail.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/generateTokens.js';
 import logAction from '../../utils/auditLogger.js';
 
@@ -19,6 +21,30 @@ export const registerUser = async ({ fullName, email, password }, req) => {
 
   const role = 'PATIENT';
   const user = await User.create({ fullName, email, password, role });
+
+  // Send email verification OTP
+  try {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    await OTP.create({ email, type: 'email_verify', hashedOtp: otp, expiresAt });
+    await sendEmail({
+      to: email,
+      subject: 'Aslan Medical — E-poçt doğrulaması',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px">
+          <h2 style="color:#0a1628">E-poçtunuzu təsdiqləyin</h2>
+          <p style="color:#475569">Aşağıdakı kodu daxil edin:</p>
+          <div style="font-size:36px;font-weight:900;letter-spacing:12px;color:#00848e;text-align:center;padding:24px;background:#f0fafb;border-radius:12px;margin:20px 0">
+            ${otp}
+          </div>
+          <p style="color:#94a3b8;font-size:13px">Kod 10 dəqiqə ərzində etibarlıdır.</p>
+        </div>
+      `,
+    });
+  } catch (e) {
+    console.error('Email OTP send failed:', e.message);
+  }
+
   const accessToken  = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id);
 
@@ -37,6 +63,9 @@ export const loginUser = async ({ email, password }, req) => {
   const valid = await user.comparePassword(password);
   if (!valid) throw new ApiError(401, 'Invalid credentials');
   if (!user.isActive) throw new ApiError(403, 'Account is deactivated');
+  if (!user.isEmailVerified && user.role === 'PATIENT') {
+    throw new ApiError(403, 'E-poçtunuz təsdiqlənməyib. Zəhmət olmasa email-inizə göndərilən kodu daxil edin.');
+  }
 
   const accessToken  = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id);

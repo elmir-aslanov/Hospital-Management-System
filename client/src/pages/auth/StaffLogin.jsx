@@ -1,6 +1,7 @@
 /* eslint-disable */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import api from '../../api/axios';
 
@@ -21,7 +22,7 @@ function roleToRoute(role = '') {
 const TABS = [
   {
     key:          'doctor',
-    label:        'Həkim',
+    labelKey:     'staffLogin.roles.doctor',
     icon:         '👨‍⚕️',
     allowedRoles: ['DOCTOR'],
     btnBg:        TEAL,
@@ -29,7 +30,7 @@ const TABS = [
   },
   {
     key:          'nurse',
-    label:        'Tibb Bacısı',
+    labelKey:     'staffLogin.roles.staff',
     icon:         '👩‍⚕️',
     allowedRoles: ['NURSE', 'RECEPTIONIST', 'LAB_TECHNICIAN'],
     btnBg:        '#2d7a6e',
@@ -37,7 +38,7 @@ const TABS = [
   },
   {
     key:          'admin',
-    label:        'Admin',
+    labelKey:     'staffLogin.roles.admin',
     icon:         '🔐',
     allowedRoles: ['ADMIN', 'SUPER_ADMIN'],
     btnBg:        '#1a2b4a',
@@ -64,6 +65,7 @@ function focusOut(e) {
 
 export default function StaffLogin() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('doctor');
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -82,7 +84,7 @@ export default function StaffLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      toast.warning('Zəhmət olmasa bütün sahələri doldurun.');
+      toast.warning(t('staffLogin.validation'));
       return;
     }
     setLoading(true);
@@ -91,7 +93,7 @@ export default function StaffLogin() {
       const { user, accessToken } = data.data;
 
       if (!tab.allowedRoles.includes(user.role?.toUpperCase())) {
-        toast.error(`Bu hesab üçün icazəniz yoxdur. (Hesab rolu: ${user.role})`);
+        toast.error(t('staffLogin.roleDenied', { role: user.role }));
         setLoading(false);
         return;
       }
@@ -99,14 +101,14 @@ export default function StaffLogin() {
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
       window.dispatchEvent(new Event('storage'));
-      toast.success(`Xoş gəldiniz, ${user.fullName}!`);
+      toast.success(t('staffLogin.welcome', { name: user.fullName }));
       navigate(roleToRoute(user.role));
     } catch (err) {
       const status = err?.response?.status;
-      if      (status === 404) toast.error('Bu e-poçtla hesab tapılmadı.');
-      else if (status === 401) toast.error('Şifrə yanlışdır.');
-      else if (status === 403) toast.error('Hesabınız deaktiv edilib. Administratorla əlaqə saxlayın.');
-      else                     toast.error('Serverlə əlaqə xətası. Bir az sonra yenidən cəhd edin.');
+      if      (status === 404) toast.error(t('staffLogin.errors.notFound'));
+      else if (status === 401) toast.error(t('staffLogin.errors.wrongPassword'));
+      else if (status === 403) toast.error(t('staffLogin.errors.disabled'));
+      else                     toast.error(t('staffLogin.errors.server'));
     } finally {
       setLoading(false);
     }
@@ -137,7 +139,7 @@ export default function StaffLogin() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
-          Ana səhifəyə qayıt
+          {t('staffLogin.backHome')}
         </button>
 
         {/* Header */}
@@ -157,9 +159,9 @@ export default function StaffLogin() {
           <h1 style={{
             fontSize: '26px', fontWeight: 800,
             color: '#f7fafc', fontFamily: FONT, margin: '0 0 6px',
-          }}>Əməkdaş Girişi</h1>
+          }}>{t('staffLogin.title')}</h1>
           <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.45)', fontFamily: FONT, margin: 0 }}>
-            Aslan Medical Center — Daxili Portal
+            {t('staffLogin.subtitle')}
           </p>
         </div>
 
@@ -179,9 +181,9 @@ export default function StaffLogin() {
             borderRadius: '12px', padding: '4px',
             marginBottom: '28px',
           }}>
-            {TABS.map(t => (
-              <button key={t.key}
-                onClick={() => switchTab(t.key)}
+            {TABS.map(item => (
+              <button key={item.key}
+                onClick={() => switchTab(item.key)}
                 style={{
                   flex: 1,
                   display: 'flex', alignItems: 'center',
@@ -189,15 +191,15 @@ export default function StaffLogin() {
                   padding: '9px 8px', borderRadius: '9px',
                   border: 'none', cursor: 'pointer',
                   fontSize: '13px', fontWeight: 600, fontFamily: FONT,
-                  background: activeTab === t.key ? t.btnBg : 'transparent',
-                  color: activeTab === t.key ? '#fff' : 'rgba(255,255,255,0.45)',
+                  background: activeTab === item.key ? item.btnBg : 'transparent',
+                  color: activeTab === item.key ? '#fff' : 'rgba(255,255,255,0.45)',
                   transition: 'all 0.2s',
-                  boxShadow: activeTab === t.key ? `0 2px 10px ${t.btnBg}66` : 'none',
+                  boxShadow: activeTab === item.key ? `0 2px 10px ${item.btnBg}66` : 'none',
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span style={{ fontSize: '15px' }}>{t.icon}</span>
-                {t.label}
+                <span style={{ fontSize: '15px' }}>{item.icon}</span>
+                {t(item.labelKey)}
               </button>
             ))}
           </div>
@@ -210,7 +212,7 @@ export default function StaffLogin() {
               <label style={{
                 display: 'block', fontSize: '13px', fontWeight: 600,
                 color: 'rgba(255,255,255,0.6)', marginBottom: '6px', fontFamily: FONT,
-              }}>E-poçt ünvanı</label>
+              }}>{t('staffLogin.email')}</label>
               <input
                 type="email" placeholder="email@aslanmedical.az"
                 value={email} onChange={e => setEmail(e.target.value)}
@@ -226,7 +228,7 @@ export default function StaffLogin() {
               <label style={{
                 display: 'block', fontSize: '13px', fontWeight: 600,
                 color: 'rgba(255,255,255,0.6)', marginBottom: '6px', fontFamily: FONT,
-              }}>Şifrə</label>
+              }}>{t('staffLogin.password')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -266,7 +268,7 @@ export default function StaffLogin() {
                 }}
                 onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                 onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-              >Şifrəni unutmusunuz?</span>
+              >{t('staffLogin.forgot')}</span>
             </div>
 
             {/* Submit */}
@@ -284,7 +286,7 @@ export default function StaffLogin() {
               onMouseEnter={e => { if (!loading) { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
             >
-              {loading ? 'Yüklənir…' : 'Daxil Ol'}
+              {loading ? t('staffLogin.loading') : t('staffLogin.submit')}
             </button>
           </form>
 
@@ -293,13 +295,13 @@ export default function StaffLogin() {
             textAlign: 'center', marginTop: '24px',
             fontSize: '13px', color: 'rgba(255,255,255,0.3)', fontFamily: FONT,
           }}>
-            Pasiyentsiniz?{' '}
+            {t('staffLogin.patientQuestion')}{' '}
             <span
               onClick={() => navigate('/login')}
               style={{ color: 'rgba(255,255,255,0.55)', cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.color = '#fff'}
               onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.55)'}
-            >Pasiyent girişi →</span>
+            >{t('staffLogin.patientLogin')}</span>
           </p>
         </div>
       </div>

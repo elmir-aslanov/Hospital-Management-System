@@ -1,5 +1,6 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BASE } from '../../api/config.js'
 import AvatarUpload from '../common/AvatarUpload'
 
@@ -21,12 +22,13 @@ const NAV = [
 
 export default function AdminLayout({ children, activePage }) {
   const navigate   = useNavigate()
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [unreadMuraciet, setUnreadMuraciet] = useState(0)
   const [notifs, setNotifs]               = useState([])
   const [unreadCount, setUnreadCount]     = useState(0)
   const [notifOpen, setNotifOpen]         = useState(false)
-  const [notifLoading, setNotifLoading]   = useState(false)
+  const [notificationNow, setNotificationNow] = useState(0)
   const adminUser  = JSON.parse(localStorage.getItem('adminUser') || '{}')
   const [adminPhoto, setAdminPhoto] = useState(
     (() => { try { return JSON.parse(localStorage.getItem('user') || '{}').photoUrl || '' } catch { return '' } })()
@@ -56,14 +58,13 @@ export default function AdminLayout({ children, activePage }) {
       .then(d => {
         const list = d.data?.notifications || []
         const now  = Date.now()
+        setNotificationNow(now)
         const last24 = list.filter(n => now - new Date(n.createdAt).getTime() < 86400000)
         setNotifs(last24)
         setUnreadCount(d.data?.unreadCount || 0)
       })
       .catch(() => {})
   }, [])
-
-  const initial    = adminUser?.fullName?.[0]?.toUpperCase() || 'A'
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
@@ -92,21 +93,22 @@ export default function AdminLayout({ children, activePage }) {
   }
 
   const typeColor = (type) => ({
-    appointment: { bg: '#eff6ff', color: '#2563eb', label: 'Randevu' },
-    lab:         { bg: '#f0fdf4', color: '#16a34a', label: 'Lab' },
-    billing:     { bg: '#fefce8', color: '#ca8a04', label: 'Ödəniş' },
-    admission:   { bg: '#fdf4ff', color: '#9333ea', label: 'Qəbul' },
-    general:     { bg: '#f8fafc', color: '#64748b', label: 'Ümumi' },
-  }[type] || { bg: '#f8fafc', color: '#64748b', label: 'Ümumi' })
+    appointment: { bg: '#eff6ff', color: '#2563eb', label: t('adminLayout.types.appointment') },
+    lab:         { bg: '#f0fdf4', color: '#16a34a', label: t('adminLayout.types.lab') },
+    billing:     { bg: '#fefce8', color: '#ca8a04', label: t('adminLayout.types.billing') },
+    admission:   { bg: '#fdf4ff', color: '#9333ea', label: t('adminLayout.types.admission') },
+    general:     { bg: '#f8fafc', color: '#64748b', label: t('adminLayout.types.general') },
+  }[type] || { bg: '#f8fafc', color: '#64748b', label: t('adminLayout.types.general') })
 
   const timeAgo = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime()
+    if (!notificationNow) return t('adminLayout.time.now')
+    const diff = notificationNow - new Date(dateStr).getTime()
     const m = Math.floor(diff / 60000)
-    if (m < 1)  return 'İndicə'
-    if (m < 60) return `${m} dəq əvvəl`
+    if (m < 1)  return t('adminLayout.time.now')
+    if (m < 60) return t('adminLayout.time.minutesAgo', { count: m })
     const h = Math.floor(m / 60)
-    if (h < 24) return `${h} saat əvvəl`
-    return `${Math.floor(h / 24)} gün əvvəl`
+    if (h < 24) return t('adminLayout.time.hoursAgo', { count: h })
+    return t('adminLayout.time.daysAgo', { count: Math.floor(h / 24) })
   }
 
   return (
@@ -125,7 +127,7 @@ export default function AdminLayout({ children, activePage }) {
           </div>
           <div>
             <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Aslan Medical</div>
-            <div style={{ color: '#475569', fontSize: 11 }}>Admin Panel</div>
+            <div style={{ color: '#475569', fontSize: 11 }}>{t('adminLayout.panel')}</div>
           </div>
         </div>
 
@@ -148,7 +150,7 @@ export default function AdminLayout({ children, activePage }) {
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 {item.icon}
-                <span style={{ flex: 1 }}>{item.label}</span>
+                <span style={{ flex: 1 }}>{t(`adminLayout.nav.${item.key}`)}</span>
                 {item.key === 'muraciet' && unreadMuraciet > 0 && !active && (
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444' }} />
                 )}
@@ -164,7 +166,7 @@ export default function AdminLayout({ children, activePage }) {
             onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent' }}
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Çıxış</span>
+            <span>{t('adminLayout.logout')}</span>
           </div>
         </div>
       </aside>
@@ -193,7 +195,7 @@ export default function AdminLayout({ children, activePage }) {
             <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
               <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Axtar..." style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 14px 8px 36px', fontSize: 13, color: '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('adminLayout.search')} style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 14px 8px 36px', fontSize: 13, color: '#64748b', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ position: 'relative' }}>
@@ -217,12 +219,12 @@ export default function AdminLayout({ children, activePage }) {
                   {/* Header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px', borderBottom: '1px solid #f1f5f9' }}>
                     <div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0f1b2d' }}>Bildirişlər</span>
-                      <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 6 }}>Son 24 saat</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0f1b2d' }}>{t('adminLayout.notifications')}</span>
+                      <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 6 }}>{t('adminLayout.last24')}</span>
                     </div>
                     {unreadCount > 0 && (
                       <button onClick={markAllRead} style={{ fontSize: 11, color: '#00848e', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                        Hamısını oxu
+                        {t('adminLayout.markAllRead')}
                       </button>
                     )}
                   </div>
@@ -231,7 +233,7 @@ export default function AdminLayout({ children, activePage }) {
                   <div style={{ maxHeight: 380, overflowY: 'auto' }}>
                     {notifs.length === 0 ? (
                       <div style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
-                        Son 24 saatda bildiriş yoxdur
+                        {t('adminLayout.emptyNotifications')}
                       </div>
                     ) : notifs.map(n => {
                       const tc = typeColor(n.type)
@@ -269,7 +271,9 @@ export default function AdminLayout({ children, activePage }) {
                   try {
                     const u = JSON.parse(localStorage.getItem('user') || '{}')
                     localStorage.setItem('user', JSON.stringify({ ...u, photoUrl: url }))
-                  } catch {}
+                  } catch {
+                    // Ignore malformed localStorage user data; avatar update already succeeded.
+                  }
                 }}
               />
               <div>

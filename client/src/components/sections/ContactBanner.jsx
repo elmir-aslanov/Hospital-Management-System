@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const ContactBanner = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const isMobile = window.innerWidth < 768
 
   return (
@@ -58,18 +60,18 @@ const ContactBanner = () => {
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#0E8F96', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Sizin rəyiniz bizim üçün dəyərlidir
+            {t('contactBanner.badge')}
           </span>
         </div>
 
         {/* Heading */}
         <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight: 800, color: '#0B1D34', lineHeight: 1.15, marginBottom: 20 }}>
-          Təklif və ya tələblərinizi<br/>dinləməkdən məmnun olarıq
+          {t('contactBanner.titleLine1')}<br/>{t('contactBanner.titleLine2')}
         </h2>
 
         {/* Subtitle */}
         <p style={{ fontSize: 16, color: '#4B6473', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 36px' }}>
-          Rəy və təkliflərinizi bizimlə paylaşın, xidmət keyfiyyətimizi birlikdə artıraq və daha yaxşısını birlikdə edək.
+          {t('contactBanner.subtitle')}
         </p>
 
         {/* Button */}
@@ -96,7 +98,7 @@ const ContactBanner = () => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
           </svg>
-          Elektron müraciət ünvanla
+          {t('contactBanner.button')}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6"/>
           </svg>

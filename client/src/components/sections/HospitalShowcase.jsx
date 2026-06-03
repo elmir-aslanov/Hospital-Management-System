@@ -1,15 +1,17 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
 
 const hospitals = [
-  { name: 'Aslan Medical Center', location: 'Bakı', image: '/AslanMedical2.png', desc: 'Sağlamlıqda multidisiplinar yanaşması, müasir infrastrukturu və texnologiya imkanları ilə Bakının mərkəzində xidmət göstərir.' },
-  { name: 'Aslan Medical Center', location: 'Ankara', image: '/Filial1.png', desc: 'Müasir tibbi avadanlıqlar və peşəkar heyəti ilə keyfiyyətli səhiyyə xidməti göstərir.' },
-  { name: 'Aslan Medical Center', location: 'Samsun', image: '/Filial2.png', desc: 'Geniş ixtisas üzrə diaqnostika və müalicə xidmətləri təklif edir.' },
+  { name: 'Aslan Medical Center', locationKey: 'baku', image: '/AslanMedical2.png', descKey: 'bakuDesc' },
+  { name: 'Aslan Medical Center', locationKey: 'ankara', image: '/Filial1.png', descKey: 'ankaraDesc' },
+  { name: 'Aslan Medical Center', locationKey: 'samsun', image: '/Filial2.png', descKey: 'samsunDesc' },
 ]
 
 export default function HospitalShowcase() {
+  const { t } = useTranslation()
   const isMobile = window.innerWidth < 768
   const [active, setActive] = useState(1)
 
@@ -51,7 +53,7 @@ export default function HospitalShowcase() {
               marginBottom: '40px',
               fontFamily: FONT,
             }}>
-              Ekspert həkimlərlə keyfiyyətli səhiyyəyə çevrilmiş qabaqcıl tibbi texnologiyalar!
+              {t('hospitalShowcase.title')}
             </h2>
 
             {/* Label + arrows */}
@@ -62,7 +64,7 @@ export default function HospitalShowcase() {
                 color: '#0a1628',
                 fontFamily: FONT,
               }}>
-                Xəstəxanamız
+                {t('hospitalShowcase.label')}
               </span>
             </div>
 
@@ -91,7 +93,7 @@ export default function HospitalShowcase() {
                     marginTop: '4px', marginBottom: 0,
                     fontFamily: FONT,
                   }}>
-                    {h.location}
+                    {t(`hospitalShowcase.locations.${h.locationKey}`)}
                   </p>
                 </div>
               ))}
@@ -129,13 +131,13 @@ export default function HospitalShowcase() {
                 color: 'white', fontSize: '20px', fontWeight: 700,
                 margin: 0, marginBottom: '8px', fontFamily: FONT,
               }}>
-                {hospitals[active].location}
+                {t(`hospitalShowcase.locations.${hospitals[active].locationKey}`)}
               </h3>
               <p style={{
                 color: 'white', fontSize: '14px', lineHeight: 1.6,
                 margin: 0, fontFamily: FONT,
               }}>
-                {hospitals[active].desc}
+                {t(`hospitalShowcase.descriptions.${hospitals[active].descKey}`)}
               </p>
             </div>
           </div>

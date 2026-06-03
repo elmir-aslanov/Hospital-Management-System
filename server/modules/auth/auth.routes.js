@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as authController from './auth.controller.js';
+
 import { requestEmailOtp, verifyEmailOtp } from './otp.controller.js';
 import {
   validateRegister, validateLogin,
@@ -170,5 +171,8 @@ router.post('/change-password', authenticate, authController.changePassword);
 // Email OTP patient login
 router.post('/request-email-otp', authLimiter, requestEmailOtp);
 router.post('/verify-email-otp',  authLimiter, verifyEmailOtp);
+
+// Email address verification after registration
+router.post('/verify-email', authLimiter, authController.verifyEmail);
 
 export default router;

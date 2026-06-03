@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
+import useLegacyI18nDom from './hooks/useLegacyI18nDom';
 import { AuthProvider } from './context/AuthContext';
 import Navbar           from './components/Navbar';
 import Footer           from './components/Footer';
@@ -53,6 +54,7 @@ import ForgotPassword   from './pages/auth/ForgotPassword';
 
 /* Patient */
 import PatientPortal    from './pages/patient/PatientPortal';
+import PatientMessages  from './pages/patient/PatientMessages';
 
 /* Dashboard */
 import DashboardLayout  from './pages/dashboard/DashboardLayout';
@@ -83,6 +85,7 @@ const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/for
 const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin', '/doctor'];
 
 function Layout() {
+  useLegacyI18nDom();
   const { pathname } = useLocation();
   const hideChrome = HIDE_CHROME_EXACT.has(pathname) ||
     HIDE_CHROME_PREFIX.some(p => pathname.startsWith(p));
@@ -141,6 +144,11 @@ function Layout() {
         <Route path="/patient" element={
           <ProtectedRoute allowedRoles={['PATIENT']}>
             <PatientPortal />
+          </ProtectedRoute>
+        } />
+        <Route path="/patient/messages" element={
+          <ProtectedRoute allowedRoles={['PATIENT']}>
+            <PatientMessages />
           </ProtectedRoute>
         } />
 

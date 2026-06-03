@@ -217,6 +217,228 @@
     "today": "Bu gün",
     "total": "Ümumi"
   },
+  "adminLogin": {
+    "backHome": "Ana səhifəyə qayıt",
+    "aria": "Aslan Medical Center sistem girişi",
+    "welcomeTitle": "Xoş gəldiniz!",
+    "welcomeText": "Aslan Medical Center idarəetmə sisteminə giriş edin",
+    "title": "Sistem Girişi",
+    "subtitle": "Hesabınızı seçin",
+    "roleAria": "Hesab rolu",
+    "roles": {
+      "admin": "Admin",
+      "staff": "Staff",
+      "doctor": "Həkim"
+    },
+    "emailLabel": "E-poçt ünvanı",
+    "emailPlaceholder": "E-poçt ünvanınızı daxil edin",
+    "passwordLabel": "Şifrə",
+    "showPassword": "Şifrəni göstər",
+    "hidePassword": "Şifrəni gizlət",
+    "forgot": "Şifrəni unutmusunuz?",
+    "submit": "Daxil ol",
+    "loading": "Yüklənir...",
+    "secure": "Təhlükəsiz giriş SSL ilə qorunur",
+    "errors": {
+      "generic": "E-poçt və ya şifrə yanlışdır",
+      "request": "Xəta baş verdi",
+      "adminRole": "Bu hesab admin deyil",
+      "staffRole": "Bu hesab staff deyil",
+      "doctorRole": "Bu hesab həkim deyil"
+    }
+  },
+  "staffLogin": {
+    "backHome": "Ana səhifəyə qayıt",
+    "title": "Əməkdaş Girişi",
+    "subtitle": "Aslan Medical Center — Daxili Portal",
+    "roles": {
+      "doctor": "Həkim",
+      "staff": "Staff",
+      "admin": "Admin"
+    },
+    "email": "E-poçt ünvanı",
+    "password": "Şifrə",
+    "forgot": "Şifrəni unutmusunuz?",
+    "submit": "Daxil Ol",
+    "loading": "Yüklənir…",
+    "patientQuestion": "Pasiyentsiniz?",
+    "patientLogin": "Pasiyent girişi →",
+    "validation": "Zəhmət olmasa bütün sahələri doldurun.",
+    "welcome": "Xoş gəldiniz, {{name}}!",
+    "roleDenied": "Bu hesab üçün icazəniz yoxdur. (Hesab rolu: {{role}})",
+    "errors": {
+      "notFound": "Bu e-poçtla hesab tapılmadı.",
+      "wrongPassword": "Şifrə yanlışdır.",
+      "disabled": "Hesabınız deaktiv edilib. Administratorla əlaqə saxlayın.",
+      "server": "Serverlə əlaqə xətası. Bir az sonra yenidən cəhd edin."
+    }
+  },
+  "adminLayout": {
+    "panel": "Admin Panel",
+    "search": "Axtar...",
+    "logout": "Çıxış",
+    "notifications": "Bildirişlər",
+    "last24": "Son 24 saat",
+    "markAllRead": "Hamısını oxu",
+    "emptyNotifications": "Son 24 saatda bildiriş yoxdur",
+    "nav": {
+      "dashboard": "Ana səhifə",
+      "doctors": "Həkimlər",
+      "patients": "Pasiyentlər",
+      "appointments": "Randevular",
+      "users": "İstifadəçilər",
+      "departments": "Şöbələr",
+      "muraciet": "Müraciətlər",
+      "billing": "Billing",
+      "pricelist": "Qiymətlər",
+      "lab": "Laboratoriya",
+      "inventory": "Anbar",
+      "analytics": "Analitika",
+      "settings": "Ayarlar"
+    },
+    "types": {
+      "appointment": "Randevu",
+      "lab": "Lab",
+      "billing": "Ödəniş",
+      "admission": "Qəbul",
+      "general": "Ümumi"
+    },
+    "time": {
+      "now": "İndicə",
+      "minutesAgo": "{{count}} dəq əvvəl",
+      "hoursAgo": "{{count}} saat əvvəl",
+      "daysAgo": "{{count}} gün əvvəl"
+    }
+  },
+  "doctorLayout": {
+    "panel": "Həkim Paneli",
+    "fallbackDoctor": "Həkim",
+    "logout": "Çıxış",
+    "nav": {
+      "dashboard": "Dashboard",
+      "patients": "Xəstələrim",
+      "prescriptions": "Reseptlər",
+      "analyses": "Analizlər",
+      "profile": "Profilim"
+    }
+  },
+  "randevuPage": {
+    "pageTitle": "Randevu Al",
+    "pageDescription": "Onlayn randevu sistemi ilə həkimə görüş təyin edin.",
+    "headline": "Pulsuz peşəkar\nkonsultasiya\nalın",
+    "weekdays": "B.E–Cümə",
+    "weekend": "Şənbə–Bazar",
+    "saturday": "Şənbə",
+    "sunday": "Bazar",
+    "closed": "Bağlıdır",
+    "phone": "Telefon",
+    "email": "Email",
+    "address": "Ünvan",
+    "addressLine": "Xətai ray, Afiyəddin Cəlilov küçəsi",
+    "cityCountry": "Bakı, Azərbaycan",
+    "benefitsTitle": "💡 Qeydiyyatlı olmaq üstünlükləri:",
+    "benefitsText": "✓ Randevularınızı izləyin<br/>✓ Tibbi tarixi saxlayın<br/>✓ Nəticələrə onlayn baxın",
+    "backHome": "Ana Səhifə",
+    "orderTitle": "Randevu Sifariş Et",
+    "guestSubtitle": "Qeydiyyatsız randevu müraciəti göndərin",
+    "loggedSubtitle": "Həkimimizlə görüş təyin edin",
+    "steps": {
+      "personal": "Şəxsi məlumatlar",
+      "details": "Randevu detalları",
+      "confirm": "Təsdiq"
+    },
+    "fields": {
+      "fullName": "Ad Soyad",
+      "email": "E-poçt",
+      "phone": "Telefon",
+      "doctorOptional": "Həkim seçin (istəyə bağlı)",
+      "departmentDoctor": "Şöbə / Həkim",
+      "dateWanted": "İstədiyiniz tarix",
+      "timeWanted": "İstədiyiniz vaxt",
+      "date": "Tarix",
+      "time": "Vaxt",
+      "doctor": "Həkim",
+      "reason": "Müayinə səbəbi",
+      "message": "Mesaj"
+    },
+    "placeholders": {
+      "fullName": "Adınız və soyadınız",
+      "email": "email@example.com",
+      "doctorLoading": "Həkimlər yüklənir...",
+      "doctorSelect": "Həkim seçin...",
+      "reason": "Şikayətiniz və ya müayinənin məqsədi...",
+      "message": "Əlavə qeydlər və ya şikayətiniz..."
+    },
+    "validation": {
+      "fullNameRequired": "Ad Soyad tələb olunur",
+      "emailRequired": "E-poçt tələb olunur",
+      "emailInvalid": "E-poçt formatı düzgün deyil.",
+      "phoneRequired": "Telefon tələb olunur",
+      "dateRequired": "Tarix seçilməlidir",
+      "requiredFields": "Zəhmət olmasa bütün məcburi sahələri doldurun.",
+      "futureRange": "Randevu yalnız növbəti 90 gün üçün seçilə bilər.",
+      "sundayClosed": "Bazar günü randevu qəbul edilmir.",
+      "doctorUnavailable": "Seçilmiş tarix üçün həkimin qəbul saatı yoxdur.",
+      "scheduleLoading": "Həkimin qəbul saatları yoxlanılır. Zəhmət olmasa gözləyin.",
+      "invalidWorkingTime": "Seçilmiş vaxt iş saatlarına uyğun deyil.",
+      "pastTimeToday": "Bu gün üçün keçmiş saat seçilə bilməz.",
+      "noSlots": "Zəhmət olmasa iş saatlarına uyğun vaxt seçin."
+    },
+    "summaryText": "Məlumatlarınızı yoxlayın və göndərin.",
+    "noDoctor": "Seçilməyib",
+    "noValue": "—",
+    "success": {
+      "guestTitle": "Müraciətiniz qəbul edildi!",
+      "loggedTitle": "Randevunuz qəbul edildi!",
+      "contactSoon": "Tezliklə sizinlə əlaqə saxlanılacaq.",
+      "moreInfo": "Ətraflı məlumat üçün:"
+    },
+    "buttons": {
+      "login": "Daxil olun",
+      "register": "Qeydiyyatdan keçin",
+      "back": "← Geri",
+      "next": "İrəli →",
+      "sending": "Göndərilir...",
+      "send": "Göndər ✓",
+      "newAppointment": "Yeni Randevu",
+      "patientPortal": "Pasiyent Portalına Keç",
+      "order": "Randevu Sifariş Et →"
+    },
+    "authQuestion": "Artıq hesabınız var?",
+    "errors": {
+      "generic": "Xəta baş verdi",
+      "slotBooked": "Bu vaxt artıq sifarişlidir.",
+      "loginRequired": "Daxil olun.",
+      "badData": "Məlumatlar yanlışdır.",
+      "retry": "Xəta baş verdi. Yenidən cəhd edin."
+    },
+    "selectTime": "Vaxt seçin...",
+    "selectDateFirst": "Əvvəl tarix seçin...",
+    "pastDate": "Keçmiş tarix seçilə bilməz",
+    "timeRequired": "Vaxt seçilməlidir",
+    "phonePlaceholder": "+994XXXXXXXXX"
+  },
+  "hospitalShowcase": {
+    "title": "Ekspert həkimlərlə keyfiyyətli səhiyyəyə çevrilmiş qabaqcıl tibbi texnologiyalar!",
+    "label": "Xəstəxanamız",
+    "locations": {
+      "baku": "Bakı",
+      "ankara": "Ankara",
+      "samsun": "Samsun"
+    },
+    "descriptions": {
+      "bakuDesc": "Sağlamlıqda multidisiplinar yanaşması, müasir infrastrukturu və texnologiya imkanları ilə Bakının mərkəzində xidmət göstərir.",
+      "ankaraDesc": "Müasir tibbi avadanlıqlar və peşəkar heyəti ilə keyfiyyətli səhiyyə xidməti göstərir.",
+      "samsunDesc": "Geniş ixtisas üzrə diaqnostika və müalicə xidmətləri təklif edir."
+    }
+  },
+  "contactBanner": {
+    "badge": "Sizin rəyiniz bizim üçün dəyərlidir",
+    "titleLine1": "Təklif və ya tələblərinizi",
+    "titleLine2": "dinləməkdən məmnun olarıq",
+    "subtitle": "Rəy və təkliflərinizi bizimlə paylaşın, xidmət keyfiyyətimizi birlikdə artıraq və daha yaxşısını birlikdə edək.",
+    "button": "Elektron müraciət ünvanla"
+  },
   "footer": {
     "quickLinks": "Keçidlər",
     "services": "Xidmətlər",

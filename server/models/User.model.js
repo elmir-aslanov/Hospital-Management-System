@@ -21,7 +21,8 @@ const userSchema = new mongoose.Schema(
     department:  { type: String, trim: true },
     photoUrl:    { type: String, default: '' },
     avatar:      { type: String, default: '' },   // kept for backward compat
-    isActive:    { type: Boolean, default: true },
+    isActive:         { type: Boolean, default: true },
+    isEmailVerified:  { type: Boolean, default: false },
     refreshToken:{ type: String, select: false },
   },
   {

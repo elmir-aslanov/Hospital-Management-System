@@ -82,7 +82,7 @@ export default function Register() {
         age: ageNum,
         idCode: idCode.trim(),
       });
-      await api.post('/auth/request-email-otp', { email: email.trim() });
+      // OTP is automatically sent by backend on registration
       setOtpModal(true);
       toast.success('Hesab yaradıldı! E-poçtunuzu yoxlayın.');
     } catch (err) {
@@ -131,17 +131,9 @@ export default function Register() {
     setOtpLoading(true);
     setOtpError('');
     try {
-      const res = await api.post('/auth/verify-email-otp', { email: form.email.trim(), otp: code });
-      const { accessToken, user } = res.data.data;
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      if (res.data.data?.refreshToken) {
-        localStorage.setItem('refreshToken', res.data.data.refreshToken);
-      }
-      authLogin(accessToken, user);
-      window.dispatchEvent(new Event('storage'));
-      toast.success('Qeydiyyat tamamlandı! Xoş gəldiniz.');
-      navigate('/patient');
+      await api.post('/auth/verify-email', { email: form.email.trim(), otp: code });
+      toast.success('E-poçt təsdiqləndi! İndi daxil ola bilərsiniz.');
+      navigate('/login');
     } catch (err) {
       setOtpError(err?.response?.data?.message || 'Kod yanlışdır və ya müddəti bitib.');
     } finally {

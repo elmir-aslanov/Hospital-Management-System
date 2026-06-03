@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { BASE } from '../api/config.js'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
@@ -16,13 +17,20 @@ const ROLE_MAP = {
 }
 
 const ROLE_ERROR = {
-  Admin: 'Bu hesab admin deyil',
-  Staff: 'Bu hesab staff deyil',
-  Həkim: 'Bu hesab həkim deyil',
+  Admin: 'adminLogin.errors.adminRole',
+  Staff: 'adminLogin.errors.staffRole',
+  Həkim: 'adminLogin.errors.doctorRole',
 }
+
+const roleLabelKey = (role) => ({
+  Admin: 'adminLogin.roles.admin',
+  Staff: 'adminLogin.roles.staff',
+  Həkim: 'adminLogin.roles.doctor',
+}[role] || 'adminLogin.roles.staff')
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [selectedRole, setSelectedRole] = useState('Admin')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -42,13 +50,13 @@ export default function AdminLoginPage() {
         credentials: 'include',
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Xəta baş verdi')
+      if (!res.ok) throw new Error(data.message || t('adminLogin.errors.request'))
 
       const user = data.data.user
       const allowedRoles = ROLE_MAP[selectedRole]
 
       if (!allowedRoles.includes(user.role)) {
-        setError(ROLE_ERROR[selectedRole])
+        setError(t(ROLE_ERROR[selectedRole]))
         setLoading(false)
         return
       }
@@ -62,7 +70,7 @@ export default function AdminLoginPage() {
         navigate('/admin/dashboard')
       }
     } catch (err) {
-      setError(err.message === ROLE_ERROR[selectedRole] ? err.message : 'E-poçt və ya şifrə yanlışdır')
+      setError(Object.values(ROLE_ERROR).includes(err.message) ? t(err.message) : t('adminLogin.errors.generic'))
     } finally {
       setLoading(false)
     }
@@ -76,19 +84,19 @@ export default function AdminLoginPage() {
         className="admin-login-back"
       >
         <ArrowLeftIcon />
-        Ana səhifəyə qayıt
+        {t('adminLogin.backHome')}
       </button>
 
       <div className="admin-login-bg-grid" />
       <div className="admin-login-bg-mark" />
 
-      <main className="admin-login-card" aria-label="Aslan Medical Center sistem girişi">
+      <main className="admin-login-card" aria-label={t('adminLogin.aria')}>
         <section className="admin-login-brand">
           <img src="/logo.png" alt="Aslan Medical Center" className="admin-login-logo" />
 
           <div>
-            <h1>Xoş gəldiniz!</h1>
-            <p>Aslan Medical Center idarəetmə sisteminə giriş edin</p>
+            <h1>{t('adminLogin.welcomeTitle')}</h1>
+            <p>{t('adminLogin.welcomeText')}</p>
           </div>
 
           <div className="admin-login-visual" aria-hidden="true">
@@ -113,11 +121,11 @@ export default function AdminLoginPage() {
 
         <section className="admin-login-form-panel">
           <div className="admin-login-heading">
-            <h2>Sistem Girişi</h2>
-            <p>Hesabınızı seçin</p>
+            <h2>{t('adminLogin.title')}</h2>
+            <p>{t('adminLogin.subtitle')}</p>
           </div>
 
-          <div className="admin-login-tabs" role="tablist" aria-label="Hesab rolu">
+          <div className="admin-login-tabs" role="tablist" aria-label={t('adminLogin.roleAria')}>
             {TABS.map(tab => (
               <button
                 key={tab}
@@ -128,19 +136,19 @@ export default function AdminLoginPage() {
                 className={selectedRole === tab ? 'admin-login-tab active' : 'admin-login-tab'}
               >
                 <UserSmallIcon />
-                {tab}
+                {t(roleLabelKey(tab))}
               </button>
             ))}
           </div>
 
           <form onSubmit={handleSubmit} className="admin-login-form">
             <label>
-              <span>E-poçt ünvanı</span>
+              <span>{t('adminLogin.emailLabel')}</span>
               <div className="admin-login-input-wrap">
                 <MailIcon />
                 <input
                   type="email"
-                  placeholder={selectedRole === 'Admin' ? 'admin@aslanmedical.az' : 'E-poçt ünvanınızı daxil edin'}
+                  placeholder={selectedRole === 'Admin' ? 'admin@aslanmedical.az' : t('adminLogin.emailPlaceholder')}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -150,7 +158,7 @@ export default function AdminLoginPage() {
             </label>
 
             <label>
-              <span>Şifrə</span>
+              <span>{t('adminLogin.passwordLabel')}</span>
               <div className="admin-login-input-wrap">
                 <LockIcon />
                 <input
@@ -165,7 +173,7 @@ export default function AdminLoginPage() {
                   type="button"
                   className="admin-login-eye"
                   onClick={() => setShowPassword(v => !v)}
-                  aria-label={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+                  aria-label={showPassword ? t('adminLogin.hidePassword') : t('adminLogin.showPassword')}
                 >
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
@@ -175,7 +183,7 @@ export default function AdminLoginPage() {
             <div className="admin-login-options">
               <span />
               <button type="button" onClick={() => navigate('/forgot-password')}>
-                Şifrəni unutmusunuz?
+                {t('adminLogin.forgot')}
               </button>
             </div>
 
@@ -186,7 +194,7 @@ export default function AdminLoginPage() {
             )}
 
             <button type="submit" disabled={loading} className="admin-login-submit">
-              <span>{loading ? 'Yüklənir...' : 'Daxil ol'}</span>
+              <span>{loading ? t('adminLogin.loading') : t('adminLogin.submit')}</span>
               <ArrowRightIcon />
             </button>
           </form>
@@ -194,7 +202,7 @@ export default function AdminLoginPage() {
           {selectedRole === 'Admin' && (
             <div className="admin-login-security">
               <ShieldSmallIcon />
-              Təhlükəsiz giriş SSL ilə qorunur
+              {t('adminLogin.secure')}
             </div>
           )}
         </section>

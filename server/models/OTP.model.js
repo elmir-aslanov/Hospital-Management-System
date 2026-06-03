@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const otpSchema = new mongoose.Schema({
   phone:      { type: String, trim: true },
   email:      { type: String, trim: true, lowercase: true },
-  type:       { type: String, enum: ['phone', 'email'], required: true },
+  type:       { type: String, enum: ['phone', 'email', 'email_verify'], required: true },
   hashedOtp:  { type: String, required: true },          // bcrypt hash — never plain text
   expiresAt:  { type: Date, required: true },
   attempts:   { type: Number, default: 0 },              // wrong-code attempts
