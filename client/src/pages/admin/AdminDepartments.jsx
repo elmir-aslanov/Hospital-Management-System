@@ -37,7 +37,7 @@ export default function AdminDepartments() {
   /* dept modal */
   const [deptModal,  setDeptModal]  = useState(false)
   const [editDept,   setEditDept]   = useState(null)
-  const [deptForm,   setDeptForm]   = useState({ name:'', slug:'', description:'', icon:'🏥', order:0, isActive:true })
+  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'🏥', order:0, isActive:true })
   const [deptSaving, setDeptSaving] = useState(false)
   const [deptErr,    setDeptErr]    = useState('')
 
@@ -80,7 +80,7 @@ export default function AdminDepartments() {
   /* ── dept CRUD ─────────────────────────────────────────────────────── */
   const openAddDept = () => {
     setEditDept(null)
-    setDeptForm({ name:'', slug:'', description:'', icon:'🏥', order: depts.length, isActive:true })
+    setDeptForm({ name:'', description:'', icon:'🏥', order: depts.length, isActive:true })
     setDeptErr('')
     setDeptModal(true)
   }
@@ -88,7 +88,7 @@ export default function AdminDepartments() {
   const openEditDept = (dept) => {
     setEditDept(dept)
     setDeptForm({
-      name: dept.name, slug: dept.slug, description: dept.description || '',
+      name: dept.name, description: dept.description || '',
       icon: dept.icon || '🏥', order: dept.order || 0, isActive: dept.isActive,
     })
     setDeptErr('')
@@ -99,9 +99,11 @@ export default function AdminDepartments() {
     if (!deptForm.name.trim()) { setDeptErr('Şöbə adı tələb olunur'); return }
     setDeptSaving(true); setDeptErr('')
     const body = {
-      ...deptForm,
-      slug: deptForm.slug.trim() || toSlug(deptForm.name),
-      order: Number(deptForm.order) || 0,
+      name:        deptForm.name.trim(),
+      description: deptForm.description,
+      icon:        deptForm.icon,
+      order:       Number(deptForm.order) || 0,
+      isActive:    deptForm.isActive,
     }
     try {
       const url    = editDept ? `${BASE}/api/v1/departments/${editDept._id}` : `${BASE}/api/v1/departments`
@@ -264,22 +266,7 @@ export default function AdminDepartments() {
               <div>
                 <label style={lbl}>Şöbə adı *</label>
                 <input style={inp} value={deptForm.name}
-                  onChange={e => {
-                    const v = e.target.value
-                    setDF('name', v)
-                    if (!editDept) setDF('slug', toSlug(v))
-                  }} />
-              </div>
-
-              {/* Slug */}
-              <div>
-                <label style={lbl}>Slug</label>
-                <input
-                  style={{ ...inp, background: editDept ? '#f8fafc' : 'white' }}
-                  value={deptForm.slug}
-                  readOnly={!!editDept}
-                  onChange={e => { if (!editDept) setDF('slug', e.target.value) }}
-                />
+                  onChange={e => setDF('name', e.target.value)} />
               </div>
 
               {/* Description */}
