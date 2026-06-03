@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import api from '../../api/axios'
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
@@ -10,6 +11,7 @@ const NAVY = '#0a1628'
 
 export default function ContactPage() {
   usePageTitle('Əlaqə', 'Aslan Medical Center ilə əlaqə saxlayın. Bakı, Azərbaycan.')
+  const { t } = useTranslation()
   const [form, setForm]       = useState({ name: '', email: '', message: '', agreed: false })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -87,12 +89,12 @@ export default function ContactPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} style={{ paddingTop: 8 }}>
 
 <h1 style={{ fontSize: 32, fontWeight: 900, color: NAVY, margin: '0 0 14px', lineHeight: 1.05, fontFamily: "'Raleway', sans-serif" }}>
-            Bizimlə<br />Əlaqə
+            {t('contact.title')}
           </h1>
 
           {success && (
             <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '10px 14px', marginBottom: 14, color: '#15803d', fontSize: 13, fontFamily: FONT }}>
-              ✓ Mesajınız qəbul edildi. Tezliklə sizinlə əlaqə saxlayacağıq.
+              ✓ {t('contact.successMsg')}
             </div>
           )}
 
@@ -100,10 +102,10 @@ export default function ContactPage() {
 
             {/* Name */}
             <div>
-              <label style={labelStyle}>Ad</label>
+              <label style={labelStyle}>{t('contact.nameLabel')}</label>
               <div style={{ position: 'relative' }}>
                 <input type="text" value={form.name} onChange={e => set('name', e.target.value)}
-                  placeholder="Tam adınızı daxil edin" style={inputStyle}
+                  placeholder={t('contact.namePlaceholder')} style={inputStyle}
                   onFocus={e => e.target.style.borderColor = TEAL}
                   onBlur={e => e.target.style.borderColor = '#d1d5db'} />
                 <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }}>
@@ -114,10 +116,10 @@ export default function ContactPage() {
 
             {/* Email */}
             <div>
-              <label style={labelStyle}>E-poçt</label>
+              <label style={labelStyle}>{t('contact.emailLabel')}</label>
               <div style={{ position: 'relative' }}>
                 <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                  placeholder="E-poçt ünvanınızı daxil edin" style={inputStyle}
+                  placeholder={t('contact.emailPlaceholder')} style={inputStyle}
                   onFocus={e => e.target.style.borderColor = TEAL}
                   onBlur={e => e.target.style.borderColor = '#d1d5db'} />
                 <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }}>
@@ -128,9 +130,9 @@ export default function ContactPage() {
 
             {/* Message */}
             <div>
-              <label style={labelStyle}>Mesaj</label>
+              <label style={labelStyle}>{t('contact.messageLabel')}</label>
               <textarea value={form.message} onChange={e => set('message', e.target.value)}
-                placeholder="Sizə necə kömək edə bilərik?"
+                placeholder={t('contact.messagePlaceholder')}
                 rows={3}
                 style={{ ...inputStyle, height: 'auto', padding: '10px 14px', resize: 'none', minHeight: 68 }}
                 onFocus={e => e.target.style.borderColor = TEAL}
@@ -142,10 +144,10 @@ export default function ContactPage() {
               <input type="checkbox" checked={form.agreed} onChange={e => set('agreed', e.target.checked)}
                 style={{ width: 14, height: 14, marginTop: 2, accentColor: TEAL, cursor: 'pointer', flexShrink: 0 }} />
               <span>
-                <a href="#" style={{ color: TEAL, textDecoration: 'none', fontWeight: 600 }}>Xidmət Şərtlərini</a>
-                {' '}və{' '}
-                <a href="#" style={{ color: TEAL, textDecoration: 'none', fontWeight: 600 }}>Məxfilik Siyasətini</a>
-                {' '}qəbul edirəm
+                <a href="#" style={{ color: TEAL, textDecoration: 'none', fontWeight: 600 }}>{t('contact.agree')}</a>
+                {' '}{t('contact.and')}{' '}
+                <a href="#" style={{ color: TEAL, textDecoration: 'none', fontWeight: 600 }}>{t('contact.privacyPolicy')}</a>
+                {' '}{t('contact.acceptText')}
               </span>
             </label>
 
@@ -167,7 +169,7 @@ export default function ContactPage() {
               {loading ? 'Göndərilir...' : (
                 <>
                   <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  MESAJ GÖNDƏR
+                  {t('contact.sendButton')}
                 </>
               )}
             </button>
@@ -181,7 +183,7 @@ export default function ContactPage() {
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
             <svg width="20" height="20" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
           </div>
-          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>ZƏNG EDİN</h3>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>{t('contact.callUs')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {['+994 50 836 36 94'].map(p => (
               <a key={p} href={`tel:${p.replace(/\s/g,'')}`}
@@ -197,7 +199,7 @@ export default function ContactPage() {
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
             <svg width="20" height="20" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
-          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>ÜNVAN</h3>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>{t('contact.location')}</h3>
           <p style={{ color: '#4b5563', fontSize: 13, margin: 0, lineHeight: 1.65, fontFamily: "'Source Sans 3', sans-serif" }}>
             Xətai ray., A. Cəlilov küçəsi<br />Bakı, Azərbaycan
           </p>
@@ -207,7 +209,7 @@ export default function ContactPage() {
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
             <svg width="20" height="20" fill="none" stroke="#00848e" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>İŞ SAATLARİ</h3>
+          <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0a1628', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px', fontFamily: "'Source Sans 3', sans-serif" }}>{t('contact.hours')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[
               { day: 'B.E – Cümə', hours: '09:00 – 19:00', closed: false },

@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
 const NAVY = '#0a1628'
 
 export default function Footer() {
+  const { t } = useTranslation()
   const year = new Date().getFullYear()
   return (
     <footer style={{ background: NAVY, color: 'white', fontFamily: FONT }}>
@@ -42,7 +44,7 @@ export default function Footer() {
 
         {/* Col 2 — Quick links */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>Keçidlər</h4>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>{t('footer.quickLinks')}</h4>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { label: 'Ana Səhifə', to: '/'            },
@@ -62,7 +64,7 @@ export default function Footer() {
 
         {/* Col 3 — Services */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>Xidmətlər</h4>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>{t('footer.services')}</h4>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {['Randevu Al', 'E-Nəticə', 'Laboratoriya', 'Kardiologiya', 'Nevrologiya', 'Cərrahiyyə'].map(s => (
               <span key={s} style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{s}</span>
@@ -72,7 +74,7 @@ export default function Footer() {
 
         {/* Col 4 — Contact */}
         <div>
-          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>Əlaqə</h4>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'white', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>{t('footer.contactInfo')}</h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
               { icon: <svg width="14" height="14" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, text: 'Xətai ray., A. Cəlilov küçəsi, Bakı' },
@@ -101,10 +103,10 @@ export default function Footer() {
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '18px 32px' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
-            © {year} Aslan Medical Center. Bütün hüquqlar qorunur.
+            © {year} Aslan Medical Center. {t('footer.rights')}.
           </span>
           <div style={{ display: 'flex', gap: 20 }}>
-            {[['Məxfilik Siyasəti', '/gizlilik'], ['Xidmət Şərtləri', '/xidmet-shertleri']].map(([label, to]) => (
+            {[[t('footer.privacy'), '/gizlilik'], [t('footer.terms'), '/xidmet-shertleri']].map(([label, to]) => (
               <Link key={to} to={to}
                 style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = TEAL)}

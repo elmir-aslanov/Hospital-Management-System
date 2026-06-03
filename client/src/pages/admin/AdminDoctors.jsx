@@ -31,12 +31,13 @@ export default function AdminDoctors() {
   const [doctorUsers,  setDoctorUsers]  = useState([])
 
   // ─── Form fields ──────────────────────────────────────────────────────────
-  const [userId,         setUserId]         = useState('')
-  const [specialization, setSpecialization] = useState('')
-  const [licenseNumber,  setLicenseNumber]  = useState('')
-  const [experience,     setExperience]     = useState('')
-  const [bio,            setBio]            = useState('')
-  const [isAvailable,    setIsAvailable]    = useState(true)
+  const [createMode,      setCreateMode]      = useState('quick')
+  const [newFullName,     setNewFullName]     = useState('')
+  const [newEmail,        setNewEmail]        = useState('')
+  const [specialization,  setSpecialization]  = useState('')
+  const [experience,      setExperience]      = useState('')
+  const [bio,             setBio]             = useState('')
+  const [isAvailable,     setIsAvailable]     = useState(true)
   const [department,      setDepartment]      = useState('')
   const [departmentId,    setDepartmentId]    = useState('')
   const [consultationFee, setConsultationFee] = useState('')
@@ -45,15 +46,14 @@ export default function AdminDoctors() {
   const [doctorPhoto,     setDoctorPhoto]     = useState('')
 
   const resetForm = () => {
-    setUserId(''); setSpecialization(''); setLicenseNumber('')
-    setExperience(''); setBio(''); setIsAvailable(true)
+    setCreateMode('quick'); setNewFullName(''); setNewEmail('')
+    setSpecialization(''); setExperience(''); setBio(''); setIsAvailable(true)
     setDepartment(''); setDepartmentId(''); setConsultationFee(''); setOrder(0); setIsActive(true)
     setDoctorPhoto('')
   }
 
   const populateForm = (doc) => {
     setSpecialization(doc.specialization || '')
-    setLicenseNumber(doc.licenseNumber || '')
     setExperience(doc.experience ?? '')
     setBio(doc.bio || '')
     setIsAvailable(doc.isAvailable !== false)
@@ -102,41 +102,64 @@ export default function AdminDoctors() {
 
   // ─── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!specialization.trim())              { setError('İxtisas tələb olunur'); return }
-    if (!editDoctor && !userId)              { setError('İstifadəçi seçilməlidir'); return }
-    if (!editDoctor && !licenseNumber.trim()) { setError('Lisenziya nömrəsi tələb olunur'); return }
-    setSaving(true); setError('')
-    try {
-      const url    = editDoctor ? `${BASE}/api/v1/doctors/${editDoctor._id}` : `${BASE}/api/v1/doctors`
-      const method = editDoctor ? 'PUT' : 'POST'
-      const body   = editDoctor
-        ? (() => {
-            const updates = { specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
-            if (department.trim())       updates.department      = department.trim()
-            if (departmentId)            updates.departmentId    = departmentId
-            if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
-            updates.order    = Number(order)
-            updates.isActive = isActive
-            return updates
-          })()
-        : { userId, specialization: specialization.trim(), licenseNumber: licenseNumber.trim(), experience: Number(experience) || 0, bio: bio.trim() }
+    if (editDoctor) {
+      // ── EDIT ──────────────────────────────────────────
+      if (!specialization.trim()) { setError('İxtisas tələb olunur'); return }
+      setSaving(true); setError('')
+      try {
+        const updates = { specialization: specialization.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
+        if (department.trim())       updates.department      = department.trim()
+        if (departmentId)            updates.departmentId    = departmentId
+        if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
+        updates.order    = Number(order)
+        updates.isActive = isActive
 
-      const r    = await fetch(url, { method, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.message || 'Xəta')
-
-      const saved = data.data || data
-      if (editDoctor) {
+        const r    = await fetch(`${BASE}/api/v1/doctors/${editDoctor._id}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.message || 'Xəta')
+        const saved = data.data || data
         setDoctors(prev => prev.map(d => d._id === editDoctor._id ? saved : d))
         setSuccess('Həkim uğurla yeniləndi')
-      } else {
-        setDoctors(prev => [saved, ...prev])
-        setSuccess('Həkim uğurla əlavə edildi')
-      }
-      setShowModal(false); setEditDoctor(null)
-      setTimeout(() => setSuccess(''), 3000)
-    } catch (e) { setError(e.message) }
-    finally { setSaving(false) }
+        setShowModal(false); setEditDoctor(null)
+        setTimeout(() => setSuccess(''), 3000)
+      } catch (e) { setError(e.message) }
+      finally { setSaving(false) }
+    } else {
+      // ── QUICK CREATE (admin-create) ──────────────────
+      if (!newFullName.trim())     { setError('Ad Soyad tələb olunur'); return }
+      if (!newEmail.trim())        { setError('E-poçt tələb olunur'); return }
+      if (!specialization.trim())  { setError('İxtisas tələb olunur'); return }
+
+      setSaving(true); setError('')
+      try {
+        const body = {
+          fullName:        newFullName.trim(),
+          email:           newEmail.trim(),
+          specialization:  specialization.trim(),
+          experience:      Number(experience) || 0,
+          bio:             bio.trim(),
+          department:      department?.trim() || '',
+          departmentId:    departmentId || undefined,
+          consultationFee: Number(consultationFee) || 0,
+          order:           Number(order) || 0,
+        }
+        const r = await fetch(`${BASE}/api/v1/doctors/admin-create`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
+        const created = data.data?.doctor || data.data || data
+        if (created?._id) setDoctors(prev => [created, ...prev])
+
+        if (data.data?.autoPassword && data.data?.licenseNumber) {
+          alert(`✅ Həkim yaradıldı!\n\nE-poçt: ${newEmail}\nŞifrə: ${data.data.autoPassword}\nLisenziya: ${data.data.licenseNumber}\n\nBu məlumatı həkimə bildirin.`)
+        }
+        closeModal()
+      } catch (e) { setError(e.message) }
+      finally { setSaving(false) }
+    }
   }
 
   // ─── Delete ───────────────────────────────────────────────────────────────
@@ -266,73 +289,32 @@ export default function AdminDoctors() {
               <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{error}</div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              {/* userId — only for create */}
-              {!editDoctor && (
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={lbl}>İstifadəçi (Həkim) *</label>
-                  {doctorUsers.length === 0 && !editDoctor ? (
-                    <div style={{
-                      background: '#f0fafb', border: '1px dashed #00848e', borderRadius: 10,
-                      padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 12,
-                    }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00848e" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                      </svg>
-                      <div>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#0f1b2d' }}>
-                          Əvvəlcə DOCTOR rollu istifadəçi yaradın
-                        </p>
-                        <p style={{ margin: '4px 0 10px', fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-                          Bütün DOCTOR rollu istifadəçilərə artıq həkim profili təyin edilib
-                          və ya heç bir DOCTOR rollu istifadəçi yoxdur.
-                        </p>
-                        <button
-                          onClick={() => { setShowModal(false); navigate('/admin/users') }}
-                          style={{
-                            fontSize: 12, fontWeight: 600, color: 'white', background: '#00848e',
-                            border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
-                          }}
-                        >
-                          İstifadəçilər bölməsinə get →
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <select
-                      value={userId}
-                      onChange={e => setUserId(e.target.value)}
-                      style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', height: 38, cursor: 'pointer' }}
-                    >
-                      <option value="">Seçin...</option>
-                      {doctorUsers.map(u => (
-                        <option key={u._id} value={u._id}>
-                          {u.fullName || ((u.name || '') + ' ' + (u.surname || '')).trim() || u.email}
-                          {u.email ? ` — ${u.email}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+            {/* Create-only fields */}
+            {!editDoctor && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                <div style={{ gridColumn: 'span 2', background: '#f0fafb', border: '1px solid #b2e4e8', borderRadius: 10, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00848e" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" strokeLinecap="round" strokeWidth="2.5"/>
+                  </svg>
+                  <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#0a1628' }}>Avtomatik yaradılır:</strong> Lisenziya nömrəsi (DR-2025-XXXXX) və müvəqqəti şifrə. Şifrə yalnız bir dəfə göstəriləcək.
+                  </div>
                 </div>
-              )}
-
-              <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <AvatarUpload
-                  currentUrl={doctorPhoto}
-                  userName={doctorUsers.find(u => u._id === userId)?.fullName || ''}
-                  size={80}
-                  onSuccess={(url) => setDoctorPhoto(url)}
-                />
+                <div style={{ gridColumn: 'span 2' }}>
+                  <MF label="Ad Soyad *" value={newFullName} onChange={setNewFullName} placeholder="məs. Nigar Əliyeva" />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <MF label="E-poçt *" value={newEmail} onChange={setNewEmail} type="email" placeholder="hekim@aslanmedical.az" />
+                </div>
               </div>
+            )}
 
-              <MF label="İxtisas *" value={specialization} onChange={setSpecialization} />
-              <MF label="Lisenziya nömrəsi *" value={licenseNumber} onChange={setLicenseNumber} />
-              <MF label="Təcrübə (il)" value={experience} onChange={setExperience} type="number" />
-
+            {/* Shared fields — create and edit */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <MF label="İxtisas *"    value={specialization} onChange={setSpecialization} placeholder="məs. Kardiologiya" />
+              <MF label="Təcrübə (il)" value={experience}     onChange={setExperience}     type="number" placeholder="0" />
               <div style={{ gridColumn: 'span 2' }}>
-                <label style={lbl}>Bio</label>
-                <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
-                  style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                <MF label="Bio" value={bio} onChange={setBio} placeholder="Həkim haqqında qısa məlumat..." />
               </div>
 
               <div style={{ gridColumn: '1/-1' }}>
@@ -376,6 +358,7 @@ export default function AdminDoctors() {
                 </div>
               )}
             </div>
+
 
             <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
               <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import usePageTitle from '../../hooks/usePageTitle'
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
@@ -7,6 +8,7 @@ const NAVY = '#0a1628'
 
 export default function NotFoundPage() {
   usePageTitle('Səhifə tapılmadı')
+  const { t } = useTranslation()
   const navigate = useNavigate()
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, padding: 24 }}>
@@ -21,22 +23,22 @@ export default function NotFoundPage() {
           </svg>
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 800, color: NAVY, margin: '0 0 12px', fontFamily: "'Raleway', sans-serif" }}>
-          Səhifə tapılmadı
+          {t('notFound.title')}
         </h1>
         <p style={{ fontSize: 15, color: '#64748b', margin: '0 0 32px', lineHeight: 1.6 }}>
-          Axtardığınız səhifə mövcud deyil və ya köçürülmüş ola bilər.
+          {t('notFound.message')}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate(-1)}
             style={{ padding: '11px 24px', border: '1.5px solid #e2e8f0', borderRadius: 10, background: 'white', fontSize: 14, fontWeight: 600, color: '#475569', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569' }}
-          >← Geri</button>
+          >← {t('notFound.goBack')}</button>
           <button onClick={() => navigate('/')}
             style={{ padding: '11px 24px', border: 'none', borderRadius: 10, background: TEAL, fontSize: 14, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: FONT, boxShadow: '0 4px 16px rgba(0,132,142,0.3)', transition: 'all 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#006b74')}
             onMouseLeave={e => (e.currentTarget.style.background = TEAL)}
-          >🏠 Ana Səhifə</button>
+          >🏠 {t('notFound.goHome')}</button>
         </div>
       </div>
     </div>

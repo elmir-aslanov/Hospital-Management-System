@@ -84,6 +84,12 @@ router.post(
   doctorsController.createDoctor
 );
 
+router.post(
+  '/admin-create',
+  authenticate, authorize('ADMIN', 'SUPER_ADMIN'),
+  doctorsController.adminCreateDoctor
+);
+
 /**
  * @swagger
  * /doctors/{id}/schedule:

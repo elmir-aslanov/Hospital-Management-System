@@ -73,3 +73,8 @@ export const getDoctorsByDepartment = asyncHandler(async (req, res) => {
     .sort({ order: 1, averageRating: -1 });
   res.json(new ApiResponse(200, doctors));
 });
+
+export const adminCreateDoctor = asyncHandler(async (req, res) => {
+  const result = await doctorsService.adminCreateDoctor(req.body);
+  res.status(201).json(new ApiResponse(201, result, 'Həkim profili yaradıldı'));
+});

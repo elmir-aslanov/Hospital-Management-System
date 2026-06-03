@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const TEAL = '#00848e'
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
@@ -64,6 +65,7 @@ function NavBtn({ onClick, label, children }) {
 // ─── main component ───────────────────────────────────────────────────────────
 
 export default function PartnersCarousel() {
+  const { t } = useTranslation()
   const [visible, setVisible]   = useState(calcVisible)
   const [pos, setPos]           = useState(N)       // index into BELT
   const [animated, setAnimated] = useState(true)
@@ -152,7 +154,7 @@ export default function PartnersCarousel() {
           color: '#94a3b8', letterSpacing: '0.14em',
           textTransform: 'uppercase', margin: '0 0 20px',
         }}>
-          TƏRƏFDAŞLARIMİZ VƏ SIĞORTA ŞİRKƏTLƏRİ
+          {t('partners.title')}
         </p>
 
         {/* carousel row */}

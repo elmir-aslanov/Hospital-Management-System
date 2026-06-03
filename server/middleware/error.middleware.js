@@ -1,9 +1,11 @@
 import ApiError from '../utils/ApiError.js';
 import logger from '../utils/logger.js';
+import { t, getLang } from '../utils/i18n.js';
 
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, _next) => {
   logger.error(`${req.method} ${req.originalUrl} — ${err.message}`, { stack: err.stack });
+  const lang = getLang(req);
 
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
@@ -43,7 +45,7 @@ export const errorHandler = (err, req, res, _next) => {
   return res.status(500).json({
     success: false,
     statusCode: 500,
-    message: 'Internal server error',
+    message: err.message || t('SERVER_ERROR', lang),
     errors: [],
   });
 };

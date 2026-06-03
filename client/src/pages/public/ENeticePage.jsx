@@ -1,6 +1,7 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import { useState } from 'react';
 import api from '../../api/axios';
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -42,6 +43,7 @@ function Spinner() {
 
 export default function ENeticePage() {
   usePageTitle('E-Nəticə', 'Tibbi nəticənizi pasiyent ID ilə yoxlayın.')
+  const { t } = useTranslation()
   const [patientId, setPatientId] = useState('');
   const [dateOfBirth, setDob]     = useState('');
   const [loading, setLoading]     = useState(false);
@@ -80,8 +82,8 @@ export default function ENeticePage() {
 
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <img src="/logo.png" alt="Aslan Medical" style={{ height: 44, marginBottom: 10 }} onError={e => e.currentTarget.style.display = 'none'} />
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 4px', fontFamily: FONT }}>E-Nəticə Sorğusu</h1>
-          <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>Nəticənizi almaq üçün məlumatlarınızı daxil edin</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 4px', fontFamily: FONT }}>{t('eNetice.title')}</h1>
+          <p style={{ fontSize: 13, color: '#718096', margin: 0 }}>{t('eNetice.subtitle')}</p>
         </div>
 
         {error && (
@@ -92,46 +94,46 @@ export default function ENeticePage() {
 
         <form onSubmit={handleSearch}>
           <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>Pasiyent ID</label>
+            <label style={labelStyle}>{t('eNetice.patientId')}</label>
             <input type="text" value={patientId} onChange={e => setPatientId(e.target.value)}
               placeholder="P-ABC123" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Doğum tarixi</label>
+            <label style={labelStyle}>{t('eNetice.birthDate')}</label>
             <input type="date" value={dateOfBirth} onChange={e => setDob(e.target.value)}
               style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
           </div>
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: loading ? '#9ca3af' : `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, color: '#fff', fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {loading && <Spinner />} Nəticəni Axtar →
+            {loading && <Spinner />} {t('eNetice.search')} →
           </button>
         </form>
 
         {result && (
           <div style={{ marginTop: 24 }}>
             <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 4 }}>✓ Pasiyent tapıldı</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 4 }}>✓ {t('eNetice.foundTitle')}</div>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#0a1628', fontFamily: FONT }}>{result.fullName}</div>
               <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>ID: {result.patientId}</div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
               <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Qan qrupu</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('eNetice.bloodGroup')}</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: result.bloodGroup ? '#dc2626' : '#9ca3af' }}>
                   {result.bloodGroup || '—'}
                 </div>
               </div>
               <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Allergiyalar</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('eNetice.allergies')}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
-                  {result.allergies?.length ? result.allergies.join(', ') : 'Yoxdur'}
+                  {result.allergies?.length ? result.allergies.join(', ') : t('eNetice.noAllergies')}
                 </div>
               </div>
             </div>
 
             {result.medicalHistory?.length > 0 && (
               <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Son tibbi qeydlər</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('eNetice.medHistory')}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {result.medicalHistory.map((h, i) => (
                     <div key={i} style={{ fontSize: 13, color: '#4b5563', borderLeft: '3px solid #00848e', paddingLeft: 10 }}>

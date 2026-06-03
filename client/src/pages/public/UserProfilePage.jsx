@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const FONT = "'Source Sans 3','Raleway',sans-serif"
 const TEAL = '#1D8B95'
@@ -240,6 +241,7 @@ function ActionRow({ message, error, saving, buttonText, savingText, buttonColor
 }
 
 export default function UserProfilePage() {
+  const { t } = useTranslation()
   const initialUser = useMemo(() => safeParseUser(), [])
   const [activeTab, setActiveTab] = useState('profile')
   const [user, setUser] = useState(initialUser)
@@ -304,7 +306,7 @@ export default function UserProfilePage() {
       localStorage.setItem('user', JSON.stringify(updatedUser))
       window.dispatchEvent(new Event('storage'))
       setUser(updatedUser)
-      setProfileMessage('✓ Yadda saxlandı')
+      setProfileMessage(t('profile.saved'))
       clearProfileNotice()
     } catch (error) {
       setProfileError(error.message || 'Xəta baş verdi')
@@ -436,8 +438,8 @@ export default function UserProfilePage() {
               maxWidth: '100%',
             }}>
               {[
-                { key: 'profile', label: 'Profil məlumatları' },
-                { key: 'password', label: 'Şifrə təhlükəsizliyi' },
+                { key: 'profile', label: t('profile.profileTab') },
+                { key: 'password', label: t('profile.passwordTab') },
               ].map(tab => (
                 <button
                   key={tab.key}
@@ -473,7 +475,7 @@ export default function UserProfilePage() {
                 <form onSubmit={handleProfileSubmit} style={{ display: 'grid', gap: 18 }}>
                   <div className="profile-form-heading" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                     <div>
-                      <h2 style={{ margin: 0, color: NAVY, fontSize: 21, fontWeight: 800 }}>Profil məlumatları</h2>
+                      <h2 style={{ margin: 0, color: NAVY, fontSize: 21, fontWeight: 800 }}>{t('profile.profileTab')}</h2>
                       <p style={{ margin: '5px 0 0', color: MUTED, fontSize: 13 }}>Şəxsi məlumatlar</p>
                     </div>
                     <span style={{ padding: '6px 10px', borderRadius: 999, background: '#F0FAFB', color: TEAL, fontSize: 12, fontWeight: 800 }}>
@@ -495,8 +497,8 @@ export default function UserProfilePage() {
                     message={profileMessage}
                     error={profileError}
                     saving={profileSaving}
-                    buttonText="Yadda saxla"
-                    savingText="Saxlanır..."
+                    buttonText={t('common.save')}
+                    savingText={t('common.saving')}
                     buttonColor={TEAL}
                     onHoverColor={DARK_TEAL}
                   />
@@ -505,7 +507,7 @@ export default function UserProfilePage() {
                 <form onSubmit={handlePasswordSubmit} style={{ display: 'grid', gap: 18 }}>
                   <div className="profile-form-heading" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                     <div>
-                      <h2 style={{ margin: 0, color: NAVY, fontSize: 21, fontWeight: 800 }}>Şifrə təhlükəsizliyi</h2>
+                      <h2 style={{ margin: 0, color: NAVY, fontSize: 21, fontWeight: 800 }}>{t('profile.passwordTab')}</h2>
                       <p style={{ margin: '5px 0 0', color: MUTED, fontSize: 13 }}>Giriş məlumatları</p>
                     </div>
                     <span style={{ padding: '6px 10px', borderRadius: 999, background: '#F8FAFC', color: NAVY, fontSize: 12, fontWeight: 800 }}>
@@ -552,7 +554,7 @@ export default function UserProfilePage() {
               minWidth: 0,
             }}>
               <section style={{ padding: '22px 22px 18px', borderBottom: `1px solid ${CARD_BORDER}` }}>
-                <h3 style={{ margin: '0 0 10px', color: NAVY, fontSize: 17, fontWeight: 800 }}>Hesab məlumatları</h3>
+                <h3 style={{ margin: '0 0 10px', color: NAVY, fontSize: 17, fontWeight: 800 }}>{t('profile.accountInfo')}</h3>
                 <InfoRow label="Ad Soyad" value={displayName} />
                 <InfoRow label="E-poçt" value={user?.email} />
                 <InfoRow label="Rol" value={role} />
@@ -589,7 +591,7 @@ export default function UserProfilePage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 style={{ margin: '0 0 7px', color: NAVY, fontSize: 17, fontWeight: 800 }}>Təhlükəsizlik tövsiyəsi</h3>
+                    <h3 style={{ margin: '0 0 7px', color: NAVY, fontSize: 17, fontWeight: 800 }}>{t('profile.securityTip')}</h3>
                     <p style={{ margin: 0, color: MUTED, fontSize: 13, lineHeight: 1.55 }}>
                       Şifrənizi mütəmadi yeniləyin, ən azı 8 simvoldan istifadə edin və giriş məlumatlarınızı heç kimlə paylaşmayın.
                     </p>

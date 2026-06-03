@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Doctor from '../../models/Doctor.model.js';
+import User from '../../models/User.model.js';
 import WorkSchedule from '../../models/WorkSchedule.model.js';
 import Appointment from '../../models/Appointment.model.js';
 import ApiError from '../../utils/ApiError.js';
@@ -196,4 +197,55 @@ export const getDoctorAvailability = async (doctorId, dateStr) => {
     slotDuration: schedule.slotDuration,
     slots,
   };
+};
+
+// ─── Admin one-step doctor creation ──────────────────────────────────────────
+
+export const adminCreateDoctor = async ({ fullName, email, specialization, experience, bio, department, departmentId, consultationFee, order }) => {
+  if (!fullName?.trim())       throw new ApiError(400, 'Ad Soyad tələb olunur');
+  if (!email?.trim())          throw new ApiError(400, 'E-poçt tələb olunur');
+  if (!specialization?.trim()) throw new ApiError(400, 'İxtisas tələb olunur');
+
+  const existing = await User.findOne({ email: email.toLowerCase().trim() });
+  if (existing) throw new ApiError(409, 'Bu e-poçt artıq qeydiyyatdadır');
+
+  // Auto-generate license number: DR-YYYY-XXXXX
+  let licenseNumber;
+  let attempts = 0;
+  do {
+    const rand = Math.floor(10000 + Math.random() * 90000);
+    licenseNumber = `DR-${new Date().getFullYear()}-${rand}`;
+    attempts++;
+    if (attempts > 20) break;
+  } while (await Doctor.exists({ licenseNumber }));
+
+  const autoPassword = 'Aslan@' + Math.floor(1000 + Math.random() * 9000);
+
+  const user = await User.create({
+    fullName: fullName.trim(),
+    email:    email.toLowerCase().trim(),
+    password: autoPassword,
+    role:     'DOCTOR',
+  });
+
+  const doctor = await Doctor.create({
+    userId:          user._id,
+    specialization:  specialization.trim(),
+    licenseNumber,
+    experience:      Number(experience) || 0,
+    bio:             bio?.trim() || '',
+    department:      department?.trim() || '',
+    departmentId:    departmentId || undefined,
+    consultationFee: Number(consultationFee) || 0,
+    order:           Number(order) || 0,
+    isActive:        true,
+    isAvailable:     true,
+  });
+
+  await doctor.populate('userId', POPULATE_USER);
+
+  // TODO: send email with autoPassword when email service is configured
+  console.log(`[Doctor Created] ${fullName} | ${email} | Password: ${autoPassword} | License: ${licenseNumber}`);
+
+  return { doctor, autoPassword, licenseNumber };
 };
