@@ -78,9 +78,7 @@ export default function AdminDoctors() {
       .catch(() => setDoctors([]))
       .finally(() => setLoading(false))
 
-    fetch(`${BASE}/api/v1/departments/admin/all`, {
-      headers: { Authorization: 'Bearer ' + token },
-    })
+    fetch(`${BASE}/api/v1/departments`)
       .then(r => r.json())
       .then(d => setDepartments(d.data || []))
       .catch(() => {})

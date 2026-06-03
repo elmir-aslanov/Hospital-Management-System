@@ -124,7 +124,7 @@ export default function AdminLoginPage() {
                 type="button"
                 role="tab"
                 aria-selected={selectedRole === tab}
-                onClick={() => { setSelectedRole(tab); setError('') }}
+                onClick={() => { setSelectedRole(tab); setError(''); setEmail('') }}
                 className={selectedRole === tab ? 'admin-login-tab active' : 'admin-login-tab'}
               >
                 <UserSmallIcon />
@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
                 <MailIcon />
                 <input
                   type="email"
-                  placeholder="admin@aslanmedical.az"
+                  placeholder={selectedRole === 'Admin' ? 'admin@aslanmedical.az' : 'E-poçt ünvanınızı daxil edin'}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -191,10 +191,12 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="admin-login-security">
-            <ShieldSmallIcon />
-            Təhlükəsiz giriş SSL ilə qorunur
-          </div>
+          {selectedRole === 'Admin' && (
+            <div className="admin-login-security">
+              <ShieldSmallIcon />
+              Təhlükəsiz giriş SSL ilə qorunur
+            </div>
+          )}
         </section>
       </main>
 
