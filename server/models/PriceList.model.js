@@ -4,7 +4,7 @@ const priceListSchema = new mongoose.Schema(
   {
     name:        { type: String, required: true, trim: true },
     serviceName: { type: String, trim: true },
-    serviceCode: { type: String, trim: true, uppercase: true, sparse: true },
+    serviceCode: { type: String, trim: true, uppercase: true },
     description: { type: String, trim: true, default: '' },
     category: {
       type: String,

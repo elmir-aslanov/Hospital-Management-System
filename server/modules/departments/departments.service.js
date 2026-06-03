@@ -25,6 +25,6 @@ export const update = async (id, data) => {
 };
 
 export const remove = async (id) => {
-  const doc = await Department.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const doc = await Department.findByIdAndDelete(id);
   if (!doc) throw new ApiError(404, 'Department not found');
 };

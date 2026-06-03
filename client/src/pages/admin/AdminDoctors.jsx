@@ -29,6 +29,8 @@ export default function AdminDoctors() {
   const [error,        setError]        = useState('')
   const [success,      setSuccess]      = useState('')
   const [doctorUsers,  setDoctorUsers]  = useState([])
+  const [doctorSuccessModal, setDoctorSuccessModal] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   // ─── Form fields ──────────────────────────────────────────────────────────
   const [createMode,      setCreateMode]      = useState('quick')
@@ -83,6 +85,18 @@ export default function AdminDoctors() {
       .then(d => setDepartments(d.data || []))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!doctorSuccessModal) return
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setDoctorSuccessModal(null)
+        setCopied(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [doctorSuccessModal])
 
   // ─── Open create modal — fetch DOCTOR-role users ──────────────────────────
   const openCreate = () => {
@@ -153,9 +167,13 @@ export default function AdminDoctors() {
         const created = data.data?.doctor || data.data || data
         if (created?._id) setDoctors(prev => [created, ...prev])
 
-        if (data.data?.autoPassword && data.data?.licenseNumber) {
-          alert(`✅ Həkim yaradıldı!\n\nE-poçt: ${newEmail}\nŞifrə: ${data.data.autoPassword}\nLisenziya: ${data.data.licenseNumber}\n\nBu məlumatı həkimə bildirin.`)
-        }
+        setDoctorSuccessModal({
+          name: created?.userId?.fullName || newFullName.trim(),
+          email: created?.userId?.email || newEmail.trim(),
+          password: data.data?.autoPassword || '—',
+          licenseNumber: data.data?.licenseNumber || created?.licenseNumber || '—',
+        })
+        setCopied(false)
         closeModal()
       } catch (e) { setError(e.message) }
       finally { setSaving(false) }
@@ -182,6 +200,33 @@ export default function AdminDoctors() {
   )
 
   const closeModal = () => { setShowModal(false); setEditDoctor(null); setError('') }
+  const closeDoctorSuccessModal = () => { setDoctorSuccessModal(null); setCopied(false) }
+
+  const copyDoctorCredentials = async () => {
+    if (!doctorSuccessModal) return
+
+    const text = `Həkim yaradıldı!\n\nE-poçt: ${doctorSuccessModal.email || '—'}\nŞifrə: ${doctorSuccessModal.password || '—'}\nLisenziya: ${doctorSuccessModal.licenseNumber || '—'}\n\nBu məlumatı həkimə bildirin.`
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
 
   return (
     <AdminLayout activePage="doctors">
@@ -268,6 +313,59 @@ export default function AdminDoctors() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {doctorSuccessModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="doctor-success-title"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(11, 29, 52, 0.55)', backdropFilter: 'blur(4px)', zIndex: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) closeDoctorSuccessModal() }}
+        >
+          <div style={{ width: 'min(560px, calc(100vw - 32px))', background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 22, boxShadow: '0 24px 70px rgba(15, 23, 42, 0.22)', padding: 28, boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+              <button onClick={closeDoctorSuccessModal} aria-label="Bağla" style={{ width: 32, height: 32, border: '1px solid #E2E8F0', borderRadius: 10, background: '#fff', color: '#64748B', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: 22 }}>
+              <div style={{ width: 58, height: 58, borderRadius: '50%', background: '#DCFCE7', color: '#16A34A', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </div>
+              <h2 id="doctor-success-title" style={{ margin: 0, fontSize: 22, lineHeight: 1.25, fontWeight: 800, color: '#0B1D34' }}>Həkim yaradıldı!</h2>
+              {doctorSuccessModal.name && (
+                <p style={{ margin: '7px 0 0', color: '#64748B', fontSize: 13 }}>{doctorSuccessModal.name}</p>
+              )}
+            </div>
+
+            <div style={{ border: '1px solid #E2E8F0', borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
+              <CredentialRow icon={<MailIcon />} label="E-poçt" value={doctorSuccessModal.email} />
+              <CredentialRow icon={<LockIcon />} label="Şifrə" value={doctorSuccessModal.password} />
+              <CredentialRow icon={<LicenseIcon />} label="Lisenziya" value={doctorSuccessModal.licenseNumber} last />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#E6F7F8', border: '1px solid rgba(29, 139, 149, 0.18)', borderRadius: 14, padding: '12px 14px', color: '#1D8B95', fontSize: 13, fontWeight: 600, marginBottom: 22 }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+              </svg>
+              Bu məlumatı həkimə bildirin.
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <button onClick={copyDoctorCredentials} style={{ padding: '10px 18px', border: '1px solid #E2E8F0', borderRadius: 10, background: '#fff', color: '#1D8B95', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
+                {copied ? 'Kopyalandı' : 'Kopyala'}
+              </button>
+              <button onClick={closeDoctorSuccessModal} style={{ padding: '10px 24px', border: 'none', borderRadius: 10, background: '#1D8B95', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 20px rgba(29,139,149,0.22)' }}>
+                Tamam
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -386,5 +484,41 @@ function MF({ label, value, onChange, type = 'text', placeholder = '' }) {
       <label style={lbl}>{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inp} />
     </div>
+  )
+}
+
+function CredentialRow({ icon, label, value, last = false }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '34px 110px 1fr', gap: 12, alignItems: 'center', padding: '13px 16px', borderBottom: last ? 'none' : '1px solid #E2E8F0', background: '#fff' }}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FAFB', color: '#1D8B95', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icon}
+      </div>
+      <div style={{ color: '#0B1D34', fontSize: 13, fontWeight: 700 }}>{label}:</div>
+      <div style={{ color: '#334155', fontSize: 13, lineHeight: 1.45, wordBreak: 'break-word' }}>{value || '—'}</div>
+    </div>
+  )
+}
+
+function MailIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-10 6L2 7" />
+    </svg>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
+}
+
+function LicenseIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="14" x="3" y="5" rx="2" /><path d="M7 9h5" /><path d="M7 13h3" /><circle cx="17" cy="13" r="2" />
+    </svg>
   )
 }

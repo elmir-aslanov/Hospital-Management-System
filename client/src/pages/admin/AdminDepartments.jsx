@@ -50,15 +50,23 @@ export default function AdminDepartments() {
 
   /* ── load data ─────────────────────────────────────────────────────── */
   useEffect(() => {
-    Promise.all([
-      fetch(`${BASE}/api/v1/departments/admin/all`,     { headers: hdrs() }).then(r => r.json()),
-      fetch(`${BASE}/api/v1/doctors?limit=200`,         { headers: hdrs() }).then(r => r.json()),
-      fetch(`${BASE}/api/v1/patients?page=1&limit=200`, { headers: hdrs() }).then(r => r.json()),
-    ]).then(([d, doc, pat]) => {
-      setDepts(d.data || [])
-      setDoctors(doc.data?.doctors   || [])
-      setPatients(pat.data?.patients || [])
-    }).finally(() => setLoading(false))
+    const load = async () => {
+      try {
+        const [d, doc, pat] = await Promise.all([
+          fetch(`${BASE}/api/v1/departments/admin/all`,     { headers: hdrs() }).then(r => r.json()),
+          fetch(`${BASE}/api/v1/doctors?limit=200`,         { headers: hdrs() }).then(r => r.json()),
+          fetch(`${BASE}/api/v1/patients?page=1&limit=200`, { headers: hdrs() }).then(r => r.json()),
+        ])
+        setDepts(d.data || [])
+        setDoctors(doc.data?.doctors   || [])
+        setPatients(pat.data?.patients || [])
+      } catch (err) {
+        console.error('AdminDepartments: failed to load data —', err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [])
 
   /* ── helpers ───────────────────────────────────────────────────────── */
