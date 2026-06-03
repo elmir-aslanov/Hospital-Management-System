@@ -151,6 +151,7 @@ export default function HekimlerPage() {
   const [error, setError]           = useState(false)
   const [search, setSearch]         = useState('')
   const [activeSpec, setActiveSpec] = useState('Hamısı')
+  const [visibleCount, setVisibleCount] = useState(8)
 
   useEffect(() => {
     // Public site-doctors endpoint — no auth required
@@ -209,7 +210,7 @@ export default function HekimlerPage() {
               type="text"
               placeholder="Həkim adı və ya ixtisas axtar..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setVisibleCount(8) }}
               style={{
                 flex: '1 1 240px', padding: '11px 16px', borderRadius: '10px',
                 border: '1.5px solid #e2e8f0', fontSize: '14px', fontFamily: FONT,
@@ -220,7 +221,7 @@ export default function HekimlerPage() {
             />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {SPECIALTIES.map(spec => (
-                <button key={spec} onClick={() => setActiveSpec(spec)} style={{
+                <button key={spec} onClick={() => { setActiveSpec(spec); setVisibleCount(8) }} style={{
                   padding: '8px 16px', borderRadius: '20px',
                   border: `1.5px solid ${activeSpec === spec ? TEAL : '#d1d9e0'}`,
                   background: activeSpec === spec ? TEAL : '#ffffff',
@@ -262,9 +263,49 @@ export default function HekimlerPage() {
           )}
 
           {!loading && !error && filtered.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
-              {filtered.map((doc, i) => <DoctorCard key={doc._id ?? i} doctor={doc} />)}
-            </div>
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
+                {filtered.slice(0, visibleCount).map((doc, i) => <DoctorCard key={doc._id ?? i} doctor={doc} />)}
+              </div>
+
+              {visibleCount < filtered.length && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+                  <button
+                    onClick={() => setVisibleCount(c => c + 8)}
+                    style={{
+                      padding: '13px 36px', background: 'white',
+                      border: '2px solid #00848e', borderRadius: 12,
+                      fontSize: 14, fontWeight: 700, color: '#00848e',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                      fontFamily: "'Source Sans 3', sans-serif",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#00848e'; e.currentTarget.style.color = 'white' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#00848e' }}
+                  >
+                    Daha çox göstər ({filtered.length - visibleCount} həkim)
+                  </button>
+                </div>
+              )}
+
+              {visibleCount >= filtered.length && filtered.length > 8 && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+                  <button
+                    onClick={() => setVisibleCount(8)}
+                    style={{
+                      padding: '13px 36px', background: 'white',
+                      border: '2px solid #e2e8f0', borderRadius: 12,
+                      fontSize: 14, fontWeight: 700, color: '#64748b',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                      fontFamily: "'Source Sans 3', sans-serif",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#00848e'; e.currentTarget.style.color = '#00848e' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
+                  >
+                    Daha az göstər ↑
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

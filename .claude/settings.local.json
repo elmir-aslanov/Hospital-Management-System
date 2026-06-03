@@ -4,7 +4,14 @@
       "Bash(node --input-type=module)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\\\\server\" -Recurse -File)",
       "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\YOGA\\\\Desktop\\\\Hospital-Management-System\" -Force)",
+      "Bash(ls -la /c/Users/YOGA/Desktop/Hospital-Management-System)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/**)",
+      "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/client -type f -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.tsx\" -o -name \"*.ts\" | head -30)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/**)",
+      "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/client/src -type f \\\\\\( -name \"*.jsx\" -o -name \"*.tsx\" -o -name \"*.js\" -o -name \"*.ts\" \\\\\\) 2>/dev/null | grep -v node_modules)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/**)"
     ]
   }
 }

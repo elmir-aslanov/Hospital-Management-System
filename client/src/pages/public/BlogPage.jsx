@@ -106,16 +106,37 @@ export default function BlogPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
+  const [hasMore,     setHasMore]     = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
-    api.get('/blog', { params: { limit: 12 } })
+    api.get('/blog', { params: { limit: 6 } })
       .then(res => {
-        const data = res.data?.data ?? res.data;
-        setPosts(Array.isArray(data) ? data : []);
+        const data = res.data?.data || res.data || {}
+        const list = Array.isArray(data) ? data : data.posts || data.blogs || []
+        const total = data.total || list.length
+        setPosts(list)
+        setHasMore(list.length < total || list.length === 6)
+        setPage(1)
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const res = await api.get('/blog', { params: { limit: 6, page: nextPage } })
+      const data = res.data?.data || res.data || {}
+      const list = Array.isArray(data) ? data : data.posts || data.blogs || []
+      setPosts(prev => [...prev, ...list])
+      setPage(nextPage)
+      setHasMore(list.length === 6)
+    } catch {}
+    finally { setLoadingMore(false) }
+  }
 
   return (
     <main style={{ fontFamily: FONT }}>
@@ -160,9 +181,38 @@ export default function BlogPage() {
           )}
 
           {!loading && !error && posts.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-              {posts.map((post, i) => <BlogCard key={post._id ?? i} post={post} index={i} />)}
-            </div>
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+                {posts.map((post, i) => <BlogCard key={post._id ?? i} post={post} index={i} />)}
+              </div>
+
+              {hasMore && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    style={{
+                      padding: '13px 36px', background: loadingMore ? '#94a3b8' : 'white',
+                      border: '2px solid #00848e', borderRadius: 12,
+                      fontSize: 14, fontWeight: 700, color: loadingMore ? 'white' : '#00848e',
+                      cursor: loadingMore ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8,
+                      fontFamily: "'Source Sans 3', sans-serif",
+                    }}
+                    onMouseEnter={e => { if (!loadingMore) { e.currentTarget.style.background = '#00848e'; e.currentTarget.style.color = 'white' } }}
+                    onMouseLeave={e => { if (!loadingMore) { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#00848e' } }}
+                  >
+                    {loadingMore ? (
+                      <>
+                        <div style={{ width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                        Yüklənir...
+                      </>
+                    ) : 'Daha çox göstər'}
+                  </button>
+                </div>
+              )}
+              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            </>
           )}
         </div>
       </section>
