@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 const TEAL = '#00848e'
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const SLIDE_MS = 420
-const INTERVAL_MS = 2500
+const INTERVAL_MS = 2000
 
 const PARTNERS = [
   { name: 'AzerGold',               logo: '/AzerGold.jpeg'                              },

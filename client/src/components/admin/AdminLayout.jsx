@@ -113,7 +113,7 @@ export default function AdminLayout({ children, activePage }) {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }} onClick={() => notifOpen && setNotifOpen(false)}>
 
       {/* SIDEBAR */}
-      <aside style={{
+      <aside className="admin-sidebar" style={{
         width: 240, minHeight: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 50,
         background: 'linear-gradient(180deg,#0a1628 0%,#0d2137 60%,#0a1f35 100%)',
         display: 'flex', flexDirection: 'column',
@@ -170,11 +170,26 @@ export default function AdminLayout({ children, activePage }) {
       </aside>
 
       {/* RIGHT */}
-      <div style={{ marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="admin-main" style={{ marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column' }}>
 
         {/* TOPBAR */}
-        <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(241,245,249,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '12px 28px', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+        <header className="admin-header" style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(241,245,249,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '12px 28px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button
+            className="admin-hamburger"
+            onClick={() => {
+              const sidebar = document.querySelector('.admin-sidebar')
+              sidebar?.classList.toggle('open')
+            }}
+            style={{ display: 'none', width: 34, height: 34, background: 'none', border: '1px solid #e2e8f0', borderRadius: 8, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+
+          <div className="admin-search" style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
             <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
               <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
@@ -270,6 +285,33 @@ export default function AdminLayout({ children, activePage }) {
           {children}
         </main>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .admin-sidebar {
+            position: fixed !important;
+            left: -240px !important;
+            z-index: 1000 !important;
+            transition: left 0.3s ease !important;
+          }
+          .admin-sidebar.open {
+            left: 0 !important;
+          }
+          .admin-main {
+            margin-left: 0 !important;
+            width: 100% !important;
+          }
+          .admin-header {
+            padding: 0 12px !important;
+          }
+          .admin-search {
+            display: none !important;
+          }
+          .admin-hamburger {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

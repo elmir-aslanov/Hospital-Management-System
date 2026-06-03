@@ -39,6 +39,8 @@ export default function AdminAppointments() {
   const [rescheduleEnd,    setRescheduleEnd]    = useState('')
   const [rescheduleErr,    setRescheduleErr]    = useState('')
   const [rescheduleSaving, setRescheduleSaving] = useState(false)
+  const [view,      setView]      = useState('table')
+  const [calMonth,  setCalMonth]  = useState(new Date())
   const [searchParams]            = useSearchParams()
 
   /* ── modal form state ── */

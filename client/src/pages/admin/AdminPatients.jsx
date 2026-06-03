@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { exportToCsv } from '../../utils/exportCsv'
+import useSort from '../../hooks/useSort'
 
 import { BASE } from '../../api/config.js'
 const emptyForm = { fullName: '', email: '', phone: '', bloodGroup: '' }
@@ -54,8 +55,10 @@ export default function AdminPatients() {
     (p.patientId || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const pages    = Math.ceil(filtered.length / 10) || 1
-  const pagSlice = filtered.slice((page - 1) * 10, page * 10)
+  const { sorted: sortedPatients, toggle: toggleSort, SortIcon } = useSort(filtered, 'patientId')
+
+  const pages    = Math.ceil(sortedPatients.length / 10) || 1
+  const pagSlice = sortedPatients.slice((page - 1) * 10, page * 10)
 
   const handleSearch = (val) => { setSearch(val); setPage(1) }
 
@@ -166,8 +169,25 @@ export default function AdminPatients() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    {['Pasiyent ID', 'Ad Soyad', 'E-poçt', 'Telefon', 'Qan qrupu', 'Status', ''].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                    {[
+                      { label: 'Pasiyent ID', key: 'patientId' },
+                      { label: 'Ad Soyad',   key: 'userId.fullName' },
+                      { label: 'E-poçt',     key: 'userId.email' },
+                      { label: 'Telefon',    key: 'userId.phone' },
+                      { label: 'Qan qrupu',  key: 'bloodGroup' },
+                      { label: 'Status',     key: null },
+                      { label: '',           key: null },
+                    ].map(({ label, key }) => (
+                      <th key={label}
+                        onClick={() => key && toggleSort(key)}
+                        style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', userSelect: 'none', cursor: key ? 'pointer' : 'default', whiteSpace: 'nowrap' }}
+                        onMouseEnter={e => { if (key) e.currentTarget.style.color = '#00848e' }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8' }}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          {label}{key && <SortIcon colKey={key} />}
+                        </span>
+                      </th>
                     ))}
                   </tr>
                 </thead>

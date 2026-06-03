@@ -11,7 +11,10 @@
       "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/client -type f -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.tsx\" -o -name \"*.ts\" | head -30)",
       "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/**)",
       "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/client/src -type f \\\\\\( -name \"*.jsx\" -o -name \"*.tsx\" -o -name \"*.js\" -o -name \"*.ts\" \\\\\\) 2>/dev/null | grep -v node_modules)",
-      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/**)"
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/**)",
+      "Bash(git checkout *)",
+      "Bash(del \"client\\\\src\\\\context\\\\ThemeContext.jsx\")",
+      "Bash(Remove-Item \"client/src/context/ThemeContext.jsx\" -Force)"
     ]
   }
 }
