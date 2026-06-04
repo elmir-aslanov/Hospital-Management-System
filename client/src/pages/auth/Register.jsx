@@ -180,7 +180,7 @@ export default function Register() {
             {/* Image card */}
             <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', position: 'relative', marginTop: 24 }}>
               <img
-                src="/emeliyyat_sekli.png"
+                src="/register.jpeg"
                 alt=""
                 style={{ width: '100%', height: 'calc(100vh - 200px)', objectFit: 'cover', objectPosition: 'center center', display: 'block' }}
                 onError={e => e.currentTarget.style.display = 'none'}

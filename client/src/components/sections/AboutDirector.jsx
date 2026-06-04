@@ -96,7 +96,7 @@ export default function AboutDirector() {
               justifyContent: 'center',
             }}>
               <img
-                src="/client1.jpeg"
+                src="/cerrahiye.jpeg"
                 alt="Aslan Medical"
                 style={{
                   width: '91%', height: '91%',
@@ -122,7 +122,7 @@ export default function AboutDirector() {
               gridTemplateColumns: '1fr 1fr',
               gap: isMobile ? '10px' : '16px',
             }}>
-              {['/client2.jpeg', '/client3.jpeg', '/client4.jpeg'].map((src, i) => (
+              {['/komponent2.jpeg', '/client3.jpeg', '/client4.jpeg'].map((src, i) => (
                 <img
                   key={i}
                   src={src}

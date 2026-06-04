@@ -10,6 +10,46 @@ export default function Footer() {
   const year = new Date().getFullYear()
   return (
     <footer style={{ background: NAVY, color: 'white', fontFamily: FONT }}>
+      <div
+        className="footer-wave"
+        aria-hidden="true"
+        style={{
+          height: 'clamp(86px, 9vw, 132px)',
+          background: '#ffffff',
+          lineHeight: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <svg
+          viewBox="0 0 1440 170"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ display: 'block', width: '100%', height: '100%' }}
+        >
+          <path
+            d="M0 44 C165 18 310 74 470 48 C620 24 760 23 910 50 C1085 82 1235 28 1440 46"
+            fill="none"
+            stroke="rgba(100,116,139,0.45)"
+            strokeWidth="1.2"
+          />
+          <path
+            d="M0 67 C190 35 350 91 545 64 C720 40 875 35 1045 66 C1205 95 1335 58 1440 62"
+            fill="none"
+            stroke="rgba(148,163,184,0.55)"
+            strokeWidth="1.1"
+          />
+          <path
+            d="M0 88 C180 58 345 111 535 86 C735 60 880 55 1065 86 C1218 112 1350 83 1440 82"
+            fill="none"
+            stroke="rgba(11,29,52,0.35)"
+            strokeWidth="1.2"
+          />
+          <path
+            d="M0 116 C155 84 320 129 505 108 C700 86 850 76 1040 104 C1190 126 1320 104 1440 94 L1440 170 L0 170 Z"
+            fill={NAVY}
+          />
+        </svg>
+      </div>
 
       {/* Main footer grid */}
       <div style={{ maxWidth: 1140, margin: '0 auto', padding: '52px 32px 36px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr', gap: 48 }}>

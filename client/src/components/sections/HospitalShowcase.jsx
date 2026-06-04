@@ -7,7 +7,7 @@ const TEAL = '#00848e'
 const hospitals = [
   { name: 'Aslan Medical Center', locationKey: 'baku', image: '/AslanMedical2.png', descKey: 'bakuDesc' },
   { name: 'Aslan Medical Center', locationKey: 'ankara', image: '/Filial1.png', descKey: 'ankaraDesc' },
-  { name: 'Aslan Medical Center', locationKey: 'samsun', image: '/Filial2.png', descKey: 'samsunDesc' },
+  { name: 'Aslan Medical Center', locationKey: 'samsun', image: '/filial24.jpeg', descKey: 'samsunDesc' },
 ]
 
 export default function HospitalShowcase() {

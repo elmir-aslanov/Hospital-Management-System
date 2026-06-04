@@ -14,7 +14,7 @@ const GOLD = '#c9a84c';
 const CONTAINER = { maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto' };
 
 const SMALL = [
-  { src: '/client2.jpeg', alt: 'Klinik 1', bg: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', nav: false },
+  { src: '/komponent2.jpeg', alt: 'Klinik 1', bg: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', nav: false },
   { src: '/client3.jpeg', alt: 'Klinik 2', bg: 'linear-gradient(135deg,#00848e 0%,#0a1628 100%)', nav: false },
   { src: '/client4.jpeg', alt: 'Klinik 3', bg: 'linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%)', nav: false },
   { src: '/client5.jpeg', alt: 'Klinik 4', bg: 'linear-gradient(135deg,#00848e 0%,#0a1628 100%)', nav: true  },
@@ -113,7 +113,7 @@ export default function ClinicalPrograms() {
                 zIndex: 5,
               }}>
                 <img
-                  src="/client1.jpeg"
+                  src="/cerrahiye.jpeg"
                   alt="Klinik proqramlar"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
                 />
