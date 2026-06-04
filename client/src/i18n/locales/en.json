@@ -419,8 +419,9 @@
     "phonePlaceholder": "+994XXXXXXXXX"
   },
   "hospitalShowcase": {
-    "title": "Advanced medical technologies shaped into quality healthcare with expert doctors!",
-    "label": "Our Hospital",
+    "title": "Our branches equipped with advanced medical technologies",
+    "label": "Our Hospitals",
+    "subtitle": "With our professional medical team and modern equipment, we provide you with high-quality healthcare services.",
     "locations": {
       "baku": "Baku",
       "ankara": "Ankara",

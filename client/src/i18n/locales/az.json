@@ -419,8 +419,9 @@
     "phonePlaceholder": "+994XXXXXXXXX"
   },
   "hospitalShowcase": {
-    "title": "Ekspert həkimlərlə keyfiyyətli səhiyyəyə çevrilmiş qabaqcıl tibbi texnologiyalar!",
-    "label": "Xəstəxanamız",
+    "title": "Qabaqcıl tibbi texnologiyalarla təchiz olunmuş filiallarımız",
+    "label": "Xəstəxanalarımız",
+    "subtitle": "Peşəkar həkim komandamız və müasir avadanlıqlarımızla sizə yüksək keyfiyyətli tibbi xidmət göstəririk.",
     "locations": {
       "baku": "Bakı",
       "ankara": "Ankara",
