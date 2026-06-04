@@ -1,8 +1,9 @@
 import { useState } from 'react'
 
 const FONT  = "'Source Sans 3', 'Raleway', sans-serif"
-const TEAL  = '#1DB6A6'
-const TEAL_HVR = '#178f84'
+const TEAL  = '#1D8B95'
+const TEAL_HVR = 'linear-gradient(135deg, #0E8F96 0%, #159f92 100%)'
+const TEAL_GRAD = 'linear-gradient(135deg, #1D8B95 0%, #1DB6A6 100%)'
 
 /* ── Inline SVG icons ──────────────────────────────────────────────────── */
 const IconUser = () => (
@@ -38,29 +39,29 @@ const IconSend = () => (
 
 /* ── Shared styles ─────────────────────────────────────────────────────── */
 const inputBase = {
-  width: '100%', height: 48, padding: '0 14px 0 38px',
-  borderRadius: 10, border: '1px solid #e2e8f0',
+  width: '100%', height: 60, padding: '0 16px 0 44px',
+  borderRadius: 12, border: '1.5px solid #D7E5EA',
   fontSize: 14, fontFamily: FONT, boxSizing: 'border-box',
-  outline: 'none', color: '#1a2b4a', background: '#fff',
+  outline: 'none', color: '#0B1D34', background: '#FAFEFF',
   transition: 'border-color 0.18s, box-shadow 0.18s',
 }
 const labelStyle = {
-  fontSize: 13, fontWeight: 500, color: '#374151',
-  marginBottom: 6, display: 'block', fontFamily: FONT,
+  fontSize: 13, fontWeight: 700, color: '#0B1D34',
+  marginBottom: 8, display: 'block', fontFamily: FONT,
 }
 const iconPos = {
-  position: 'absolute', left: 12, top: '50%',
-  transform: 'translateY(-50%)', color: '#94a3b8',
+  position: 'absolute', left: 15, top: '50%',
+  transform: 'translateY(-50%)', color: TEAL,
   pointerEvents: 'none', display: 'flex', alignItems: 'center',
 }
 const iconPosTop = {
-  position: 'absolute', left: 12, top: 14,
-  color: '#94a3b8', pointerEvents: 'none',
+  position: 'absolute', left: 15, top: 17,
+  color: TEAL, pointerEvents: 'none',
   display: 'flex', alignItems: 'center',
 }
 
-function focusIn(e)  { e.target.style.borderColor = TEAL;   e.target.style.boxShadow = '0 0 0 3px rgba(29,182,166,0.12)' }
-function focusOut(e) { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }
+function focusIn(e)  { e.target.style.borderColor = TEAL;   e.target.style.boxShadow = '0 0 0 3px rgba(29, 139, 149, 0.12)' }
+function focusOut(e) { e.target.style.borderColor = '#D7E5EA'; e.target.style.boxShadow = 'none' }
 
 /* ── Icon map keyed by field name ──────────────────────────────────────── */
 const ICON_MAP = {
@@ -72,18 +73,29 @@ const ICON_MAP = {
   unvan:   <IconMapPin />,
 }
 
+const PLACEHOLDERS = {
+  ad: 'Adınızı daxil edin',
+  soyad: 'Soyadınızı daxil edin',
+  ataAdi: 'Ata adınızı daxil edin',
+  epoct: 'E-poçt ünvanınızı daxil edin',
+  telefon: 'Telefon nömrənizi daxil edin',
+  unvan: 'Ünvanınızı daxil edin',
+}
+
 /* ── Field row — defined OUTSIDE main component to prevent remount on each render ── */
 function FieldGroup({ label, name, type = 'text', form, onChange }) {
   return (
     <div>
-      <label style={labelStyle}>{label} *</label>
+      <label style={labelStyle}>{label} <span style={{ color: '#E85D3F' }}>*</span></label>
       <div style={{ position: 'relative' }}>
         {ICON_MAP[name] && <span style={iconPos}>{ICON_MAP[name]}</span>}
         <input
+          className="muraciet-input"
           type={type}
           name={name}
           value={form[name]}
           onChange={onChange}
+          placeholder={PLACEHOLDERS[name]}
           style={inputBase}
           onFocus={focusIn}
           onBlur={focusOut}
@@ -135,6 +147,13 @@ export default function ElektronMuraciet() {
 
   return (
     <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '40px 0', fontFamily: FONT }}>
+      <style>{`
+        .muraciet-input::placeholder,
+        .muraciet-textarea::placeholder {
+          color: #94A3B8;
+          opacity: 1;
+        }
+      `}</style>
 
       {/* Info text section */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '0 16px 24px' : '0 48px 32px' }}>
@@ -155,9 +174,9 @@ export default function ElektronMuraciet() {
       {/* Form card */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '0 16px 40px' : '0 48px 60px' }}>
         <div style={{
-          background: '#ffffff', borderRadius: 16, padding: isMobile ? 24 : 40,
-          border: '1px solid rgba(15,23,42,0.08)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+          background: '#FFFFFF', borderRadius: 20, padding: isMobile ? 24 : 40,
+          border: '1px solid rgba(29, 139, 149, 0.10)',
+          boxShadow: '0 12px 35px rgba(11, 29, 52, 0.06)',
         }}>
           <form onSubmit={handleSubmit}>
 
@@ -185,17 +204,19 @@ export default function ElektronMuraciet() {
 
             {/* Row 3 — Mətn */}
             <div style={{ marginBottom: 28 }}>
-              <label style={labelStyle}>Mətn *</label>
+              <label style={labelStyle}>Mətn <span style={{ color: '#E85D3F' }}>*</span></label>
               <div style={{ position: 'relative' }}>
                 <span style={iconPosTop}><IconMsg /></span>
                 <textarea
+                  className="muraciet-textarea"
                   name="metn"
                   value={form.metn}
                   onChange={handleChange}
+                  placeholder="Mesajınızı yazın..."
                   style={{
                     ...inputBase,
                     height: 'auto', minHeight: 200,
-                    padding: '12px 14px 12px 38px',
+                    padding: '15px 16px 15px 44px',
                     resize: 'vertical',
                   }}
                   onFocus={focusIn}
@@ -225,13 +246,13 @@ export default function ElektronMuraciet() {
                 type="submit"
                 disabled={loading}
                 style={{
-                  background: loading ? '#7ec8cc' : (hovering ? TEAL_HVR : TEAL),
+                  background: loading ? '#7ec8cc' : (hovering ? TEAL_HVR : TEAL_GRAD),
                   color: '#fff', border: 'none',
-                  padding: '12px 32px', fontSize: 14, fontWeight: 600,
-                  borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer',
+                  padding: '14px 34px', fontSize: 14, fontWeight: 700,
+                  borderRadius: 12, cursor: loading ? 'not-allowed' : 'pointer',
                   fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 8,
-                  transition: 'background 0.2s',
-                  boxShadow: loading ? 'none' : '0 4px 14px rgba(29,182,166,0.3)',
+                  transition: 'background 0.2s, box-shadow 0.2s',
+                  boxShadow: loading ? 'none' : '0 12px 24px rgba(29, 139, 149, 0.22)',
                   width: isMobile ? '100%' : 'auto',
                   justifyContent: 'center',
                 }}
