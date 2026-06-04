@@ -156,17 +156,17 @@ export default function ElektronMuraciet() {
       `}</style>
 
       {/* Info text section */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '0 16px 24px' : '0 48px 32px' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0B1D34', marginBottom: 16, fontFamily: FONT }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '32px 16px 28px' : '48px 48px 40px' }}>
+        <h2 style={{ fontSize: isMobile ? 24 : 28, fontWeight: 800, lineHeight: 1.25, color: '#0B1D34', marginBottom: 22, fontFamily: FONT }}>
           Hörmətli istifadəçi!
         </h2>
-        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.8, marginBottom: 12 }}>
+        <p style={{ maxWidth: 1200, fontSize: isMobile ? 15 : 16, fontWeight: 400, color: '#475569', lineHeight: isMobile ? 1.7 : 1.85, marginBottom: 18 }}>
           Aslan Medical Center-ə olan müraciətlər "Vətəndaşların müraciətləri haqqında" Azərbaycan Respublikasının Qanunu və digər qanunvericilik aktlarına uyğun olaraq qeydiyyata alınır və baxılır. Müraciətin mətni oxunaqlı olmalı, müraciətdə edilən təklif və ya tələb aydın ifadə edilməli, təhqir və böhtana yol verilməməlidir.
         </p>
-        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.8, marginBottom: 12 }}>
+        <p style={{ maxWidth: 1200, fontSize: isMobile ? 15 : 16, fontWeight: 400, color: '#475569', lineHeight: isMobile ? 1.7 : 1.85, marginBottom: 18 }}>
           Müraciətdə təhqir və böhtana yol verildikdə, yaxud müəllif özü barədə məlumatları dəqiq göstərmədikdə müraciətə baxılmır.
         </p>
-        <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.8, marginBottom: 0 }}>
+        <p style={{ maxWidth: 1200, fontSize: isMobile ? 15 : 16, fontWeight: 400, color: '#475569', lineHeight: isMobile ? 1.7 : 1.85, marginBottom: 0 }}>
           Aslan Medical Center təhlükəsizlik səbəbindən bu domenlərdən məktub qəbul etmir: yandex.ru, mail.ru, list.ru, inbox.ru, bk.ru, yahoo.com.
         </p>
       </div>
