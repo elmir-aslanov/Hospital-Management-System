@@ -208,14 +208,14 @@ document.documentElement.lang = i18n.language || 'az';
 
 export default function App() {
   return (
-    <I18nextProvider i18n={i18n}>
-      <AuthProvider>
+    <AuthProvider>
+      <I18nextProvider i18n={i18n}>
         <BrowserRouter>
           <RouteLoader />
           <Layout />
           <WhatsAppButton />
         </BrowserRouter>
-      </AuthProvider>
-    </I18nextProvider>
+      </I18nextProvider>
+    </AuthProvider>
   );
 }

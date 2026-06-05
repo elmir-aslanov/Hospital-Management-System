@@ -4,6 +4,10 @@ import * as authApi from '../api/authApi';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  if (typeof useState !== 'function') {
+    console.error('AuthProvider: React hooks unavailable');
+    return children;
+  }
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user,  setUser]  = useState(() => {
     try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
