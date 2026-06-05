@@ -65,6 +65,8 @@ export default function Login() {
             navigate('/doctor/dashboard');
           } else if (role === 'NURSE') {
             navigate('/nurse');
+          } else if (role === 'RECEPTIONIST') {
+            navigate('/receptionist');
           } else if (['STAFF', 'SOBE_MUDURU', 'BAS_HEKIM'].includes(role)) {
             localStorage.setItem('adminToken', token);
             localStorage.setItem('adminUser', JSON.stringify(user));
