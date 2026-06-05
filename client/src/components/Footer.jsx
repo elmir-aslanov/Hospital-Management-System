@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
@@ -7,6 +8,7 @@ const NAVY = '#0a1628'
 
 export default function Footer() {
   const { t } = useTranslation()
+  const { isMobile, isTablet } = useBreakpoint()
   const year = new Date().getFullYear()
   return (
     <footer style={{ background: NAVY, color: 'white', fontFamily: FONT }}>
@@ -52,7 +54,7 @@ export default function Footer() {
       </div>
 
       {/* Main footer grid */}
-      <div style={{ maxWidth: 1140, margin: '0 auto', padding: '52px 32px 36px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.5fr', gap: 48 }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto', padding: isMobile ? '32px 16px 24px' : '52px 32px 36px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '2fr 1fr 1fr 1.5fr', gap: 48 }}>
 
         {/* Col 1 — Brand */}
         <div>
@@ -141,7 +143,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '18px 32px' }}>
-        <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0, textAlign: isMobile ? 'center' : 'left' }}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
             © {year} Aslan Medical Center. {t('footer.rights')}.
           </span>

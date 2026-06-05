@@ -80,30 +80,6 @@ const HeroSection = () => {
           {t('hero.subtitle')}
         </p>
 
-        {/* Button */}
-        <div>
-          <button
-            style={{
-              border: '2px solid white',
-              borderRadius: '28px',
-              padding: '12px 28px',
-              width: 'fit-content',
-              color: 'white',
-              background: 'transparent',
-              fontSize: isMobile ? '14px' : '15px',
-              fontWeight: 600,
-              fontFamily: FONT,
-              cursor: 'pointer',
-              transition: 'background 0.25s, color 0.25s',
-              letterSpacing: '0.3px',
-            }}
-            onClick={() => window.location.href = '/about'}
-            onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#00848e'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'white'; }}
-          >
-            {t('hero.learnMore')}
-          </button>
-        </div>
       </motion.div>
 
       {/* Multi-wave transition */}

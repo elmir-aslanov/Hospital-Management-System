@@ -1,4 +1,5 @@
 import usePageTitle from '../../hooks/usePageTitle'
+import { useBreakpoint } from '../../hooks/useBreakpoint'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -12,6 +13,7 @@ const NAVY = '#0a1628'
 export default function ContactPage() {
   usePageTitle('Əlaqə', 'Aslan Medical Center ilə əlaqə saxlayın. Bakı, Azərbaycan.')
   const { t } = useTranslation()
+  const { isMobile, isTablet } = useBreakpoint()
   const [form, setForm]       = useState({ name: '', email: '', message: '', agreed: false })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -49,7 +51,7 @@ export default function ContactPage() {
   return (
     <main style={{ background: '#eef2f7', fontFamily: FONT, paddingTop: 110 }}>
 
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0px 40px 16px', display: 'grid', gridTemplateColumns: '420px 1fr', gap: 56, alignItems: 'center' }}>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '16px 16px 16px' : '0px 40px 16px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '420px 1fr', gap: 56, alignItems: 'center' }}>
 
         {/* LEFT — circular photo */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
@@ -177,7 +179,7 @@ export default function ContactPage() {
           </div>
         </motion.div>
       </section>
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '0 40px 40px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '0 16px 24px' : '0 40px 40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2,1fr)' : 'repeat(3,1fr)', gap: 16 }}>
 
         <div style={{ background: 'white', borderRadius: 16, padding: '20px 20px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb' }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e0f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>

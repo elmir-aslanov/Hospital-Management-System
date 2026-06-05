@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useBreakpoint } from '../../hooks/useBreakpoint'
 
 const FONT = "'Source Sans 3','Raleway',sans-serif"
 const TEAL = '#1D8B95'
@@ -242,6 +243,7 @@ function ActionRow({ message, error, saving, buttonText, savingText, buttonColor
 
 export default function UserProfilePage() {
   const { t } = useTranslation()
+  const { isMobile } = useBreakpoint()
   const initialUser = useMemo(() => safeParseUser(), [])
   const [activeTab, setActiveTab] = useState('profile')
   const [user, setUser] = useState(initialUser)
@@ -368,7 +370,7 @@ export default function UserProfilePage() {
         <Card style={{ overflow: 'hidden' }}>
           <div className="profile-summary-grid" style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 292px',
+            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 292px',
             gap: 24,
             alignItems: 'center',
             padding: '22px 24px',
@@ -469,7 +471,7 @@ export default function UserProfilePage() {
             </span>
           </div>
 
-          <div className="profile-settings-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 312px', minHeight: 390 }}>
+          <div className="profile-settings-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 312px', minHeight: 390 }}>
             <section style={{ padding: '24px 24px 22px', minWidth: 0 }}>
               {activeTab === 'profile' ? (
                 <form onSubmit={handleProfileSubmit} style={{ display: 'grid', gap: 18 }}>
@@ -482,7 +484,7 @@ export default function UserProfilePage() {
                       Yenilənə bilər
                     </span>
                   </div>
-                  <div className="profile-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
+                  <div className="profile-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
                     <Field label="Ad Soyad">
                       <TextInput value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ad Soyad" />
                     </Field>
@@ -514,7 +516,7 @@ export default function UserProfilePage() {
                       Təhlükəsiz dəyişiklik
                     </span>
                   </div>
-                  <div className="profile-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
+                  <div className="profile-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
                     <PasswordField
                       label="Cari şifrə"
                       value={currentPassword}
