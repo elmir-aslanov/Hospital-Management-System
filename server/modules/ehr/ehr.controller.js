@@ -29,6 +29,12 @@ export const getRecordById = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, record));
 });
 
+export const getPatientEHR   = asyncHandler(async (req, res) => { const d = await ehrService.getPatientEHR(req.params.patientId, req.query);  res.json(new ApiResponse(200, d)); });
+export const getEHRSummary   = asyncHandler(async (req, res) => { const d = await ehrService.getEHRSummary(req.params.patientId);              res.json(new ApiResponse(200, d)); });
+export const addEHRRecord    = asyncHandler(async (req, res) => { const d = await ehrService.addEHRRecord(req.body);                            res.status(201).json(new ApiResponse(201, d, 'Qeyd əlavə edildi')); });
+export const updateEHRRecord = asyncHandler(async (req, res) => { const d = await ehrService.updateEHRRecord(req.params.id, req.body);          res.json(new ApiResponse(200, d, 'Qeyd yeniləndi')); });
+export const deleteEHRRecord = asyncHandler(async (req, res) => { await ehrService.deleteEHRRecord(req.params.id);                             res.json(new ApiResponse(200, null, 'Qeyd silindi')); });
+
 export const getPatientResults = asyncHandler(async (req, res) => {
   const { patientId, dateOfBirth, phone } = req.query;
 

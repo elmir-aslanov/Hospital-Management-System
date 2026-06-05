@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { exportToCsv } from '../../utils/exportCsv'
 import useSort from '../../hooks/useSort'
@@ -16,6 +17,7 @@ const getEmail  = (p) => p?.userId?.email   || '—'
 const getPhone  = (p) => p?.userId?.phone   || '—'
 
 export default function AdminPatients() {
+  const navigate = useNavigate()
   const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
 
   const [patients, setPatients]     = useState([])
@@ -224,10 +226,16 @@ export default function AdminPatients() {
                           </span>
                         </td>
                         <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleDelete(p)}
-                            style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: 'white', fontSize: 11, cursor: 'pointer', color: '#ef4444' }}
-                          >Sil</button>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => navigate(`/admin/ehr/${p._id}`)}
+                              style={{ padding: '5px 12px', border: '1px solid #00848e', borderRadius: 7, background: 'white', color: '#00848e', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                            >EHR</button>
+                            <button
+                              onClick={() => handleDelete(p)}
+                              style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: 'white', fontSize: 11, cursor: 'pointer', color: '#ef4444' }}
+                            >Sil</button>
+                          </div>
                         </td>
                       </tr>
                     )

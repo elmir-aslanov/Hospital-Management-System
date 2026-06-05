@@ -1,5 +1,61 @@
 import MedicalRecord from '../../models/MedicalRecord.model.js';
+import EHR     from '../../models/EHR.model.js';
+import Patient from '../../models/Patient.model.js';
 import ApiError from '../../utils/ApiError.js';
+
+const POPULATE_DOCTOR = { path: 'doctorId', populate: { path: 'userId', select: 'fullName' } };
+
+export const getPatientEHR = async (patientId, { type, page = 1, limit = 50 } = {}) => {
+  const filter = { patientId, isActive: true };
+  if (type) filter.type = type;
+  const pg  = Math.max(1, parseInt(page));
+  const lim = Math.min(100, parseInt(limit));
+  const [records, total] = await Promise.all([
+    EHR.find(filter).populate(POPULATE_DOCTOR).sort({ date: -1 }).skip((pg - 1) * lim).limit(lim),
+    EHR.countDocuments(filter),
+  ]);
+  return { records, total, page: pg, limit: lim };
+};
+
+export const addEHRRecord = async (data) => {
+  const patient = await Patient.findById(data.patientId);
+  if (!patient) throw new ApiError(404, 'Pasiyent tapılmadı');
+  const record = await EHR.create(data);
+  await record.populate(POPULATE_DOCTOR);
+  return record;
+};
+
+export const updateEHRRecord = async (id, data) => {
+  const r = await EHR.findByIdAndUpdate(id, data, { new: true }).populate(POPULATE_DOCTOR);
+  if (!r) throw new ApiError(404, 'Qeyd tapılmadı');
+  return r;
+};
+
+export const deleteEHRRecord = async (id) => {
+  const r = await EHR.findByIdAndUpdate(id, { isActive: false });
+  if (!r) throw new ApiError(404, 'Qeyd tapılmadı');
+};
+
+export const getEHRSummary = async (patientId) => {
+  const [patient, records] = await Promise.all([
+    Patient.findById(patientId).populate('userId', 'fullName email phone birthDate'),
+    EHR.find({ patientId, isActive: true }).populate(POPULATE_DOCTOR).sort({ date: -1 }),
+  ]);
+  if (!patient) throw new ApiError(404, 'Pasiyent tapılmadı');
+  return {
+    patient,
+    records,
+    byType: {
+      diagnosis:    records.filter(r => r.type === 'diagnosis'),
+      procedure:    records.filter(r => r.type === 'procedure'),
+      allergy:      records.filter(r => r.type === 'allergy'),
+      prescription: records.filter(r => r.type === 'prescription'),
+      lab:          records.filter(r => r.type === 'lab'),
+      note:         records.filter(r => r.type === 'note'),
+      vaccination:  records.filter(r => r.type === 'vaccination'),
+    },
+  };
+};
 
 // Append-only — no delete operation is exposed
 export const createRecord = async (data, doctorId) => {

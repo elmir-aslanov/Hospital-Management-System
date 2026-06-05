@@ -12,6 +12,13 @@ router.get('/patient-results', ehrController.getPatientResults);
 
 router.use(authenticate);
 
+// EHR (new)
+router.get('/patient/:patientId/summary', authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE'), ehrController.getEHRSummary);
+router.get('/patient/:patientId',         authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE','PATIENT'), ehrController.getPatientEHR);
+router.post('/records',                   authorize('ADMIN','SUPER_ADMIN','DOCTOR'),         ehrController.addEHRRecord);
+router.put('/records/:id',                authorize('ADMIN','SUPER_ADMIN','DOCTOR'),         ehrController.updateEHRRecord);
+router.delete('/records/:id',             authorize('ADMIN','SUPER_ADMIN'),                  ehrController.deleteEHRRecord);
+
 // Create a medical record (append-only — no DELETE route)
 router.post('/', authorize('DOCTOR', 'LAB_TECHNICIAN'), validateCreateRecord, validate, ehrController.createRecord);
 

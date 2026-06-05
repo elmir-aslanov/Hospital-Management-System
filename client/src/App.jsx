@@ -40,6 +40,7 @@ import AdminAnbar           from './pages/admin/AdminAnbar';
 import AdminPriceList       from './pages/admin/AdminPriceList';
 import AdminSettings        from './pages/admin/AdminSettings';
 import AdminDischarge       from './pages/admin/AdminDischarge';
+import AdminEHR             from './pages/admin/AdminEHR';
 import AdminLab             from './pages/admin/AdminLab';
 import DoctorDashboard      from './pages/doctor/DoctorDashboard'
 import DoctorPatients       from './pages/doctor/DoctorPatients'
@@ -128,6 +129,7 @@ function Layout() {
         <Route path="/admin/analytics"    element={<AdminAnalitika />} />
         <Route path="/admin/settings"     element={<AdminSettings />} />
         <Route path="/admin/discharge"    element={<AdminDischarge />} />
+        <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
 
         {/* ── Doctor ── */}
         <Route path="/doctor/dashboard"     element={<DoctorDashboard />} />

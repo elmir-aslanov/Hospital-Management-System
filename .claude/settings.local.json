@@ -21,7 +21,12 @@
       "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/server -type f -name \"*.js\" | head -80)",
       "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/server -type f -name \"*.js\" | grep -v node_modules | tail -60)",
       "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/discharge/ 2>/dev/null && echo \"EXISTS\" || echo \"NOT EXISTS\")",
-      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/discharge//**)"
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/discharge//**)",
+      "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/ehr/ 2>/dev/null && echo \"EXISTS\" || echo \"NOT EXISTS\")",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/ehr//**)",
+      "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/server/models/EHR.model.js 2>/dev/null && echo \"EXISTS\" || echo \"NOT EXISTS\")",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/models/**)",
+      "Bash(grep -n \"ehr\" /c/Users/YOGA/Desktop/Hospital-Management-System/server/app.js)"
     ]
   }
 }
