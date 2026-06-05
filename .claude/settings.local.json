@@ -30,7 +30,13 @@
       "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/notifications/ 2>/dev/null && echo \"EXISTS\" || echo \"NOT EXISTS\")",
       "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/notifications//**)",
       "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/server/models/Notification.model.js 2>/dev/null && echo \"EXISTS\" || echo \"NOT EXISTS\")",
-      "Bash(grep -n \"notification\\\\|Notification\" /c/Users/YOGA/Desktop/Hospital-Management-System/server/app.js)"
+      "Bash(grep -n \"notification\\\\|Notification\" /c/Users/YOGA/Desktop/Hospital-Management-System/server/app.js)",
+      "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/nurse/ 2>/dev/null || echo \"NOT EXISTS\")",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/**)",
+      "Bash(mkdir -p /c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/nurse)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\YOGA\\Desktop\\Hospital-Management-System\\client\\src\\pages"
     ]
   }
 }
