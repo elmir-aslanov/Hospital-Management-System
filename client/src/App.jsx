@@ -39,6 +39,7 @@ import AdminAnalitika       from './pages/admin/AdminAnalitika';
 import AdminAnbar           from './pages/admin/AdminAnbar';
 import AdminPriceList       from './pages/admin/AdminPriceList';
 import AdminSettings        from './pages/admin/AdminSettings';
+import AdminDischarge       from './pages/admin/AdminDischarge';
 import AdminLab             from './pages/admin/AdminLab';
 import DoctorDashboard      from './pages/doctor/DoctorDashboard'
 import DoctorPatients       from './pages/doctor/DoctorPatients'
@@ -126,6 +127,7 @@ function Layout() {
         <Route path="/admin/pricelist"    element={<AdminPriceList />} />
         <Route path="/admin/analytics"    element={<AdminAnalitika />} />
         <Route path="/admin/settings"     element={<AdminSettings />} />
+        <Route path="/admin/discharge"    element={<AdminDischarge />} />
 
         {/* ── Doctor ── */}
         <Route path="/doctor/dashboard"     element={<DoctorDashboard />} />

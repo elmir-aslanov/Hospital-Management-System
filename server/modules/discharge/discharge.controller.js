@@ -26,6 +26,16 @@ export const getDischargeSummaryByVisit = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, summary));
 });
 
+export const getAllDischarges = asyncHandler(async (req, res) => {
+  const data = await dischargeService.getAllDischarges(req.query);
+  res.status(200).json(new ApiResponse(200, data));
+});
+
+export const getDischargesByPatient = asyncHandler(async (req, res) => {
+  const data = await dischargeService.getDischargesByPatient(req.params.patientId);
+  res.status(200).json(new ApiResponse(200, data));
+});
+
 export const downloadPDF = asyncHandler(async (req, res) => {
   const { pdfUrl, pdfBuffer } = await dischargeService.generatePDFBuffer(req.params.id);
 

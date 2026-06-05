@@ -86,18 +86,26 @@ export const updateInvoiceStatus = async (id, status) => {
 export const addPayment = async ({ invoiceId, amount, method, transactionId, note }, userId) => {
   const invoice = await Invoice.findById(invoiceId);
   if (!invoice) throw new ApiError(404, 'Invoice not found');
-  if (invoice.status === 'cancelled') throw new ApiError(400, 'Cannot pay a cancelled invoice');
+  if (invoice.status === 'cancelled') throw new ApiError(400, 'Ləğv edilmiş faktura üzrə ödəniş qəbul edilə bilməz');
+  if (invoice.status === 'paid') throw new ApiError(400, 'Faktura artıq ödənilib');
 
-  const payment = await Payment.create({
-    invoiceId, patientId: invoice.patientId,
-    amount, method, transactionId, note, receivedBy: userId,
-  });
+  const paymentAmount = Math.max(0, Number(amount) || 0);
+  if (paymentAmount <= 0) throw new ApiError(400, 'Ödəniş məbləği sıfırdan böyük olmalıdır');
 
-  const totalPaid = await Payment.aggregate([
+  const currentPaid = await Payment.aggregate([
     { $match: { invoiceId: invoice._id, status: 'completed' } },
     { $group: { _id: null, sum: { $sum: '$amount' } } },
   ]);
-  const paid = totalPaid[0]?.sum || 0;
+  const paidBefore = currentPaid[0]?.sum || 0;
+  const remaining  = Math.max(0, Number(invoice.total || 0) - paidBefore);
+  if (paymentAmount > remaining) throw new ApiError(400, 'Ödəniş məbləği fakturanın qalıq borcunu aşır');
+
+  const payment = await Payment.create({
+    invoiceId, patientId: invoice.patientId,
+    amount: paymentAmount, method, transactionId, note, receivedBy: userId,
+  });
+
+  const paid = paidBefore + paymentAmount;
 
   if (paid >= invoice.total) {
     invoice.status = 'paid';
@@ -128,13 +136,13 @@ export const addPayment = async ({ invoiceId, amount, method, transactionId, not
     await Promise.all(admins.map(a => createNotification({
       userId:  a._id,
       title:   invoice.status === 'paid' ? 'Faktura tam ödənildi' : 'Ödəniş qəbul edildi',
-      message: `${amount} AZN ödəniş qəbul edildi.`,
+      message: `${paymentAmount} AZN ödəniş qəbul edildi.`,
       type:    'billing',
       link:    '/admin/billing',
     })));
   } catch (_) {}
 
-  try { logAction({ userId, action: 'CREATE_PAYMENT', resourceType: 'Payment', resourceId: payment._id, description: `Payment ${amount} AZN recorded for invoice ${invoiceId}` }); } catch (_) {}
+  try { logAction({ userId, action: 'CREATE_PAYMENT', resourceType: 'Payment', resourceId: payment._id, description: `Payment ${paymentAmount} AZN recorded for invoice ${invoiceId}` }); } catch (_) {}
 
   return payment;
 };

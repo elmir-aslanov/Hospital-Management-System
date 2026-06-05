@@ -14,7 +14,14 @@
       "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/**)",
       "Bash(git checkout *)",
       "Bash(del \"client\\\\src\\\\context\\\\ThemeContext.jsx\")",
-      "Bash(Remove-Item \"client/src/context/ThemeContext.jsx\" -Force)"
+      "Bash(Remove-Item \"client/src/context/ThemeContext.jsx\" -Force)",
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/server/src -type f -name \"*.js\" | head -60)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/**)",
+      "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/server -type f -name \"*.js\" | head -80)",
+      "Bash(find /c/Users/YOGA/Desktop/Hospital-Management-System/server -type f -name \"*.js\" | grep -v node_modules | tail -60)",
+      "Bash(ls /c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/discharge/ 2>/dev/null && echo \"EXISTS\" || echo \"NOT EXISTS\")",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/discharge//**)"
     ]
   }
 }

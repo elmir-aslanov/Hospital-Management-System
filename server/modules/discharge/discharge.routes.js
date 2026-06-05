@@ -9,6 +9,8 @@ const router = Router();
 
 router.use(authenticate);
 
+router.get('/',                   authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE'), dischargeController.getAllDischarges);
+router.get('/patient/:patientId', authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE'), dischargeController.getDischargesByPatient);
 // /visit/:visitId before /:id
 router.get('/visit/:visitId', authorize('ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'), dischargeController.getDischargeSummaryByVisit);
 

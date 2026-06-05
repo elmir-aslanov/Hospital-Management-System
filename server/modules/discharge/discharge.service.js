@@ -120,6 +120,26 @@ export const getDischargeSummaryByVisit = async (visitId) => {
   return summary;
 };
 
+export const getAllDischarges = async ({ page = 1, limit = 20 } = {}) => {
+  const pg  = Math.max(1, parseInt(page));
+  const lim = Math.min(50, parseInt(limit));
+  const [items, total] = await Promise.all([
+    DischargeSummary.find()
+      .populate({ path: 'patientId', populate: { path: 'userId', select: 'fullName' } })
+      .populate({ path: 'dischargingDoctor', populate: { path: 'userId', select: 'fullName' } })
+      .sort({ dischargeDate: -1 })
+      .skip((pg - 1) * lim).limit(lim),
+    DischargeSummary.countDocuments(),
+  ]);
+  return { items, total, page: pg, limit: lim };
+};
+
+export const getDischargesByPatient = async (patientId) => {
+  return DischargeSummary.find({ patientId })
+    .populate({ path: 'dischargingDoctor', populate: { path: 'userId', select: 'fullName' } })
+    .sort({ dischargeDate: -1 });
+};
+
 export const generatePDFBuffer = async (summaryId) => {
   const summary = await populateSummary(DischargeSummary.findById(summaryId));
   if (!summary) throw new ApiError(404, 'Discharge summary not found');

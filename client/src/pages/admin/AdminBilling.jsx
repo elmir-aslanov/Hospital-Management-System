@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 import { BASE } from '../../api/config.js'
 
 const STATUS = {
-  draft:          { label: 'Qaralama', bg: '#f8fafc', color: '#64748b' },
-  issued:         { label: 'Kəsildi',  bg: '#eff6ff', color: '#2563eb' },
-  paid:           { label: 'Ödənildi', bg: '#f0fdf4', color: '#16a34a' },
-  partially_paid: { label: 'Qismən',   bg: '#fefce8', color: '#ca8a04' },
-  cancelled:      { label: 'Ləğv',     bg: '#fef2f2', color: '#dc2626' },
-  overdue:        { label: 'Gecikmiş', bg: '#fff7ed', color: '#ea580c' },
+  draft:          { label: 'Ödənilməyib',     bg: '#fff7ed', color: '#f97316' },
+  issued:         { label: 'Ödənilməyib',     bg: '#fff7ed', color: '#f97316' },
+  pending:        { label: 'Ödənilməyib',     bg: '#fff7ed', color: '#f97316' },
+  paid:           { label: 'Ödənilib',        bg: '#f0fdf4', color: '#22c55e' },
+  partially_paid: { label: 'Qismən ödənilib', bg: '#ecfeff', color: '#0891b2' },
+  cancelled:      { label: 'Ləğv edilib',     bg: '#fef2f2', color: '#ef4444' },
+  overdue:        { label: 'Ödənilməyib',     bg: '#fff7ed', color: '#f97316' },
 }
 
 const METHOD_LABELS = {
@@ -17,7 +18,7 @@ const METHOD_LABELS = {
 }
 
 const emptyItem = () => ({ description: '', quantity: 1, unitPrice: 0, total: 0 })
-const emptyForm = { patientId: '', notes: '', discount: 0, tax: 0, status: 'draft' }
+const emptyForm = { patientId: '', notes: '', discount: 0, tax: 0, status: 'issued' }
 const emptyPay  = { amount: '', method: 'cash', transactionId: '', note: '', terminalRef: '', cardLast4: '', bankRef: '', bankName: '', insuranceRef: '', insuranceCo: '', platform: '', onlineCode: '' }
 
 const METHOD_FIELDS = {
@@ -28,18 +29,28 @@ const METHOD_FIELDS = {
 }
 
 const fmt = (n) => Number(n || 0).toFixed(2)
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('az-AZ') : '—'
-const patFull = (p) => p?.userId?.fullName || p?.fullName || '—'
+const fmtDate = (d) => {
+  if (!d) return '—'
+  const date = new Date(d)
+  if (Number.isNaN(date.getTime())) return '—'
+  return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`
+}
+const patFull = (p) => p?.userId?.fullName || p?.fullName || 'Naməlum pasiyent'
+const statusInfo = (status) => STATUS[status] || STATUS.issued
+const isPayable = (inv) => ['draft', 'issued', 'pending', 'overdue', 'partially_paid'].includes(inv?.status)
+const isUnpaid = (inv) => ['draft', 'issued', 'pending', 'overdue'].includes(inv?.status)
 
 export default function AdminBilling() {
   const token   = localStorage.getItem('adminToken') || localStorage.getItem('token')
-  const headers = { Authorization: `Bearer ${token}` }
+  const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
   const [invoices,   setInvoices]   = useState([])
   const [summary,    setSummary]    = useState({})
   const [patients,   setPatients]   = useState([])
   const [loading,    setLoading]    = useState(true)
+  const [loadError,  setLoadError]  = useState(false)
   const [search,     setSearch]     = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   const [showModal,  setShowModal]  = useState(false)
   const [form,       setForm]       = useState(emptyForm)
@@ -67,15 +78,26 @@ export default function AdminBilling() {
       setSummary(s.data || {})
       setInvoices(inv.data?.invoices || [])
       setPatients(pat.data?.patients || [])
+      setLoadError(false)
+    }).catch(() => {
+      setLoadError(true)
     }).finally(() => setLoading(false))
-  }, [])
+  }, [headers])
 
   /* ── search ─────────────────────────────────────────────────────────── */
-  const filtered = invoices.filter(inv =>
-    !search ||
-    (inv.invoiceNumber || '').toLowerCase().includes(search.toLowerCase()) ||
-    patFull(inv.patientId).toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = invoices.filter(inv => {
+    const q = search.trim().toLowerCase()
+    const s = statusInfo(inv.status)
+    const matchesSearch = !q ||
+      (inv.invoiceNumber || '').toLowerCase().includes(q) ||
+      patFull(inv.patientId).toLowerCase().includes(q) ||
+      fmt(inv.total).includes(q) ||
+      s.label.toLowerCase().includes(q)
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'unpaid' && isUnpaid(inv)) ||
+      inv.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   /* ── detail ─────────────────────────────────────────────────────────── */
   const openDetail = (inv) => {
@@ -140,6 +162,8 @@ export default function AdminBilling() {
 
   /* ── payment form ───────────────────────────────────────────────────── */
   const savePayment = async () => {
+    const invoice = detail || invoices.find(inv => inv._id === selected)
+    if (!isPayable(invoice)) { setPayErr('Bu faktura üçün ödəniş qəbul edilə bilməz'); return }
     if (!payForm.amount || Number(payForm.amount) <= 0) { setPayErr('Məbləğ daxil edin'); return }
     // validate method-specific required fields
     const extraFields = METHOD_FIELDS[payForm.method] || []
@@ -199,7 +223,7 @@ export default function AdminBilling() {
 <h2>Aslan Medical Center</h2><p class="sub">Ödəniş Qəbzi</p>
 <div class="row"><span>Faktura №</span><span>${ps.invoiceNumber || '—'}</span></div>
 <div class="row"><span>Pasiyent</span><span>${ps.patientName}</span></div>
-<div class="row"><span>Tarix</span><span>${new Date(ps.createdAt).toLocaleDateString('az-AZ')}</span></div>
+<div class="row"><span>Tarix</span><span>${fmtDate(ps.createdAt)}</span></div>
 <div class="row"><span>Ödəniş üsulu</span><span>${METHOD_LABELS[ps.method]}</span></div>
 ${ps.txId ? `<div class="row"><span>Sənəd / Ref №</span><span>${ps.txId}</span></div>` : ''}
 ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:160px;text-align:right">${ps.extraNote}</span></div>` : ''}
@@ -219,13 +243,14 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
       <tr>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9">${it.description}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center">${it.quantity}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right">${it.unitPrice} ₼</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600">${it.total} ₼</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(it.unitPrice)} AZN</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:600">${fmt(it.total)} AZN</td>
       </tr>
     `).join('') || ''
 
-    const patientName = invoice.patientId?.userId?.fullName || invoice.patientId?.fullName || '—'
-    const date = new Date(invoice.createdAt).toLocaleDateString('az-AZ')
+    const patientName = patFull(invoice.patientId)
+    const date = fmtDate(invoice.createdAt)
+    const status = statusInfo(invoice.status)
 
     win.document.write(`
       <!DOCTYPE html><html><head>
@@ -259,7 +284,7 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
       </div>
       <div class="info-grid">
         <div class="info-box"><h4>Pasiyent</h4><p>${patientName}</p></div>
-        <div class="info-box"><h4>Status</h4><p>${invoice.status}</p></div>
+        <div class="info-box"><h4>Status</h4><p>${status.label}</p></div>
       </div>
       <table>
         <thead><tr>
@@ -270,10 +295,10 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
       </table>
       <div class="totals">
         <table>
-          <tr><td>Ara cəm</td><td>${invoice.subtotal} ₼</td></tr>
-          ${invoice.discount ? `<tr><td>Endirim</td><td>-${invoice.discount} ₼</td></tr>` : ''}
-          ${invoice.tax ? `<tr><td>Vergi</td><td>${invoice.tax} ₼</td></tr>` : ''}
-          <tr class="total-row"><td>CƏMİ</td><td>${invoice.total} ₼</td></tr>
+          <tr><td>Ara cəm</td><td>${fmt(invoice.subtotal)} AZN</td></tr>
+          ${invoice.discount ? `<tr><td>Endirim</td><td>-${fmt(invoice.discount)} AZN</td></tr>` : ''}
+          ${invoice.tax ? `<tr><td>Vergi</td><td>${fmt(invoice.tax)} AZN</td></tr>` : ''}
+          <tr class="total-row"><td>CƏMİ</td><td>${fmt(invoice.total)} AZN</td></tr>
         </table>
       </div>
       <div style="clear:both"></div>
@@ -286,13 +311,13 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
   }
 
   /* ── summary counts ─────────────────────────────────────────────────── */
-  const unpaidCount    = invoices.filter(i => i.status === 'issued' || i.status === 'overdue').length
+  const unpaidCount    = invoices.filter(isUnpaid).length
   const cancelledCount = invoices.filter(i => i.status === 'cancelled').length
 
   /* ── shared styles ──────────────────────────────────────────────────── */
   const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', background: 'white' }
   const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
-  const btn = (bg, color, border) => ({ padding: '6px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer' })
+  const btn = (bg, color, border, disabled = false) => ({ padding: '6px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.75 : 1, whiteSpace: 'nowrap' })
 
   /* ════════════════════════════════════════════════════════════════════ */
   return (
@@ -301,25 +326,25 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Billing</h1>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{invoices.length} faktura</p>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0B1D34' }}>Fakturalar</h1>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>Ümumi faktura sayı: {invoices.length}</p>
         </div>
         <button onClick={() => { setForm(emptyForm); setFormItems([emptyItem()]); setFormErr(''); setShowModal(true) }}
-          style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          style={{ background: '#1D8B95', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Yeni Faktura
+          + Yeni Faktura
         </button>
       </div>
 
       {/* ── Summary cards ───────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'Ümumi gəlir',    value: `${fmt(summary.totalRevenue)} AZN`, color: '#00848e', bg: '#f0fdfa' },
-          { label: 'Bu gün',         value: `${fmt(summary.todayRevenue)} AZN`, color: '#16a34a', bg: '#f0fdf4' },
-          { label: 'Ödənilməmiş',    value: unpaidCount,                         color: '#ea580c', bg: '#fff7ed' },
-          { label: 'Ləğv edilmiş',   value: cancelledCount,                      color: '#dc2626', bg: '#fef2f2' },
+          { label: 'Ümumi gəlir',    value: `${fmt(summary.totalRevenue)} AZN`, color: '#1D8B95', bg: '#f0fdfa' },
+          { label: 'Bu gün',         value: `${fmt(summary.todayRevenue)} AZN`, color: '#22C55E', bg: '#f0fdf4' },
+          { label: 'Ödənilməmiş',    value: unpaidCount,                         color: '#F97316', bg: '#fff7ed' },
+          { label: 'Ləğv edilmiş',   value: cancelledCount,                      color: '#EF4444', bg: '#fef2f2' },
         ].map(c => (
-          <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.color}20`, borderRadius: 14, padding: '16px 20px' }}>
+          <div key={c.label} style={{ minHeight: 88, background: '#FFFFFF', border: `1px solid ${c.color}20`, borderRadius: 14, padding: '16px 20px', boxShadow: '0 8px 22px rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `4px solid ${c.color}` }}>
             <p style={{ margin: 0, fontSize: 12, color: '#64748b', fontWeight: 500 }}>{c.label}</p>
             <p style={{ margin: '6px 0 0', fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</p>
           </div>
@@ -327,38 +352,50 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
       </div>
 
       {/* ── Main layout ─────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 18, height: 'calc(100vh - 290px)' }}>
+      <div style={{ display: 'flex', gap: 18, alignItems: 'stretch' }}>
 
         {/* Left — table */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div style={{ position: 'relative', marginBottom: 14 }}>
-            <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
-              <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            <div style={{ position: 'relative', flex: '1 1 320px' }}>
+              <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
+                <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Faktura № və ya pasiyent adı ilə axtar..."
+                style={{ ...inp, paddingLeft: 36 }} />
             </div>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Faktura №, pasiyent axtar..."
-              style={{ ...inp, paddingLeft: 36 }} />
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inp, width: 180, flex: '0 0 180px' }}>
+              <option value="all">Hamısı</option>
+              <option value="paid">Ödənilib</option>
+              <option value="unpaid">Ödənilməyib</option>
+              <option value="partially_paid">Qismən ödənilib</option>
+              <option value="cancelled">Ləğv edilib</option>
+            </select>
           </div>
 
-          <div style={{ flex: 1, background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', overflow: 'auto' }}>
+          <div style={{ background: 'white', borderRadius: 14, border: '1px solid #E2E8F0', overflowX: 'auto', overflowY: 'visible', boxShadow: '0 8px 22px rgba(15,23,42,0.04)' }}>
             {loading ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                <div style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#1D8B95', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </div>
+            ) : loadError ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#EF4444', fontSize: 14 }}>Fakturalar yüklənərkən xəta baş verdi</div>
             ) : filtered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8', fontSize: 14 }}>Faktura tapılmadı</div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', minWidth: 820, borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    {['Faktura №', 'Pasiyent', 'Məbləğ', 'Status', 'Tarix', ''].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                  <tr style={{ borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+                    {['Faktura №', 'Pasiyent', 'Məbləğ', 'Status', 'Tarix', 'Əməliyyat'].map(h => (
+                      <th key={h} style={{ padding: '13px 16px', textAlign: h === 'Əməliyyat' ? 'right' : 'left', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(inv => {
-                    const s = STATUS[inv.status] || STATUS.draft
+                    const s = statusInfo(inv.status)
                     const isSel = selected === inv._id
+                    const payable = isPayable(inv)
                     return (
                       <tr key={inv._id} onClick={() => openDetail(inv)}
                         style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer', background: isSel ? '#f0fafb' : 'white', transition: 'background 0.1s' }}
@@ -372,10 +409,17 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: s.bg, color: s.color }}>{s.label}</span>
                         </td>
                         <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{fmtDate(inv.createdAt)}</td>
-                        <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => { setSelected(inv._id); setDetail(inv); setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}
-                              style={btn('white', '#00848e', '1px solid #00848e')}>Ödəniş</button>
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            {payable ? (
+                              <button onClick={() => { setSelected(inv._id); setDetail(inv); setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}
+                                style={btn('white', '#1D8B95', '1px solid #1D8B95')}>Ödəniş et</button>
+                            ) : (
+                              <button onClick={() => openDetail(inv)}
+                                style={btn(inv.status === 'paid' ? '#f0fdf4' : '#f8fafc', inv.status === 'paid' ? '#16a34a' : '#64748b', '1px solid #e2e8f0')}>
+                                {inv.status === 'paid' ? 'Detallar' : 'Ləğv edilib'}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -398,7 +442,7 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
 
               {detailLoad ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-                  <div style={{ width: 28, height: 28, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <div style={{ width: 28, height: 28, border: '3px solid #e2e8f0', borderTopColor: '#1D8B95', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 </div>
               ) : (
                 <>
@@ -407,7 +451,7 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                     <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>{fmtDate(detail.createdAt)}</p>
                   </div>
 
-                  {(() => { const s = STATUS[detail.status] || STATUS.draft; return (
+                  {(() => { const s = statusInfo(detail.status); return (
                     <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: s.bg, color: s.color, display: 'inline-block', marginBottom: 14 }}>{s.label}</span>
                   )})()}
 
@@ -455,14 +499,20 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                     <span>TOPLAM</span><span>{fmt(detail.total)} AZN</span>
                   </div>
 
-                  <button onClick={() => { setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}
-                    style={{ marginTop: 16, width: '100%', padding: '10px', background: '#00848e', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                    Ödəniş əlavə et
-                  </button>
+                  {isPayable(detail) ? (
+                    <button onClick={() => { setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}
+                      style={{ marginTop: 16, width: '100%', padding: '10px', background: '#1D8B95', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      Ödəniş et
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: 16, width: '100%', padding: '10px', background: detail.status === 'paid' ? '#f0fdf4' : '#f8fafc', color: detail.status === 'paid' ? '#16a34a' : '#64748b', border: '1px solid #e2e8f0', borderRadius: 9, fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
+                      {detail.status === 'paid' ? 'Ödənilib' : 'Ləğv edilib'}
+                    </div>
+                  )}
                   <button
                     onClick={() => printInvoice(detail)}
                     style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#00848e'; e.currentTarget.style.color = '#00848e' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#1D8B95'; e.currentTarget.style.color = '#1D8B95' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569' }}
                   >
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

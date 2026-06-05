@@ -2,7 +2,6 @@ import usePageTitle from '../../hooks/usePageTitle'
 import HeroSection       from '../../components/HeroSection';
 import AboutDirector    from '../../components/sections/AboutDirector';
 import HospitalShowcase from '../../components/sections/HospitalShowcase';
-import DoctorsSection   from '../../components/sections/DoctorsSection';
 import ContactBanner    from '../../components/sections/ContactBanner';
 import PatientStories   from '../../components/sections/PatientStories';
 import PartnersCarousel from '../../components/sections/PartnersCarousel';
@@ -14,7 +13,6 @@ export default function HomePage() {
       <HeroSection />
       <AboutDirector />
       <HospitalShowcase />
-      <DoctorsSection />
       <PatientStories />
       <PartnersCarousel />
       <ContactBanner />
