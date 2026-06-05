@@ -44,6 +44,7 @@ import AdminEHR             from './pages/admin/AdminEHR';
 import NurseDashboard       from './pages/nurse/NurseDashboard';
 import ReceptionistDashboard from './pages/receptionist/ReceptionistDashboard';
 import AdminLab             from './pages/admin/AdminLab';
+import LabTechDashboard     from './pages/lab/LabTechDashboard';
 import DoctorDashboard      from './pages/doctor/DoctorDashboard'
 import DoctorPatients       from './pages/doctor/DoctorPatients'
 import DoctorPrescriptions  from './pages/doctor/DoctorPrescriptions'
@@ -134,6 +135,7 @@ function Layout() {
         <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
         <Route path="/nurse"              element={<NurseDashboard />} />
         <Route path="/receptionist"       element={<ReceptionistDashboard />} />
+        <Route path="/lab"                element={<LabTechDashboard />} />
 
         {/* ── Doctor ── */}
         <Route path="/doctor/dashboard"     element={<DoctorDashboard />} />
