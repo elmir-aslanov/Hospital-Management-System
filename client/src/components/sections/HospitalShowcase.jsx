@@ -1,210 +1,88 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-
-const FONT = "'Source Sans 3', 'Raleway', sans-serif"
-const TEAL = '#00848e'
-
-const hospitals = [
-  { name: 'Aslan Medical Center', locationKey: 'baku', image: '/filial11.jpeg', descKey: 'bakuDesc' },
-  { name: 'Aslan Medical Center', locationKey: 'ankara', image: '/Filial1.png', descKey: 'ankaraDesc' },
-  { name: 'Aslan Medical Center', locationKey: 'samsun', image: '/filial24.jpeg', descKey: 'samsunDesc' },
+const LOCATIONS = [
+  {
+    name:    'Aslan Medical — Xətai',
+    phone:   '+994 50 836 36 94',
+    address: 'Xətai ray., A. Cəlilov küçəsi',
+    city:    'Bakı',
+    image:   '/Filial1.png',
+  },
+  {
+    name:    'Aslan Medical — Nəsimi',
+    phone:   '+994 12 XXX XX XX',
+    address: 'Nəsimi ray.',
+    city:    'Bakı',
+    image:   '/Filial1.png',
+  },
+  {
+    name:    'Aslan Medical — Mərkəz',
+    phone:   '+994 50 836 36 94',
+    address: 'Nizami küçəsi',
+    city:    'Bakı',
+    image:   '/Filial2.png',
+  },
 ]
 
 export default function HospitalShowcase() {
-  const { t } = useTranslation()
-  const isMobile = window.innerWidth < 768
-  const [active, setActive] = useState(0)
-  const activeHospital = hospitals[active]
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setActive(current => (current + 1) % hospitals.length)
-    }, 6000)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
-
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box', margin: 0, background: '#f8fffe' }}>
-      <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        padding: isMobile ? '44px 16px' : '72px 48px',
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '24px' : '36px',
-          alignItems: 'stretch',
-        }}>
+    <section style={{ background: 'white', padding: '64px 0', fontFamily: "'Source Sans 3', sans-serif" }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px' }}>
 
-          {/* LEFT COLUMN */}
-          <div style={{
-            flex: '0 0 42%',
-            background: 'linear-gradient(145deg, #effafa 0%, #dff3f5 100%)',
-            border: '1px solid rgba(0,132,142,0.12)',
-            borderRadius: '18px',
-            padding: isMobile ? '28px 20px' : '42px 38px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            boxSizing: 'border-box',
-            boxShadow: '0 18px 50px rgba(8,42,58,0.08)',
-          }}>
+        <h2 style={{ fontSize: 34, fontWeight: 800, color: '#0a1628', margin: '0 0 32px', fontFamily: "'Raleway', sans-serif" }}>
+          Xəstəxanalarımız
+        </h2>
 
-            <div>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                width: 'fit-content',
-                borderRadius: '999px',
-                background: 'rgba(0,132,142,0.10)',
-                color: TEAL,
-                border: '1px solid rgba(0,132,142,0.18)',
-                padding: '7px 13px',
-                fontWeight: 700,
-                fontSize: '13px',
-                letterSpacing: '0.02em',
-                fontFamily: FONT,
-                marginBottom: '18px',
-              }}>
-                {t('hospitalShowcase.label')}
-              </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {LOCATIONS.map((loc, i) => (
+            <div key={i} style={{ position: 'relative', height: 340, borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
 
-            <h2 style={{
-                fontSize: isMobile ? '28px' : '42px',
-                fontWeight: 800,
-                color: '#0a1628',
-                lineHeight: 1.12,
-                letterSpacing: 0,
-              margin: 0,
-              fontFamily: FONT,
-            }}>
-              {t('hospitalShowcase.title')}
-            </h2>
+              {/* Background image with zoom on hover */}
+              <img
+                src={loc.image}
+                alt={loc.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.4s ease' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              />
 
-              <p style={{
-                color: 'rgba(10,22,40,0.68)',
-                fontSize: isMobile ? '15px' : '16px',
-                lineHeight: 1.7,
-                margin: '18px 0 0',
-                fontFamily: FONT,
-              }}>
-                {t('hospitalShowcase.subtitle')}
-              </p>
-            </div>
+              {/* Full overlay gradient — transparent top, dark bottom */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.0) 100%)',
+              }} />
 
-            {/* Thumbnails */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(3, minmax(96px, 1fr))' : 'repeat(3, minmax(0, 1fr))',
-              gap: '12px',
-              marginTop: isMobile ? '28px' : '38px',
-            }}>
-              {hospitals.map((h, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActive(i)}
-                  style={{
-                    appearance: 'none',
-                    border: i === active ? `2px solid ${TEAL}` : '1px solid rgba(10,22,40,0.08)',
-                    background: i === active ? '#ffffff' : 'rgba(255,255,255,0.62)',
-                    borderRadius: '14px',
-                    padding: '8px',
-                    boxShadow: i === active ? '0 12px 28px rgba(0,132,142,0.18)' : '0 8px 18px rgba(8,42,58,0.06)',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    position: 'relative',
-                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
-                    fontFamily: FONT,
-                  }}
-                >
-                  <img
-                    src={h.image}
-                    alt={h.name}
-                    style={{
-                      width: '100%',
-                      aspectRatio: '1.35 / 1',
-                      objectFit: 'cover',
-                      borderRadius: '10px',
-                      display: 'block',
-                    }}
-                    onError={e => { e.currentTarget.style.background = '#c8e6ea'; }}
-                  />
-                  <span style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: isMobile ? '12px' : '13px',
-                    color: i === active ? TEAL : '#52616f',
-                    marginTop: '8px',
-                    fontWeight: i === active ? 800 : 700,
-                    fontFamily: FONT,
-                  }}>
-                    {t(`hospitalShowcase.locations.${h.locationKey}`)}
+              {/* TOP — location pin icon + name */}
+              <div style={{ position: 'absolute', top: 18, left: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 16, fontWeight: 700, color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                  {loc.name}
+                </span>
+              </div>
+
+              {/* BOTTOM — phone, address, link */}
+              <div style={{ position: 'absolute', top: 72, left: 0, right: 0, padding: '0 20px 16px' }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4 }}>{loc.phone}</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 2 }}>{loc.address}</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 14 }}>{loc.city}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+                  <span style={{ color: '#93c5fd', fontWeight: 700, borderBottom: '1px solid #93c5fd', paddingBottom: 1, cursor: 'pointer' }}>
+                    Xəritədə göstər
                   </span>
-                </button>
-              ))}
+                  <span style={{ color: 'rgba(255,255,255,0.7)' }}>və xidmətlər</span>
+                </div>
+              </div>
+
+              {/* Blue bottom border */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: '#2563eb' }} />
+
             </div>
-
-          </div>
-
-          {/* RIGHT COLUMN */}
-          <div style={{
-            flex: 1,
-            position: 'relative',
-            borderRadius: '20px',
-            overflow: 'hidden',
-            minHeight: isMobile ? '340px' : '520px',
-            boxShadow: '0 26px 70px rgba(8,42,58,0.18)',
-            border: '1px solid rgba(255,255,255,0.85)',
-            background: '#c8e6ea',
-          }}>
-            <img
-              src={activeHospital.image}
-              alt={activeHospital.name}
-              style={{
-                width: '100%', height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-                position: 'absolute',
-                inset: 0,
-              }}
-              onError={e => { e.currentTarget.style.background = '#c8e6ea'; }}
-            />
-
-            {/* Overlay card */}
-            <div style={{
-              position: 'absolute',
-              bottom: isMobile ? '16px' : '24px',
-              left: isMobile ? '16px' : '24px',
-              right: isMobile ? '16px' : 'auto',
-              background: 'linear-gradient(135deg, rgba(3,58,67,0.88), rgba(0,132,142,0.78))',
-              border: '1px solid rgba(255,255,255,0.22)',
-              backdropFilter: 'blur(14px)',
-              borderRadius: '16px',
-              padding: isMobile ? '18px' : '22px 24px',
-              maxWidth: isMobile ? 'none' : '360px',
-              boxShadow: '0 16px 36px rgba(3,58,67,0.28)',
-            }}>
-              <h3 style={{
-                color: 'white', fontSize: isMobile ? '20px' : '24px', fontWeight: 800,
-                margin: 0, marginBottom: '8px', fontFamily: FONT,
-              }}>
-                {t(`hospitalShowcase.locations.${activeHospital.locationKey}`)}
-              </h3>
-              <p style={{
-                color: 'rgba(255,255,255,0.86)', fontSize: '14px', lineHeight: 1.65,
-                margin: 0, fontFamily: FONT,
-              }}>
-                {t(`hospitalShowcase.descriptions.${activeHospital.descKey}`)}
-              </p>
-            </div>
-          </div>
-
+          ))}
         </div>
+
       </div>
-    </div>
+    </section>
   )
 }

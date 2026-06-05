@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 import { BASE } from '../../api/config.js'
-const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
+const token = () => localStorage.getItem('token') || localStorage.getItem('adminToken')
 const hdrs  = () => ({ Authorization: `Bearer ${token()}` })
 
 /* ── helpers ───────────────────────────────────────────────────────────── */

@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   const location  = useLocation()
 
   const [adminUser]          = useState(() => JSON.parse(localStorage.getItem('adminUser') || '{}'))
-  const token                = localStorage.getItem('adminToken')
+  const token                = localStorage.getItem('token') || localStorage.getItem('adminToken')
   const [stats, setStats]    = useState({ doctors: 0, patients: 0, appointments: 0, muraciet: 0 })
   const [appointments, setAppointments] = useState([])
   const [search, setSearch]  = useState('')
@@ -162,6 +162,8 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
     localStorage.removeItem('adminUser')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     navigate('/admin')
   }
 

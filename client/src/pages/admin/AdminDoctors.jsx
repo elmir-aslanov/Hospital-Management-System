@@ -6,7 +6,7 @@ import AvatarUpload from '../../components/common/AvatarUpload'
 
 export default function AdminDoctors() {
   const navigate = useNavigate()
-  const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+  const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
 
   const getName  = (doc) => {
     const u = doc.userId

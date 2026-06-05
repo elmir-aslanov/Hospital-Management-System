@@ -35,7 +35,7 @@ export default function AdminMuraciet() {
   const [search, setSearch]       = useState('')
   const [dateFilter, setDateFilter] = useState('all')
 
-  const token   = localStorage.getItem('adminToken')
+  const token   = localStorage.getItem('token') || localStorage.getItem('adminToken')
   const headers = { Authorization: `Bearer ${token}` }
 
   useEffect(() => {

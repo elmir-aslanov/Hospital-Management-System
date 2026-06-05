@@ -63,6 +63,8 @@ export default function AdminLoginPage() {
 
       localStorage.setItem('adminToken', data.data.accessToken)
       localStorage.setItem('adminUser', JSON.stringify(user))
+      localStorage.setItem('token', data.data.accessToken)
+      localStorage.setItem('user', JSON.stringify(user))
 
       if (user.role === 'DOCTOR') {
         navigate('/doctor/dashboard')

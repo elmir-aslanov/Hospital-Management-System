@@ -81,7 +81,7 @@ const EyeOffIcon = (
 )
 
 export default function AdminUsers() {
-  const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+  const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
 
   // ─── List state ───────────────────────────────────────────────────────────
   const [users,        setUsers]        = useState([])

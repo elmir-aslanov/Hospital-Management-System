@@ -1,10 +1,10 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import HeroSection       from '../../components/HeroSection';
 import AboutDirector    from '../../components/sections/AboutDirector';
-import HospitalShowcase from '../../components/sections/HospitalShowcase';
 import ContactBanner    from '../../components/sections/ContactBanner';
 import PatientStories   from '../../components/sections/PatientStories';
 import PartnersCarousel from '../../components/sections/PartnersCarousel';
+import FilialSection    from '../../components/sections/FilialSection';
 
 export default function HomePage() {
   usePageTitle('Ana Səhifə', 'Azərbaycanda ən müasir tibbi mərkəz. Peşəkar həkimlər, müasir avadanlıq.')
@@ -12,10 +12,10 @@ export default function HomePage() {
     <main style={{ background: '#ffffff' }}>
       <HeroSection />
       <AboutDirector />
-      <HospitalShowcase />
-      <PatientStories />
-      <PartnersCarousel />
+<PatientStories />
+      <FilialSection />
       <ContactBanner />
+      <PartnersCarousel />
     </main>
   );
 }

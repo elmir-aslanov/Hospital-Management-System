@@ -36,7 +36,7 @@ export default function AdminLayout({ children, activePage }) {
   )
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
     if (!token) return
     fetch(`${BASE}/api/v1/muraciet`, {
       headers: { 'Authorization': 'Bearer ' + token },
@@ -50,7 +50,7 @@ export default function AdminLayout({ children, activePage }) {
   }, [])
 
   useEffect(() => {
-    const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    const t = localStorage.getItem('token') || localStorage.getItem('adminToken')
     if (!t) return
     fetch(`${BASE}/api/v1/notifications?page=1&limit=20`, {
       headers: { Authorization: `Bearer ${t}` },
@@ -70,11 +70,13 @@ export default function AdminLayout({ children, activePage }) {
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
     localStorage.removeItem('adminUser')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     navigate('/admin')
   }
 
   const markAllRead = () => {
-    const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    const t = localStorage.getItem('token') || localStorage.getItem('adminToken')
     fetch(`${BASE}/api/v1/notifications/read-all`, {
       method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
     }).then(() => {
@@ -84,7 +86,7 @@ export default function AdminLayout({ children, activePage }) {
   }
 
   const markOneRead = (id) => {
-    const t = localStorage.getItem('adminToken') || localStorage.getItem('token')
+    const t = localStorage.getItem('token') || localStorage.getItem('adminToken')
     fetch(`${BASE}/api/v1/notifications/${id}/read`, {
       method: 'PATCH', headers: { Authorization: `Bearer ${t}` },
     }).then(() => {
@@ -151,7 +153,7 @@ export default function AdminLayout({ children, activePage }) {
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 {item.icon}
-                <span style={{ flex: 1 }}>{t(`adminLayout.nav.${item.key}`)}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
                 {item.key === 'muraciet' && unreadMuraciet > 0 && !active && (
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444' }} />
                 )}

@@ -18,7 +18,7 @@ const getPhone  = (p) => p?.userId?.phone   || '—'
 
 export default function AdminPatients() {
   const navigate = useNavigate()
-  const token = localStorage.getItem('adminToken') || localStorage.getItem('token')
+  const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
 
   const [patients, setPatients]     = useState([])
   const [total, setTotal]           = useState(0)

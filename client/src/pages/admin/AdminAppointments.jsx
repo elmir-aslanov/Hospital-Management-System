@@ -57,7 +57,7 @@ export default function AdminAppointments() {
   const [formError,       setFormError]       = useState('')
   const searchTimer = useRef(null)
 
-  const token   = localStorage.getItem('adminToken')
+  const token   = localStorage.getItem('token') || localStorage.getItem('adminToken')
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   const load = () => {
