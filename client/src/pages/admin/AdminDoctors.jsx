@@ -125,6 +125,7 @@ export default function AdminDoctors() {
         if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
         updates.order    = Number(order)
         updates.isActive = isActive
+        if (doctorPhoto)             updates.image           = doctorPhoto
 
         const r    = await fetch(`${BASE}/api/v1/doctors/${editDoctor._id}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
         const data = await r.json()
@@ -405,6 +406,16 @@ export default function AdminDoctors() {
                 </div>
               </div>
             )}
+
+            {/* Avatar upload */}
+            <div style={{ display:'flex', justifyContent:'center', marginBottom: 20 }}>
+              <AvatarUpload
+                currentUrl={doctorPhoto}
+                userName={newFullName || (editDoctor ? (editDoctor.userId?.fullName || '') : '')}
+                size={80}
+                onSuccess={(url) => setDoctorPhoto(url)}
+              />
+            </div>
 
             {/* Shared fields — create and edit */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

@@ -65,113 +65,167 @@ function getClinicalInterests(doctor) {
 }
 
 function DoctorCard({ doctor }) {
-  const navigate  = useNavigate()
-  const imgSrc    = getDoctorImage(doctor)
-  const doctorId  = getDoctorId(doctor)
-  const fullName  = getDoctorName(doctor)
-  const specialty = getDoctorSpecialty(doctor)
-  const department = getDoctorDepartment(doctor)
-  const title = getDoctorTitle(doctor)
-  const position = getDoctorPosition(doctor)
-  const clinicalInterests = getClinicalInterests(doctor) || specialty || department
-  const initials  = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
-  const profilePath = '/hekimler/' + doctorId
-  const goProfile = () => navigate(profilePath)
+  const navigate   = useNavigate()
+  const fullName   = doctor.userId?.fullName || doctor.fullName || doctor.name || 'Həkim'
+  const spec       = doctor.specialization || doctor.specialty || doctor.department || ''
+  const exp        = doctor.experience || 0
+  const rating     = doctor.averageRating || 0
+  const ratingCount = doctor.totalRatings || 0
+  const photo      = doctor.userId?.photoUrl || doctor.image || null
+  const initials   = fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'DR'
+  const isAvailable = doctor.isAvailable !== false
+  const fee        = doctor.consultationFee || 0
+
+  const days = []
+  let d = new Date()
+  d.setDate(d.getDate() + 1)
+  while (days.length < 2) {
+    if (d.getDay() !== 0) {
+      days.push({
+        label: d.toLocaleDateString('az-AZ', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+        date:  d.toISOString().split('T')[0],
+        slots: ['09:00', '09:30', '10:00'],
+      })
+    }
+    d = new Date(d); d.setDate(d.getDate() + 1)
+  }
+
+  const StarRating = ({ value }) => (
+    <span style={{ display:'flex', alignItems:'center', gap: 2 }}>
+      {[1,2,3,4,5].map(s => (
+        <svg key={s} width="14" height="14" viewBox="0 0 24 24"
+          fill={s <= Math.round(value) ? '#f59e0b' : 'none'}
+          stroke="#f59e0b" strokeWidth="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      ))}
+    </span>
+  )
+
+  const fmtTime = (t) => {
+    const [h, m] = t.split(':').map(Number)
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    const h12  = h % 12 || 12
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`
+  }
 
   return (
     <motion.div
-      className="doctor-profile-card"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4 }}
-      onClick={goProfile}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          goProfile()
-        }
-      }}
-      role="link"
-      tabIndex={0}
+      style={{ background: 'white', borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', fontFamily: FONT, overflow: 'hidden' }}
     >
-      {/* Photo */}
-      <div className="doctor-card-photo">
-        {imgSrc ? (
-          <img
-            src={imgSrc}
-            alt={fullName}
-            onError={e => {
-              e.currentTarget.style.display = 'none'
-              e.currentTarget.nextSibling.style.display = 'flex'
-            }}
-          />
-        ) : null}
-        {/* Initials fallback */}
-        <div style={{
-          display: imgSrc ? 'none' : 'flex',
-          width: '100%', height: '100%',
-          alignItems: 'center', justifyContent: 'center',
-          fontSize: '44px', fontWeight: 700,
-          color: 'rgba(255,255,255,0.75)',
-          fontFamily: "'Raleway', sans-serif",
-        }}>
-          {initials}
+      {/* ── TOP SECTION: Left col (photo+btn) + Right col (info) ── */}
+      <div style={{ display: 'flex', gap: 0 }}>
+
+        {/* Left column — photo + View Full Profile */}
+        <div style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, minHeight: 180, background: 'linear-gradient(135deg, #1e3a5f 0%, #00848e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {photo
+              ? <img src={photo} alt={fullName} style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} onError={e=>e.target.style.display='none'} />
+              : <span style={{ fontSize: 44, fontWeight: 800, color: 'rgba(255,255,255,0.75)', fontFamily:"'Raleway',sans-serif" }}>{initials}</span>
+            }
+          </div>
+          <button
+            onClick={() => navigate(`/hekimler/${doctor._id}`)}
+            style={{ margin: 12, padding: '9px 12px', border: `2px solid ${NAVY}`, borderRadius: 5, background: 'white', color: NAVY, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.18s', textAlign: 'center' }}
+            onMouseEnter={e => { e.currentTarget.style.background = NAVY; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = NAVY }}
+          >
+            View Full Profile
+          </button>
+        </div>
+
+        {/* Right column — all info */}
+        <div style={{ flex: 1, padding: '18px 20px 14px', minWidth: 0 }}>
+
+          {/* Name */}
+          <h3 style={{ margin: '0 0 3px', fontSize: 19, fontWeight: 800, color: NAVY, fontFamily: "'Raleway', sans-serif" }}>
+            Dr. {fullName}
+          </h3>
+          <p style={{ margin: '0 0 10px', fontSize: 13.5, color: '#475569' }}>{spec}</p>
+
+          {/* Rating + Accepting — same row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {rating > 0 && (
+                <>
+                  <StarRating value={rating} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1f2937' }}>{rating.toFixed(1)}</span>
+                  {ratingCount > 0 && <span style={{ fontSize: 12, color: '#64748b' }}>| {ratingCount} rəy</span>}
+                </>
+              )}
+            </div>
+            <span style={{ display:'flex', alignItems:'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: isAvailable ? '#16a34a' : '#94a3b8', flexShrink: 0 }}>
+              {isAvailable && <svg width="13" height="13" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
+              {isAvailable ? 'Qəbul edir' : 'Məşğul'}
+            </span>
+          </div>
+
+          {/* Address + phone — same row */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+              <svg width="15" height="15" fill={TEAL} viewBox="0 0 24 24" style={{ flexShrink:0, marginTop: 1 }}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              <span style={{ fontSize: 12.5, color: TEAL, fontWeight: 600, lineHeight: 1.5 }}>
+                Aslan Medical Center<br/>
+                <span style={{ color: '#475569', fontWeight: 400 }}>Bakı, Azərbaycan</span>
+              </span>
+            </div>
+            <a href="tel:+994508363694" style={{ display:'flex', alignItems:'center', gap: 6, textDecoration:'none', flexShrink: 0 }}>
+              <svg width="15" height="15" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
+              <span style={{ fontSize: 13, color: TEAL, fontWeight: 700 }}>+994 50 836 36 94</span>
+            </a>
+          </div>
+
+          {(exp > 0 || fee > 0) && (
+            <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+              {exp > 0 && <span style={{ fontSize: 12, color: '#64748b' }}>{exp} il təcrübə</span>}
+              {fee > 0  && <span style={{ fontSize: 12, color: '#64748b' }}>Konsultasiya: <strong style={{ color: NAVY }}>{fee} ₼</strong></span>}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Info */}
-      <div className="doctor-card-content">
-        <div>
-          <h3 className="doctor-card-name">
-          {fullName || 'Həkim'}
-        </h3>
+      {/* ── Divider ── */}
+      <div style={{ height: 1, background: '#e2e8f0', margin: '0' }} />
 
-          {title && <p className="doctor-card-title">{title}</p>}
+      {/* ── BOOK AN APPOINTMENT ── */}
+      <div style={{ padding: '18px 20px 20px' }}>
+        <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 800, color: NAVY, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          BOOK AN APPOINTMENT
+        </p>
 
-          {position && <p className="doctor-card-text">{position}</p>}
+        {days.map((day, di) => (
+          <div key={di} style={{ marginBottom: di < days.length - 1 ? 16 : 0 }}>
+            <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: '#111827' }}>{day.label}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {day.slots.map(slot => (
+                <button
+                  key={slot}
+                  onClick={() => navigate(`/randevu?doctorId=${doctor._id}&date=${day.date}&time=${slot}`)}
+                  style={{ padding: '10px 16px', background: NAVY, color: 'white', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = TEAL}
+                  onMouseLeave={e => e.currentTarget.style.background = NAVY}
+                >
+                  {fmtTime(slot)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
 
-        {doctor.experience > 0 && (
-            <p className="doctor-card-text doctor-card-experience">
-            <span style={{ color: TEAL }}>●</span>
-            {doctor.experience} il təcrübə
-          </p>
-        )}
-
-          <p className="doctor-card-clinic">
-            <span className="clinic-icon" aria-hidden="true">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 21h18" />
-                <path d="M5 21V7l7-4 7 4v14" />
-                <path d="M9 21v-6h6v6" />
-                <path d="M10 9h4" />
-                <path d="M12 7v4" />
-              </svg>
-            </span>
-            Aslan Medical Center
-          </p>
-
-          {clinicalInterests && (
-            <p className="doctor-card-interests">
-              <span>İxtisas sahələri:</span> {clinicalInterests}
-            </p>
-          )}
-
-          {!clinicalInterests && doctor.bio && (
-            <p className="doctor-card-bio">{doctor.bio}</p>
-          )}
-        </div>
-
-        <button className="doctor-profile-action" type="button" onClick={e => { e.stopPropagation(); goProfile() }}>
-          <span>Profilə bax</span>
-          <span className="doctor-arrow" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14" />
-              <path d="m13 6 6 6-6 6" />
-            </svg>
-          </span>
+        <button
+          onClick={() => navigate(`/randevu?doctorId=${doctor._id}`)}
+          style={{ marginTop: 16, width: '100%', padding: '11px', border: '1.5px solid #d1d5db', borderRadius: 5, background: 'white', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.18s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#374151' }}
+        >
+          Show more appointment times
         </button>
       </div>
+
     </motion.div>
   )
 }

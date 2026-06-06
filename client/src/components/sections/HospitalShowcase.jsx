@@ -27,16 +27,16 @@ const LOCATIONS = [
 export default function HospitalShowcase() {
   const { isMobile, isTablet } = useBreakpoint()
   return (
-    <section style={{ background: 'white', padding: '64px 0', fontFamily: "'Source Sans 3', sans-serif" }}>
-      <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px' }}>
+    <section style={{ background: 'white', padding: '64px 0', display: isMobile ? 'none' : 'block', fontFamily: "'Source Sans 3', sans-serif" }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto', padding: isMobile ? '0 16px' : '0 32px' }}>
 
-        <h2 style={{ fontSize: 34, fontWeight: 800, color: '#0a1628', margin: '0 0 32px', fontFamily: "'Raleway', sans-serif" }}>
+        <h2 style={{ fontSize: isMobile ? 24 : 34, fontWeight: 800, color: '#0a1628', margin: '0 0 32px', fontFamily: "'Raleway', sans-serif" }}>
           Xəstəxanalarımız
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2,1fr)' : 'repeat(3,1fr)', gap: isMobile ? 16 : 24 }}>
           {LOCATIONS.map((loc, i) => (
-            <div key={i} style={{ position: 'relative', height: isMobile ? 260 : 340, borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
+            <div key={i} style={{ position: 'relative', height: isMobile ? 220 : 300, borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
 
               {/* Background image with zoom on hover */}
               <img
