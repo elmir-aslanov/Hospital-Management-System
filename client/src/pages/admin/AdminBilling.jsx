@@ -41,7 +41,7 @@ const isPayable = (inv) => ['draft', 'issued', 'pending', 'overdue', 'partially_
 const isUnpaid = (inv) => ['draft', 'issued', 'pending', 'overdue'].includes(inv?.status)
 
 export default function AdminBilling() {
-  const token   = localStorage.getItem('adminToken') || localStorage.getItem('token')
+  const token   = localStorage.getItem('token') || localStorage.getItem('adminToken')
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
   const [invoices,   setInvoices]   = useState([])

@@ -274,12 +274,6 @@ export default function HekimlerPage() {
     <main style={{ fontFamily: FONT }}>
       <AboutDirector />
 
-      {/* Wave: white → light grey */}
-      <div style={{ lineHeight: 0, overflow: 'hidden', background: '#ffffff' }}>
-        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" style={{ width: '100%', height: '60px', display: 'block' }}>
-          <path d="M0,30 C360,0 1080,60 1440,20 L1440,60 L0,60 Z" fill="#EAF6F3" />
-        </svg>
-      </div>
 
       <section className="doctors-listing-section">
         <div className="doctors-page-container">
@@ -372,35 +366,34 @@ export default function HekimlerPage() {
           {!loading && !error && filtered.length > 0 && (
             <>
               {view === 'table' && (
-                <div style={{ background:'white', borderRadius: 12, border:'1px solid #e2e8f0', overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
-                  <div style={{ padding:'14px 24px', borderBottom:'1px solid #e2e8f0', display:'flex', alignItems:'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius:'50%', background:'#00848e' }} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color:'#1f2937', letterSpacing:'0.04em' }}>
-                      {filtered.length} HƏKIM TAPILDI
-                    </span>
+                <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
+
+                  {/* Header */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '2px solid #e5e7eb', background: '#f9fafb' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ad</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Şöbə</span>
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'10px 24px', background:'#f9fafb', borderBottom:'2px solid #e2e8f0' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color:'#374151', letterSpacing:'0.06em' }}>Ad</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color:'#374151', letterSpacing:'0.06em' }}>Şöbə</span>
-                  </div>
+
+                  {/* Rows */}
                   {filtered.map((doc, i) => {
-                    const name = doc.userId?.fullName || doc.fullName || doc.name || '—'
-                    const dept = doc.specialization || doc.department || doc.specialty || '—'
-                    const hasLink = !!doc._id
+                    const name     = doc.userId?.fullName || doc.fullName || doc.name || '—'
+                    const dept     = doc.specialization || doc.department || doc.specialty || '—'
+                    const isLinked = !!doc._id
                     return (
                       <div key={doc._id || i}
-                        onClick={() => hasLink && navigate(`/hekimler/${doc._id}`)}
-                        style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'13px 24px', borderBottom: i < filtered.length-1 ? '1px solid #f3f4f6' : 'none', cursor: hasLink ? 'pointer' : 'default', transition:'background 0.1s' }}
+                        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: i < filtered.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
                         onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                        onClick={() => isLinked && navigate(`/hekimler/${doc._id}`)}
                       >
-                        <span style={{ fontSize: 14, fontWeight: hasLink ? 500 : 400, color: hasLink ? '#2563eb' : '#1f2937' }}>
-                          Dr. {name}
+                        <span style={{ fontSize: 14, color: isLinked ? '#1d4ed8' : '#1f2937', fontWeight: isLinked ? 600 : 400 }}>
+                          Dr {name}
                         </span>
-                        <span style={{ fontSize: 14, color:'#374151' }}>{dept}</span>
+                        <span style={{ fontSize: 14, color: '#374151', fontWeight: 400 }}>{dept}</span>
                       </div>
                     )
                   })}
+
                 </div>
               )}
 
@@ -416,14 +409,14 @@ export default function HekimlerPage() {
 
       <style>{`
         .doctors-listing-section {
-          background: #DDEFE9;
+          background: #FFFFFF;
           padding: 24px 0 68px;
         }
 
         .doctors-page-container {
-          max-width: 100%;
+          max-width: 1280px;
           margin: 0 auto;
-          padding: 0 36px;
+          padding: 0 40px;
           box-sizing: border-box;
         }
 

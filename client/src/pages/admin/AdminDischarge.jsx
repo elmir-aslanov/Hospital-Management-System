@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 const BASE  = 'http://localhost:5000'
-const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
+const token = () => localStorage.getItem('token') || localStorage.getItem('adminToken')
 const hdrs  = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
 const TEAL  = '#00848e'
 const NAVY  = '#0a1628'
