@@ -331,22 +331,16 @@ export default function HekimlerPage() {
             </div>
 
               <div style={{ display:'flex', gap: 4, background:'#f1f5f9', borderRadius: 8, padding: 3 }}>
-                <button onClick={() => setView('card')}
-                  style={{ padding:'6px 14px', borderRadius: 6, border:'none', cursor:'pointer', fontSize: 12, fontWeight: 600,
-                    background: view==='card' ? 'white' : 'transparent',
-                    color: view==='card' ? '#00848e' : '#64748b',
-                    boxShadow: view==='card' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', display:'flex', alignItems:'center' }}>
-                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ marginRight: 4 }}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                  Kart
-                </button>
-                <button onClick={() => setView('table')}
-                  style={{ padding:'6px 14px', borderRadius: 6, border:'none', cursor:'pointer', fontSize: 12, fontWeight: 600,
-                    background: view==='table' ? 'white' : 'transparent',
-                    color: view==='table' ? '#00848e' : '#64748b',
-                    boxShadow: view==='table' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', display:'flex', alignItems:'center' }}>
-                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ marginRight: 4 }}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                  Siyahı
-                </button>
+                {[{key:'table',label:'Siyahı'},{key:'card',label:'Kart'}].map(v => (
+                  <button key={v.key} onClick={() => setView(v.key)}
+                    style={{ padding:'6px 16px', borderRadius: 6, border:'none', cursor:'pointer', fontSize: 12, fontWeight: 600, fontFamily: FONT,
+                      background: view===v.key ? 'white' : 'transparent',
+                      color: view===v.key ? '#00848e' : '#64748b',
+                      boxShadow: view===v.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                      transition: 'all 0.15s' }}>
+                    {v.label}
+                  </button>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -377,66 +371,42 @@ export default function HekimlerPage() {
 
           {!loading && !error && filtered.length > 0 && (
             <>
-              {view === 'card' && (
-                <>
-                  <div className="doctors-grid">
-                    {filtered.slice(0, visibleCount).map((doc, i) => <DoctorCard key={doc._id ?? i} doctor={doc} />)}
-                  </div>
-
-                  {visibleCount < filtered.length && (
-                    <div className="doctor-listing-footer">
-                      <button
-                        className="doctor-load-button doctor-load-primary"
-                        onClick={() => setVisibleCount(c => c + 8)}
-                      >
-                        Daha çox göstər ({filtered.length - visibleCount} həkim)
-                      </button>
-                    </div>
-                  )}
-
-                  {visibleCount >= filtered.length && filtered.length > 8 && (
-                    <div className="doctor-listing-footer">
-                      <button
-                        className="doctor-load-button"
-                        onClick={() => setVisibleCount(8)}
-                      >
-                        Daha az göstər ↑
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
               {view === 'table' && (
-                <div style={{ background:'white', borderRadius: 12, border:'1px solid #e2e8f0', overflow:'hidden' }}>
+                <div style={{ background:'white', borderRadius: 12, border:'1px solid #e2e8f0', overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
                   <div style={{ padding:'14px 24px', borderBottom:'1px solid #e2e8f0', display:'flex', alignItems:'center', gap: 8 }}>
-                    <svg width="14" height="14" fill="#00848e" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
-                    <span style={{ fontSize: 13, fontWeight: 700, color:'#1f2937' }}>
+                    <div style={{ width: 10, height: 10, borderRadius:'50%', background:'#00848e' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color:'#1f2937', letterSpacing:'0.04em' }}>
                       {filtered.length} HƏKIM TAPILDI
                     </span>
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'12px 24px', borderBottom:'2px solid #e2e8f0', background:'#f8fafc' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color:'#374151', textTransform:'uppercase', letterSpacing:'0.06em' }}>Ad</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color:'#374151', textTransform:'uppercase', letterSpacing:'0.06em' }}>Şöbə</span>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'10px 24px', background:'#f9fafb', borderBottom:'2px solid #e2e8f0' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color:'#374151', letterSpacing:'0.06em' }}>Ad</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color:'#374151', letterSpacing:'0.06em' }}>Şöbə</span>
                   </div>
                   {filtered.map((doc, i) => {
                     const name = doc.userId?.fullName || doc.fullName || doc.name || '—'
                     const dept = doc.specialization || doc.department || doc.specialty || '—'
-                    const hasProfile = !!doc._id
+                    const hasLink = !!doc._id
                     return (
                       <div key={doc._id || i}
-                        style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'14px 24px', borderBottom: i < filtered.length-1 ? '1px solid #f1f5f9' : 'none', transition:'background 0.1s', cursor: hasProfile ? 'pointer' : 'default' }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                        onClick={() => hasLink && navigate(`/hekimler/${doc._id}`)}
+                        style={{ display:'grid', gridTemplateColumns:'1fr 1fr', padding:'13px 24px', borderBottom: i < filtered.length-1 ? '1px solid #f3f4f6' : 'none', cursor: hasLink ? 'pointer' : 'default', transition:'background 0.1s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
                         onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                        onClick={() => hasProfile && navigate(`/hekimler/${doc._id}`)}
                       >
-                        <span style={{ fontSize: 14, color: hasProfile ? '#2563eb' : '#1f2937', fontWeight: hasProfile ? 600 : 400, textDecoration: hasProfile ? 'underline' : 'none', textDecorationColor: '#93c5fd' }}>
+                        <span style={{ fontSize: 14, fontWeight: hasLink ? 500 : 400, color: hasLink ? '#2563eb' : '#1f2937' }}>
                           Dr. {name}
                         </span>
                         <span style={{ fontSize: 14, color:'#374151' }}>{dept}</span>
                       </div>
                     )
                   })}
+                </div>
+              )}
+
+              {view === 'card' && (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: 20 }}>
+                  {filtered.slice(0, visibleCount).map((doc, i) => <DoctorCard key={doc._id ?? i} doctor={doc} />)}
                 </div>
               )}
             </>
