@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { showSuccess, showError, showWarning } from '../../utils/alert'
 
 const FONT  = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL  = '#1D8B95'
@@ -109,21 +110,17 @@ export default function ElektronMuraciet() {
   const isMobile = window.innerWidth < 768
 
   const [form, setForm] = useState({ ad: '', soyad: '', ataAdi: '', epoct: '', telefon: '', unvan: '', metn: '' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [success, setSuccess] = useState('')
+  const [loading,  setLoading]  = useState(false)
   const [hovering, setHovering] = useState(false)
 
   const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
 
   const handleSubmit = async e => {
     e.preventDefault()
-    setError('')
-    setSuccess('')
 
     const { ad, soyad, ataAdi, epoct, telefon, unvan, metn } = form
     if (!ad.trim() || !soyad.trim() || !ataAdi.trim() || !epoct.trim() || !telefon.trim() || !unvan.trim() || !metn.trim()) {
-      setError('Bütün sahələri doldurun')
+      showWarning('Zəhmət olmasa bütün vacib xanaları doldurun.')
       return
     }
 
@@ -136,10 +133,10 @@ export default function ElektronMuraciet() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Xəta baş verdi')
-      setSuccess('Müraciətiniz qəbul edildi')
+      showSuccess('Müraciətiniz uğurla göndərildi.')
       setForm({ ad: '', soyad: '', ataAdi: '', epoct: '', telefon: '', unvan: '', metn: '' })
     } catch (err) {
-      setError(err.message || 'Xəta baş verdi')
+      showError(err.message || 'Müraciət göndərilmədi. Yenidən cəhd edin.')
     } finally {
       setLoading(false)
     }
@@ -233,14 +230,7 @@ export default function ElektronMuraciet() {
               flexDirection: isMobile ? 'column' : 'row',
               gap: 16,
             }}>
-              <div style={{ flex: 1 }}>
-                {error && (
-                  <p style={{ color: '#e53e3e', fontSize: 14, margin: 0 }}>{error}</p>
-                )}
-                {success && (
-                  <p style={{ color: '#38a169', fontSize: 14, margin: 0 }}>{success}</p>
-                )}
-              </div>
+              <div style={{ flex: 1 }} />
 
               <button
                 type="submit"

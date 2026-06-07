@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { BASE } from '../../api/config.js';
+import { showSuccess, showError, showWarning } from '../../utils/alert';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -31,12 +32,10 @@ export default function Login() {
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
-    if (!email || !password) { setError('Bütün sahələri doldurun'); return; }
-    setError('');
+    if (!email || !password) { showWarning('Bütün sahələri doldurun.'); return; }
     setLoading(true);
     fetch(`${BASE}/api/v1/auth/login`, {
       method: 'POST',
@@ -54,6 +53,7 @@ export default function Login() {
             localStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken);
           }
           authLogin(token, user);
+          showSuccess('Sistemə uğurla daxil oldunuz.');
           const role = user.role?.toUpperCase();
           if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
             localStorage.setItem('adminToken', token);
@@ -77,10 +77,10 @@ export default function Login() {
             navigate('/');
           }
         } else {
-          setError(data.message || 'E-poçt və ya şifrə yanlışdır');
+          showError(data.message || 'E-poçt və ya şifrə yanlışdır.');
         }
       })
-      .catch(() => setError('Xəta baş verdi'))
+      .catch(() => showError('Server ilə əlaqə qurulmadı. Yenidən cəhd edin.'))
       .finally(() => setLoading(false));
   };
 
@@ -147,9 +147,6 @@ export default function Login() {
                 </button>
               </div>
             </div>
-
-            {/* Error */}
-            {error && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 14px', fontFamily: FONT }}>{error}</p>}
 
             {/* Submit */}
             <button

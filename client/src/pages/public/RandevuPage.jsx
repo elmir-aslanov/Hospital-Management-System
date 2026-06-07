@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from '../../api/axios'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
+import { showSuccess, showError, showWarning, showInfo, getErrorMessage } from '../../utils/alert'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -239,7 +240,7 @@ export default function RandevuPage() {
     setLoadDept(true)
     axios.get('/departments')
       .then(r => setDepartments(r.data.data || []))
-      .catch(() => setError('Şöbələr yüklənmədi. Yenidən cəhd edin.'))
+      .catch(() => showError('Şöbələr yüklənmədi. Yenidən cəhd edin.'))
       .finally(() => setLoadDept(false))
   }, [step])
 
@@ -249,7 +250,7 @@ export default function RandevuPage() {
     setLoadDoc(true)
     axios.get(`/doctors/by-department/${selDept}`)
       .then(r => setDoctors(r.data.data || []))
-      .catch(() => setError('Həkimlər yüklənmədi. Yenidən cəhd edin.'))
+      .catch(() => showError('Həkimlər yüklənmədi. Yenidən cəhd edin.'))
       .finally(() => setLoadDoc(false))
   }, [selDept])
 
@@ -268,7 +269,7 @@ export default function RandevuPage() {
       })
       .catch(() => {
         setSlots([])
-        setError('Boş saatlar yüklənmədi. Yenidən cəhd edin.')
+        showError('Boş saatlar yüklənmədi. Yenidən cəhd edin.')
       })
       .finally(() => setLoadSlot(false))
   }, [selDoctor, selDate, slotTick])
@@ -297,6 +298,7 @@ export default function RandevuPage() {
           params: { patientId: patientStr.trim().toUpperCase(), birthDate: birthDateStr },
         })
         setPatient(r.data.data)
+        showInfo('Pasiyent məlumatları təsdiqləndi.')
         setStep(2)
       } catch (e) {
         const s = e.response?.status
@@ -305,7 +307,7 @@ export default function RandevuPage() {
         } else if (s === 401) {
           setError('Doğum tarixi uyğun gəlmir. Məlumatları yoxlayın.')
         } else {
-          setError(e.response?.data?.message || 'Pasiyent məlumatı yoxlanılarkən xəta baş verdi.')
+          setError(getErrorMessage(e, 'Pasiyent məlumatı yoxlanılarkən xəta baş verdi.'))
         }
       } finally {
         setLoading(false)
@@ -355,19 +357,20 @@ export default function RandevuPage() {
 
       const r = await axios.post('/appointments/public', payload)
       setResult(r.data.data)
+      showSuccess('Randevunuz uğurla yaradıldı.')
     } catch (e) {
       const s = e.response?.status
-      const m = e.response?.data?.message
       if (s === 409) {
         // Race condition: slot was booked after user selected it → go back to Step 2
         setSelSlot('')
-        setSlotTick(prev => prev + 1)   // forces slot useEffect to re-run
+        setSlotTick(prev => prev + 1)
         setStep(2)
+        showError('Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.')
         setError('Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.')
       } else if (s >= 500) {
-        setError('Server xətası baş verdi. Yenidən cəhd edin.')
+        showError('Server xətası baş verdi. Yenidən cəhd edin.')
       } else {
-        setError(m || 'Randevu yaradılarkən xəta baş verdi.')
+        showError(getErrorMessage(e, 'Randevu yaradılarkən xəta baş verdi.'))
       }
     } finally {
       setLoading(false)

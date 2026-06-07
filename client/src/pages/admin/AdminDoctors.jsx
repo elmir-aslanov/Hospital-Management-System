@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { BASE } from '../../api/config.js'
 import AvatarUpload from '../../components/common/AvatarUpload'
+import { showSuccess, showError, getErrorMessage } from '../../utils/alert'
 
 export default function AdminDoctors() {
   const navigate = useNavigate()
@@ -27,7 +28,6 @@ export default function AdminDoctors() {
   const [editDoctor,   setEditDoctor]   = useState(null)
   const [saving,       setSaving]       = useState(false)
   const [error,        setError]        = useState('')
-  const [success,      setSuccess]      = useState('')
   const [doctorUsers,  setDoctorUsers]  = useState([])
   const [doctorSuccessModal, setDoctorSuccessModal] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -132,10 +132,9 @@ export default function AdminDoctors() {
         if (!r.ok) throw new Error(data.message || 'Xəta')
         const saved = data.data || data
         setDoctors(prev => prev.map(d => d._id === editDoctor._id ? saved : d))
-        setSuccess('Həkim uğurla yeniləndi')
+        showSuccess('Həkim məlumatları uğurla yeniləndi.')
         setShowModal(false); setEditDoctor(null)
-        setTimeout(() => setSuccess(''), 3000)
-      } catch (e) { setError(e.message) }
+      } catch (e) { setError(e.message); showError(getErrorMessage(e, 'Həkim yenilənmədi.')) }
       finally { setSaving(false) }
     } else {
       // ── QUICK CREATE (admin-create) ──────────────────
@@ -173,9 +172,10 @@ export default function AdminDoctors() {
           password: data.data?.autoPassword || '—',
           licenseNumber: data.data?.licenseNumber || created?.licenseNumber || '—',
         })
+        showSuccess('Yeni həkim uğurla əlavə edildi.')
         setCopied(false)
         closeModal()
-      } catch (e) { setError(e.message) }
+      } catch (e) { setError(e.message); showError(getErrorMessage(e, 'Həkim əlavə edilmədi.')) }
       finally { setSaving(false) }
     }
   }
@@ -187,8 +187,8 @@ export default function AdminDoctors() {
       const r = await fetch(`${BASE}/api/v1/doctors/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } })
       if (!r.ok) { const d = await r.json(); throw new Error(d.message || 'Silmə zamanı xəta') }
       setDoctors(prev => prev.filter(d => d._id !== id))
-      setSuccess('Həkim silindi'); setTimeout(() => setSuccess(''), 3000)
-    } catch (e) { alert(e.message) }
+      showSuccess('Həkim uğurla silindi.')
+    } catch (e) { showError(getErrorMessage(e, 'Həkim silinmədi.')) }
   }
 
   // ─── Search ───────────────────────────────────────────────────────────────
@@ -230,11 +230,6 @@ export default function AdminDoctors() {
 
   return (
     <AdminLayout activePage="doctors">
-      {success && (
-        <div style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 600, marginBottom: 18 }}>
-          {success}
-        </div>
-      )}
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
