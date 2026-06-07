@@ -1,365 +1,246 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
-const BASE  = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'
-const TEAL  = '#00848e'
-const NAVY  = '#0a1628'
-const FONT  = "'Source Sans 3', 'Raleway', sans-serif"
+const TEAL = '#00848e'
+const NAVY = '#0a1628'
+const FONT = "'Source Sans 3', sans-serif"
+const BASE = 'http://localhost:5000'
 
-const DAY_AZ = {
-  0: 'Bazar',
-  1: 'B.ertəsi',
-  2: 'Ç.axşamı',
-  3: 'Çərşənbə',
-  4: 'C.axşamı',
-  5: 'Cümə',
-  6: 'Şənbə',
-}
-
-function Stars({ rating = 0, size = 16 }) {
-  return (
-    <span style={{ display: 'inline-flex', gap: 2 }}>
-      {[1, 2, 3, 4, 5].map(i => (
-        <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill={i <= Math.round(rating) ? '#f59e0b' : '#e2e8f0'}>
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
-      ))}
-    </span>
-  )
-}
-
-function Card({ children, style = {} }) {
-  return (
-    <div style={{
-      background: 'white', borderRadius: 16, border: '1px solid #f1f5f9',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.06)', padding: '24px',
-      ...style,
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function SectionTitle({ children }) {
-  return (
-    <h2 style={{ fontSize: 16, fontWeight: 700, color: NAVY, margin: '0 0 16px', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8 }}>
-      {children}
-    </h2>
-  )
+const CV = {
+  tahsil: ['İstanbul Universiteti - Cərrahpaşa Tibb Fakültəsi Radiologiya Bölümü'],
+  yeterlilik: [
+    'Türk Radiologiya Dərnəyi nəzəri yetərlilik imtahanı (17 noyabr 2019)',
+    '2015 Aprel TUS imtahanında xarici vətəndaşlar arasında 1.yer',
+  ],
+  nesrler: [
+    'Poster: "Endovaskuler anevrizm tedavisi sonrası endogreft enfeksiyonu" — 38. TRD 2017',
+    '"Ekstraosseoz anevrizmal kemik kistinin tanı ve tedavisinde radyolojinin yeri" — 38. TRD 2017',
+    '"Sezaryen sonrası mesane flap hematomu vakası" — 38. TRD 2017',
+  ],
+  uzvlukler: [
+    'Türk Radiologiya Dərnəyi (TRD)',
+    'Türk Maqnetik Rezonans Dərnəyi (TMRD)',
+    'Avropa Radiologiya Dərnəyi (ESR)',
+  ],
+  kurslar: [
+    'Rush Universiteti Nöroradiologiya şöbəsi, Çikago, ABD — 01.10.2017–01.11.2017',
+    '"Meme MRG Sempozyumu" — 13 sentyabr 2015, İstanbul',
+    'Nöroradyoloji ve Baş-Boyun Radyolojisi toplantısı — 19-21 fevral 2016, İstanbul',
+    '"Türk Nöroradyoloji Derneği Diploma 2.Dönem 4.Kursu" — 17-19 kasım 2017',
+    '"26. Nöroradyoloji ve Baş-Boyun Radyolojisi toplantısı" — 17-19 fevral 2017',
+    'Türk Magnit Rezonans Dərnəyi 22. kongress — 25-27 may 2017, Ankara',
+    '"Türk Radyoloji Derneği 38.Ulusal Kongresi" — 31 oktyabr–4 noyabr 2017',
+    '"Türk Nöroradyoloji Derneği Yıllık Bilimsel Toplantısı" — 16-18 fevral 2018',
+    '"TRD İstanbul Şube Obstetrik Fetal Radyoloji Sempozyumu" — 18 mart 2018',
+    '"TRD İstanbul Şube Çocuk Radyolojisi Sempozyumu" — 7 oktyabr 2018',
+    '"2.Multiparametrik Prostat MR Görüntüleme Kursu" — 17 noyabr 2018',
+    '"Türk Nöroradyoloji Derneği Yıllık Bilimsel Toplantısı" — 15-17 fevral 2019',
+    '"Radyoloji Kış Okulu" — 4-10 fevral 2019, Antalya',
+    '"Kardiyak MR Görüntüleme Sempozyumu" — 28 sentyabr, İstanbul',
+    '"Türk Radyoloji Derneği 40.Uluslarası Kongresi" — 6-10 noyabr 2019',
+    'Kore ve Türk Radyoloji Dernekleri Ortak Kardiyak Görüntüleme Kursu — 6 noyabr, Antalya',
+  ],
 }
 
 export default function HekimProfilPage() {
-  const { id }     = useParams()
-  const navigate   = useNavigate()
-
-  const [doctor,    setDoctor]    = useState(null)
-  const [ratings,   setRatings]   = useState([])
-  const [schedule,  setSchedule]  = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [error,     setError]     = useState(false)
-  const [activeTab, setActiveTab] = useState('haqqinda')
+  const { id }       = useParams()
+  const navigate     = useNavigate()
+  const [doctor,     setDoctor]     = useState(null)
+  const [ratings,    setRatings]    = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [activeTab,  setActiveTab]  = useState('haqqinda')
 
   useEffect(() => {
-    if (!id) return
-    setLoading(true)
-    Promise.allSettled([
-      fetch(`${BASE}/api/v1/doctors/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-      }).then(r => { if (!r.ok) throw new Error(); return r.json() }),
-      fetch(`${BASE}/api/v1/ratings/doctor/${id}`).then(r => r.ok ? r.json() : { data: [] }),
-      fetch(`${BASE}/api/v1/doctors/${id}/schedule`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-      }).then(r => r.ok ? r.json() : { data: [] }),
-    ]).then(([docRes, ratingRes, schedRes]) => {
-      if (docRes.status === 'rejected') { setError(true); return }
-      const docData = docRes.value?.data || docRes.value
-      setDoctor(docData)
-      const ratingData = ratingRes.value
-      setRatings(
-        ratingData?.data?.ratings || ratingData?.data ||
-        ratingData?.ratings || (Array.isArray(ratingData) ? ratingData : [])
-      )
-      const schedData = schedRes.value?.data
-      setSchedule(Array.isArray(schedData) ? schedData : [])
+    Promise.all([
+      fetch(`${BASE}/api/v1/doctors/${id}`).then(r=>r.json()),
+      fetch(`${BASE}/api/v1/ratings/doctor/${id}`).then(r=>r.json()).catch(()=>({ data: [] })),
+    ]).then(([dRes, rRes]) => {
+      setDoctor(dRes.data || dRes)
+      setRatings(rRes.data?.ratings || rRes.data || [])
     }).finally(() => setLoading(false))
   }, [id])
 
   if (loading) return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}>
-      <div style={{ width: 40, height: 40, border: '3px solid #e2e8f0', borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh' }}>
+      <div style={{ width:36, height:36, border:`3px solid #e2e8f0`, borderTopColor:TEAL, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
-  if (error || !doctor) return (
-    <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: FONT, padding: 24 }}>
-      <div style={{ fontSize: 48 }}>🔍</div>
-      <p style={{ fontSize: 16, color: '#64748b' }}>Həkim tapılmadı.</p>
-      <button onClick={() => navigate('/hekimler')}
-        style={{ padding: '10px 22px', background: TEAL, color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
-        ← Həkimlər
-      </button>
+  if (!doctor) return (
+    <div style={{ textAlign:'center', padding:80, fontFamily:FONT }}>
+      <p style={{ fontSize:18, color:'#64748b' }}>Həkim tapılmadı</p>
+      <button onClick={() => navigate('/hekimler')} style={{ marginTop:16, padding:'10px 24px', background:TEAL, color:'white', border:'none', borderRadius:8, cursor:'pointer' }}>← Geri</button>
     </div>
   )
 
-  const u        = doctor.userId || {}
-  const fullName = u.fullName || ((u.name || '') + ' ' + (u.surname || '')).trim() || 'Həkim'
-  const initials = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
-  const deptName = doctor.departmentId?.name || doctor.department || '—'
-  const photo    = u.photoUrl || doctor.image || null
+  const name    = doctor.userId?.fullName || doctor.fullName || '—'
+  const spec    = doctor.specialization || doctor.specialty || ''
+  const exp     = doctor.experience || 0
+  const rating  = doctor.averageRating || 0
+  const photo   = doctor.userId?.photoUrl || doctor.image || null
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
 
-  const sortedSchedule = [...schedule].sort((a, b) => a.dayOfWeek - b.dayOfWeek)
-  const shownRatings   = ratings.slice(0, 5)
+  const StarRating = ({ value }) => (
+    <span style={{ display:'flex', gap:2 }}>
+      {[1,2,3,4,5].map(s => (
+        <svg key={s} width="16" height="16" viewBox="0 0 24 24"
+          fill={s <= Math.round(value) ? '#f59e0b' : 'none'}
+          stroke="#f59e0b" strokeWidth="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      ))}
+    </span>
+  )
 
-  const CV = {
-    tahsil: [
-      'İstanbul Universiteti - Cərrahpaşa Tibb Fakültəsi Radiologiya Bölümü',
-    ],
-    yeterlilik: [
-      'Türk Radiologiya Dərnəyi Radiologiyada nəzəri yetərlilik imtahanı (17 noyabr 2019)',
-      '2015 Aprel TUS imtahanında xarici vətəndaşlar arasında 1.yer',
-    ],
-    nesrler: [
-      'Poster: "Endovaskuler anevrizm tedavisi sonrası endogreft enfeksiyonu" — 38. TRD 2017',
-      '"Ekstraosseoz anevrizmal kemik kistinin tanı ve tedavisinde radyolojinin yeri" — 38. TRD 2017',
-      '"Sezaryen sonrası mesane flap hematomu vakası" — 38. TRD 2017',
-    ],
-    uzvlukler: [
-      'Türk Radiologiya Dərnəyi (TRD)',
-      'Türk Maqnetik Rezonans Dərnəyi (TMRD)',
-      'Avropa Radiologiya Dərnəyi (ESR)',
-    ],
-    kurslar: [
-      'Rush Universiteti Nöroradiologiya şöbəsi, Çikago, ABD — 01.10.2017–01.11.2017',
-      '"Meme MRG Sempozyumu" — 13 sentyabr 2015, İstanbul',
-      'Nöroradyoloji ve Baş-Boyun Radyolojisi toplantısı — 19-21 fevral 2016, İstanbul',
-      '"Türk Nöroradyoloji Derneği Diploma 2.Dönem 4.Kursu" — 17-19 kasım 2017, İstanbul',
-      '"26. Nöroradyoloji ve Baş-Boyun Radyolojisi toplantısı" — 17-19 fevral 2017, İstanbul',
-      'Türk Magnit Rezonans Dərnəyi 22. kongress — 25-27 may 2017, Ankara',
-      '"Türk Radyoloji Derneği 38.Ulusal Kongresi" — 31 oktyabr–4 noyabr 2017',
-      '"Türk Nöroradyoloji Derneği Yıllık Bilimsel Toplantısı" — 16-18 fevral 2018, İstanbul',
-      '"TRD İstanbul Şube Obstetrik Fetal Radyoloji Sempozyumu" — 18 mart 2018',
-      '"TRD İstanbul Şube Çocuk Radyolojisi Sempozyumu" — 7 oktyabr 2018',
-      '"2.Multiparametrik Prostat MR Görüntüleme Kursu" — 17 noyabr 2018, İstanbul',
-      '"Türk Nöroradyoloji Derneği Yıllık Bilimsel Toplantısı" — 15-17 fevral 2019',
-      '"Radyoloji Kış Okulu" — 4-10 fevral 2019, Antalya',
-      '"TRD İstanbul Şube Adli Sorumluluklarımız ve Acil Radyoloji Sempozyumu" — 24 şubat 2019',
-      '"Türk Nöroradyoloji Derneği Diploma 3.Dönem 2.Kursu" — 29-31 mart 2019',
-      '"Kardiyak MR Görüntüleme Sempozyumu" — 28 sentyabr, İstanbul',
-      '"Türk Radyoloji Derneği 40.Uluslarası Kongresi" — 6-10 noyabr 2019',
-      '"2.Multiparametrik Prostat MR – Füzyon Biyopsi Kursu" — 26 oktyabr 2019',
-      'Kore ve Türk Radyoloji Dernekleri Ortak Kardiyak Görüntüleme Kursu — 6 noyabr, Antalya',
-    ],
-  }
+  const TABS = [
+    { key:'haqqinda', label:'Tərcümeyi-hal'        },
+    { key:'nesrler',  label:'Nəşrlər'               },
+    { key:'uzvluk',   label:'Üzvlüklər'             },
+    { key:'kurslar',  label:'İştirak Etdiyi Kurslar'},
+  ]
 
   return (
-    <main style={{ fontFamily: FONT, background: '#f0f4f8', minHeight: '100vh' }}>
+    <div style={{ minHeight:'100vh', background:'#f8fafc', fontFamily:FONT, paddingTop:130 }}>
 
-      {/* ── Back button ─────────────────────────────────────── */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 24px 0' }}>
-        <button onClick={() => navigate('/hekimler')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: 14, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}
-          onMouseEnter={e => e.currentTarget.style.color = TEAL}
-          onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
-          ← Həkimlər
-        </button>
-      </div>
-
-      {/* ── Hero ────────────────────────────────────────────── */}
-      <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, padding: '48px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-
-          {/* Avatar */}
-          <div style={{ flexShrink: 0 }}>
-            {photo ? (
-              <img src={photo} alt={fullName}
-                style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover', border: '4px solid rgba(255,255,255,0.3)' }}
-                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }} />
-            ) : null}
-            <div style={{
-              display: photo ? 'none' : 'flex', width: 120, height: 120, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)', border: '4px solid rgba(255,255,255,0.3)',
-              alignItems: 'center', justifyContent: 'center',
-              fontSize: 42, fontWeight: 800, color: 'white',
-            }}>
-              {initials}
+      {/* HERO */}
+      <div style={{ background:`linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, padding:'40px 0' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:'0 32px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:24, flexWrap:'wrap' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:24 }}>
+            {/* Avatar */}
+            <div style={{ width:100, height:100, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.3)', overflow:'hidden', flexShrink:0, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {photo
+                ? <img src={photo} alt={name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                : <span style={{ fontSize:36, fontWeight:800, color:'white' }}>{initials}</span>
+              }
+            </div>
+            {/* Info */}
+            <div>
+              <p style={{ margin:'0 0 4px', fontSize:13, color:'rgba(255,255,255,0.7)' }}>Həkim</p>
+              <h1 style={{ margin:'0 0 8px', fontSize:28, fontWeight:800, color:'white', fontFamily:"'Raleway',sans-serif" }}>Dr. {name}</h1>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
+                <span style={{ background:'rgba(255,255,255,0.2)', color:'white', fontSize:12, fontWeight:600, padding:'4px 12px', borderRadius:20 }}>{spec}</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
+                {exp > 0 && <span style={{ fontSize:13, color:'rgba(255,255,255,0.8)' }}>🏥 {exp} il təcrübə</span>}
+                {spec && <span style={{ fontSize:13, color:'rgba(255,255,255,0.8)' }}>🏷 {spec}</span>}
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
+                <StarRating value={rating} />
+                <span style={{ fontSize:13, color:'rgba(255,255,255,0.8)' }}>{rating > 0 ? rating.toFixed(1) : '0.0'} · {doctor.totalRatings || 0} rəy</span>
+                {doctor.isAvailable !== false && (
+                  <span style={{ background:'#22c55e', color:'white', fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:20 }}>● Qəbul edir</span>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Info */}
-          <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginBottom: 4 }}>Həkim</div>
-            <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: 'white', fontFamily: FONT }}>
-              Dr. {fullName}
-            </h1>
-
-            {doctor.specialization && (
-              <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: 20, padding: '4px 14px', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-                {doctor.specialization}
-              </span>
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', color: 'rgba(255,255,255,0.85)', fontSize: 14, marginBottom: 10 }}>
-              {doctor.experience > 0 && <span>🎓 {doctor.experience} il təcrübə</span>}
-              <span>🏥 {deptName}</span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <Stars rating={doctor.averageRating} size={18} />
-              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>
-                {Number(doctor.averageRating || 0).toFixed(1)} · {doctor.totalRatings || 0} rəy
-              </span>
-              <span style={{
-                padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                background: doctor.isAvailable ? 'rgba(34,197,94,0.25)' : 'rgba(148,163,184,0.25)',
-                color: doctor.isAvailable ? '#86efac' : '#cbd5e1',
-                border: `1px solid ${doctor.isAvailable ? 'rgba(34,197,94,0.4)' : 'rgba(148,163,184,0.4)'}`,
-              }}>
-                {doctor.isAvailable ? '● Qəbul edir' : '● Məşğul'}
-              </span>
-            </div>
-          </div>
-
           {/* CTA */}
-          <div style={{ flexShrink: 0 }}>
-            <button
-              onClick={() => navigate(`/randevu?doctorId=${id}`)}
-              style={{ padding: '13px 28px', background: 'white', color: TEAL, border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', transition: 'transform .15s' }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-              Randevu Al
-            </button>
-          </div>
+          <button onClick={() => navigate(`/randevu?doctorId=${id}`)}
+            style={{ padding:'13px 28px', background:'white', color:NAVY, border:'none', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:FONT, boxShadow:'0 4px 16px rgba(0,0,0,0.15)', flexShrink:0 }}>
+            Randevu Al
+          </button>
         </div>
       </div>
 
-      {/* ── Two column body ─────────────────────────────────── */}
-      <div style={{ maxWidth: 1100, margin: '32px auto', padding: '0 24px 60px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, alignItems: 'start' }}>
+      {/* CONTENT */}
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'32px 32px 60px', display:'grid', gridTemplateColumns:'1fr 340px', gap:24, alignItems:'start' }}>
 
-        {/* ── LEFT ──────────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* LEFT */}
+        <div>
+          {/* Tab bar */}
+          <div style={{ display:'flex', borderBottom:`2px solid #e2e8f0`, marginBottom:20, background:'white', borderRadius:'12px 12px 0 0', overflow:'hidden' }}>
+            {TABS.map(t => (
+              <button key={t.key} onClick={() => setActiveTab(t.key)}
+                style={{ flex:1, padding:'14px 8px', border:'none', background:'none', cursor:'pointer', fontSize:13, fontWeight: activeTab===t.key ? 700 : 400,
+                  color: activeTab===t.key ? '#2563eb' : '#64748b',
+                  borderBottom: activeTab===t.key ? '2px solid #2563eb' : '2px solid transparent',
+                  marginBottom:-2, fontFamily:FONT, transition:'all 0.15s', whiteSpace:'nowrap' }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-          {/* About */}
-          <Card>
-            <SectionTitle>📋 Haqqında</SectionTitle>
-            {doctor.bio
-              ? <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.75, margin: 0 }}>{doctor.bio}</p>
-              : <p style={{ fontSize: 14, color: '#94a3b8', margin: 0 }}>Məlumat yoxdur</p>
-            }
-          </Card>
+          {/* Tab content */}
+          <div style={{ background:'white', borderRadius:'0 0 12px 12px', border:'1px solid #e2e8f0', borderTop:'none', padding:'24px 28px', minHeight:200 }}>
 
-          {/* Schedule */}
-          <Card>
-            <SectionTitle>📅 İş Cədvəli</SectionTitle>
-            {sortedSchedule.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#94a3b8', margin: 0 }}>Cədvəl məlumatı yoxdur</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc' }}>
-                    {['Gün', 'Saat', 'Status'].map(h => (
-                      <th key={h} style={{ padding: '10px 14px', fontSize: 12, fontWeight: 600, color: '#64748b', textAlign: 'left', borderBottom: '1px solid #f1f5f9' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedSchedule.map(s => (
-                    <tr key={s.dayOfWeek}
-                      style={{ borderBottom: '1px solid #f8fafc' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'white'}>
-                      <td style={{ padding: '11px 14px', fontSize: 14, fontWeight: 600, color: NAVY }}>
-                        {DAY_AZ[s.dayOfWeek] ?? `Gün ${s.dayOfWeek}`}
-                      </td>
-                      <td style={{ padding: '11px 14px', fontSize: 14, color: '#334155' }}>
-                        {s.isOff ? '—' : `${s.startTime} – ${s.endTime}`}
-                      </td>
-                      <td style={{ padding: '11px 14px' }}>
-                        {s.isOff
-                          ? <span style={{ fontSize: 12, fontWeight: 600, background: '#fef2f2', color: '#dc2626', borderRadius: 6, padding: '3px 9px' }}>İstirahət</span>
-                          : <span style={{ fontSize: 12, fontWeight: 600, background: '#f0fdf4', color: '#16a34a', borderRadius: 6, padding: '3px 9px' }}>İşləyir</span>
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
-
-          {/* Reviews */}
-          <Card>
-            <SectionTitle>⭐ Rəylər</SectionTitle>
-            {shownRatings.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#94a3b8', margin: 0 }}>Hələ rəy yoxdur</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {shownRatings.map((r, i) => (
-                  <div key={r._id ?? i} style={{ borderBottom: i < shownRatings.length - 1 ? '1px solid #f1f5f9' : 'none', paddingBottom: i < shownRatings.length - 1 ? 16 : 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Stars rating={r.rating} size={14} />
-                      <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                        {r.createdAt ? new Date(r.createdAt).toLocaleDateString('az-AZ') : ''}
-                      </span>
-                    </div>
-                    {r.comment && <p style={{ fontSize: 14, color: '#475569', margin: 0, lineHeight: 1.6 }}>{r.comment}</p>}
-                  </div>
-                ))}
+            {activeTab === 'haqqinda' && (
+              <div>
+                {doctor.bio && <p style={{ fontSize:14, color:'#374151', lineHeight:1.8, marginBottom:24 }}>{doctor.bio}</p>}
+                <p style={{ fontSize:14, fontWeight:700, color:'#2563eb', marginBottom:8 }}>Tahsil:</p>
+                <ul style={{ margin:'0 0 20px', paddingLeft:20 }}>
+                  {CV.tahsil.map((t,i) => <li key={i} style={{ fontSize:14, color:'#374151', marginBottom:6, lineHeight:1.6 }}>{t}</li>)}
+                </ul>
+                <p style={{ fontSize:14, fontWeight:700, color:'#2563eb', marginBottom:8 }}>Radiologiya sahəsində yetərlilik:</p>
+                <ul style={{ margin:0, paddingLeft:20 }}>
+                  {CV.yeterlilik.map((t,i) => <li key={i} style={{ fontSize:14, color:'#374151', marginBottom:6, lineHeight:1.6 }}>{t}</li>)}
+                </ul>
               </div>
             )}
-          </Card>
+
+            {activeTab === 'nesrler' && (
+              <div>
+                <p style={{ fontSize:14, fontWeight:700, color:'#2563eb', marginBottom:12 }}>Elmi araşdırmalar:</p>
+                <ul style={{ margin:0, paddingLeft:20 }}>
+                  {CV.nesrler.map((n,i) => <li key={i} style={{ fontSize:14, color:'#374151', marginBottom:10, lineHeight:1.7 }}>{n}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {activeTab === 'uzvluk' && (
+              <ul style={{ margin:0, paddingLeft:20 }}>
+                {CV.uzvlukler.map((u,i) => <li key={i} style={{ fontSize:14, color:'#374151', marginBottom:8, lineHeight:1.6 }}>{u}</li>)}
+              </ul>
+            )}
+
+            {activeTab === 'kurslar' && (
+              <ul style={{ margin:0, paddingLeft:20 }}>
+                {CV.kurslar.map((k,i) => <li key={i} style={{ fontSize:14, color:'#374151', marginBottom:8, lineHeight:1.6 }}>{k}</li>)}
+              </ul>
+            )}
+
+          </div>
         </div>
 
-        {/* ── RIGHT ─────────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* RIGHT */}
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
-          {/* Contact info */}
-          <Card>
-            <SectionTitle>📞 Əlaqə məlumatları</SectionTitle>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <InfoRow icon="₼" label="Konsultasiya haqqı"
-                value={doctor.consultationFee ? `${doctor.consultationFee} ₼` : 'Məlumat yoxdur'} />
-              <InfoRow icon="🏥" label="Şöbə" value={deptName} />
-              <InfoRow icon="📱" label="Telefon" value={u.phone || '—'} />
-              {u.email && <InfoRow icon="✉️" label="E-poçt" value={u.email} />}
-            </div>
-          </Card>
+          {/* Contact card */}
+          <div style={{ background:'white', borderRadius:12, border:'1px solid #e2e8f0', padding:'20px 22px' }}>
+            <h3 style={{ margin:'0 0 16px', fontSize:15, fontWeight:700, color:NAVY, display:'flex', alignItems:'center', gap:8 }}>
+              📞 Əlaqə məlumatları
+            </h3>
+            {[
+              { label:'Konsultasiya haqqı', value: doctor.consultationFee ? `${doctor.consultationFee} ₼` : '—' },
+              { label:'Şöbə',              value: doctor.departmentId?.name || doctor.department || '—' },
+              { label:'Telefon',           value: doctor.userId?.phone || '—' },
+              { label:'E-poçt',            value: doctor.userId?.email || '—' },
+            ].map((row,i,arr) => (
+              <div key={i} style={{ padding:'10px 0', borderBottom: i<arr.length-1 ? '1px solid #f1f5f9':'none' }}>
+                <div style={{ fontSize:11, color:'#94a3b8', marginBottom:3 }}>{row.label}</div>
+                <div style={{ fontSize:14, fontWeight:500, color:NAVY }}>{row.value}</div>
+              </div>
+            ))}
+          </div>
 
-          {/* CTA card */}
-          <Card style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #0d2240 100%)`, border: 'none' }}>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: '0 0 4px', fontFamily: FONT }}>Onlayn randevu alın</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: 'white', margin: '0 0 20px', fontFamily: FONT, lineHeight: 1.4 }}>
-              Dr. {fullName} ilə görüş təyin edin
-            </p>
-            <button
-              onClick={() => navigate(`/randevu?doctorId=${id}`)}
-              style={{ width: '100%', padding: '13px 0', background: TEAL, color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'opacity .15s' }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              Randevu Al
-            </button>
-          </Card>
+          {/* Ratings card */}
+          <div style={{ background:'white', borderRadius:12, border:'1px solid #e2e8f0', padding:'20px 22px' }}>
+            <h3 style={{ margin:'0 0 16px', fontSize:15, fontWeight:700, color:NAVY }}>Rəylər</h3>
+            {ratings.length === 0
+              ? <p style={{ fontSize:13, color:'#94a3b8', margin:0 }}>Hələ rəy yoxdur</p>
+              : ratings.slice(0,5).map((r,i) => (
+                <div key={i} style={{ borderBottom: i<ratings.length-1 ? '1px solid #f1f5f9':'none', paddingBottom:12, marginBottom:12 }}>
+                  <StarRating value={r.rating || r.score || 0} />
+                  {r.comment && <p style={{ fontSize:13, color:'#374151', margin:'6px 0 0', lineHeight:1.6 }}>{r.comment}</p>}
+                  <span style={{ fontSize:11, color:'#94a3b8' }}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString('az-AZ') : ''}</span>
+                </div>
+              ))
+            }
+          </div>
+
         </div>
       </div>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
-        @media (max-width: 768px) {
-          main > div:last-of-type { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </main>
-  )
-}
-
-function InfoRow({ icon, label, value }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-      <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icon}</span>
-      <div>
-        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 14, color: '#334155', fontWeight: 500 }}>{value}</div>
-      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
