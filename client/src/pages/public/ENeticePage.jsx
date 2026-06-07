@@ -997,6 +997,16 @@ export default function ENeticePage() {
 
       <div className="enetice-shell">
         <aside className="enetice-promo" aria-label="Aslan Medical mobil tətbiqi">
+          <a href="/" style={{
+            alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 13, fontWeight: 600, color: TEAL, textDecoration: 'none',
+            padding: '6px 14px', border: `1.5px solid ${TEAL}`, borderRadius: 8,
+            background: 'transparent', transition: 'background 0.15s, color 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEAL }}>
+            ← Ana səhifə
+          </a>
           <div className="enetice-promo-copy">
             <h2>Analiz nəticələriniz hər zaman əlinizin altında</h2>
             <p>Tətbiqdən istifadə edərək laborator analiz nəticələrinizi onlayn rejimdə rahat şəkildə əldə edə bilərsiniz.</p>

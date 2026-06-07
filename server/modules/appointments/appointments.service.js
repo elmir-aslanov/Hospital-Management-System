@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import Appointment from '../../models/Appointment.model.js';
 import Patient from '../../models/Patient.model.js';
 import Doctor from '../../models/Doctor.model.js';
@@ -108,6 +109,93 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
   } catch (_) {}
 
   return populateAppointment(Appointment.findById(appointment._id));
+};
+
+// ─── Public booking (no auth) — existing OR new patient ──────────────────────
+
+export const createPublicAppointment = async (body) => {
+  const {
+    patientType = 'existing',
+    doctorId, date, startTime, reason, notes,
+  } = body;
+
+  if (!doctorId)  throw new ApiError(400, 'Həkim seçilməlidir');
+  if (!date)      throw new ApiError(400, 'Tarix seçilməlidir');
+  if (!startTime) throw new ApiError(400, 'Saat seçilməlidir');
+
+  let patientMongoId;
+
+  // ── NEW PATIENT ────────────────────────────────────────────────────────────
+  if (patientType === 'new') {
+    const pd = body.patient || {};
+    const { firstName, lastName, fatherName, phone, email, fin, birthDate } = pd;
+
+    if (!firstName?.trim()) throw new ApiError(400, 'Ad daxil edilməlidir');
+    if (!lastName?.trim())  throw new ApiError(400, 'Soyad daxil edilməlidir');
+    if (!phone?.trim())     throw new ApiError(400, 'Telefon daxil edilməlidir');
+    if (!birthDate)         throw new ApiError(400, 'Doğum tarixi daxil edilməlidir');
+
+    const fullName   = `${firstName.trim()} ${lastName.trim()}`;
+    const cleanPhone = phone.trim();
+
+    // Reuse existing user account if same phone already registered
+    let user = await User.findOne({ phone: cleanPhone });
+
+    if (!user) {
+      const guestEmail = email?.trim()?.toLowerCase()
+        || `walkin.${cleanPhone.replace(/\D/g, '')}.${Date.now()}@aslanmedical.az`;
+
+      user = await User.create({
+        fullName,
+        ataAdi:    fatherName?.trim() || undefined,
+        email:     guestEmail,
+        phone:     cleanPhone,
+        role:      'PATIENT',
+        password:  crypto.randomBytes(24).toString('hex'), // hashed by pre-save hook
+        birthDate: new Date(birthDate),
+        isActive:  true,
+      });
+    }
+
+    let patient = await Patient.findOne({ userId: user._id });
+    if (!patient) patient = await Patient.create({ userId: user._id });
+
+    patientMongoId = patient._id;
+
+  // ── EXISTING PATIENT ───────────────────────────────────────────────────────
+  } else {
+    const { patientStrId } = body;
+    if (!patientStrId?.trim()) throw new ApiError(400, 'Pasiyent ID daxil edilməlidir');
+
+    const patient = await Patient.findOne({ patientId: patientStrId.trim().toUpperCase() });
+    if (!patient) throw new ApiError(404, 'Bu ID ilə pasiyent tapılmadı. Zəhmət olmasa resepsiyona müraciət edin.');
+
+    patientMongoId = patient._id;
+  }
+
+  // ── CREATE APPOINTMENT ─────────────────────────────────────────────────────
+  const appointment = await createAppointment({
+    patientId: patientMongoId,
+    doctorId,
+    date,
+    startTime,
+    reason: reason?.trim() || 'Onlayn randevu',
+    note:   notes,
+  });
+
+  const doctor = await Doctor.findById(doctorId)
+    .populate('userId', 'fullName')
+    .populate('departmentId', 'name');
+
+  return {
+    appointmentId:     appointment._id,
+    appointmentNumber: `APP-${new Date().getFullYear()}-${String(appointment._id).slice(-6).toUpperCase()}`,
+    date,
+    time:           startTime,
+    doctorName:     doctor?.userId?.fullName ? `Dr. ${doctor.userId.fullName}` : '—',
+    departmentName: doctor?.departmentId?.name || doctor?.department || '—',
+    status:         appointment.status,
+  };
 };
 
 // ─── Read ─────────────────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ const router = Router();
 router.get('/public',     doctorsController.getPublicDoctors);
 router.get('/public/all', doctorsController.getAllPublicDoctors);
 router.get('/by-department/:departmentId', doctorsController.getDoctorsByDepartment);
+router.get('/:id/public-slots', doctorsController.getDoctorAvailability);
 
 /**
  * @swagger
