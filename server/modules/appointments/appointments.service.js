@@ -44,15 +44,27 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
   if (!doctor)  throw new ApiError(404, 'Doctor not found');
 
   // Step 3 — check work schedule
-  const apptDate  = new Date(date);
-  const dayOfWeek = apptDate.getDay();
+  // UTC noon avoids timezone midnight-shift when calculating day-of-week
+  const apptDate  = new Date(`${date}T00:00:00.000Z`);
+  const dayOfWeek = new Date(`${date}T12:00:00.000Z`).getUTCDay();
   const schedule  = await WorkSchedule.findOne({ doctorId, dayOfWeek });
 
-  if (!schedule || schedule.isOff) {
-    throw new ApiError(400, 'Doctor is not available on this day');
+  // Mirror getPublicSlots fallback: if no schedule entry, use clinic defaults
+  let schedStart, schedEnd;
+  if (!schedule) {
+    const def = DEFAULT_HOURS[dayOfWeek];
+    if (!def) throw new ApiError(400, 'Bazar günü qəbul yoxdur.');
+    schedStart = def.start;
+    schedEnd   = def.end;
+  } else if (schedule.isOff) {
+    throw new ApiError(400, 'Həkim bu gün işləmir.');
+  } else {
+    schedStart = schedule.startTime;
+    schedEnd   = schedule.endTime;
   }
-  if (startTime < schedule.startTime || endTime > schedule.endTime) {
-    throw new ApiError(400, `Time is outside doctor working hours (${schedule.startTime}–${schedule.endTime})`);
+
+  if (startTime < schedStart || endTime > schedEnd) {
+    throw new ApiError(400, `Seçilmiş saat həkimin iş saatları xaricindədir (${schedStart}–${schedEnd}).`);
   }
 
   // Step 4 — conflict detection (UTC range to avoid timezone mismatch)
@@ -62,7 +74,7 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
   const conflict = await Appointment.findOne({
     doctorId,
     date: { $gte: dayStart, $lte: dayEnd },
-    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.MISSED, 'no_show'] },
+    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.MISSED, 'no_show', APPOINTMENT_STATUS.COMPLETED] },
     $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
   });
   if (conflict) throw new ApiError(409, 'Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.');
@@ -137,11 +149,11 @@ export const getPublicSlots = async (doctorId, dateStr) => {
   if (!doctorId) throw new ApiError(400, 'doctorId tələb olunur');
   if (!dateStr)  throw new ApiError(400, 'date tələb olunur (YYYY-MM-DD)');
 
-  // Parse date using noon to avoid timezone midnight shift
-  const date = new Date(`${dateStr}T12:00:00`);
+  // Parse date at UTC noon to avoid timezone midnight shift (consistent with createAppointment)
+  const date = new Date(`${dateStr}T12:00:00.000Z`);
   if (isNaN(date.getTime())) throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
 
-  const dayOfWeek = date.getDay();
+  const dayOfWeek = date.getUTCDay();
 
   // Try doctor-specific schedule first
   const schedule = await WorkSchedule.findOne({ doctorId, dayOfWeek });
