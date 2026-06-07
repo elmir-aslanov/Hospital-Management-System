@@ -232,7 +232,7 @@ export default function RandevuPage() {
 
   // ── Load departments once ─────────────────────────────────────────────────
   useEffect(() => {
-    axios.get('/api/v1/departments')
+    axios.get('/departments')
       .then(r => setDepartments(r.data.data || []))
       .catch(() => {})
   }, [])
@@ -241,7 +241,7 @@ export default function RandevuPage() {
   useEffect(() => {
     if (!selDept) { setDoctors([]); setSelDoctor(''); return }
     setLoadDoc(true)
-    axios.get(`/api/v1/doctors/by-department/${selDept}`)
+    axios.get(`/doctors/by-department/${selDept}`)
       .then(r => setDoctors(r.data.data || []))
       .catch(() => setError('Həkimlər yüklənmədi. Yenidən cəhd edin.'))
       .finally(() => setLoadDoc(false))
@@ -249,13 +249,14 @@ export default function RandevuPage() {
 
   // ── Available slots ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (!selDoctor || !selDate) { setSlots([]); setSelSlot(''); return }
-    setLoadSlot(true)
-    setSelSlot('')
-    axios.get(`/api/v1/doctors/${selDoctor}/public-slots`, { params: { date: selDate } })
-      .then(r => setSlots(r.data.data?.slots || []))
-      .catch(() => setError('Mövcud saatlar yüklənmədi. Yenidən cəhd edin.'))
-      .finally(() => setLoadSlot(false))
+    if (!selDoctor || !selDate) return
+    setSlots([])
+    axios.get(`/appointments/slots?doctorId=${selDoctor}&date=${selDate}`)
+      .then(r => {
+        const data = r.data.data || r.data || []
+        setSlots(Array.isArray(data) ? data : [])
+      })
+      .catch(() => setSlots([]))
   }, [selDoctor, selDate])
 
   // ── Birth date string ─────────────────────────────────────────────────────
@@ -278,7 +279,7 @@ export default function RandevuPage() {
       if (!patientStr.trim()) return setError('Pasiyent ID daxil edilməlidir')
       setLoading(true)
       try {
-        const r = await axios.get('/api/v1/patients/search-public', {
+        const r = await axios.get('/patients/search-public', {
           params: { patientId: patientStr.trim().toUpperCase(), birthDate: birthDateStr },
         })
         setPatient(r.data.data)
@@ -338,7 +339,7 @@ export default function RandevuPage() {
         }
       }
 
-      const r = await axios.post('/api/v1/appointments/public', payload)
+      const r = await axios.post('/appointments/public', payload)
       setResult(r.data.data)
     } catch (e) {
       const s = e.response?.status
@@ -639,37 +640,37 @@ export default function RandevuPage() {
                       disabled={!selDoctor} style={{ ...inp, colorScheme: 'light' }} />
                   </Field>
 
-                  {selDoctor && selDate && (
-                    <Field label="Saat" required>
-                      {loadSlot
-                        ? <p style={{ fontSize: 13, color: T.muted }}>Saatlar yüklənir...</p>
-                        : slots.length === 0
-                          ? <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
-                              Bu tarix üçün boş saat yoxdur.
-                            </p>
-                          : (
-                            <div style={{ display: 'grid',
-                              gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: 8 }}>
-                              {slots.map(s => (
-                                <button key={s.time}
-                                  onClick={() => s.available && setSelSlot(s.time)}
-                                  disabled={!s.available}
-                                  style={{
-                                    padding: '9px 4px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                                    cursor: s.available ? 'pointer' : 'not-allowed', fontFamily: T.font,
-                                    border: `1.5px solid ${selSlot === s.time ? T.teal : s.available ? T.border : '#f1f5f9'}`,
-                                    background: selSlot === s.time ? T.teal : s.available ? T.card : '#f8fafc',
-                                    color: selSlot === s.time ? 'white' : s.available ? T.navy : '#cbd5e1',
-                                    transition: 'all .15s',
-                                  }}>
-                                  {s.time}
-                                </button>
-                              ))}
-                            </div>
-                          )
-                      }
-                    </Field>
-                  )}
+                  <div style={{marginBottom:20}}>
+                    <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:8}}>
+                      Saat <span style={{color:'#ef4444'}}>*</span>
+                    </div>
+                    {!selDoctor||!selDate ? (
+                      <p style={{fontSize:14,color:'#94a3b8',margin:0}}>Həkim və tarix seçin</p>
+                    ) : slots.length===0 ? (
+                      <p style={{fontSize:14,color:'#94a3b8',margin:0}}>Bu tarix üçün boş saat yoxdur.</p>
+                    ) : (
+                      <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                        {slots.map(s=>(
+                          <button key={s} onClick={()=>setSelSlot(s)} style={{
+                            padding:'10px 18px',
+                            border:'none',
+                            borderRadius:6,
+                            fontSize:14,
+                            fontWeight:600,
+                            background:'#1e3a5f',
+                            color:'white',
+                            cursor:'pointer',
+                            fontFamily:T.font,
+                            opacity:selSlot===s?1:0.85,
+                            outline:selSlot===s?`2px solid ${T.teal}`:'none',
+                            outlineOffset:2
+                          }}>
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <Field label="Qeyd / Şikayət (ixtiyari)">
                     <textarea value={note} onChange={e => setNote(e.target.value)}
