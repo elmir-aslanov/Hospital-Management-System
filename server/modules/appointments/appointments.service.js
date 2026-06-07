@@ -55,17 +55,17 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
     throw new ApiError(400, `Time is outside doctor working hours (${schedule.startTime}–${schedule.endTime})`);
   }
 
-  // Step 4 — conflict detection
-  const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
-  const dayEnd   = new Date(date); dayEnd.setHours(23, 59, 59, 999);
+  // Step 4 — conflict detection (UTC range to avoid timezone mismatch)
+  const dayStart = new Date(`${date}T00:00:00.000Z`);
+  const dayEnd   = new Date(`${date}T23:59:59.999Z`);
 
   const conflict = await Appointment.findOne({
     doctorId,
     date: { $gte: dayStart, $lte: dayEnd },
-    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.MISSED] },
+    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.MISSED, 'no_show'] },
     $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
   });
-  if (conflict) throw new ApiError(409, 'This time slot is already booked');
+  if (conflict) throw new ApiError(409, 'Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.');
 
   // Step 5 — create
   const appointment = await Appointment.create({ patientId, doctorId, date: apptDate, startTime, endTime, reason });
@@ -109,6 +109,95 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
   } catch (_) {}
 
   return populateAppointment(Appointment.findById(appointment._id));
+};
+
+// ─── Public available slots (no auth) ────────────────────────────────────────
+
+// Default clinic working hours used when doctor has no WorkSchedule entry
+const DEFAULT_HOURS = {
+  1: { start: '09:00', end: '18:00' }, // Mon
+  2: { start: '09:00', end: '18:00' }, // Tue
+  3: { start: '09:00', end: '18:00' }, // Wed
+  4: { start: '09:00', end: '18:00' }, // Thu
+  5: { start: '09:00', end: '18:00' }, // Fri
+  6: { start: '09:00', end: '14:00' }, // Sat
+  0: null,                              // Sun — closed
+};
+const DEFAULT_SLOT_DURATION = 30; // minutes
+
+function minsToTime(m) {
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+function timeToMins(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+export const getPublicSlots = async (doctorId, dateStr) => {
+  if (!doctorId) throw new ApiError(400, 'doctorId tələb olunur');
+  if (!dateStr)  throw new ApiError(400, 'date tələb olunur (YYYY-MM-DD)');
+
+  // Parse date using noon to avoid timezone midnight shift
+  const date = new Date(`${dateStr}T12:00:00`);
+  if (isNaN(date.getTime())) throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
+
+  const dayOfWeek = date.getDay();
+
+  // Try doctor-specific schedule first
+  const schedule = await WorkSchedule.findOne({ doctorId, dayOfWeek });
+
+  let startTime, endTime, slotDuration;
+
+  if (schedule) {
+    if (schedule.isOff) {
+      return { date: dateStr, doctorId, available: false, slots: [], reason: 'İstirahət günüdür' };
+    }
+    startTime    = schedule.startTime;
+    endTime      = schedule.endTime;
+    slotDuration = schedule.slotDuration || DEFAULT_SLOT_DURATION;
+  } else {
+    // Fallback to clinic defaults
+    const defaults = DEFAULT_HOURS[dayOfWeek];
+    if (!defaults) {
+      return { date: dateStr, doctorId, available: false, slots: [], reason: 'Bazar günü qəbul yoxdur' };
+    }
+    startTime    = defaults.start;
+    endTime      = defaults.end;
+    slotDuration = DEFAULT_SLOT_DURATION;
+  }
+
+  // Fetch already booked appointments — UTC range matches how dates are stored
+  const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
+  const dayEnd   = new Date(`${dateStr}T23:59:59.999Z`);
+
+  const booked = await Appointment.find({
+    doctorId,
+    date: { $gte: dayStart, $lte: dayEnd },
+    status: { $nin: ['cancelled', 'missed', 'no_show', 'completed'] },
+  }).select('startTime');
+
+  const bookedSet = new Set(booked.map(a => a.startTime));
+
+  // Past-time buffer for today (15 min)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isToday  = dateStr === todayStr;
+  const nowMins  = isToday
+    ? (new Date().getHours() * 60 + new Date().getMinutes() + 15)
+    : 0;
+
+  // Generate slots
+  const slots = [];
+  let cur = timeToMins(startTime);
+  const end = timeToMins(endTime);
+
+  while (cur + slotDuration <= end) {
+    const time = minsToTime(cur);
+    const pastTime = isToday && cur < nowMins;
+    slots.push({ time, available: !bookedSet.has(time) && !pastTime });
+    cur += slotDuration;
+  }
+
+  return { date: dateStr, doctorId, available: true, slots };
 };
 
 // ─── Public booking (no auth) — existing OR new patient ──────────────────────

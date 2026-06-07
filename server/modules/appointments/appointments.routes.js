@@ -12,6 +12,7 @@ import authorize    from '../../middleware/rbac.middleware.js';
 const router = Router();
 
 // ── Public routes (no auth) ──────────────────────────────────────────────────
+router.get('/slots',   appointmentsController.getPublicSlots);
 router.post('/public', appointmentsController.createPublicAppointment);
 
 router.use(authenticate);

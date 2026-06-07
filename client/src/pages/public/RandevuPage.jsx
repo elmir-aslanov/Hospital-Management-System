@@ -227,19 +227,25 @@ export default function RandevuPage() {
   const [selDate,     setSelDate]     = useState('')
   const [selSlot,     setSelSlot]     = useState('')
   const [note,        setNote]        = useState('')
+  const [loadDept,    setLoadDept]    = useState(false)
   const [loadDoc,     setLoadDoc]     = useState(false)
   const [loadSlot,    setLoadSlot]    = useState(false)
+  // Increment to force a slot re-fetch (used after 409 double-booking race condition)
+  const [slotTick,    setSlotTick]    = useState(0)
 
-  // ── Load departments once ─────────────────────────────────────────────────
+  // ── Load departments when Step 2 mounts ──────────────────────────────────
   useEffect(() => {
+    if (step !== 2) return
+    setLoadDept(true)
     axios.get('/departments')
       .then(r => setDepartments(r.data.data || []))
-      .catch(() => {})
-  }, [])
+      .catch(() => setError('Şöbələr yüklənmədi. Yenidən cəhd edin.'))
+      .finally(() => setLoadDept(false))
+  }, [step])
 
   // ── Doctors by department ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!selDept) { setDoctors([]); setSelDoctor(''); return }
+    if (!selDept) { setDoctors([]); setSelDoctor(''); setSelDate(''); setSlots([]); setSelSlot(''); return }
     setLoadDoc(true)
     axios.get(`/doctors/by-department/${selDept}`)
       .then(r => setDoctors(r.data.data || []))
@@ -249,15 +255,23 @@ export default function RandevuPage() {
 
   // ── Available slots ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (!selDoctor || !selDate) return
+    if (!selDoctor || !selDate) { setSlots([]); setSelSlot(''); return }
+    setLoadSlot(true)
     setSlots([])
-    axios.get(`/appointments/slots?doctorId=${selDoctor}&date=${selDate}`)
+    setSelSlot('')
+    // date input[type=date] always yields YYYY-MM-DD — safe to send directly
+    axios.get('/appointments/slots', { params: { doctorId: selDoctor, date: selDate } })
       .then(r => {
-        const data = r.data.data || r.data || []
-        setSlots(Array.isArray(data) ? data : [])
+        const data = r.data?.data
+        if (!data || data.available === false) { setSlots([]); return }
+        setSlots(Array.isArray(data.slots) ? data.slots : [])
       })
-      .catch(() => setSlots([]))
-  }, [selDoctor, selDate])
+      .catch(() => {
+        setSlots([])
+        setError('Boş saatlar yüklənmədi. Yenidən cəhd edin.')
+      })
+      .finally(() => setLoadSlot(false))
+  }, [selDoctor, selDate, slotTick])
 
   // ── Birth date string ─────────────────────────────────────────────────────
   const birthDateStr = birthYear && birthMonth && birthDay
@@ -344,9 +358,17 @@ export default function RandevuPage() {
     } catch (e) {
       const s = e.response?.status
       const m = e.response?.data?.message
-      if (s === 409)       setError('Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.')
-      else if (s >= 500)   setError('Server xətası baş verdi. Yenidən cəhd edin.')
-      else                 setError(m || 'Randevu yaradılarkən xəta baş verdi.')
+      if (s === 409) {
+        // Race condition: slot was booked after user selected it → go back to Step 2
+        setSelSlot('')
+        setSlotTick(prev => prev + 1)   // forces slot useEffect to re-run
+        setStep(2)
+        setError('Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.')
+      } else if (s >= 500) {
+        setError('Server xətası baş verdi. Yenidən cəhd edin.')
+      } else {
+        setError(m || 'Randevu yaradılarkən xəta baş verdi.')
+      }
     } finally {
       setLoading(false)
     }
@@ -366,7 +388,7 @@ export default function RandevuPage() {
     setFirstName(''); setLastName(''); setFatherName('')
     setPhone(''); setEmail(''); setFin('')
     setSelDept(''); setSelDoctor(''); setSelDate(''); setSelSlot(''); setNote('')
-    setResult(null)
+    setSlotTick(0); setResult(null)
   }
 
   // ── SUCCESS SCREEN ────────────────────────────────────────────────────────
@@ -604,14 +626,22 @@ export default function RandevuPage() {
                   </p>
 
                   <Field label="Şöbə / İxtisas" required>
-                    <select value={selDept}
-                      onChange={e => { setSelDept(e.target.value); setSelDoctor(''); setSlots([]); setSelSlot('') }}
-                      style={inp}>
-                      <option value="">Şöbə seçin...</option>
-                      {departments.map(d => (
-                        <option key={d._id} value={d._id}>{d.name}</option>
-                      ))}
-                    </select>
+                    {loadDept
+                      ? <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Şöbələr yüklənir...</p>
+                      : (
+                        <select value={selDept}
+                          onChange={e => { setSelDept(e.target.value); setSelDoctor(''); setSelDate(''); setSlots([]); setSelSlot('') }}
+                          style={inp}>
+                          <option value="">Şöbə seçin...</option>
+                          {departments.length === 0
+                            ? <option disabled>Aktiv şöbə tapılmadı</option>
+                            : departments.map(d => (
+                                <option key={d._id} value={d._id}>{d.name}</option>
+                              ))
+                          }
+                        </select>
+                      )
+                    }
                   </Field>
 
                   <Field label="Həkim" required>
@@ -619,7 +649,7 @@ export default function RandevuPage() {
                       ? <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Həkimlər yüklənir...</p>
                       : (
                         <select value={selDoctor}
-                          onChange={e => { setSelDoctor(e.target.value); setSelSlot('') }}
+                          onChange={e => { setSelDoctor(e.target.value); setSelDate(''); setSlots([]); setSelSlot('') }}
                           disabled={!selDept} style={inp}>
                           <option value="">Həkim seçin...</option>
                           {doctors.map(d => (
@@ -640,34 +670,55 @@ export default function RandevuPage() {
                       disabled={!selDoctor} style={{ ...inp, colorScheme: 'light' }} />
                   </Field>
 
-                  <div style={{marginBottom:20}}>
-                    <div style={{fontSize:13,fontWeight:600,color:'#374151',marginBottom:8}}>
-                      Saat <span style={{color:'#ef4444'}}>*</span>
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+                      Mövcud saatlar <span style={{ color: '#ef4444' }}>*</span>
                     </div>
-                    {!selDoctor||!selDate ? (
-                      <p style={{fontSize:14,color:'#94a3b8',margin:0}}>Həkim və tarix seçin</p>
-                    ) : slots.length===0 ? (
-                      <p style={{fontSize:14,color:'#94a3b8',margin:0}}>Bu tarix üçün boş saat yoxdur.</p>
+
+                    {!selDoctor || !selDate ? (
+                      <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
+                        Həkim və tarixi seçdikdən sonra saatlar görünəcək.
+                      </p>
+                    ) : loadSlot ? (
+                      <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
+                        Boş saatlar yüklənir...
+                      </p>
+                    ) : slots.length === 0 ? (
+                      <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
+                        Bu tarix üçün boş saat yoxdur.
+                      </p>
                     ) : (
-                      <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-                        {slots.map(s=>(
-                          <button key={s} onClick={()=>setSelSlot(s)} style={{
-                            padding:'10px 18px',
-                            border:'none',
-                            borderRadius:6,
-                            fontSize:14,
-                            fontWeight:600,
-                            background:'#1e3a5f',
-                            color:'white',
-                            cursor:'pointer',
-                            fontFamily:T.font,
-                            opacity:selSlot===s?1:0.85,
-                            outline:selSlot===s?`2px solid ${T.teal}`:'none',
-                            outlineOffset:2
-                          }}>
-                            {s}
-                          </button>
-                        ))}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {slots.map(s => {
+                          const selected = selSlot === s.time
+                          return (
+                            <button
+                              key={s.time}
+                              onClick={() => s.available && setSelSlot(s.time)}
+                              disabled={!s.available}
+                              title={!s.available ? 'Bu saat artıq tutulub' : ''}
+                              style={{
+                                padding: '9px 16px', borderRadius: 8, fontSize: 13,
+                                fontWeight: 600, fontFamily: T.font,
+                                cursor: s.available ? 'pointer' : 'not-allowed',
+                                border: selected
+                                  ? `2px solid ${T.teal}`
+                                  : s.available
+                                    ? `1.5px solid #1e3a5f`
+                                    : `1.5px solid ${T.border}`,
+                                background: selected
+                                  ? T.teal
+                                  : s.available
+                                    ? '#1e3a5f'
+                                    : '#f8fafc',
+                                color: selected || s.available ? 'white' : '#cbd5e1',
+                                opacity: s.available ? 1 : 0.55,
+                                transition: 'all .15s',
+                              }}>
+                              {s.time}
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
                   </div>

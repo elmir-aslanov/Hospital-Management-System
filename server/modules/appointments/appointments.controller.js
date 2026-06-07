@@ -7,6 +7,12 @@ export const createAppointment = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, appointment, 'Appointment booked successfully'));
 });
 
+export const getPublicSlots = asyncHandler(async (req, res) => {
+  const { doctorId, date } = req.query;
+  const result = await appointmentsService.getPublicSlots(doctorId, date);
+  res.json(new ApiResponse(200, result));
+});
+
 export const createPublicAppointment = asyncHandler(async (req, res) => {
   const result = await appointmentsService.createPublicAppointment(req.body);
   res.status(201).json(new ApiResponse(201, result, 'Randevunuz uğurla yaradıldı'));
