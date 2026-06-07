@@ -1,7 +1,6 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import { useEffect, useState } from 'react'
 import api from '../../api/axios'
-import { useTranslation } from 'react-i18next'
 
 const FONT = "'Poppins', 'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
@@ -34,12 +33,16 @@ function getDateRangeError(startDate, endDate) {
   const end = new Date(`${endDate}T00:00:00`)
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return ''
-  if (end < start) return 'Son tarix başlanğıc tarixindən əvvəl ola bilməz.'
-
-  const dayDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-  if (dayDiff > 30) return 'Tarix aralığı 30 günü keçməməlidir.'
+  if (end < start) return 'Başlanğıc tarix son tarixdən böyük ola bilməz'
 
   return ''
+}
+
+function formatDate(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('az-AZ', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 function InfoButton({ label, onClick }) {
@@ -93,7 +96,6 @@ function InfoModal({ type, onClose }) {
 export default function ENeticePage() {
   usePageTitle('E-Nəticə', 'Laborator analiz nəticələrinizi onlayn yoxlayın.')
 
-  const { t } = useTranslation()
   const [searchMode, setSearchMode] = useState('fin')
   const [patientId, setPatientId] = useState('')
   const [protocol, setProtocol] = useState('')
@@ -111,6 +113,17 @@ export default function ENeticePage() {
     ? patientId.trim() && protocol.trim()
     : dateOfBirth && protocol.trim()
   const canSubmit = Boolean(hasRequiredFields) && !dateRangeError && !loading
+
+  const handleSearchModeChange = (mode) => {
+    setSearchMode(mode)
+    setError(null)
+    setResult(null)
+    if (mode === 'fin') {
+      setDob('')
+    } else {
+      setPatientId('')
+    }
+  }
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -140,26 +153,38 @@ export default function ENeticePage() {
     setModal(type)
   }
 
+  const validateForm = () => {
+    if (searchMode === 'fin' && !patientId.trim()) return 'FİN kod daxil edilməlidir'
+    if (searchMode === 'birth' && !dateOfBirth) return 'Doğum tarixi daxil edilməlidir'
+    if (!protocol.trim()) return 'Protokol nömrəsi daxil edilməlidir'
+    if (dateRangeError) return dateRangeError
+    return ''
+  }
+
+  const buildPayload = () => {
+    const payload = {
+      searchType: searchMode === 'fin' ? 'fin' : 'birthDate',
+      protocol: protocol.trim(),
+    }
+
+    if (searchMode === 'fin') {
+      payload.fin = patientId.trim()
+    } else {
+      payload.birthDate = dateOfBirth
+    }
+
+    if (startDate) payload.startDate = startDate
+    if (endDate) payload.endDate = endDate
+
+    return payload
+  }
+
   const handleSearch = async (event) => {
     event?.preventDefault()
 
-    if (searchMode === 'fin' && !patientId.trim()) {
-      setError('FİN daxil edin')
-      return
-    }
-
-    if (searchMode === 'birth' && !dateOfBirth) {
-      setError('Doğum tarixini daxil edin')
-      return
-    }
-
-    if (!protocol.trim()) {
-      setError('Protokol nömrəsini daxil edin')
-      return
-    }
-
-    if (dateRangeError) {
-      setError(dateRangeError)
+    const validationError = validateForm()
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -168,19 +193,25 @@ export default function ENeticePage() {
     setResult(null)
 
     try {
-      const params = {
-        searchMode,
-        protocol: protocol.trim(),
-        ...(patientId.trim() ? { patientId: patientId.trim().toUpperCase() } : {}),
-        ...(dateOfBirth ? { birthDate: dateOfBirth } : {}),
-        ...(startDate ? { startDate } : {}),
-        ...(endDate ? { endDate } : {}),
+      const res = await api.post('/lab-results/search', buildPayload())
+      const data = res.data?.data || null
+      if (!data) {
+        setError('Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı.')
+        return
       }
-
-      const res = await api.get('/patients/search-public', { params })
-      setResult(res.data?.data || res.data)
+      setResult(data)
     } catch (err) {
-      setError(err.response?.data?.message || 'Məlumat tapılmadı. Daxil etdiyiniz məlumatları yoxlayın.')
+      if (!err.response) {
+        setError('Bağlantı xətası baş verdi')
+      } else if (err.response.status === 400) {
+        setError(err.response.data?.message || 'Məlumatları düzgün doldurun')
+      } else if (err.response.status === 404) {
+        setError(err.response.data?.message || 'Analiz nəticəsi tapılmadı')
+      } else if (err.response.status >= 500) {
+        setError('Server xətası baş verdi')
+      } else {
+        setError(err.response.data?.message || 'Məlumatları düzgün doldurun')
+      }
     } finally {
       setLoading(false)
     }
@@ -220,43 +251,58 @@ export default function ENeticePage() {
         .enetice-shell {
           width: min(100%, 1360px);
           display: grid;
-          grid-template-columns: minmax(420px, 470px) minmax(0, 760px);
+          grid-template-columns: minmax(390px, 450px) minmax(0, 760px);
           align-items: center;
           gap: clamp(54px, 5vw, 72px);
           justify-content: center;
         }
 
         .enetice-promo {
-          height: min(700px, calc(100vh - 34px));
-          min-height: 650px;
+          height: min(680px, calc(100vh - 34px));
+          min-height: 620px;
           border-radius: 30px;
-          background: #2d98d8;
-          color: #ffffff;
-          padding: 30px 28px 26px;
+          background: #ffffff;
+          color: #0b1d34;
+          border: 1px solid #e2e8f0;
+          padding: 30px 28px 24px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
         }
 
-        .enetice-promo h2 {
+        .enetice-promo-copy {
           width: min(100%, 410px);
-          margin: 0;
-          font-size: 27px;
-          font-weight: 700;
-          line-height: 1.35;
           text-align: center;
+        }
+
+        .enetice-promo h2 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 700;
+          line-height: 1.3;
+          letter-spacing: 0;
+        }
+
+        .enetice-promo p {
+          margin: 8px auto 0;
+          max-width: 360px;
+          color: #475569;
+          font-size: 14.5px;
+          font-weight: 400;
+          line-height: 1.5;
           letter-spacing: 0;
         }
 
         .enetice-phone-frame {
           position: relative;
-          width: min(56%, 245px);
-          height: 480px;
-          margin: 4px auto 8px;
+          width: min(54%, 226px);
+          height: 410px;
+          margin: 12px auto 10px;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: #ffffff;
           z-index: 1;
           overflow: hidden;
         }
@@ -287,13 +333,13 @@ export default function ENeticePage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 20px;
+          gap: 18px;
           flex-wrap: wrap;
           margin-top: 6px;
         }
 
         .enetice-store-row img {
-          height: 42px;
+          height: 35px;
           width: auto;
           display: block;
           border-radius: 6px;
@@ -306,16 +352,16 @@ export default function ENeticePage() {
         }
 
         .enetice-form-logo {
-          width: 132px;
+          width: 120px;
           max-width: 48%;
           height: auto;
           object-fit: contain;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
         }
 
         .enetice-form-panel h1 {
-          margin: 0 0 8px;
-          font-size: clamp(34px, 2.5vw, 40px);
+          margin: 0 0 7px;
+          font-size: clamp(30px, 2.2vw, 36px);
           font-weight: 800;
           line-height: 1.15;
           letter-spacing: 0;
@@ -324,10 +370,10 @@ export default function ENeticePage() {
 
         .enetice-subtitle {
           max-width: 560px;
-          margin: 0 0 26px;
+          margin: 0 0 22px;
           color: #475569;
-          font-size: 18px;
-          line-height: 1.42;
+          font-size: 15.5px;
+          line-height: 1.5;
           font-weight: 400;
         }
 
@@ -351,7 +397,7 @@ export default function ENeticePage() {
           align-items: center;
           justify-content: space-between;
           gap: 42px;
-          margin-bottom: 24px;
+          margin-bottom: 22px;
         }
 
         .enetice-choice {
@@ -359,7 +405,7 @@ export default function ENeticePage() {
           align-items: center;
           gap: 9px;
           color: #101828;
-          font-size: 16px;
+          font-size: 14.5px;
           font-weight: 600;
           line-height: 1.25;
           cursor: pointer;
@@ -400,7 +446,7 @@ export default function ENeticePage() {
         }
 
         .enetice-field {
-          margin-bottom: 18px;
+          margin-bottom: 16px;
           position: relative;
         }
 
@@ -409,9 +455,9 @@ export default function ENeticePage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-bottom: 8px;
-          color: #344054;
-          font-size: 17px;
+          margin-bottom: 6px;
+          color: #0b1d34;
+          font-size: 14.5px;
           font-weight: 600;
           line-height: 1.2;
         }
@@ -426,12 +472,12 @@ export default function ENeticePage() {
 
         .enetice-input {
           width: 100%;
-          height: 62px;
-          border: 1px solid #1f2937;
-          border-radius: 4px;
+          height: 52px;
+          border: 1px solid #cbd5e1;
+          border-radius: 9px;
           background: #ffffff;
           color: ${NAVY};
-          font: 500 18px/1.2 ${FONT};
+          font: 500 15.5px/1.2 ${FONT};
           padding: 0 48px 0 16px;
           outline: none;
           transition: border-color 0.18s ease, box-shadow 0.18s ease;
@@ -439,8 +485,8 @@ export default function ENeticePage() {
         }
 
         .enetice-input::placeholder {
-          color: #d8dbe0;
-          font-weight: 700;
+          color: #cbd5e1;
+          font-weight: 600;
         }
 
         .enetice-input:focus {
@@ -479,12 +525,12 @@ export default function ENeticePage() {
         .enetice-date-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 20px;
+          gap: 18px;
           margin-top: 0;
         }
 
         .enetice-date-grid .enetice-field {
-          margin-bottom: 18px;
+          margin-bottom: 16px;
         }
 
         .enetice-tooltip {
@@ -533,19 +579,19 @@ export default function ENeticePage() {
 
         .enetice-submit {
           width: min(100%, 220px);
-          height: 72px;
+          height: 52px;
           border: 0;
-          border-radius: 8px;
-          background: #a9d7f4;
+          border-radius: 11px;
+          background: #9fd4f2;
           color: #ffffff;
-          font: 700 21px/1 ${FONT};
+          font: 700 16.5px/1 ${FONT};
           cursor: pointer;
           transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
         }
 
         .enetice-submit:not(:disabled) {
-          background: #2d98d8;
-          box-shadow: 0 10px 20px rgba(45, 152, 216, 0.2);
+          background: #1d8b95;
+          box-shadow: 0 10px 20px rgba(29, 139, 149, 0.18);
         }
 
         .enetice-submit:not(:disabled):hover {
@@ -570,7 +616,7 @@ export default function ENeticePage() {
         }
 
         .enetice-partner-strip {
-          margin-top: 22px;
+          margin-top: 26px;
           display: flex;
           align-items: center;
           gap: 44px;
@@ -583,11 +629,11 @@ export default function ENeticePage() {
         }
 
         .enetice-partner-strip .insurance-logo {
-          width: 142px;
+          width: 138px;
         }
 
         .enetice-partner-strip .tabib-logo {
-          width: 118px;
+          width: 112px;
         }
 
         .enetice-result {
@@ -596,38 +642,50 @@ export default function ENeticePage() {
         }
 
         .enetice-result-card {
-          border: 1px solid #c8f3d4;
+          border: 1px solid #dbeafe;
           border-radius: 12px;
-          background: #f0fdf4;
-          padding: 15px 18px;
-          margin-bottom: 12px;
+          background: #f8fafc;
+          padding: 18px;
+          margin-bottom: 14px;
         }
 
-        .enetice-result-status {
-          margin-bottom: 4px;
-          color: #15803d;
-          font-size: 14px;
-          font-weight: 800;
+        .enetice-result-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 16px;
         }
 
         .enetice-result-name {
           color: ${NAVY};
-          font-size: 18px;
+          font-size: 19px;
           font-weight: 800;
+          margin: 0 0 4px;
         }
 
-        .enetice-result-id {
-          margin-top: 2px;
-          color: #667085;
+        .enetice-result-subtitle {
+          margin: 0;
+          color: #64748b;
           font-size: 13px;
           font-weight: 600;
         }
 
-        .enetice-result-grid {
+        .enetice-result-badge {
+          border-radius: 999px;
+          background: #dcfce7;
+          color: #15803d;
+          padding: 7px 11px;
+          font-size: 12px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .enetice-result-meta {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
 
         .enetice-mini-card {
@@ -644,6 +702,63 @@ export default function ENeticePage() {
           font-weight: 800;
           letter-spacing: 0.06em;
           text-transform: uppercase;
+        }
+
+        .enetice-mini-value {
+          color: ${NAVY};
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.35;
+        }
+
+        .enetice-result-table {
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          overflow: hidden;
+          background: #ffffff;
+        }
+
+        .enetice-result-row {
+          display: grid;
+          grid-template-columns: minmax(160px, 1.5fr) minmax(90px, 0.8fr) minmax(90px, 0.8fr) minmax(130px, 1fr);
+          gap: 12px;
+          align-items: center;
+          padding: 11px 13px;
+          border-bottom: 1px solid #e2e8f0;
+          color: #334155;
+          font-size: 13px;
+        }
+
+        .enetice-result-row:last-child {
+          border-bottom: 0;
+        }
+
+        .enetice-result-row.is-head {
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .enetice-result-test {
+          color: ${NAVY};
+          font-weight: 800;
+        }
+
+        .enetice-result-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 14px;
+          border-radius: 10px;
+          background: #1d8b95;
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 800;
+          padding: 10px 14px;
         }
 
         .enetice-history {
@@ -796,7 +911,11 @@ export default function ENeticePage() {
           }
 
           .enetice-promo h2 {
-            font-size: 22px;
+            font-size: 24px;
+          }
+
+          .enetice-promo p {
+            font-size: 15px;
           }
 
           .enetice-store-row img {
@@ -809,7 +928,7 @@ export default function ENeticePage() {
           }
 
           .enetice-form-panel h1 {
-            font-size: 28px;
+            font-size: 30px;
           }
 
           .enetice-subtitle {
@@ -820,7 +939,7 @@ export default function ENeticePage() {
           .enetice-choice-row,
           .enetice-date-grid,
           .enetice-actions,
-          .enetice-result-grid {
+          .enetice-result-meta {
             grid-template-columns: 1fr;
           }
 
@@ -840,7 +959,7 @@ export default function ENeticePage() {
           }
 
           .enetice-input {
-            height: 48px;
+            height: 52px;
             font-size: 16px;
           }
 
@@ -864,12 +983,24 @@ export default function ENeticePage() {
             justify-content: center;
             gap: 28px;
           }
+
+          .enetice-result-header {
+            flex-direction: column;
+          }
+
+          .enetice-result-row {
+            grid-template-columns: 1fr;
+            gap: 4px;
+          }
         }
       `}</style>
 
       <div className="enetice-shell">
         <aside className="enetice-promo" aria-label="Aslan Medical mobil tətbiqi">
-          <h2>Tətbiqdən istifadə edərək, laborator analizlərinizin nəticələrini onlayn rejimdə əldə edə bilərsiniz</h2>
+          <div className="enetice-promo-copy">
+            <h2>Analiz nəticələriniz hər zaman əlinizin altında</h2>
+            <p>Tətbiqdən istifadə edərək laborator analiz nəticələrinizi onlayn rejimdə rahat şəkildə əldə edə bilərsiniz.</p>
+          </div>
 
           <div className="enetice-phone-frame">
             <img src={ASSETS.phone} alt="Aslan Medical mobil tətbiq ekranı" />
@@ -897,7 +1028,7 @@ export default function ENeticePage() {
                   name="enetice-search-mode"
                   value="fin"
                   checked={searchMode === 'fin'}
-                  onChange={() => setSearchMode('fin')}
+                  onChange={() => handleSearchModeChange('fin')}
                 />
                 <span className="enetice-radio" aria-hidden="true" />
                 <span>FİN və Protokol ilə axtarış et</span>
@@ -909,7 +1040,7 @@ export default function ENeticePage() {
                   name="enetice-search-mode"
                   value="birth"
                   checked={searchMode === 'birth'}
-                  onChange={() => setSearchMode('birth')}
+                  onChange={() => handleSearchModeChange('birth')}
                 />
                 <span className="enetice-radio" aria-hidden="true" />
                 <span>Doğum tarixi və Protokol ilə axtarış et</span>
@@ -1016,39 +1147,60 @@ export default function ENeticePage() {
           {result && (
             <div className="enetice-result">
               <div className="enetice-result-card">
-                <div className="enetice-result-status">✓ {t('eNetice.foundTitle')}</div>
-                <div className="enetice-result-name">{result.fullName}</div>
-                <div className="enetice-result-id">ID: {result.patientId}</div>
-              </div>
+                <div className="enetice-result-header">
+                  <div>
+                    <h2 className="enetice-result-name">{result.patientFullName || 'Pasiyent'}</h2>
+                    <p className="enetice-result-subtitle">Analiz nəticəsi tapıldı</p>
+                  </div>
+                  <span className="enetice-result-badge">{result.status || 'Hazırdır'}</span>
+                </div>
 
-              <div className="enetice-result-grid">
-                <div className="enetice-mini-card">
-                  <div className="enetice-mini-label">{t('eNetice.bloodGroup')}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: result.bloodGroup ? '#dc2626' : '#9ca3af' }}>
-                    {result.bloodGroup || '—'}
+                <div className="enetice-result-meta">
+                  <div className="enetice-mini-card">
+                    <div className="enetice-mini-label">Protokol</div>
+                    <div className="enetice-mini-value">{result.protocol || '—'}</div>
+                  </div>
+                  <div className="enetice-mini-card">
+                    <div className="enetice-mini-label">Tarix</div>
+                    <div className="enetice-mini-value">{formatDate(result.resultDate)}</div>
+                  </div>
+                  <div className="enetice-mini-card">
+                    <div className="enetice-mini-label">Analiz adı</div>
+                    <div className="enetice-mini-value">{result.analysisName || 'Laborator analiz'}</div>
+                  </div>
+                  <div className="enetice-mini-card">
+                    <div className="enetice-mini-label">Həkim</div>
+                    <div className="enetice-mini-value">{result.doctorName || '—'}</div>
                   </div>
                 </div>
-                <div className="enetice-mini-card">
-                  <div className="enetice-mini-label">{t('eNetice.allergies')}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#374151' }}>
-                    {result.allergies?.length ? result.allergies.join(', ') : t('eNetice.noAllergies')}
-                  </div>
-                </div>
-              </div>
 
-              {result.medicalHistory?.length > 0 && (
-                <div className="enetice-history">
-                  <div className="enetice-history-title">{t('eNetice.medHistory')}</div>
-                  <div className="enetice-history-list">
-                    {result.medicalHistory.map((history, index) => (
-                      <div key={index} className="enetice-history-item">
-                        <span style={{ fontWeight: 700, color: NAVY }}>{history.condition}</span>
-                        {history.notes && <span style={{ color: '#98a2b3' }}> — {history.notes}</span>}
+                {Array.isArray(result.results) && result.results.length > 0 && (
+                  <div className="enetice-result-table">
+                    <div className="enetice-result-row is-head">
+                      <span>Nəticə</span>
+                      <span>Dəyər</span>
+                      <span>Vahid</span>
+                      <span>Referans</span>
+                    </div>
+                    {result.results.map((item, index) => (
+                      <div className="enetice-result-row" key={`${item.name || item.testName || 'test'}-${index}`}>
+                        <span className="enetice-result-test">{item.name || item.testName || 'Analiz'}</span>
+                        <span>{item.value || '—'}</span>
+                        <span>{item.unit || '—'}</span>
+                        <span>{item.referenceRange || '—'}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+
+                {result.summary && <p className="enetice-result-subtitle" style={{ marginTop: 12 }}>{result.summary}</p>}
+
+                {(result.pdfUrl || result.fileUrl) && (
+                  <a className="enetice-result-link" href={result.pdfUrl || result.fileUrl} target="_blank" rel="noreferrer">
+                    PDF yüklə
+                  </a>
+                )}
+              </div>
 
               <button className="enetice-reset" type="button" onClick={reset}>
                 Yeni Sorğu

@@ -12,5 +12,6 @@ export const deleteOrder       = asyncHandler(async (req, res) => { await svc.de
 export const createResult      = asyncHandler(async (req, res) => { const d = await svc.createResult(req.body, uid(req));      res.status(201).json(new ApiResponse(201, d, 'Result saved')); });
 export const getResultByOrder  = asyncHandler(async (req, res) => { const d = await svc.getResultByOrder(req.params.orderId);  res.json(new ApiResponse(200, d)); });
 export const getPatientResults = asyncHandler(async (req, res) => { const d = await svc.getPatientResults(req.params.patientId); res.json(new ApiResponse(200, d)); });
+export const searchPublicResult = asyncHandler(async (req, res) => { const d = await svc.searchPublicResult(req.body);          res.json(new ApiResponse(200, d, 'Analiz nəticəsi tapıldı')); });
 export const verifyResult      = asyncHandler(async (req, res) => { const d = await svc.verifyResult(req.params.id, uid(req)); res.json(new ApiResponse(200, d, 'Verified')); });
 export const getLabSummary     = asyncHandler(async (req, res) => { const d = await svc.getLabSummary();                       res.json(new ApiResponse(200, d)); });

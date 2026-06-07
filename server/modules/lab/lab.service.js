@@ -6,6 +6,62 @@ import logAction from '../../utils/auditLogger.js';
 const POP_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POP_DOCTOR  = { path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } };
 const POP_PERF    = { path: 'performedBy', select: 'fullName name surname' };
+const POP_PUBLIC_PATIENT = { path: 'patientId', select: 'userId', populate: { path: 'userId', select: 'fullName name surname sexiyyatId birthDate' } };
+const POP_PUBLIC_DOCTOR  = { path: 'doctorId', select: 'userId specialization', populate: { path: 'userId', select: 'fullName name surname' } };
+
+const trim = (value) => String(value || '').trim();
+const escapeRegex = (value) => trim(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const normalize = (value) => trim(value).toUpperCase();
+
+const displayName = (user) => {
+  if (!user) return '';
+  const name = [user.name, user.surname].filter(Boolean).join(' ').trim();
+  return name || user.fullName || '';
+};
+
+const parseDateInput = (value, fieldName) => {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) {
+    throw new ApiError(400, fieldName || 'Məlumatları düzgün doldurun');
+  }
+  return date;
+};
+
+const sameDate = (left, right) => {
+  if (!left || !right) return false;
+  return new Date(left).toISOString().slice(0, 10) === right;
+};
+
+const publicResultPayload = (order, result) => {
+  const patientUser = order.patientId?.userId;
+  const doctorUser = order.doctorId?.userId;
+  const tests = Array.isArray(order.tests) ? order.tests : [];
+  const analysisName = tests.map(test => test.testName).filter(Boolean).join(', ') || 'Laborator analiz';
+  const resultDate = result.verifiedAt || result.createdAt || order.updatedAt || order.createdAt;
+
+  return {
+    patientFullName: displayName(patientUser) || 'Pasiyent',
+    protocol: order.orderNumber,
+    resultDate,
+    doctorName: displayName(doctorUser),
+    labName: 'Aslan Medical Laboratoriya',
+    analysisName,
+    status: result.isVerified ? 'Təsdiqlənib' : 'Hazırdır',
+    summary: result.summary || '',
+    results: (result.results || []).map(item => ({
+      name: item.testName,
+      testName: item.testName,
+      value: item.value,
+      unit: item.unit || '',
+      referenceRange: item.referenceRange || '',
+      status: item.status || 'normal',
+      notes: item.notes || '',
+    })),
+    pdfUrl: result.attachmentUrl || '',
+    fileUrl: result.attachmentUrl || '',
+  };
+};
 
 // ── Orders ───────────────────────────────────────────────────
 export const createOrder = async (data, doctorId) => {
@@ -87,6 +143,75 @@ export const getPatientResults = async (patientId) =>
   LabResult.find({ patientId }).sort({ createdAt: -1 })
     .populate('labOrderId', 'orderNumber tests')
     .populate(POP_PERF);
+
+export const searchPublicResult = async ({
+  searchType,
+  fin,
+  birthDate,
+  protocol,
+  startDate,
+  endDate,
+} = {}) => {
+  const cleanSearchType = trim(searchType);
+  const cleanFin = trim(fin);
+  const cleanProtocol = trim(protocol);
+  const cleanBirthDate = trim(birthDate);
+
+  if (!['fin', 'birthDate'].includes(cleanSearchType)) {
+    throw new ApiError(400, 'Məlumatları düzgün doldurun');
+  }
+  if (!cleanProtocol) {
+    throw new ApiError(400, 'Protokol nömrəsi daxil edilməlidir');
+  }
+  if (cleanSearchType === 'fin' && !cleanFin) {
+    throw new ApiError(400, 'FİN kod daxil edilməlidir');
+  }
+  if (cleanSearchType === 'birthDate' && !cleanBirthDate) {
+    throw new ApiError(400, 'Doğum tarixi daxil edilməlidir');
+  }
+
+  const start = parseDateInput(startDate, 'Məlumatları düzgün doldurun');
+  const end = parseDateInput(endDate, 'Məlumatları düzgün doldurun');
+  if (start && end && start > end) {
+    throw new ApiError(400, 'Başlanğıc tarix son tarixdən böyük ola bilməz');
+  }
+
+  const order = await LabOrder.findOne({
+    orderNumber: new RegExp(`^${escapeRegex(cleanProtocol)}$`, 'i'),
+    status: { $ne: 'cancelled' },
+  }).populate([POP_PUBLIC_PATIENT, POP_PUBLIC_DOCTOR]);
+
+  if (!order) {
+    throw new ApiError(404, 'Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı');
+  }
+
+  const patientUser = order.patientId?.userId;
+  const matchesPatient = cleanSearchType === 'fin'
+    ? normalize(patientUser?.sexiyyatId) === normalize(cleanFin)
+    : sameDate(patientUser?.birthDate, cleanBirthDate);
+
+  if (!matchesPatient) {
+    throw new ApiError(404, 'Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı');
+  }
+
+  const resultFilter = { labOrderId: order._id };
+  if (start || end) {
+    resultFilter.createdAt = {};
+    if (start) resultFilter.createdAt.$gte = start;
+    if (end) {
+      const endOfDay = new Date(end);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      resultFilter.createdAt.$lte = endOfDay;
+    }
+  }
+
+  const result = await LabResult.findOne(resultFilter).sort({ createdAt: -1 });
+  if (!result) {
+    throw new ApiError(404, 'Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı');
+  }
+
+  return publicResultPayload(order, result);
+};
 
 export const verifyResult = async (resultId, userId) => {
   const result = await LabResult.findById(resultId);
