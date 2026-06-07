@@ -52,11 +52,12 @@ export default function HekimProfilPage() {
   const { id }     = useParams()
   const navigate   = useNavigate()
 
-  const [doctor,   setDoctor]   = useState(null)
-  const [ratings,  setRatings]  = useState([])
-  const [schedule, setSchedule] = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState(false)
+  const [doctor,    setDoctor]    = useState(null)
+  const [ratings,   setRatings]   = useState([])
+  const [schedule,  setSchedule]  = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState(false)
+  const [activeTab, setActiveTab] = useState('haqqinda')
 
   useEffect(() => {
     if (!id) return
@@ -109,6 +110,47 @@ export default function HekimProfilPage() {
 
   const sortedSchedule = [...schedule].sort((a, b) => a.dayOfWeek - b.dayOfWeek)
   const shownRatings   = ratings.slice(0, 5)
+
+  const CV = {
+    tahsil: [
+      'İstanbul Universiteti - Cərrahpaşa Tibb Fakültəsi Radiologiya Bölümü',
+    ],
+    yeterlilik: [
+      'Türk Radiologiya Dərnəyi Radiologiyada nəzəri yetərlilik imtahanı (17 noyabr 2019)',
+      '2015 Aprel TUS imtahanında xarici vətəndaşlar arasında 1.yer',
+    ],
+    nesrler: [
+      'Poster: "Endovaskuler anevrizm tedavisi sonrası endogreft enfeksiyonu" — 38. TRD 2017',
+      '"Ekstraosseoz anevrizmal kemik kistinin tanı ve tedavisinde radyolojinin yeri" — 38. TRD 2017',
+      '"Sezaryen sonrası mesane flap hematomu vakası" — 38. TRD 2017',
+    ],
+    uzvlukler: [
+      'Türk Radiologiya Dərnəyi (TRD)',
+      'Türk Maqnetik Rezonans Dərnəyi (TMRD)',
+      'Avropa Radiologiya Dərnəyi (ESR)',
+    ],
+    kurslar: [
+      'Rush Universiteti Nöroradiologiya şöbəsi, Çikago, ABD — 01.10.2017–01.11.2017',
+      '"Meme MRG Sempozyumu" — 13 sentyabr 2015, İstanbul',
+      'Nöroradyoloji ve Baş-Boyun Radyolojisi toplantısı — 19-21 fevral 2016, İstanbul',
+      '"Türk Nöroradyoloji Derneği Diploma 2.Dönem 4.Kursu" — 17-19 kasım 2017, İstanbul',
+      '"26. Nöroradyoloji ve Baş-Boyun Radyolojisi toplantısı" — 17-19 fevral 2017, İstanbul',
+      'Türk Magnit Rezonans Dərnəyi 22. kongress — 25-27 may 2017, Ankara',
+      '"Türk Radyoloji Derneği 38.Ulusal Kongresi" — 31 oktyabr–4 noyabr 2017',
+      '"Türk Nöroradyoloji Derneği Yıllık Bilimsel Toplantısı" — 16-18 fevral 2018, İstanbul',
+      '"TRD İstanbul Şube Obstetrik Fetal Radyoloji Sempozyumu" — 18 mart 2018',
+      '"TRD İstanbul Şube Çocuk Radyolojisi Sempozyumu" — 7 oktyabr 2018',
+      '"2.Multiparametrik Prostat MR Görüntüleme Kursu" — 17 noyabr 2018, İstanbul',
+      '"Türk Nöroradyoloji Derneği Yıllık Bilimsel Toplantısı" — 15-17 fevral 2019',
+      '"Radyoloji Kış Okulu" — 4-10 fevral 2019, Antalya',
+      '"TRD İstanbul Şube Adli Sorumluluklarımız ve Acil Radyoloji Sempozyumu" — 24 şubat 2019',
+      '"Türk Nöroradyoloji Derneği Diploma 3.Dönem 2.Kursu" — 29-31 mart 2019',
+      '"Kardiyak MR Görüntüleme Sempozyumu" — 28 sentyabr, İstanbul',
+      '"Türk Radyoloji Derneği 40.Uluslarası Kongresi" — 6-10 noyabr 2019',
+      '"2.Multiparametrik Prostat MR – Füzyon Biyopsi Kursu" — 26 oktyabr 2019',
+      'Kore ve Türk Radyoloji Dernekleri Ortak Kardiyak Görüntüleme Kursu — 6 noyabr, Antalya',
+    ],
+  }
 
   return (
     <main style={{ fontFamily: FONT, background: '#f0f4f8', minHeight: '100vh' }}>

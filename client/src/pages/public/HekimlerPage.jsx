@@ -82,7 +82,11 @@ function DoctorCard({ doctor }) {
   while (days.length < 2) {
     if (d.getDay() !== 0) {
       days.push({
-        label: d.toLocaleDateString('az-AZ', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+        label: (() => {
+          const DAYS   = ['Bazar','Bazar ertəsi','Çərşənbə axşamı','Çərşənbə','Cümə axşamı','Cümə','Şənbə']
+          const MONTHS = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avqust','sentyabr','oktyabr','noyabr','dekabr']
+          return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+        })(),
         date:  d.toISOString().split('T')[0],
         slots: ['09:00', '09:30', '10:00'],
       })
@@ -102,12 +106,7 @@ function DoctorCard({ doctor }) {
     </span>
   )
 
-  const fmtTime = (t) => {
-    const [h, m] = t.split(':').map(Number)
-    const ampm = h >= 12 ? 'PM' : 'AM'
-    const h12  = h % 12 || 12
-    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`
-  }
+  const fmtTime = (t) => t
 
   return (
     <motion.div
@@ -115,12 +114,12 @@ function DoctorCard({ doctor }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4 }}
-      style={{ background: 'white', borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', fontFamily: FONT, overflow: 'hidden' }}
+      style={{ background: '#F8FDFD', borderRadius: 8, boxShadow: '0 2px 16px rgba(0,132,142,0.08)', border: '1px solid #C8E9EB', fontFamily: FONT, overflow: 'hidden' }}
     >
-      {/* ── TOP SECTION: Left col (photo+btn) + Right col (info) ── */}
+      {/* ── MAIN: Photo col + Info col + Appointment col ── */}
       <div style={{ display: 'flex', gap: 0 }}>
 
-        {/* Left column — photo + View Full Profile */}
+        {/* Photo + button */}
         <div style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, minHeight: 180, background: 'linear-gradient(135deg, #1e3a5f 0%, #00848e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {photo
@@ -134,96 +133,75 @@ function DoctorCard({ doctor }) {
             onMouseEnter={e => { e.currentTarget.style.background = NAVY; e.currentTarget.style.color = 'white' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = NAVY }}
           >
-            View Full Profile
+            Tam Profili Gör
           </button>
         </div>
 
-        {/* Right column — all info */}
-        <div style={{ flex: 1, padding: '18px 20px 14px', minWidth: 0 }}>
-
-          {/* Name */}
+        {/* Info col */}
+        <div style={{ flex: 1, padding: '18px 20px 14px', minWidth: 0, borderRight: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 3px', fontSize: 19, fontWeight: 800, color: NAVY, fontFamily: "'Raleway', sans-serif" }}>
             Dr. {fullName}
           </h3>
           <p style={{ margin: '0 0 10px', fontSize: 13.5, color: '#475569' }}>{spec}</p>
 
-          {/* Rating + Accepting — same row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {rating > 0 && (
-                <>
-                  <StarRating value={rating} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1f2937' }}>{rating.toFixed(1)}</span>
-                  {ratingCount > 0 && <span style={{ fontSize: 12, color: '#64748b' }}>| {ratingCount} rəy</span>}
-                </>
-              )}
-            </div>
-            <span style={{ display:'flex', alignItems:'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: isAvailable ? '#16a34a' : '#94a3b8', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <span style={{ display:'flex', alignItems:'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: isAvailable ? '#16a34a' : '#94a3b8' }}>
               {isAvailable && <svg width="13" height="13" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
               {isAvailable ? 'Qəbul edir' : 'Məşğul'}
             </span>
           </div>
 
-          {/* Address + phone — same row */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-              <svg width="15" height="15" fill={TEAL} viewBox="0 0 24 24" style={{ flexShrink:0, marginTop: 1 }}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-              <span style={{ fontSize: 12.5, color: TEAL, fontWeight: 600, lineHeight: 1.5 }}>
-                Aslan Medical Center<br/>
-                <span style={{ color: '#475569', fontWeight: 400 }}>Bakı, Azərbaycan</span>
-              </span>
-            </div>
-            <a href="tel:+994508363694" style={{ display:'flex', alignItems:'center', gap: 6, textDecoration:'none', flexShrink: 0 }}>
-              <svg width="15" height="15" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
-              <span style={{ fontSize: 13, color: TEAL, fontWeight: 700 }}>+994 50 836 36 94</span>
-            </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <svg width="15" height="15" fill={TEAL} viewBox="0 0 24 24" style={{ flexShrink:0 }}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            <span style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap' }}>Aslan Medical Center, Bakı</span>
           </div>
+          <a href="tel:+994508363694" style={{ display:'flex', alignItems:'center', gap: 6, textDecoration:'none', marginBottom: 8 }}>
+            <svg width="15" height="15" fill="none" stroke={TEAL} strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.5 5.5l.76-.76a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
+            <span style={{ fontSize: 13, color: TEAL, fontWeight: 700 }}>+994 50 836 36 94</span>
+          </a>
 
           {(exp > 0 || fee > 0) && (
-            <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+            <div style={{ display: 'flex', gap: 16 }}>
               {exp > 0 && <span style={{ fontSize: 12, color: '#64748b' }}>{exp} il təcrübə</span>}
               {fee > 0  && <span style={{ fontSize: 12, color: '#64748b' }}>Konsultasiya: <strong style={{ color: NAVY }}>{fee} ₼</strong></span>}
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Divider ── */}
-      <div style={{ height: 1, background: '#e2e8f0', margin: '0' }} />
+        {/* ── RANDEVU AL — sağ sütun ── */}
+        <div style={{ width: 320, flexShrink: 0, padding: '18px 20px 20px', background: '#E8F7F8' }}>
+          <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 800, color: NAVY, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            RANDEVU AL
+          </p>
 
-      {/* ── BOOK AN APPOINTMENT ── */}
-      <div style={{ padding: '18px 20px 20px' }}>
-        <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 800, color: NAVY, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          BOOK AN APPOINTMENT
-        </p>
-
-        {days.map((day, di) => (
-          <div key={di} style={{ marginBottom: di < days.length - 1 ? 16 : 0 }}>
-            <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: '#111827' }}>{day.label}</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {day.slots.map(slot => (
-                <button
-                  key={slot}
-                  onClick={() => navigate(`/randevu?doctorId=${doctor._id}&date=${day.date}&time=${slot}`)}
-                  style={{ padding: '10px 16px', background: NAVY, color: 'white', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = TEAL}
-                  onMouseLeave={e => e.currentTarget.style.background = NAVY}
-                >
-                  {fmtTime(slot)}
-                </button>
-              ))}
+          {days.map((day, di) => (
+            <div key={di} style={{ marginBottom: di < days.length - 1 ? 16 : 0 }}>
+              <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700, color: '#111827' }}>{day.label}</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {day.slots.map(slot => (
+                  <button
+                    key={slot}
+                    onClick={() => navigate(`/randevu?doctorId=${doctor._id}&date=${day.date}&time=${slot}`)}
+                    style={{ padding: '8px 12px', background: NAVY, color: 'white', border: 'none', borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = TEAL}
+                    onMouseLeave={e => e.currentTarget.style.background = NAVY}
+                  >
+                    {fmtTime(slot)}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        <button
-          onClick={() => navigate(`/randevu?doctorId=${doctor._id}`)}
-          style={{ marginTop: 16, width: '100%', padding: '11px', border: '1.5px solid #d1d5db', borderRadius: 5, background: 'white', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.18s' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#374151' }}
-        >
-          Show more appointment times
-        </button>
+          <button
+            onClick={() => navigate(`/randevu?doctorId=${doctor._id}`)}
+            style={{ marginTop: 14, width: '100%', padding: '10px', border: '1.5px solid #d1d5db', borderRadius: 5, background: 'white', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, transition: 'all 0.18s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#374151' }}
+          >
+            Daha çox vaxt göstər
+          </button>
+        </div>
       </div>
 
     </motion.div>
@@ -239,6 +217,7 @@ export default function HekimlerPage() {
   const [activeSpec, setActiveSpec] = useState('Hamısı')
   const [visibleCount, setVisibleCount] = useState(8)
   const [view, setView] = useState('table')
+  const [expandedId, setExpandedId] = useState(null)
 
   useEffect(() => {
     // Public site-doctors endpoint — no auth required
@@ -324,18 +303,6 @@ export default function HekimlerPage() {
               </label>
             </div>
 
-              <div style={{ display:'flex', gap: 4, background:'#f1f5f9', borderRadius: 8, padding: 3 }}>
-                {[{key:'table',label:'Siyahı'},{key:'card',label:'Kart'}].map(v => (
-                  <button key={v.key} onClick={() => setView(v.key)}
-                    style={{ padding:'6px 16px', borderRadius: 6, border:'none', cursor:'pointer', fontSize: 12, fontWeight: 600, fontFamily: FONT,
-                      background: view===v.key ? 'white' : 'transparent',
-                      color: view===v.key ? '#00848e' : '#64748b',
-                      boxShadow: view===v.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                      transition: 'all 0.15s' }}>
-                    {v.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </motion.div>
 
@@ -376,20 +343,31 @@ export default function HekimlerPage() {
 
                   {/* Rows */}
                   {filtered.map((doc, i) => {
-                    const name     = doc.userId?.fullName || doc.fullName || doc.name || '—'
-                    const dept     = doc.specialization || doc.department || doc.specialty || '—'
-                    const isLinked = !!doc._id
+                    const name      = doc.userId?.fullName || doc.fullName || doc.name || '—'
+                    const dept      = doc.specialization || doc.department || doc.specialty || '—'
+                    const isLinked  = !!doc._id
+                    const isOpen    = expandedId === doc._id
                     return (
-                      <div key={doc._id || i}
-                        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: i < filtered.length - 1 ? '1px solid #f3f4f6' : 'none', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s' }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                        onClick={() => isLinked && navigate(`/hekimler/${doc._id}`)}
-                      >
-                        <span style={{ fontSize: 14, color: isLinked ? '#1d4ed8' : '#1f2937', fontWeight: isLinked ? 600 : 400 }}>
-                          Dr {name}
-                        </span>
-                        <span style={{ fontSize: 14, color: '#374151', fontWeight: 400 }}>{dept}</span>
+                      <div key={doc._id || i}>
+                        <div
+                          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '1px solid #f3f4f6', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s', background: isOpen ? '#f0fafb' : 'white' }}
+                          onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#f9fafb' }}
+                          onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'white' }}
+                          onClick={() => isLinked && setExpandedId(isOpen ? null : doc._id)}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: isLinked ? '#1d4ed8' : '#1f2937', fontWeight: isLinked ? 600 : 400 }}>
+                            Dr {name}
+                            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.5 }}>
+                              <path d="m6 9 6 6 6-6"/>
+                            </svg>
+                          </span>
+                          <span style={{ fontSize: 14, color: '#374151', fontWeight: 400 }}>{dept}</span>
+                        </div>
+                        {isOpen && (
+                          <div style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <DoctorCard doctor={doc} />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -397,11 +375,6 @@ export default function HekimlerPage() {
                 </div>
               )}
 
-              {view === 'card' && (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: 20 }}>
-                  {filtered.slice(0, visibleCount).map((doc, i) => <DoctorCard key={doc._id ?? i} doctor={doc} />)}
-                </div>
-              )}
             </>
           )}
         </div>

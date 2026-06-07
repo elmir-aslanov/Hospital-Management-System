@@ -60,6 +60,6 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
     transformation: [{ width: 300, height: 300, crop: 'fill', gravity: 'face' }],
   });
 
-  await User.findByIdAndUpdate(req.user.id, { avatar: avatarUrl });
-  res.status(200).json(new ApiResponse(200, { avatarUrl }, 'Avatar updated'));
+  await User.findByIdAndUpdate(req.user.id, { photoUrl: avatarUrl, avatar: avatarUrl });
+  res.status(200).json(new ApiResponse(200, { photoUrl: avatarUrl, avatarUrl }, 'Avatar updated'));
 });
