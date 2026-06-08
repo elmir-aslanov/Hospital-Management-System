@@ -4,9 +4,12 @@ import User from '../../models/User.model.js';
 import WorkSchedule from '../../models/WorkSchedule.model.js';
 import Appointment from '../../models/Appointment.model.js';
 import ApiError from '../../utils/ApiError.js';
+import logger from '../../utils/logger.js';
+import { uploadImageBuffer, deleteImage } from '../../config/cloudinary.js';
 
 const POPULATE_USER = 'fullName name surname email phone photoUrl department role';
 const POPULATE_DEPT = { path: 'departmentId', select: 'name slug icon _id' };
+const DOCTOR_IMAGE_FOLDER = 'aslan-medical/doctors';
 
 export const getPublicDoctors = async (limit = 8) => {
   const lim = Math.min(20, Math.max(1, parseInt(limit) || 8));
@@ -62,6 +65,38 @@ export const getPublicDoctorById = async (id) => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const uploadDoctorImage = async (file) => {
+  if (!file) return null;
+
+  try {
+    const result = await uploadImageBuffer(file.buffer, {
+      folder: DOCTOR_IMAGE_FOLDER,
+      transformation: [
+        { width: 1000, height: 1200, crop: 'limit' },
+        { quality: 'auto', fetch_format: 'auto' },
+      ],
+    });
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+    };
+  } catch (err) {
+    logger.error(`Doctor image upload failed: ${err.message}`);
+    throw new ApiError(400, 'Şəkil yüklənmədi');
+  }
+};
+
+const deleteDoctorImage = async (publicId) => {
+  if (!publicId) return;
+
+  try {
+    await deleteImage(publicId);
+  } catch (err) {
+    logger.error(`Doctor image delete failed (${publicId}): ${err.message}`);
+  }
+};
+
 const timeToMinutes = (time) => {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;
@@ -85,7 +120,7 @@ const generateTimeSlots = (startTime, endTime, slotDuration) => {
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
-export const createDoctor = async ({ userId, specialization, licenseNumber, experience, bio }) => {
+export const createDoctor = async ({ userId, specialization, licenseNumber, experience, bio }, imageFile) => {
   const [existingUser, existingLicense] = await Promise.all([
     Doctor.findOne({ userId }),
     Doctor.findOne({ licenseNumber }),
@@ -94,8 +129,25 @@ export const createDoctor = async ({ userId, specialization, licenseNumber, expe
   if (existingUser) throw new ApiError(409, 'Doctor profile already exists');
   if (existingLicense) throw new ApiError(409, 'License number already registered');
 
-  const doctor = await Doctor.create({ userId, specialization, licenseNumber, experience, bio });
-  return doctor.populate('userId', POPULATE_USER);
+  const uploadedImage = await uploadDoctorImage(imageFile);
+
+  try {
+    const doctor = await Doctor.create({
+      userId,
+      specialization,
+      licenseNumber,
+      experience,
+      bio,
+      ...(uploadedImage && {
+        image: uploadedImage.url,
+        imagePublicId: uploadedImage.publicId,
+      }),
+    });
+    return doctor.populate('userId', POPULATE_USER);
+  } catch (err) {
+    await deleteDoctorImage(uploadedImage?.publicId);
+    throw err;
+  }
 };
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
@@ -133,7 +185,7 @@ export const getDoctorById = async (id) => {
 
 // ─── Update ───────────────────────────────────────────────────────────────────
 
-export const updateDoctor = async (id, updateData) => {
+export const updateDoctor = async (id, updateData, imageFile) => {
   const allowed = ['specialization', 'licenseNumber', 'experience', 'bio', 'isAvailable',
                    'department', 'departmentId', 'image', 'order', 'isActive', 'consultationFee', 'languages',
                    'academicTitle', 'activityAreas', 'education', 'publications', 'courses', 'memberships'];
@@ -142,24 +194,59 @@ export const updateDoctor = async (id, updateData) => {
     if (updateData[key] !== undefined) safe[key] = updateData[key];
   }
 
+  if (imageFile) {
+    delete safe.image;
+  }
+
   if (safe.departmentId) {
     const dept = await mongoose.model('Department').findById(safe.departmentId);
     if (!dept) throw new ApiError(404, 'Department not found');
     safe.department = dept.name;
   }
 
-  const doctor = await Doctor.findByIdAndUpdate(id, safe, { new: true, runValidators: true })
+  const existing = await Doctor.findById(id);
+  if (!existing) throw new ApiError(404, 'Doctor not found');
+  const oldImagePublicId = existing.imagePublicId;
+  const legacyImageChanged = !imageFile
+    && safe.image !== undefined
+    && safe.image !== existing.image;
+
+  if (legacyImageChanged) {
+    safe.imagePublicId = '';
+  }
+
+  const uploadedImage = await uploadDoctorImage(imageFile);
+  if (uploadedImage) {
+    safe.image = uploadedImage.url;
+    safe.imagePublicId = uploadedImage.publicId;
+  }
+
+  try {
+    Object.assign(existing, safe);
+    await existing.save();
+  } catch (err) {
+    await deleteDoctorImage(uploadedImage?.publicId);
+    throw err;
+  }
+
+  if ((uploadedImage || legacyImageChanged) && oldImagePublicId && oldImagePublicId !== uploadedImage?.publicId) {
+    await deleteDoctorImage(oldImagePublicId);
+  }
+
+  const doctor = await Doctor.findById(id)
     .populate('userId', POPULATE_USER)
     .populate(POPULATE_DEPT);
-  if (!doctor) throw new ApiError(404, 'Doctor not found');
   return doctor;
 };
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 
 export const deleteDoctor = async (id) => {
-  const doctor = await Doctor.findByIdAndDelete(id);
+  const doctor = await Doctor.findById(id);
   if (!doctor) throw new ApiError(404, 'Doctor not found');
+
+  await deleteDoctorImage(doctor.imagePublicId);
+  await Doctor.findByIdAndDelete(id);
   return doctor;
 };
 
@@ -236,7 +323,7 @@ export const getDoctorAvailability = async (doctorId, dateStr) => {
 
 // ─── Admin one-step doctor creation ──────────────────────────────────────────
 
-export const adminCreateDoctor = async ({ fullName, email, specialization, experience, bio, department, departmentId, consultationFee, order }) => {
+export const adminCreateDoctor = async ({ fullName, email, specialization, experience, bio, department, departmentId, consultationFee, order }, imageFile) => {
   if (!fullName?.trim())       throw new ApiError(400, 'Ad Soyad tələb olunur');
   if (!email?.trim())          throw new ApiError(400, 'E-poçt tələb olunur');
   if (!specialization?.trim()) throw new ApiError(400, 'İxtisas tələb olunur');
@@ -255,32 +342,42 @@ export const adminCreateDoctor = async ({ fullName, email, specialization, exper
   } while (await Doctor.exists({ licenseNumber }));
 
   const autoPassword = 'Aslan@' + Math.floor(1000 + Math.random() * 9000);
+  const uploadedImage = await uploadDoctorImage(imageFile);
 
-  const user = await User.create({
-    fullName: fullName.trim(),
-    email:    email.toLowerCase().trim(),
-    password: autoPassword,
-    role:     'DOCTOR',
-  });
+  try {
+    const user = await User.create({
+      fullName: fullName.trim(),
+      email:    email.toLowerCase().trim(),
+      password: autoPassword,
+      role:     'DOCTOR',
+    });
 
-  const doctor = await Doctor.create({
-    userId:          user._id,
-    specialization:  specialization.trim(),
-    licenseNumber,
-    experience:      Number(experience) || 0,
-    bio:             bio?.trim() || '',
-    department:      department?.trim() || '',
-    departmentId:    departmentId || undefined,
-    consultationFee: Number(consultationFee) || 0,
-    order:           Number(order) || 0,
-    isActive:        true,
-    isAvailable:     true,
-  });
+    const doctor = await Doctor.create({
+      userId:          user._id,
+      specialization:  specialization.trim(),
+      licenseNumber,
+      experience:      Number(experience) || 0,
+      bio:             bio?.trim() || '',
+      department:      department?.trim() || '',
+      departmentId:    departmentId || undefined,
+      consultationFee: Number(consultationFee) || 0,
+      order:           Number(order) || 0,
+      isActive:        true,
+      isAvailable:     true,
+      ...(uploadedImage && {
+        image: uploadedImage.url,
+        imagePublicId: uploadedImage.publicId,
+      }),
+    });
 
-  await doctor.populate('userId', POPULATE_USER);
+    await doctor.populate('userId', POPULATE_USER);
 
-  // TODO: send email with autoPassword when email service is configured
-  console.log(`[Doctor Created] ${fullName} | ${email} | Password: ${autoPassword} | License: ${licenseNumber}`);
+    // TODO: send email with autoPassword when email service is configured
+    console.log(`[Doctor Created] ${fullName} | ${email} | Password: ${autoPassword} | License: ${licenseNumber}`);
 
-  return { doctor, autoPassword, licenseNumber };
+    return { doctor, autoPassword, licenseNumber };
+  } catch (err) {
+    await deleteDoctorImage(uploadedImage?.publicId);
+    throw err;
+  }
 };

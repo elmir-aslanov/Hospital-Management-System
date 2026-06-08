@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { BASE } from '../../api/config.js'
 import AvatarUpload from '../../components/common/AvatarUpload'
 import { showSuccess, showError, getErrorMessage } from '../../utils/alert'
 
 export default function AdminDoctors() {
-  const navigate = useNavigate()
   const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
 
   const getName  = (doc) => {
@@ -18,7 +16,15 @@ export default function AdminDoctors() {
     if (u.email) return u.email.split('@')[0]
     return 'Naməlum'
   }
-  const getPhoto = (doc) => doc.userId?.photoUrl || null
+  const resolveImage = (src) => {
+    if (!src) return null
+    if (typeof src === 'object') src = src.url || src.secure_url || src.path || ''
+    if (!src) return null
+    if (src.startsWith('http')) return src
+    if (src.startsWith('/')) return `${BASE}${src}`
+    return src
+  }
+  const getPhoto = (doc) => resolveImage(doc.image || doc.imageUrl || doc.userId?.photoUrl || null)
 
   const [doctors,      setDoctors]      = useState([])
   const [departments,  setDepartments]  = useState([])
@@ -28,12 +34,12 @@ export default function AdminDoctors() {
   const [editDoctor,   setEditDoctor]   = useState(null)
   const [saving,       setSaving]       = useState(false)
   const [error,        setError]        = useState('')
-  const [doctorUsers,  setDoctorUsers]  = useState([])
+  const [, setDoctorUsers]  = useState([])
   const [doctorSuccessModal, setDoctorSuccessModal] = useState(null)
   const [copied, setCopied] = useState(false)
 
   // ─── Form fields ──────────────────────────────────────────────────────────
-  const [createMode,      setCreateMode]      = useState('quick')
+  const [, setCreateMode]      = useState('quick')
   const [newFullName,     setNewFullName]     = useState('')
   const [newEmail,        setNewEmail]        = useState('')
   const [specialization,  setSpecialization]  = useState('')
@@ -46,12 +52,13 @@ export default function AdminDoctors() {
   const [order,           setOrder]           = useState(0)
   const [isActive,        setIsActive]        = useState(true)
   const [doctorPhoto,     setDoctorPhoto]     = useState('')
+  const [doctorPhotoFile, setDoctorPhotoFile] = useState(null)
 
   const resetForm = () => {
     setCreateMode('quick'); setNewFullName(''); setNewEmail('')
     setSpecialization(''); setExperience(''); setBio(''); setIsAvailable(true)
     setDepartment(''); setDepartmentId(''); setConsultationFee(''); setOrder(0); setIsActive(true)
-    setDoctorPhoto('')
+    setDoctorPhoto(''); setDoctorPhotoFile(null)
   }
 
   const populateForm = (doc) => {
@@ -64,7 +71,8 @@ export default function AdminDoctors() {
     setConsultationFee(doc.consultationFee || '')
     setOrder(doc.order || 0)
     setIsActive(doc.isActive !== false)
-    setDoctorPhoto(doc.userId?.photoUrl || '')
+    setDoctorPhoto(getPhoto(doc) || '')
+    setDoctorPhotoFile(null)
   }
 
   // ─── Fetch doctors ────────────────────────────────────────────────────────
@@ -114,6 +122,15 @@ export default function AdminDoctors() {
 
   // ─── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
+    const toFormData = (payload) => {
+      const fd = new FormData()
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) fd.append(key, value)
+      })
+      if (doctorPhotoFile) fd.append('image', doctorPhotoFile)
+      return fd
+    }
+
     if (editDoctor) {
       // ── EDIT ──────────────────────────────────────────
       if (!specialization.trim()) { setError('İxtisas tələb olunur'); return }
@@ -125,9 +142,8 @@ export default function AdminDoctors() {
         if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
         updates.order    = Number(order)
         updates.isActive = isActive
-        if (doctorPhoto)             updates.image           = doctorPhoto
 
-        const r    = await fetch(`${BASE}/api/v1/doctors/${editDoctor._id}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+        const r    = await fetch(`${BASE}/api/v1/doctors/${editDoctor._id}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + token }, body: toFormData(updates) })
         const data = await r.json()
         if (!r.ok) throw new Error(data.message || 'Xəta')
         const saved = data.data || data
@@ -158,8 +174,8 @@ export default function AdminDoctors() {
         }
         const r = await fetch(`${BASE}/api/v1/doctors/admin-create`, {
           method: 'POST',
-          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          headers: { Authorization: 'Bearer ' + token },
+          body: toFormData(body),
         })
         const data = await r.json()
         if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
@@ -199,7 +215,7 @@ export default function AdminDoctors() {
     (d.userId?.department || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const closeModal = () => { setShowModal(false); setEditDoctor(null); setError('') }
+  const closeModal = () => { setShowModal(false); setEditDoctor(null); setError(''); setDoctorPhotoFile(null) }
   const closeDoctorSuccessModal = () => { setDoctorSuccessModal(null); setCopied(false) }
 
   const copyDoctorCredentials = async () => {
@@ -408,7 +424,8 @@ export default function AdminDoctors() {
                 currentUrl={doctorPhoto}
                 userName={newFullName || (editDoctor ? (editDoctor.userId?.fullName || '') : '')}
                 size={80}
-                onSuccess={(url) => setDoctorPhoto(url)}
+                uploadImmediately={false}
+                onFileSelect={(file) => setDoctorPhotoFile(file)}
               />
             </div>
 

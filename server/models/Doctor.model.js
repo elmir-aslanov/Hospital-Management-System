@@ -13,6 +13,7 @@ const doctorSchema = new mongoose.Schema(
     department:      { type: String, trim: true, default: '' },
     departmentId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Department', default: null },
     image:           { type: String, default: '' },
+    imagePublicId:   { type: String, default: '' },
     order:           { type: Number, default: 0 },
     isActive:        { type: Boolean, default: true },
     consultationFee: { type: Number, default: 0, min: 0 },

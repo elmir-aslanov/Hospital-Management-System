@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinary from '../config/cloudinary.js';
 
 /**
  * Upload a Buffer to Cloudinary and return the secure_url.

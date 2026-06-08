@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 
 const BASE = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'
 
-export default function AvatarUpload({ currentUrl, userName, size = 80, onSuccess }) {
+export default function AvatarUpload({ currentUrl, userName, size = 80, onSuccess, onFileSelect, uploadImmediately = true }) {
   const [uploading, setUploading] = useState(false)
   const [error,     setError]     = useState('')
   const [preview,   setPreview]   = useState(null)
@@ -18,6 +18,10 @@ export default function AvatarUpload({ currentUrl, userName, size = 80, onSucces
 
     setError('')
     setPreview(URL.createObjectURL(file))
+    if (!uploadImmediately) {
+      onFileSelect?.(file)
+      return
+    }
     setUploading(true)
 
     try {

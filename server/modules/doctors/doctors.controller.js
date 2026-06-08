@@ -20,8 +20,8 @@ export const getPublicDoctorById = asyncHandler(async (req, res) => {
 });
 
 export const createDoctor = asyncHandler(async (req, res) => {
-  const doctor = await doctorsService.createDoctor(req.body);
-  res.status(201).json(new ApiResponse(201, doctor, 'Doctor profile created'));
+  const doctor = await doctorsService.createDoctor(req.body, req.file);
+  res.status(201).json(new ApiResponse(201, doctor, 'Həkim uğurla əlavə edildi'));
 });
 
 export const getDoctors = asyncHandler(async (req, res) => {
@@ -47,13 +47,13 @@ export const getDoctorById = asyncHandler(async (req, res) => {
 });
 
 export const updateDoctor = asyncHandler(async (req, res) => {
-  const doctor = await doctorsService.updateDoctor(req.params.id, req.body);
-  res.status(200).json(new ApiResponse(200, doctor, 'Doctor updated'));
+  const doctor = await doctorsService.updateDoctor(req.params.id, req.body, req.file);
+  res.status(200).json(new ApiResponse(200, doctor, 'Həkim məlumatları yeniləndi'));
 });
 
 export const deleteDoctor = asyncHandler(async (req, res) => {
   await doctorsService.deleteDoctor(req.params.id);
-  res.status(200).json(new ApiResponse(200, null, 'Doctor deleted'));
+  res.status(200).json(new ApiResponse(200, null, 'Həkim silindi'));
 });
 
 export const getDoctorSchedule = asyncHandler(async (req, res) => {
@@ -80,6 +80,6 @@ export const getDoctorsByDepartment = asyncHandler(async (req, res) => {
 });
 
 export const adminCreateDoctor = asyncHandler(async (req, res) => {
-  const result = await doctorsService.adminCreateDoctor(req.body);
+  const result = await doctorsService.adminCreateDoctor(req.body, req.file);
   res.status(201).json(new ApiResponse(201, result, 'Həkim profili yaradıldı'));
 });

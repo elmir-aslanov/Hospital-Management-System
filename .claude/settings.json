@@ -37,7 +37,21 @@
       "Bash([ ! -f \"$d/service.js\" ])",
       "Bash(echo 'Missing service: __TRACKED_VAR__')",
       "Bash(xargs grep -l \"change-password\\\\|changePassword\")",
-      "Bash(findstr \":5174\")"
+      "Bash(findstr \":5174\")",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/public\" && grep -n \"\\\\.hp-grid\\\\|\\\\.hp-card\\\\|margin-top\\\\|padding-top\\\\|padding:.*32px 0\" HekimProfilPage.jsx | head -20)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/public/**)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/public\" && grep -n \"StarRating\\\\|rating > 0\\\\|reviewsCount\\\\|bookAppointment\" HekimProfilPage.jsx)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/public\" && grep -n \"\\\\brating\\\\b\" HekimProfilPage.jsx)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/**)",
+      "Bash(sed -n '92,115p' App.jsx)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/modules/**)",
+      "Bash(ls -la doctors/)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && grep -n \"blog\" app.js *)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/server/**)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && grep -rln \"cloudinary\" --include=\"*.js\" modules/ utils/ middleware/ config/ 2>/dev/null | head -10)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && echo \"--- uploadToCloudinary ---\" && cat utils/uploadToCloudinary.js && echo \"--- multer/upload middleware search ---\" && grep -rln \"multer\" middleware/ modules/ 2>/dev/null | head -5 && echo \"--- example usage in doctors ---\" && grep -n \"cloudinary\\\\|multer\\\\|upload\" modules/doctors/doctors.routes.js modules/doctors/doctors.controller.js modules/doctors/doctors.service.js)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && cat middleware/upload.middleware.js && echo \"--- cloudinary config exports ---\" && grep -n \"^export\\\\|uploadImageBuffer\\\\|deleteImage\" config/cloudinary.js | head -20)",
+      "Bash(curl -s http://localhost:5000/api/v1/blog-posts)"
     ]
   }
 }

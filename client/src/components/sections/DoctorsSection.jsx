@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
+const BACKEND = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'
+
+function resolveImage(src) {
+  if (!src) return null
+  if (typeof src === 'object') src = src.url || src.secure_url || src.path || ''
+  if (!src) return null
+  if (src.startsWith('http')) return src
+  if (src.startsWith('/')) return `${BACKEND}${src}`
+  return src
+}
 
 const PersonIcon = () => (
   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00848e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -11,7 +21,7 @@ const PersonIcon = () => (
 
 function DoctorCard({ doctor }) {
   const name  = doctor.userId?.fullName || doctor.fullName || doctor.name || '—'
-  const photo = doctor.image || doctor.userId?.photoUrl || doctor.photo || null
+  const photo = resolveImage(doctor.image || doctor.imageUrl || doctor.userId?.photoUrl || doctor.photo)
   return (
     <div style={{ fontFamily: FONT }}>
       <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', borderRadius: '8px', marginBottom: '16px', background: '#f0f0f0' }}>
@@ -57,7 +67,7 @@ export default function DoctorsSection() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL?.replace('/api/v1','') || 'http://localhost:5000'}/api/v1/doctors/public?limit=8`)
+    fetch(`${BACKEND}/api/v1/doctors/public?limit=8`)
       .then(r => r.json())
       .then(data => {
         let list = []

@@ -15,6 +15,8 @@ const GREEN_HOVER = '#159947'
 const BACKEND = import.meta.env.VITE_API_URL?.replace('/api/v1', '') ?? 'http://localhost:5000'
 function resolveImage(src) {
   if (!src) return null
+  if (typeof src === 'object') src = src.url || src.secure_url || src.path || ''
+  if (!src) return null
   if (src.startsWith('http')) return src
   if (src.startsWith('/')) return `${BACKEND}${src}`
   return src
@@ -71,7 +73,7 @@ function DoctorCard({ doctor }) {
   const exp        = doctor.experience || 0
   const rating     = doctor.averageRating || 0
   const ratingCount = doctor.totalRatings || 0
-  const photo      = doctor.userId?.photoUrl || doctor.image || null
+  const photo      = getDoctorImage(doctor)
   const initials   = fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'DR'
   const isAvailable = doctor.isAvailable !== false
   const fee        = doctor.consultationFee || 0

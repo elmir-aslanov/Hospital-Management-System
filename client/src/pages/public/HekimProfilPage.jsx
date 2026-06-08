@@ -14,6 +14,8 @@ const BACKEND = import.meta.env.VITE_API_URL?.replace('/api/v1', '') ?? 'http://
 
 function resolveImage(src) {
   if (!src) return null
+  if (typeof src === 'object') src = src.url || src.secure_url || src.path || ''
+  if (!src) return null
   if (src.startsWith('http')) return src
   if (src.startsWith('/')) return `${BACKEND}${src}`
   return src
@@ -32,18 +34,6 @@ const TIME_GROUPS = [
   { key: 'gunorta', label: 'Günorta', test: (t) => t >= '12:00' && t < '17:00' },
   { key: 'axsam',   label: 'Axşam',   test: (t) => t >= '17:00' },
 ]
-
-function StarRating({ value }) {
-  return (
-    <span style={{ display: 'flex', gap: 2 }}>
-      {[1, 2, 3, 4, 5].map(s => (
-        <svg key={s} width="15" height="15" viewBox="0 0 24 24" fill={s <= Math.round(value) ? '#f59e0b' : 'none'} stroke="#f59e0b" strokeWidth="2">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-      ))}
-    </span>
-  )
-}
 
 const slotBtnStyle = (available, selected) => ({
   padding: '9px 16px',
@@ -227,8 +217,6 @@ export default function HekimProfilPage() {
   const photo          = resolveImage(doctor.image)
   const initials       = getInitials(name)
   const isAccepting    = doctor.isAcceptingAppointments !== false
-  const rating         = doctor.rating || 0
-  const reviewsCount   = doctor.reviewsCount || 0
   const activityAreas  = Array.isArray(doctor.activityAreas) && doctor.activityAreas.length
     ? doctor.activityAreas
     : (specialty ? [specialty] : [])
@@ -259,47 +247,7 @@ export default function HekimProfilPage() {
   ].filter(Boolean)
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: FONT, paddingTop: 130 }}>
-
-      {/* ── HERO ── */}
-      <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, padding: '44px 0' }}>
-        <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <div style={{ width: 104, height: 104, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.3)', overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {photo
-                ? <img src={photo} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
-                : <span style={{ fontSize: 36, fontWeight: 800, color: 'white' }}>{initials}</span>
-              }
-            </div>
-            <div>
-              <p style={{ margin: '0 0 4px', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Həkim</p>
-              <h1 style={{ margin: '0 0 8px', fontSize: 28, fontWeight: 800, color: 'white', fontFamily: "'Raleway',sans-serif" }}>{name || 'Həkim'}</h1>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                {title && <span style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>{title}</span>}
-                {specialty && <span style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>{specialty}</span>}
-                {department && department !== specialty && <span style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>{department}</span>}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                {rating > 0 && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <StarRating value={rating} />
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{rating.toFixed(1)}{reviewsCount > 0 ? ` · ${reviewsCount} rəy` : ''}</span>
-                  </span>
-                )}
-                <span style={{ background: isAccepting ? '#22c55e' : '#94a3b8', color: 'white', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}>
-                  {isAccepting ? '● Qəbul edir' : '● Qəbul etmir'}
-                </span>
-              </div>
-            </div>
-          </div>
-          {isAccepting && (
-            <button onClick={bookAppointment}
-              style={{ padding: '13px 28px', background: 'white', color: NAVY, border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
-              Randevu Al
-            </button>
-          )}
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: FONT, paddingTop: 40 }}>
 
       {/* ── MAIN CONTENT ── */}
       <div className="hp-grid">
