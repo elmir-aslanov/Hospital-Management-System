@@ -65,7 +65,10 @@ export default function AdminAppointments() {
     fetch(`${BASE}/api/v1/appointments?limit=50`, { headers })
       .then(r => r.json())
       .then(d => {
-        const list = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : d.appointments || d.result || []
+        const list = Array.isArray(d.data) ? d.data
+        : Array.isArray(d.data?.appointments) ? d.data.appointments
+        : Array.isArray(d) ? d
+        : d.appointments || d.result || []
         setAppts(list)
       })
       .catch(() => setAppts([]))

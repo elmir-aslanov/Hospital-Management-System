@@ -275,11 +275,17 @@ export const createPublicAppointment = async (body) => {
   }
 
   // ── CREATE APPOINTMENT ─────────────────────────────────────────────────────
+  // Compute endTime (30-min slot) — model requires it
+  const [apptH, apptM] = startTime.split(':').map(Number);
+  const endTotalMins = apptH * 60 + apptM + 30;
+  const endTime = `${String(Math.floor(endTotalMins / 60)).padStart(2, '0')}:${String(endTotalMins % 60).padStart(2, '0')}`;
+
   const appointment = await createAppointment({
     patientId: patientMongoId,
     doctorId,
     date,
     startTime,
+    endTime,
     reason: reason?.trim() || 'Onlayn randevu',
     note:   notes,
   });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from '../../api/axios'
 import Navbar from '../../components/Navbar'
@@ -224,7 +224,7 @@ export default function RandevuPage() {
   const [doctors,     setDoctors]     = useState([])
   const [slots,       setSlots]       = useState([])
   const [selDept,     setSelDept]     = useState('')
-  const [selDoctor,   setSelDoctor]   = useState(params.get('doctorId') || '')
+  const [selDoctor,   setSelDoctor]   = useState('')
   const [selDate,     setSelDate]     = useState('')
   const [selSlot,     setSelSlot]     = useState('')
   const [note,        setNote]        = useState('')
@@ -233,6 +233,16 @@ export default function RandevuPage() {
   const [loadSlot,    setLoadSlot]    = useState(false)
   // Increment to force a slot re-fetch (used after 409 double-booking race condition)
   const [slotTick,    setSlotTick]    = useState(0)
+
+  // ── Prefill from URL query params (?doctorId=&departmentId=&date=&time=) ──
+  // Consumed step by step as departments/doctors/slots load; each field is
+  // cleared once applied so it never overrides a later manual selection.
+  const prefill = useRef({
+    doctorId:     params.get('doctorId') || '',
+    departmentId: params.get('departmentId') || '',
+    date:         params.get('date') || '',
+    time:         params.get('time') || '',
+  })
 
   // ── Load departments when Step 2 mounts ──────────────────────────────────
   useEffect(() => {
@@ -273,6 +283,48 @@ export default function RandevuPage() {
       })
       .finally(() => setLoadSlot(false))
   }, [selDoctor, selDate, slotTick])
+
+  // ── Prefill: resolve department (direct departmentId, or via doctor lookup) ─
+  useEffect(() => {
+    if (step !== 2 || selDept || departments.length === 0) return
+    const pf = prefill.current
+    if (pf.departmentId) {
+      if (departments.some(d => d._id === pf.departmentId)) setSelDept(pf.departmentId)
+      pf.departmentId = ''
+    } else if (pf.doctorId) {
+      axios.get(`/doctors/public/${pf.doctorId}`)
+        .then(r => {
+          const deptId = r.data?.data?.department?._id
+          if (deptId && departments.some(d => d._id === deptId)) setSelDept(deptId)
+        })
+        .catch(() => {})
+    }
+  }, [step, departments, selDept])
+
+  // ── Prefill: resolve doctor once the department's doctor list is loaded ────
+  useEffect(() => {
+    const pf = prefill.current
+    if (!pf.doctorId || !selDept || selDoctor || doctors.length === 0) return
+    if (doctors.some(d => d._id === pf.doctorId)) setSelDoctor(pf.doctorId)
+    pf.doctorId = ''
+  }, [doctors, selDept, selDoctor])
+
+  // ── Prefill: resolve date once the doctor is selected ──────────────────────
+  useEffect(() => {
+    const pf = prefill.current
+    if (!pf.date || !selDoctor || selDate) return
+    setSelDate(pf.date)
+    pf.date = ''
+  }, [selDoctor, selDate])
+
+  // ── Prefill: resolve time slot once available slots are loaded ─────────────
+  useEffect(() => {
+    const pf = prefill.current
+    if (!pf.time || !selDate || selSlot || slots.length === 0) return
+    const match = slots.find(s => s.time === pf.time && s.available)
+    if (match) setSelSlot(pf.time)
+    pf.time = ''
+  }, [slots, selDate, selSlot])
 
   // ── Birth date string ─────────────────────────────────────────────────────
   const birthDateStr = birthYear && birthMonth && birthDay

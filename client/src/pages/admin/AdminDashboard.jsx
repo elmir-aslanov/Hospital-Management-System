@@ -117,11 +117,12 @@ export default function AdminDashboard() {
     const p5 = fetch(`${API}/appointments?limit=5&sort=-createdAt`, { headers })
       .then(r => r.json())
       .then(data => {
-        let list = []
-        if (Array.isArray(data)) list = data
-        else if (Array.isArray(data.appointments)) list = data.appointments
-        else if (Array.isArray(data.data)) list = data.data
-        else if (Array.isArray(data.docs)) list = data.docs
+        const list =
+          Array.isArray(data.data?.appointments) ? data.data.appointments :
+          Array.isArray(data.data)               ? data.data :
+          Array.isArray(data.appointments)       ? data.appointments :
+          Array.isArray(data.docs)               ? data.docs :
+          Array.isArray(data)                    ? data : []
         setAppointments(list)
       })
       .catch(() => setAppointments([]))

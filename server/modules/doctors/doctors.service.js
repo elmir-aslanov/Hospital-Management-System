@@ -26,6 +26,40 @@ export const getAllPublicDoctors = async () => {
     .lean();
 };
 
+// Public-safe doctor profile — only fields the public detail page is allowed to see
+export const getPublicDoctorById = async (id) => {
+  const doctor = await Doctor.findOne({ _id: id, isActive: true })
+    .populate('userId', 'fullName name surname photoUrl')
+    .populate(POPULATE_DEPT)
+    .lean();
+  if (!doctor) throw new ApiError(404, 'Doctor not found');
+
+  const fullName = doctor.userId?.fullName
+    || [doctor.userId?.name, doctor.userId?.surname].filter(Boolean).join(' ')
+    || '';
+
+  return {
+    _id: doctor._id,
+    fullName,
+    title: doctor.academicTitle || '',
+    department: doctor.departmentId
+      ? { _id: doctor.departmentId._id, name: doctor.departmentId.name }
+      : null,
+    specialty: doctor.specialization || '',
+    image: doctor.image || doctor.userId?.photoUrl || '',
+    bio: doctor.bio || '',
+    activityAreas: doctor.activityAreas || [],
+    education: doctor.education || [],
+    publications: doctor.publications || [],
+    courses: doctor.courses || [],
+    memberships: doctor.memberships || [],
+    consultationFee: doctor.consultationFee || 0,
+    rating: doctor.averageRating || 0,
+    reviewsCount: doctor.totalRatings || 0,
+    isAcceptingAppointments: doctor.isAvailable !== false,
+  };
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const timeToMinutes = (time) => {
@@ -101,7 +135,8 @@ export const getDoctorById = async (id) => {
 
 export const updateDoctor = async (id, updateData) => {
   const allowed = ['specialization', 'licenseNumber', 'experience', 'bio', 'isAvailable',
-                   'department', 'departmentId', 'image', 'order', 'isActive', 'consultationFee', 'languages'];
+                   'department', 'departmentId', 'image', 'order', 'isActive', 'consultationFee', 'languages',
+                   'academicTitle', 'activityAreas', 'education', 'publications', 'courses', 'memberships'];
   const safe = {};
   for (const key of allowed) {
     if (updateData[key] !== undefined) safe[key] = updateData[key];

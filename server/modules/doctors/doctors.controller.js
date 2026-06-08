@@ -14,6 +14,11 @@ export const getAllPublicDoctors = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, data));
 });
 
+export const getPublicDoctorById = asyncHandler(async (req, res) => {
+  const data = await doctorsService.getPublicDoctorById(req.params.id);
+  res.json(new ApiResponse(200, data));
+});
+
 export const createDoctor = asyncHandler(async (req, res) => {
   const doctor = await doctorsService.createDoctor(req.body);
   res.status(201).json(new ApiResponse(201, doctor, 'Doctor profile created'));

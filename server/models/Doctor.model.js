@@ -17,6 +17,12 @@ const doctorSchema = new mongoose.Schema(
     isActive:        { type: Boolean, default: true },
     consultationFee: { type: Number, default: 0, min: 0 },
     languages:       [{ type: String, trim: true }],
+    academicTitle:   { type: String, trim: true, default: '' },
+    activityAreas:   [{ type: String, trim: true }],
+    education:       [{ type: String, trim: true }],
+    publications:    [{ type: String, trim: true }],
+    courses:         [{ type: String, trim: true }],
+    memberships:     [{ type: String, trim: true }],
   },
   { timestamps: true }
 );
