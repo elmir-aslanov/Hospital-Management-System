@@ -34,6 +34,7 @@ import AdminAppointments    from './pages/admin/AdminAppointments';
 import AdminMuraciet        from './pages/admin/AdminMuraciet'
 import AdminUsers           from './pages/admin/AdminUsers'
 import AdminDepartments     from './pages/admin/AdminDepartments';
+import AdminBlog            from './pages/admin/AdminBlog';
 import AdminBilling         from './pages/admin/AdminBilling';
 import AdminAnalitika       from './pages/admin/AdminAnalitika';
 import AdminAnbar           from './pages/admin/AdminAnbar';
@@ -125,6 +126,7 @@ function Layout() {
         <Route path="/admin/muraciet"     element={<AdminMuraciet />} />
         <Route path="/admin/users"        element={<AdminUsers />} />
         <Route path="/admin/departments"  element={<AdminDepartments />} />
+        <Route path="/admin/blog"         element={<AdminBlog />} />
         <Route path="/admin/billing"      element={<AdminBilling />} />
         <Route path="/admin/lab"          element={<AdminLab />} />
         <Route path="/admin/inventory"    element={<AdminAnbar />} />

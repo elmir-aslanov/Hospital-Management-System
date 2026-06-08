@@ -39,7 +39,17 @@ export const getAll = async ({ page = 1, limit = 20, search, category } = {}) =>
   return { data, total, page: pg, pages: Math.ceil(total / lim) || 1 };
 };
 
-export const create = (data) => BlogPost.create(data);
+const slugify = (title) => title.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+
+export const create = async (data) => {
+  const baseSlug = slugify(data.title || '');
+  let slug = baseSlug;
+  let suffix = 1;
+  while (await BlogPost.exists({ slug })) {
+    slug = `${baseSlug}-${++suffix}`;
+  }
+  return BlogPost.create({ ...data, slug });
+};
 
 export const update = async (id, data) => {
   if (data.isPublished && !data.publishedAt) data.publishedAt = new Date();

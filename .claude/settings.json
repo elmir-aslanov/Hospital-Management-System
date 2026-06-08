@@ -55,7 +55,27 @@
       "Bash(sed -n '60,90p' modules/doctors/doctors.service.js)",
       "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin\" && ls *.jsx | head -30)",
       "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin/**)",
-      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin\" && head -60 AdminDepartments.jsx)"
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin\" && head -60 AdminDepartments.jsx)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin\" && grep -ln \"FormData\" *.jsx)",
+      "Bash(grep -n \"FormData\\\\|multipart\\\\|fetch\\(\\\\`\\\\${BASE}.*image\\\\|method: 'POST'.*image\" -A3 -B1 AdminDoctors.jsx)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src\" && cat api/config.js 2>/dev/null | head -20 *)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src\" && grep -n \"AdminDepartments\\\\|AdminBlog\\\\|admin/departments\\\\|admin/blog\" App.jsx)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/components/admin\" && grep -n \"departments\\\\|Departments\\\\|path:.*admin\\\\|label:\" AdminLayout.jsx | head -30)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/components/admin/**)",
+      "Bash(curl -s http://localhost:5174/ -o /dev/null -w \"client status: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:5000/api/v1/health -o /dev/null -w \"server health: %{http_code}\\\\n\")",
+      "Read(//c/tmp/**)",
+      "Bash(ls -la /tmp/ /c/tmp/ 2>/dev/null; echo \"---\"; cat /tmp/click_tab.js 2>/dev/null | head -100)",
+      "Read(//c/tmp//**)",
+      "Read(//c/tmp/cdp_test//**)",
+      "Read(//c/tmp/cdp_test/**)",
+      "Bash(node -e \"require.resolve\\('chrome-remote-interface'\\)\")",
+      "Bash(npm ls *)",
+      "Read(//c//**)",
+      "Bash(where node *)",
+      "Bash(tasklist)",
+      "Bash(curl -s http://localhost:9222/json/version)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --remote-debugging-port=9222 --user-data-dir=\"C:/tmp/cdp_profile\" --no-first-run --window-size=1440,900 \"about:blank\")"
     ]
   }
 }

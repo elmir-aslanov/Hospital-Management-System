@@ -43,7 +43,12 @@
       "Bash(grep -n \"adminToken\\\\|getItem\\('token'\\)\" /c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin/AdminDashboard.jsx | head -5)",
       "Bash(grep -n \"adminToken\\\\|getItem\\('token'\\)\" /c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin/AdminMuraciet.jsx | head -5)",
       "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/hooks/**)",
-      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/components/ui/**)"
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/components/ui/**)",
+      "Bash(curl -s http://localhost:9223/json/version)",
+      "Bash(awk '{print $2}')",
+      "Bash(taskkill //PID 44296 //T //F)",
+      "Bash(curl -s http://localhost:9223/json/version -o /dev/null -w \"port 9223 status: %{http_code}\\\\n\")",
+      "Bash(rm -rf /c/tmp/cdp_profile3 /c/tmp/cdp_profile2 /c/tmp/cdp_profile)"
     ],
     "additionalDirectories": [
       "C:\\Users\\YOGA\\Desktop\\Hospital-Management-System\\client\\src\\pages"
