@@ -72,7 +72,7 @@ const uploadDoctorImage = async (file) => {
     const result = await uploadImageBuffer(file.buffer, {
       folder: DOCTOR_IMAGE_FOLDER,
       transformation: [
-        { width: 1000, height: 1200, crop: 'limit' },
+        { width: 600, height: 600, crop: 'fill', gravity: 'face' },
         { quality: 'auto', fetch_format: 'auto' },
       ],
     });

@@ -68,12 +68,14 @@ function getClinicalInterests(doctor) {
 
 function DoctorCard({ doctor }) {
   const navigate   = useNavigate()
+  const [imageFailed, setImageFailed] = useState(false)
   const fullName   = doctor.userId?.fullName || doctor.fullName || doctor.name || 'Həkim'
   const spec       = doctor.specialization || doctor.specialty || doctor.department || ''
   const exp        = doctor.experience || 0
   const rating     = doctor.averageRating || 0
   const ratingCount = doctor.totalRatings || 0
   const photo      = getDoctorImage(doctor)
+  const showPhoto  = photo && !imageFailed
   const initials   = fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'DR'
   const isAvailable = doctor.isAvailable !== false
   const fee        = doctor.consultationFee || 0
@@ -122,11 +124,11 @@ function DoctorCard({ doctor }) {
       <div style={{ display: 'flex', gap: 0 }}>
 
         {/* Photo + button */}
-        <div style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, minHeight: 180, background: 'linear-gradient(135deg, #1e3a5f 0%, #00848e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {photo
-              ? <img src={photo} alt={fullName} style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} onError={e=>e.target.style.display='none'} />
-              : <span style={{ fontSize: 44, fontWeight: 800, color: 'rgba(255,255,255,0.75)', fontFamily:"'Raleway',sans-serif" }}>{initials}</span>
+        <div style={{ width: 200, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ width: 200, height: 260, background: '#EEF2F6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {showPhoto
+              ? <img src={photo} alt={fullName} style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} onError={() => setImageFailed(true)} />
+              : <span style={{ fontSize: 44, fontWeight: 800, color: '#94A3B8', fontFamily:"'Raleway',sans-serif" }}>{initials}</span>
             }
           </div>
           <button

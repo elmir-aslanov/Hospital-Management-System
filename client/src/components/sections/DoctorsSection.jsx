@@ -29,7 +29,7 @@ function DoctorCard({ doctor }) {
           <img
             src={photo}
             alt={name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
             onError={e => {
               e.currentTarget.style.display = 'none'
               e.currentTarget.nextSibling.style.display = 'flex'

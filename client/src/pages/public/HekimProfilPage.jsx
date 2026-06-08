@@ -172,6 +172,7 @@ export default function HekimProfilPage() {
   const [notFound,  setNotFound]  = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [activeTab, setActiveTab] = useState('haqqinda')
+  const [failedImageSrc, setFailedImageSrc] = useState('')
 
   useEffect(() => {
     setLoading(true)
@@ -214,7 +215,8 @@ export default function HekimProfilPage() {
   const title          = doctor.title || ''
   const department     = doctor.department?.name || ''
   const specialty      = doctor.specialty || ''
-  const photo          = resolveImage(doctor.image)
+  const imageSrc       = resolveImage(doctor.image)
+  const photo          = imageSrc && failedImageSrc !== imageSrc ? imageSrc : null
   const initials       = getInitials(name)
   const isAccepting    = doctor.isAcceptingAppointments !== false
   const activityAreas  = Array.isArray(doctor.activityAreas) && doctor.activityAreas.length
@@ -255,7 +257,7 @@ export default function HekimProfilPage() {
         {/* LEFT CARD */}
         <div className="hp-card hp-left">
           {photo
-            ? <img src={photo} alt={name} className="hp-photo" onError={e => { e.target.style.display = 'none' }} />
+            ? <img src={photo} alt={name} className="hp-photo" onError={() => setFailedImageSrc(photo)} />
             : (
               <div className="hp-photo hp-photo-placeholder">
                 <span>{initials}</span>
@@ -413,15 +415,19 @@ export default function HekimProfilPage() {
 
         .hp-photo {
           width: 100%;
-          height: 340px;
+          max-width: 360px;
+          aspect-ratio: 1 / 1;
+          height: auto;
           border-radius: 20px;
           object-fit: cover;
+          object-position: center top;
           display: block;
+          background: #EEF2F6;
           box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
         }
 
         .hp-photo-placeholder {
-          background: linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%);
+          background: #EEF2F6;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -430,7 +436,7 @@ export default function HekimProfilPage() {
         .hp-photo-placeholder span {
           font-size: 56px;
           font-weight: 800;
-          color: rgba(255,255,255,0.85);
+          color: #94A3B8;
           font-family: 'Raleway', sans-serif;
         }
 
@@ -488,7 +494,9 @@ export default function HekimProfilPage() {
           }
 
           .hp-photo, .hp-photo-placeholder {
-            height: 260px;
+            max-width: 100%;
+            aspect-ratio: 1 / 1;
+            height: auto;
           }
 
           .hp-tabbar {

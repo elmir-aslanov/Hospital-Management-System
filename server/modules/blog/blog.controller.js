@@ -13,7 +13,8 @@ export const getBySlug = asyncHandler(async (req, res) => {
 });
 
 export const getAll = asyncHandler(async (req, res) => {
-  const data = await svc.getAll();
+  const { page, limit, search, category } = req.query;
+  const data = await svc.getAll({ page, limit, search, category });
   res.json(new ApiResponse(200, data));
 });
 
@@ -30,4 +31,9 @@ export const update = asyncHandler(async (req, res) => {
 export const remove = asyncHandler(async (req, res) => {
   await svc.remove(req.params.id);
   res.json(new ApiResponse(200, null, 'Post deleted'));
+});
+
+export const uploadCover = asyncHandler(async (req, res) => {
+  const data = await svc.uploadCover(req.params.id, req.file);
+  res.json(new ApiResponse(200, data, 'Cover image uploaded'));
 });

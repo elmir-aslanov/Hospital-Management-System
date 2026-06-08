@@ -53,12 +53,13 @@ export default function AdminDoctors() {
   const [isActive,        setIsActive]        = useState(true)
   const [doctorPhoto,     setDoctorPhoto]     = useState('')
   const [doctorPhotoFile, setDoctorPhotoFile] = useState(null)
+  const [doctorPhotoError, setDoctorPhotoError] = useState('')
 
   const resetForm = () => {
     setCreateMode('quick'); setNewFullName(''); setNewEmail('')
     setSpecialization(''); setExperience(''); setBio(''); setIsAvailable(true)
     setDepartment(''); setDepartmentId(''); setConsultationFee(''); setOrder(0); setIsActive(true)
-    setDoctorPhoto(''); setDoctorPhotoFile(null)
+    setDoctorPhoto(''); setDoctorPhotoFile(null); setDoctorPhotoError('')
   }
 
   const populateForm = (doc) => {
@@ -73,6 +74,7 @@ export default function AdminDoctors() {
     setIsActive(doc.isActive !== false)
     setDoctorPhoto(getPhoto(doc) || '')
     setDoctorPhotoFile(null)
+    setDoctorPhotoError('')
   }
 
   // ─── Fetch doctors ────────────────────────────────────────────────────────
@@ -122,6 +124,11 @@ export default function AdminDoctors() {
 
   // ─── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
+    if (doctorPhotoError) {
+      setError(doctorPhotoError)
+      return
+    }
+
     const toFormData = (payload) => {
       const fd = new FormData()
       Object.entries(payload).forEach(([key, value]) => {
@@ -215,7 +222,7 @@ export default function AdminDoctors() {
     (d.userId?.department || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const closeModal = () => { setShowModal(false); setEditDoctor(null); setError(''); setDoctorPhotoFile(null) }
+  const closeModal = () => { setShowModal(false); setEditDoctor(null); setError(''); setDoctorPhotoFile(null); setDoctorPhotoError('') }
   const closeDoctorSuccessModal = () => { setDoctorSuccessModal(null); setCopied(false) }
 
   const copyDoctorCredentials = async () => {
@@ -284,7 +291,7 @@ export default function AdminDoctors() {
             <div key={doc._id} style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
               <div style={{ height: 130, background: 'linear-gradient(135deg,#e8f6f8,#f0fafb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 {getPhoto(doc) ? (
-                  <img src={getPhoto(doc)} alt={getName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={getPhoto(doc)} alt={getName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
                 ) : (
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
                     {getName(doc).charAt(0).toUpperCase()}
@@ -423,9 +430,25 @@ export default function AdminDoctors() {
               <AvatarUpload
                 currentUrl={doctorPhoto}
                 userName={newFullName || (editDoctor ? (editDoctor.userId?.fullName || '') : '')}
-                size={80}
+                size={160}
                 uploadImmediately={false}
+                allowedTypes={['image/jpeg', 'image/png']}
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                maxSizeBytes={2 * 1024 * 1024}
+                minWidth={600}
+                minHeight={600}
+                preferSquare
+                previewWidth={160}
+                previewHeight={160}
+                previewRadius={16}
+                previewObjectPosition="center top"
+                previewBackground="#F1F5F9"
+                previewBorder="1px solid #E2E8F0"
+                placeholderColor="#94A3B8"
+                helperText="Tövsiyə olunan ölçü: 600x600 px, kvadrat şəkil. JPG/PNG, maksimum 2MB."
+                guidanceText="Şəkli yükləməzdən əvvəl kvadrat formatda crop edin."
                 onFileSelect={(file) => setDoctorPhotoFile(file)}
+                onValidationChange={({ valid, message }) => setDoctorPhotoError(valid ? '' : message)}
               />
             </div>
 

@@ -8,7 +8,7 @@ import {
 import validate from '../../middleware/validate.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
 import authorize from '../../middleware/rbac.middleware.js';
-import { uploadImage } from '../../middleware/upload.middleware.js';
+import { uploadDoctorImage } from '../../middleware/upload.middleware.js';
 
 const router = Router();
 
@@ -83,7 +83,7 @@ router.get(
 router.post(
   '/',
   authenticate, authorize('ADMIN'),
-  uploadImage,
+  uploadDoctorImage,
   validateCreateDoctor, validate,
   doctorsController.createDoctor
 );
@@ -91,7 +91,7 @@ router.post(
 router.post(
   '/admin-create',
   authenticate, authorize('ADMIN', 'SUPER_ADMIN'),
-  uploadImage,
+  uploadDoctorImage,
   doctorsController.adminCreateDoctor
 );
 
@@ -254,7 +254,7 @@ router.get(
 router.put(
   '/:id',
   authenticate, authorize('ADMIN', 'DOCTOR'),
-  uploadImage,
+  uploadDoctorImage,
   validateUpdateDoctor, validate,
   doctorsController.updateDoctor
 );

@@ -67,7 +67,7 @@ export const uploadCover = async (id, file) => {
     transformation: [{ width: 1200, height: 630, crop: 'fill' }],
   });
 
-  post.coverImage = result.url;
+  post.coverImage = result.secure_url;
   await post.save();
   return post;
 };

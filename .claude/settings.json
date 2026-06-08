@@ -51,7 +51,11 @@
       "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && grep -rln \"cloudinary\" --include=\"*.js\" modules/ utils/ middleware/ config/ 2>/dev/null | head -10)",
       "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && echo \"--- uploadToCloudinary ---\" && cat utils/uploadToCloudinary.js && echo \"--- multer/upload middleware search ---\" && grep -rln \"multer\" middleware/ modules/ 2>/dev/null | head -5 && echo \"--- example usage in doctors ---\" && grep -n \"cloudinary\\\\|multer\\\\|upload\" modules/doctors/doctors.routes.js modules/doctors/doctors.controller.js modules/doctors/doctors.service.js)",
       "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/server\" && cat middleware/upload.middleware.js && echo \"--- cloudinary config exports ---\" && grep -n \"^export\\\\|uploadImageBuffer\\\\|deleteImage\" config/cloudinary.js | head -20)",
-      "Bash(curl -s http://localhost:5000/api/v1/blog-posts)"
+      "Bash(curl -s http://localhost:5000/api/v1/blog-posts)",
+      "Bash(sed -n '60,90p' modules/doctors/doctors.service.js)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin\" && ls *.jsx | head -30)",
+      "Read(//c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin/**)",
+      "Bash(cd \"/c/Users/YOGA/Desktop/Hospital-Management-System/client/src/pages/admin\" && head -60 AdminDepartments.jsx)"
     ]
   }
 }
