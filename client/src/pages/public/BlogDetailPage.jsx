@@ -155,7 +155,7 @@ const baseStyles = `
   .article-header-card, .article-card, .detail-widget, .bottom-cta, .related-card { background: #fff; border: 1px solid ${BORDER}; box-shadow: 0 10px 28px rgba(15, 23, 42, .05); }
   .article-header-card { padding: 38px 42px; margin-bottom: 28px; }
   .category-label { display: inline-flex; color: ${TEAL}; background: #E6F7F8; border: 1px solid rgba(29, 139, 149, .18); border-radius: 999px; padding: 7px 13px; font-size: 12px; font-weight: 900; margin-bottom: 16px; text-transform: uppercase; letter-spacing: .04em; }
-  .article-header-card h1 { max-width: 980px; margin: 0 0 16px; color: #2E333A; font-family: 'Raleway', ${FONT}; font-size: clamp(36px, 4.7vw, 58px); line-height: 1.1; font-weight: 650; letter-spacing: 0; }
+  .article-header-card h1 { max-width: 980px; margin: 0 0 16px; color: #2E333A; font-family: 'Raleway', ${FONT}; font-size: 24px; line-height: 1.1; font-weight: 650; letter-spacing: 0; }
   .article-header-card p { max-width: 900px; margin: 0; color: ${TEXT}; font-size: 19px; line-height: 1.68; }
   .article-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; color: ${MUTED}; font-size: 15px; }
   .article-meta span + span::before { content: '|'; margin-right: 10px; color: #CBD5E1; }
@@ -164,8 +164,9 @@ const baseStyles = `
   .article-hero-image { width: 100%; height: 430px; object-fit: cover; object-position: center; display: block; background: #E6F7F8; }
   .article-body { padding: 38px 46px 48px; }
   .article-body section + section { margin-top: 32px; }
-  .article-body h2 { margin: 0 0 12px; color: ${NAVY}; font-size: 27px; line-height: 1.25; font-weight: 900; }
-  .article-body p { margin: 0 0 15px; color: ${TEXT}; font-size: 18px; line-height: 1.82; }
+  .article-body h2 { margin: 0 0 12px; color: ${NAVY}; font-size: 18px; line-height: 1.25; font-weight: 900; }
+  .article-body h3 { margin: 0 0 10px; color: ${NAVY}; font-size: 16px; line-height: 1.3; font-weight: 800; }
+  .article-body p { margin: 0 0 15px; color: ${TEXT}; font-size: 15px; line-height: 1.7; }
   .article-body ul { margin: 14px 0 0; padding-left: 22px; color: ${TEXT}; font-size: 17px; line-height: 1.85; }
   .detail-sidebar { display: grid; gap: 24px; position: sticky; top: 92px; }
   .detail-widget { padding: 24px; }
