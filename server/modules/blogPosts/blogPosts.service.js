@@ -7,7 +7,7 @@ export const getAll = async ({ page = 1, limit = 9, category, search } = {}) => 
   const lim = Math.min(50, Math.max(1, parseInt(limit) || 9));
   const skip = (pg - 1) * lim;
 
-  const filter = { isPublished: true };
+  const filter = {};
   if (category) filter.category = category;
   if (search)   filter.title = { $regex: search, $options: 'i' };
 

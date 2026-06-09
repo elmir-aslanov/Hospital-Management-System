@@ -22,7 +22,7 @@ import HekimlerPage          from './pages/public/HekimlerPage';
 import HekimProfilPage       from './pages/public/HekimProfilPage';
 import DepartmentsPage       from './pages/public/DepartmentsPage';
 import ServicesPage          from './pages/public/ServicesPage';
-import BlogPage              from './pages/public/BlogListingPage';
+import BlogPage              from './pages/public/BlogPage';
 import BlogDetailPage        from './pages/public/BlogDetailPage';
 import ContactPage           from './pages/public/ContactPage';
 import ENeticePage           from './pages/public/ENeticePage';
