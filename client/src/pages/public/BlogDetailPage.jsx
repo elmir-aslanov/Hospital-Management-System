@@ -175,7 +175,7 @@ const baseStyles = `
   .article-meta span + span::before { content: '|'; margin-right: 10px; color: #CBD5E1; }
   .article-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start; }
   .article-card { min-width: 0; overflow: hidden; }
-  .article-hero-image { width: 100%; height: 430px; object-fit: cover; object-position: center; display: block; background: #E6F7F8; }
+  .article-hero-image { width: 100%; height: 400px; max-height: 400px; object-fit: cover; object-position: center; display: block; background: #E6F7F8; border-radius: 8px; }
   .article-body { padding: 38px 46px 48px; }
   .article-body h2, .article-body h3, .article-body p { margin: 0 0 15px; }
   .article-body h2 { color: ${NAVY}; font-size: 18px; line-height: 1.25; font-weight: 900; }
