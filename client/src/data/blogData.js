@@ -350,50 +350,82 @@ export const blogPosts = [
     slug: 'xaya-xercenginin-xeberdarliq-elamétleri',
     title: 'Xaya xərçənginin xəbərdarlıq əlamətləri hansılardır?',
     category: 'Xərçəng Profilaktikası',
-    excerpt: 'Xayada izah edilməyən şişkinlik, narahatlıq və ya dəyişikliklər nəzərə alınmamalıdır.',
+    excerpt: 'İzah edilməyən şişkinlik, narahatlıq və ya xayadakı dəyişikliklər nəzərə alınmamalıdır.',
     image: '/blogsekil1.jpeg',
     author: 'Aslan Medical Center',
     publishedAt: '2026-06-01',
-    readTime: '5 dəq oxuma',
+    readTime: '7 dəq oxuma',
     comments: 8,
     views: 1200,
     body: [
       {
-        heading: 'Giriş',
+        heading: 'Xaya xərçənginin xəbərdarlıq əlamətləri',
         paragraphs: [
-          'Xaya xərçəngi ən çox müalicə edilə bilən xərçəng növlərindən biridir — xüsusilə erkən aşkar edildikdə. Buna görə əlamətləri tanımaq çox vacibdir.',
-          'Asağıda diqqət etməli olduğunuz yeddi əsas xəbərdarlıq əlaməti verilmişdir.',
+          'Diqqətinizi haqq edən yeddi ümumi əlamət var. Nəzərə alın ki, əlamətlərin çoxu digər vəziyyətlərlə də baş verə bilər — lakin müayinə üçün həkimə müraciəti haqq edirlər.',
         ],
       },
       {
-        heading: 'Xəbərdarlıq əlamətləri',
+        heading: 'İzah edilməyən kəllə',
         paragraphs: [
-          'Xaya xərçənginin ən geniş yayılmış erkən əlaməti xayadakı kəllə və ya çıxıntıdır. Əksər hallarda kəllə ağrı verməyəcək.',
+          'Xaya xərçənginin ən geniş yayılmış erkən xəbərdarlıq əlaməti xayadakı kəllə və ya çıxıntıdır. Əksər hallarda kəllə ağrı verməyəcək. Lakin bəziləri müəyyən narahatlıq hiss etdiklərini bildirirlər.',
+          'Ayda bir dəfə özünüzü müayinə etmək xayadakı kəllələri axtarmağın ən yaxşı yoludur. Müayinəni duş və ya vannadan sonra aparın — isti su skrotumu rahatlaşdırır və müayinəni asanlaşdırır.',
         ],
         bullets: [
-          'İzah edilməyən kəllə və ya şişlik',
-          'Ağırlıq hissi və ya təzyiq',
-          'Birdən böyümüş görünən xayalar',
-          'Xaya ölçüsü və ya sərtliyinin dəyişməsi',
-          'Ayaqların şişməsi',
-          'Bel ağrısı və ya nəfəs darlığı',
-          'Döş böyüməsi və ya həssaslığı',
+          'Baxın: Skrotumu şişkinlik, rəng dəyişikliyi və ya ölçü-forma dəyişikliyi üçün vizual olaraq yoxlayın.',
+          'Tutun və yuvarlayın: Hər xayanı kəllə və ya qeyri-adi bir şey üçün yavaşca yuvarlayın.',
+          'Digərini yoxlayın: Eyni müayinəni digər xayanızda da edin.',
+        ],
+      },
+      {
+        heading: 'Ağırlıq hissi və ya təzyiq',
+        paragraphs: [
+          'Birdən "ağırlaşmış" və ya müəyyən bir təzyiq altında hiss edilən xayalar xaya xərçəngi və ya başqa bir problemin əlaməti ola bilər. "Bu cür əlamətləri görməzdən gəlməmək vacibdir," deyə Dr. Qupta vurğulayır.',
+        ],
+      },
+      {
+        heading: 'Şişkinlik',
+        paragraphs: [
+          'Birdən daha böyük görünən xayalar skrotumda maye yığılmasına işarə edə bilər. Bu yığılma xaya xərçənginin erkən əlaməti ola bilər. Qırmızılıq və istilik ilə müşayiət olunan şişkinlik adətən infeksiyanı göstərir.',
+          '"Lakin skrotumunuzda birdən maye yığılması hiss etsəniz, həmişə müayinə olunun," deyə Dr. Qupta məsləhət verir.',
+        ],
+      },
+      {
+        heading: 'Xaya ölçüsü və ya sərtliyinin dəyişməsi',
+        paragraphs: [
+          'Müəyyən xaya şişləri hormonal dəyişikliklərə — testosteron azalması və ya estrogen artması kimi — səbəb ola bilər ki, bu da xaya ölçüsünü və ya sərtliyini dəyişdirə bilər.',
+        ],
+      },
+      {
+        heading: 'Ayaqların şişməsi',
+        paragraphs: [
+          'Xaya xərçəngi bəzən dərin vena trombozu (DVT) yaradır — bədəninizdəki dərin damarda qan laxtası əmələ gəlir. Bu şişkinlik, ağrı və həssaslığa səbəb ola bilər. Qan laxtaları ürək tutması və ya insult kimi ciddi problemlərə gətirib çıxara biləcəyi üçün dərhal həkimə müraciət edin.',
+        ],
+      },
+      {
+        heading: 'Bel ağrısı və ya nəfəs darlığı',
+        paragraphs: [
+          'Müalicəsiz qalan xaya xərçəngi digər problemlərə çevrilə bilər.',
+          '"Bunlar ümumiləşdirilmiş əlamətlərdir, lakin daha inkişaf etmiş xaya xərçənginin əlamətləri ola bilər," deyə Dr. Qupta qeyd edir.',
+        ],
+        bullets: [
+          'Bel ağrısı: Xaya xərçəngi bel və qarın nahiyəsindəki limfa düyünlərinə yayıla bilər.',
+          'Nəfəs darlığı: Ağciyərlərə yayılmış xaya xərçəngi nəfəs almağı çətinləşdirə bilər.',
+        ],
+      },
+      {
+        heading: 'Döş böyüməsi və ya həssaslığı',
+        paragraphs: [
+          'Xaya xərçəngindən yaranan hormonal dəyişikliklər bəzən döş həssaslığına və ya döş toxumasının böyüməsinə səbəb ola bilər. Bəzi şişlər yüksək miqdarda insan xorionik qonadotropin (HCG) hormonu ifraz edə bilər.',
+          '"Kişilər birdən döş həssaslığı və ya şişkinliyi hiss etsə, müayinə olunmaq tövsiyə edilir," deyə Dr. Qupta bildirir.',
         ],
       },
       {
         heading: 'Erkən aşkarlamanın önəmi',
         paragraphs: [
-          'Xaya xərçəngi olan insanların 95%-ə qədəri sağalır, lakin erkən müalicə uğur şansını artırır.',
-          'Ayda bir dəfə özünüzü müayinə etmək xayadakı kəllələri axtarmağın ən yaxşı yoludur.',
+          'Xaya xərçəngi erkən tapılarsa adətən müalicə oluna bilən nisbətən nadir bir xəstəlikdir. 15-35 yaş arası kişilərdə ən çox diaqnoz qoyulan xərçəng növüdür.',
+          '"Xaya xərçəngləri adətən sürətlə böyüdüyü üçün əlamətlər yaşayırsınızsa, tez yardım almaq vacibdir. Xaya xərçəngi olan insanların 95%-ə qədəri sağalır, lakin erkən müalicə uğur şansını artırır," deyə Dr. Qupta izah edir.',
+          'Xaya xərçənginin hər hansı bir əlamətini yaşayırsınızsa, dərhal həkiminizlə görüş təyin edin.',
         ],
-      },
-      {
-        heading: 'Nə zaman həkimə müraciət etməli?',
-        paragraphs: ['Hər hansı bir əlamət yaşayırsınızsa, tez yardım almaq vacibdir, çünki xaya xərçəngləri adətən sürətlə böyüyür.'],
-      },
-      {
-        heading: 'Nəticə',
-        paragraphs: ['Erkən müayinə həyat xilas edə bilər. Şikayətlər varsa, onkoloqa müraciət etməyi gecikdirməyin.'],
       },
     ],
   },
