@@ -234,7 +234,13 @@ export default function HekimlerPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = doctors.filter(d => {
+  const filtered = [...doctors].sort((a, b) => {
+    const nameA = a.userId?.fullName || a.fullName || ''
+    const nameB = b.userId?.fullName || b.fullName || ''
+    if (nameA.includes('Muradov')) return -1
+    if (nameB.includes('Muradov')) return 1
+    return 0
+  }).filter(d => {
     const name = getDoctorName(d)
     const specialty = getDoctorSpecialty(d)
     const department = getDoctorDepartment(d)

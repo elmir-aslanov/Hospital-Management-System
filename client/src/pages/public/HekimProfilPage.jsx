@@ -226,6 +226,8 @@ export default function HekimProfilPage() {
   const publications   = Array.isArray(doctor.publications) ? doctor.publications : []
   const courses        = Array.isArray(doctor.courses) ? doctor.courses : []
   const memberships    = Array.isArray(doctor.memberships) ? doctor.memberships : []
+  const workingHours   = (Array.isArray(doctor.workingHours) && doctor.workingHours.length ? doctor.workingHours : null)
+                      || (Array.isArray(doctor.schedule)     && doctor.schedule.length     ? doctor.schedule     : null)
 
   const TABS = [
     { key: 'haqqinda', label: 'Tərcümeyi-hal' },
@@ -382,9 +384,28 @@ export default function HekimProfilPage() {
             )}
 
             {activeTab === 'saatlar' && (
-              isAccepting
-                ? <AppointmentSlotsTab doctor={doctor} navigate={navigate} />
-                : <p style={{ fontSize: 14, color: MUTED, margin: 0 }}>Bu həkim hazırda randevu qəbul etmir.</p>
+              workingHours
+                ? (
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {workingHours.map((entry, i) => {
+                      let text
+                      if (typeof entry === 'string') {
+                        text = entry
+                      } else {
+                        const day   = entry.day || entry.dayName || ''
+                        const start = entry.startTime || entry.start || ''
+                        const end   = entry.endTime   || entry.end   || ''
+                        text = day && start && end ? `${day}: ${start} – ${end}`
+                             : day && start        ? `${day}: ${start}`
+                             : day                 || start || ''
+                      }
+                      return text
+                        ? <li key={i} style={{ fontSize: 15, color: '#374151', marginBottom: 8, lineHeight: 1.6 }}>{text}</li>
+                        : null
+                    })}
+                  </ul>
+                )
+                : <p style={{ fontSize: 14, color: MUTED, margin: 0 }}>Randevu saatları məlumatı əlavə edilməyib.</p>
             )}
 
           </div>
