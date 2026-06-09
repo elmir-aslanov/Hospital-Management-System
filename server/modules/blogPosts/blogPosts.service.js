@@ -47,11 +47,7 @@ export const getAdminAll = async ({ page = 1, limit = 20, category, search } = {
 };
 
 export const getOne = async (slug) => {
-  const post = await Blog.findOneAndUpdate(
-    { slug, isPublished: true },
-    { $inc: { views: 1 } },
-    { new: true },
-  )
+  const post = await Blog.findOne({ slug })
     .populate('author', 'fullName name surname photoUrl')
     .lean();
   if (!post) throw new ApiError(404, 'Post not found');
