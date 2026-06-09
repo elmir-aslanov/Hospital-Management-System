@@ -141,18 +141,6 @@ function BlogSidebar({ onSelectTopic }) {
         <a href="#blog-results">Məqalələrə bax</a>
       </section>
 
-      <section className="sidebar-widget popular-widget">
-        <h2>Populyar yazılar</h2>
-        <div className="popular-list">
-          {popularPosts.slice(0, 3).map(post => (
-            <Link key={post.id} to={`/blog/${post.slug}`} className="popular-item">
-              <img src={post.image} alt={post.title} loading="lazy" onError={event => { event.currentTarget.style.display = 'none' }} />
-              <span>{post.category}</span>
-              <strong>{post.title}</strong>
-            </Link>
-          ))}
-        </div>
-      </section>
     </aside>
   )
 }

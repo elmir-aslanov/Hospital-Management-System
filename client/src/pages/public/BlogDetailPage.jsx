@@ -58,18 +58,6 @@ function DetailSidebar({ post, navigate }) {
         </ul>
       </section>
 
-      <section className="detail-widget popular-widget">
-        <h2>Populyar yazılar</h2>
-        <div className="popular-list">
-          {popularPosts.slice(0, 3).map(item => (
-            <Link key={item.id} to={`/blog/${item.slug}`} className="popular-item">
-              <img src={item.image} alt={item.title} loading="lazy" onError={event => { event.currentTarget.style.display = 'none' }} />
-              <span>{item.category}</span>
-              <strong>{item.title}</strong>
-            </Link>
-          ))}
-        </div>
-      </section>
     </aside>
   )
 }
@@ -151,15 +139,6 @@ export default function BlogDetailPage() {
           <button type="button" onClick={() => navigate('/randevu')}>Randevu al</button>
         </section>
 
-        <section className="related-section" aria-labelledby="related-title">
-          <div className="related-head">
-            <p>Oxşar məqalələr</p>
-            <h2 id="related-title">Bu mövzuda daha çox oxuyun</h2>
-          </div>
-          <div className="related-grid">
-            {related.map(item => <RelatedCard key={item.id} post={item} />)}
-          </div>
-        </section>
       </div>
 
       <style>{baseStyles}</style>

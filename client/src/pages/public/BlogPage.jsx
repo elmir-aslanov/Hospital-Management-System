@@ -7,31 +7,26 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
 const NAVY = '#0B1D34'
 
-function BlogCard({ post }) {
+function BlogCard({ post, hoveredId, setHoveredId }) {
   const navigate = useNavigate()
   const imgSrc = post.coverImage ?? post.image ?? null
 
   return (
     <article
       onClick={() => navigate(`/blog/${post.slug}`)}
+      onMouseEnter={() => setHoveredId(post._id)}
+      onMouseLeave={() => setHoveredId(null)}
       style={{
         background: '#fff',
         borderRadius: 10,
         overflow: 'hidden',
         border: '1px solid #E2E8F0',
-        boxShadow: '0 2px 10px rgba(11,29,52,0.06)',
         cursor: 'pointer',
-        transition: 'transform 0.18s, box-shadow 0.18s',
         display: 'flex',
         flexDirection: 'column',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-3px)'
-        e.currentTarget.style.boxShadow = '0 10px 28px rgba(29,139,149,0.14)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = '0 2px 10px rgba(11,29,52,0.06)'
+        boxShadow: hoveredId === post._id ? '0 8px 24px rgba(0,0,0,0.12)' : 'none',
+        transform: hoveredId === post._id ? 'translateY(-4px)' : 'none',
+        transition: 'all 0.2s',
       }}
     >
       <div style={{ height: 220, background: '#E6F7F8', overflow: 'hidden', flexShrink: 0 }}>
@@ -72,11 +67,16 @@ function BlogCard({ post }) {
           </p>
         )}
 
-        {post.readTime && (
-          <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: FONT, marginTop: 4 }}>
-            {post.readTime} dəq oxu
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: 4 }}>
+          {post.readTime && (
+            <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: FONT }}>
+              {post.readTime} dəq oxu
+            </span>
+          )}
+          <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 12 }}>
+            {post.createdAt ? new Date(post.createdAt).toLocaleDateString('az-AZ') : ''}
           </span>
-        )}
+        </div>
       </div>
     </article>
   )
@@ -101,6 +101,8 @@ export default function BlogPage() {
   usePageTitle('Tibbi Blog', 'Sağlamlıq, müalicə və profilaktika üzrə məqalələr.')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('Hamısı')
+  const [hoveredId, setHoveredId] = useState(null)
 
   useEffect(() => {
     api.get('/blog', { params: { limit: 100 } })
@@ -113,25 +115,46 @@ export default function BlogPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const filteredPosts = activeCategory === 'Hamısı' ? posts : posts.filter(p => p.category === activeCategory)
+
   return (
     <main style={{ background: '#F5F6F8', minHeight: '100vh', fontFamily: FONT }}>
-      <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 24px', boxSizing: 'border-box' }}>
+      <div style={{ background: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', padding: '48px 32px', textAlign: 'center', marginBottom: 40 }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 8px' }}>ASLAN MEDİCAL CENTER</p>
+        <h1 style={{ color: 'white', fontSize: 32, fontWeight: 800, margin: '0 0 12px', fontFamily: "'Raleway',sans-serif" }}>Tibbi Bloq</h1>
+        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 15, margin: 0 }}>Sağlamlıq, müalicə və profilaktika üzrə məqalə və yeniliklər.</p>
+      </div>
+
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' }}>
+        {!loading && posts.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 32 }}>
+            {['Hamısı', ...new Set(posts.map(p => p.category).filter(Boolean))].map(cat => (
+              <button key={cat} onClick={() => setActiveCategory(cat)}
+                style={{
+                  padding: '7px 18px', borderRadius: 20,
+                  border: `1.5px solid ${activeCategory === cat ? '#00848e' : '#e2e8f0'}`,
+                  background: activeCategory === cat ? '#00848e' : 'white',
+                  color: activeCategory === cat ? 'white' : '#64748b',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+                }}>
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && <Spinner />}
 
-        {!loading && posts.length === 0 && (
+        {!loading && filteredPosts.length === 0 && (
           <p style={{ textAlign: 'center', color: '#94A3B8', padding: '80px 0', fontSize: 16 }}>
             Hazırda bloq yazısı yoxdur.
           </p>
         )}
 
-        {!loading && posts.length > 0 && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 24,
-          }}>
-            {posts.map((post, i) => (
-              <BlogCard key={post._id ?? i} post={post} />
+        {!loading && filteredPosts.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, paddingBottom: 60 }}>
+            {filteredPosts.map((post, i) => (
+              <BlogCard key={post._id ?? i} post={post} hoveredId={hoveredId} setHoveredId={setHoveredId} />
             ))}
           </div>
         )}
