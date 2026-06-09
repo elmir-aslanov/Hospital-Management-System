@@ -8,6 +8,12 @@ export const getAll = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, data));
 });
 
+export const getAdminAll = asyncHandler(async (req, res) => {
+  const { page, limit, category, search } = req.query;
+  const data = await svc.getAdminAll({ page, limit, category, search });
+  res.json(new ApiResponse(200, data));
+});
+
 export const getOne = asyncHandler(async (req, res) => {
   const data = await svc.getOne(req.params.slug);
   res.json(new ApiResponse(200, data));

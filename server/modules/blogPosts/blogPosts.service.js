@@ -24,6 +24,28 @@ export const getAll = async ({ page = 1, limit = 9, category, search } = {}) => 
   return { data, total, page: pg, pages: Math.ceil(total / lim) || 1 };
 };
 
+export const getAdminAll = async ({ page = 1, limit = 20, category, search } = {}) => {
+  const pg  = Math.max(1, parseInt(page) || 1);
+  const lim = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const skip = (pg - 1) * lim;
+
+  const filter = {};
+  if (category) filter.category = category;
+  if (search)   filter.title = { $regex: search, $options: 'i' };
+
+  const [data, total] = await Promise.all([
+    Blog.find(filter)
+      .populate('author', 'fullName name surname photoUrl')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(lim)
+      .lean(),
+    Blog.countDocuments(filter),
+  ]);
+
+  return { data, total, page: pg, pages: Math.ceil(total / lim) || 1 };
+};
+
 export const getOne = async (slug) => {
   const post = await Blog.findOneAndUpdate(
     { slug, isPublished: true },

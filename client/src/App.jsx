@@ -22,7 +22,8 @@ import HekimlerPage          from './pages/public/HekimlerPage';
 import HekimProfilPage       from './pages/public/HekimProfilPage';
 import DepartmentsPage       from './pages/public/DepartmentsPage';
 import ServicesPage          from './pages/public/ServicesPage';
-import BlogPage              from './pages/public/BlogPage';
+import BlogPage              from './pages/public/BlogListingPage';
+import BlogDetailPage        from './pages/public/BlogDetailPage';
 import ContactPage           from './pages/public/ContactPage';
 import ENeticePage           from './pages/public/ENeticePage';
 import ElektronMuraciet     from './pages/public/ElektronMuraciet';
@@ -108,6 +109,7 @@ function Layout() {
         <Route path="/services"    element={<ServicesPage />} />
         <Route path="/patients"    element={<ComingSoon title="Pasiyent Mərkəzi" />} />
         <Route path="/blog"        element={<BlogPage />} />
+        <Route path="/blog/:slug"  element={<BlogDetailPage />} />
         <Route path="/contact"     element={<ContactPage />} />
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
         <Route path="/hekimler"            element={<HekimlerPage />} />

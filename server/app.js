@@ -37,7 +37,6 @@ import siteDoctorsRoutes    from './modules/sitedoctors/sitedoctors.routes.js';
 // ── Public website modules ────────────────────────────────────────────────────
 import departmentsRoutes    from './modules/departments/departments.routes.js';
 import servicesRoutes       from './modules/services/services.routes.js';
-import blogRoutes           from './modules/blog/blog.routes.js';
 import blogPostsRoutes      from './modules/blogPosts/blogPosts.routes.js';
 import contactRoutes        from './modules/contact/contact.routes.js';
 import muracietRoutes       from './modules/muraciet/muraciet.routes.js';
@@ -149,8 +148,7 @@ app.use(`${API}/site-doctors`,   siteDoctorsRoutes);
 // ── Public website ─────────────────────────────────────────────────────────────
 app.use(`${API}/departments`,    departmentsRoutes);
 app.use(`${API}/services`,       servicesRoutes);
-app.use(`${API}/blog`,           blogRoutes);
-app.use(`${API}/blog-posts`,     blogPostsRoutes);
+app.use(`${API}/blog`,           blogPostsRoutes);
 app.use(`${API}/contact`,        contactRoutes);
 app.use(`${API}/muraciet`,       muracietRoutes);
 app.use(`${API}/admin`,         adminRoutes);

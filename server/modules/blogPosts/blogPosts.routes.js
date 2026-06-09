@@ -8,9 +8,15 @@ const router = Router();
 
 // ── Public ─────────────────────────────────────────────────────────────────────
 router.get('/',        ctrl.getAll);
-router.get('/:slug',   ctrl.getOne);
 
 // ── Admin ──────────────────────────────────────────────────────────────────────
+router.get('/admin/all',
+  authenticate, authorize('ADMIN', 'SUPER_ADMIN'),
+  ctrl.getAdminAll
+);
+
+router.get('/:slug',   ctrl.getOne);
+
 router.post('/',
   authenticate, authorize('ADMIN', 'SUPER_ADMIN'),
   ctrl.create
