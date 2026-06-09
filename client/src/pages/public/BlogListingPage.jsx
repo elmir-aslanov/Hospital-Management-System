@@ -175,19 +175,6 @@ function BlogSidebar({ onSelectTopic }) {
         <a href="#blog-results">Məqalələrə bax</a>
       </section>
 
-      {/* Popular */}
-      <section className="sidebar-widget popular-widget">
-        <h2>Populyar yazılar</h2>
-        <div className="popular-list">
-          {popularPosts.slice(0, 3).map(post => (
-            <Link key={post.id} to={`/blog/${post.slug}`} className="popular-item">
-              <img src={post.image} alt={post.title} loading="lazy" onError={ev => { ev.currentTarget.style.display = 'none' }} />
-              <span>{post.category}</span>
-              <strong>{post.title}</strong>
-            </Link>
-          ))}
-        </div>
-      </section>
     </aside>
   )
 }
@@ -274,15 +261,6 @@ export default function BlogListingPage() {
             </div>
 
             <div id="blog-results" className="post-list">
-              {visiblePosts.length ? (
-                visiblePosts.map((post, i) => <PostRow key={post.id} post={post} index={i} />)
-              ) : (
-                <div className="empty-state">
-                  <SearchIcon />
-                  <h3>Məqalə tapılmadı</h3>
-                  <p>Axtarış və ya filtr nəticəsinə uyğun yazı mövcud deyil.</p>
-                </div>
-              )}
             </div>
 
             {visiblePosts.length > 0 && (

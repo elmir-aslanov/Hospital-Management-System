@@ -6,7 +6,7 @@ const blogSchema = new mongoose.Schema({
   content:     { type: String, required: true },
   excerpt:     { type: String, trim: true },
   coverImage:  { type: String },
-  category:    { type: String, enum: ['Kardiologiya', 'Nevrologiya', 'Diş', 'Uşaq sağlamlığı', 'Ümumi'] },
+  category:    { type: String, trim: true },
   author:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   tags:        [{ type: String, trim: true }],
   readTime:    { type: Number, default: 5 },

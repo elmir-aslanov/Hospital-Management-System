@@ -191,10 +191,13 @@ function SRow({ label, value, last }) {
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RandevuPage() {
+  useEffect(() => { window.scrollTo(0, 0) }, [])
+
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
   const [step,        setStep]        = useState(1)
+  useEffect(() => { window.scrollTo(0, 0) }, [step])
   const [patientType, setPatientType] = useState('existing') // 'existing' | 'new'
   const [error,       setError]       = useState('')
   const [loading,     setLoading]     = useState(false)

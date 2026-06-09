@@ -346,6 +346,155 @@ export const blogPosts = [
     }),
   },
   {
+    id: 'f1',
+    slug: 'xaya-xercenginin-xeberdarliq-elamétleri',
+    title: 'Xaya xərçənginin xəbərdarlıq əlamətləri hansılardır?',
+    category: 'Xərçəng Profilaktikası',
+    excerpt: 'Xayada izah edilməyən şişkinlik, narahatlıq və ya dəyişikliklər nəzərə alınmamalıdır.',
+    image: '/blogsekil1.jpeg',
+    author: 'Aslan Medical Center',
+    publishedAt: '2026-06-01',
+    readTime: '5 dəq oxuma',
+    comments: 8,
+    views: 1200,
+    body: [
+      {
+        heading: 'Giriş',
+        paragraphs: [
+          'Xaya xərçəngi ən çox müalicə edilə bilən xərçəng növlərindən biridir — xüsusilə erkən aşkar edildikdə. Buna görə əlamətləri tanımaq çox vacibdir.',
+          'Asağıda diqqət etməli olduğunuz yeddi əsas xəbərdarlıq əlaməti verilmişdir.',
+        ],
+      },
+      {
+        heading: 'Xəbərdarlıq əlamətləri',
+        paragraphs: [
+          'Xaya xərçənginin ən geniş yayılmış erkən əlaməti xayadakı kəllə və ya çıxıntıdır. Əksər hallarda kəllə ağrı verməyəcək.',
+        ],
+        bullets: [
+          'İzah edilməyən kəllə və ya şişlik',
+          'Ağırlıq hissi və ya təzyiq',
+          'Birdən böyümüş görünən xayalar',
+          'Xaya ölçüsü və ya sərtliyinin dəyişməsi',
+          'Ayaqların şişməsi',
+          'Bel ağrısı və ya nəfəs darlığı',
+          'Döş böyüməsi və ya həssaslığı',
+        ],
+      },
+      {
+        heading: 'Erkən aşkarlamanın önəmi',
+        paragraphs: [
+          'Xaya xərçəngi olan insanların 95%-ə qədəri sağalır, lakin erkən müalicə uğur şansını artırır.',
+          'Ayda bir dəfə özünüzü müayinə etmək xayadakı kəllələri axtarmağın ən yaxşı yoludur.',
+        ],
+      },
+      {
+        heading: 'Nə zaman həkimə müraciət etməli?',
+        paragraphs: ['Hər hansı bir əlamət yaşayırsınızsa, tez yardım almaq vacibdir, çünki xaya xərçəngləri adətən sürətlə böyüyür.'],
+      },
+      {
+        heading: 'Nəticə',
+        paragraphs: ['Erkən müayinə həyat xilas edə bilər. Şikayətlər varsa, onkoloqa müraciət etməyi gecikdirməyin.'],
+      },
+    ],
+  },
+  {
+    id: 'f2',
+    slug: 'sperma-sayini-artirmaq',
+    title: 'Sperma sayını artırmaq və kişi fertilliğini yaxşılaşdırmaq üçün nə etməli?',
+    category: 'Sidik-Cinsiyyət Sağlamlığı',
+    excerpt: 'Sağlam qidalanma, çəkini idarə etmə və stressin azaldılması kömək edən əsas üsullardır.',
+    image: '/blogsekil2.jpeg',
+    author: 'Aslan Medical Center',
+    publishedAt: '2026-06-03',
+    readTime: '6 dəq oxuma',
+    comments: 5,
+    views: 980,
+    body: [
+      {
+        heading: 'Giriş',
+        paragraphs: [
+          'Bioloji baxımdan hamımız iki inqrediyentdən başlayırıq: kişidən bir sperma və qadından bir yumurta. Lakin hər resept kimi, uğur inqrediyentlərin keyfiyyətindən asılı ola bilər.',
+          'Son 50 ildə tədqiqatçıların aşkar etdiyi sperma sağlamlığının azalması narahatlıq doğurur.',
+        ],
+      },
+      {
+        heading: 'Sperma sağlamlığını necə yaxşılaşdırmaq olar?',
+        paragraphs: [
+          'Gündəlik vərdişlərinizi dəyişdirmək fertilliyin yaxşılaşmasına kömək edə bilər. Nəticələri görmək üçün adətən ən azı üç ay lazımdır.',
+        ],
+        bullets: [
+          'Pəhrizinizi tənzimləyin — Aralıq dənizi pəhrizi fertilliyi artırır',
+          'Multivitamin qəbul edin — lakin testosteron əlavəsindən qaçının',
+          'Çəkinizi idarə edin — hər 9 kq artıq çəki sonsuzluq riskini 10% artırır',
+          'Toksinlərə məruz qalmanı minimuma endirin',
+          'Gecədə 7-8 saat yatın',
+          'Stresi azaldın — yoga, nəfəs məşqləri kömək edir',
+          'Alkoqolü məhdudlaşdırın — həftədə 7-dən çox içki tövsiyə edilmir',
+          'Siqareti buraxın',
+          'İstiliyi azaldın — sauna və cakuzidən uzaq durun',
+        ],
+      },
+      {
+        heading: 'Nə zaman həkimə müraciət etməli?',
+        paragraphs: ['Altı aydan bir ilə qədər hamiləliyə çalışıb bacarmırsınızsa, fertillik qiymətləndirməsi vaxtı gəlmiş ola bilər.'],
+      },
+      {
+        heading: 'Nəticə',
+        paragraphs: ['Sperma sağlamlığı üçün düzgün həyat tərzi həlledici rol oynayır. Mütəxəssis dəstəyi ilə bu proses daha effektiv idarə edilə bilər.'],
+      },
+    ],
+  },
+  {
+    id: 'f3',
+    slug: 'erektil-disfunksiya-haqqinda',
+    title: 'Erektil disfunksiya haqqında ümumi suallara cavablar',
+    category: 'Kişi Sağlamlığı',
+    excerpt: 'Əksər kişilərin həyatlarının müəyyən dövründə yaşadığı ED haqqında bilməli olduğunuz hər şey.',
+    image: '/blogsekil3.jpeg',
+    author: 'Aslan Medical Center',
+    publishedAt: '2026-06-05',
+    readTime: '7 dəq oxuma',
+    comments: 11,
+    views: 2100,
+    body: [
+      {
+        heading: 'Giriş',
+        paragraphs: [
+          'Erektil disfunksiya (ED) — ereksiyanı əldə etmək və ya saxlamaq çətinliyi — çox geniş yayılmış bir vəziyyətdir. Əksər kişilər həyatlarının müəyyən bir dövründə bunu yaşayır.',
+          'ED haqqında danışmaq utandırıcı görünə bilər, lakin bu, normal tibbi bir vəziyyətdir və müalicə oluna bilər.',
+        ],
+      },
+      {
+        heading: 'ED-nin əsas səbəbləri',
+        paragraphs: [
+          'ED-nin arxasında fiziki və ya psixoloji amillər dayana bilər — çox vaxt hər ikisi birlikdə.',
+        ],
+        bullets: [
+          'Ürək-damar xəstəlikləri və yüksək qan təzyiqi',
+          'Diabet və hormonal pozğunluqlar',
+          'Stress, narahatlıq, depressiya',
+          'Siqaret, alkoqol və piylənmə',
+          'Bəzi dərman preparatları',
+        ],
+      },
+      {
+        heading: 'Müalicə variantları',
+        paragraphs: [
+          'ED üçün bir çox effektiv müalicə mövcuddur. Həkiminiz sizin vəziyyətinizə uyğun ən yaxşı variantı tövsiyə edəcək.',
+          'Həyat tərzi dəyişiklikləri (idman, sağlam qidalanma, siqareti buraxmaq) çox vaxt kifayət edə bilər.',
+        ],
+      },
+      {
+        heading: 'Nə zaman həkimə müraciət etməli?',
+        paragraphs: ['ED tez-tez yaşanırsa, bu həm fiziki, həm də emosional sağlamlığa təsir edə bilər. Üroloq və ya seksopatoloqa müraciət etmək tövsiyə edilir.'],
+      },
+      {
+        heading: 'Nəticə',
+        paragraphs: ['ED müalicə edilə bilən bir vəziyyətdir. Utanmadan həkiminizlə danışın — vaxtında müraciət nəticəni əhəmiyyətli dərəcədə yaxşılaşdırır.'],
+      },
+    ],
+  },
+  {
     id: '12',
     slug: 'usaqlarda-qizdirma-zamani-ne-etmeli',
     title: 'Uşaqlarda qızdırma zamanı nə etməli?',
