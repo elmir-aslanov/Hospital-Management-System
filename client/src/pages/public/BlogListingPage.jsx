@@ -22,7 +22,6 @@ const tabs = [
     filter: post => ['Kardiologiya', 'Endokrinologiya', 'Pediatriya', 'Dermatologiya', 'Ginekologiya', 'Qadın sağlamlığı'].includes(post.category),
   },
   { label: 'Profilaktika', filter: post => post.category === 'Profilaktika' },
-  { label: 'Daha çox', filter: () => true },
 ]
 
 function formatDate(dateStr) {
@@ -97,7 +96,7 @@ function RelatedTopics({ onSelectTopic }) {
             <article key={topic} className="topic-item">
               <div>
                 <h3>{topic}</h3>
-                <p>{count || 1} məqalə · 5 dəq əvvəl yeniləndi</p>
+                <p>{count || 1} məqalə</p>
               </div>
               <button type="button" onClick={() => onSelectTopic(topic)}>Bax</button>
             </article>
@@ -221,10 +220,6 @@ export default function BlogListingPage() {
                   Aslan Medical bloqunda sağlamlıq, profilaktika, müayinə və müalicə mövzularında
                   həkimlərimizin tövsiyələrini və maarifləndirici yazıları oxuya bilərsiniz.
                 </p>
-                <div className="blog-meta-line">
-                  <LockIcon />
-                  <span>Açıq tibbi maarifləndirmə bloqu</span>
-                </div>
               </div>
             </div>
           </header>
@@ -301,12 +296,12 @@ export default function BlogListingPage() {
       <style>{`
         .blog-page { min-height: 100vh; background: ${PAGE_BG}; color: ${NAVY}; padding: 32px 0 72px; }
         .blog-container { width: min(1440px, calc(100% - 64px)); margin: 0 auto; box-sizing: border-box; }
-        .blog-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start; }
+        .blog-layout { display: grid; grid-template-columns: minmax(0, 860px) 300px; gap: 32px; align-items: start; }
         .blog-main-panel, .sidebar-widget { background: #fff; border: 1px solid ${BORDER}; box-shadow: 0 10px 28px rgba(15, 23, 42, .05); }
         .blog-main-panel { min-width: 0; }
         .blog-profile-card { padding: 38px 40px 34px; }
         .profile-title-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 24px; margin-bottom: 32px; }
-        .profile-title-row h1 { margin: 0; color: #2E333A; font-family: 'Raleway', ${FONT}; font-size: clamp(42px, 4.8vw, 62px); line-height: 1.12; font-weight: 600; letter-spacing: 0; }
+        .profile-title-row h1 { margin: 0; color: #2E333A; font-family: 'Raleway', ${FONT}; font-size: 32px; line-height: 1.12; font-weight: 600; letter-spacing: 0; }
         .profile-title-row button, .topic-item button { border: 1px solid ${TEAL}; border-radius: 999px; background: #fff; color: ${TEAL}; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; transition: background .18s, color .18s, border-color .18s; }
         .profile-title-row button { min-width: 154px; height: 42px; padding: 0 18px; }
         .profile-title-row button:hover, .topic-item button:hover { background: ${TEAL}; color: #fff; }
@@ -321,7 +316,7 @@ export default function BlogListingPage() {
         .blog-tabs button.active::after { background: ${TEAL}; }
         .newsfeed-card { padding: 40px 40px 44px; }
         .newsfeed-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 360px); gap: 24px; align-items: start; padding-bottom: 28px; border-bottom: 1px solid ${BORDER}; }
-        .newsfeed-head h2 { margin: 0; color: #2E333A; font-family: 'Raleway', ${FONT}; font-size: clamp(34px, 3vw, 42px); line-height: 1.12; font-weight: 600; letter-spacing: 0; }
+        .newsfeed-head h2 { margin: 0; color: #2E333A; font-family: 'Raleway', ${FONT}; font-size: 20px; line-height: 1.12; font-weight: 600; letter-spacing: 0; }
         .newsfeed-head p { margin: 8px 0 0; color: ${MUTED}; font-size: 15px; }
         .newsfeed-search { display: flex; height: 44px; }
         .newsfeed-search label { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid #CBD5E1; border-right: 0; border-radius: 8px 0 0 8px; padding: 0 13px; color: #94A3B8; background: #fff; }
@@ -335,7 +330,7 @@ export default function BlogListingPage() {
         .post-image-link img { width: 100%; height: 172px; object-fit: cover; object-position: center; display: block; transition: transform .22s; }
         .post-row:hover .post-image-link img { transform: scale(1.035); }
         .post-content { min-width: 0; padding-top: 2px; }
-        .post-title { display: inline-block; color: ${NAVY}; text-decoration: none; font-size: clamp(23px, 2vw, 29px); line-height: 1.25; font-weight: 900; letter-spacing: 0; }
+        .post-title { display: inline-block; color: ${NAVY}; text-decoration: none; font-size: 16px; line-height: 1.25; font-weight: 600; letter-spacing: 0; }
         .post-title:hover { color: ${TEAL}; text-decoration: underline; }
         .post-meta { display: flex; flex-wrap: wrap; gap: 9px; margin: 12px 0 12px; color: ${MUTED}; font-size: 15px; line-height: 1.5; }
         .post-meta span + span::before { content: '|'; margin-right: 9px; color: #CBD5E1; }
