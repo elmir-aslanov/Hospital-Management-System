@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../../components/Navbar'
-import Footer from '../../components/Footer'
 import usePageTitle from '../../hooks/usePageTitle'
 import api from '../../api/axios'
 
@@ -9,18 +7,9 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
 const NAVY = '#0B1D34'
 
-const BACKEND = import.meta.env.VITE_API_URL?.replace('/api/v1', '') ?? 'http://localhost:5000'
-
-function resolveImage(src) {
-  if (!src) return null
-  if (src.startsWith('http')) return src
-  if (src.startsWith('/')) return `${BACKEND}${src}`
-  return src
-}
-
 function BlogCard({ post }) {
   const navigate = useNavigate()
-  const imgSrc = resolveImage(post.coverImage ?? post.image)
+  const imgSrc = post.coverImage ?? post.image ?? null
 
   return (
     <article
@@ -125,32 +114,28 @@ export default function BlogPage() {
   }, [])
 
   return (
-    <>
-      <Navbar />
-      <main style={{ background: '#F5F6F8', minHeight: '100vh', fontFamily: FONT }}>
-        <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 24px', boxSizing: 'border-box' }}>
-          {loading && <Spinner />}
+    <main style={{ background: '#F5F6F8', minHeight: '100vh', fontFamily: FONT }}>
+      <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 24px', boxSizing: 'border-box' }}>
+        {loading && <Spinner />}
 
-          {!loading && posts.length === 0 && (
-            <p style={{ textAlign: 'center', color: '#94A3B8', padding: '80px 0', fontSize: 16 }}>
-              Hazırda bloq yazısı yoxdur.
-            </p>
-          )}
+        {!loading && posts.length === 0 && (
+          <p style={{ textAlign: 'center', color: '#94A3B8', padding: '80px 0', fontSize: 16 }}>
+            Hazırda bloq yazısı yoxdur.
+          </p>
+        )}
 
-          {!loading && posts.length > 0 && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 24,
-            }}>
-              {posts.map((post, i) => (
-                <BlogCard key={post._id ?? i} post={post} />
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-      <Footer />
-    </>
+        {!loading && posts.length > 0 && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 24,
+          }}>
+            {posts.map((post, i) => (
+              <BlogCard key={post._id ?? i} post={post} />
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   )
 }
