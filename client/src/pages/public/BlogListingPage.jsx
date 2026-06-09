@@ -156,6 +156,43 @@ function BlogSidebar({ onSelectTopic }) {
   )
 }
 
+const featuredPosts = [
+  {
+    id: 'f3',
+    image: '/blogsekil3.jpeg',
+    category: 'Kişi Sağlamlığı',
+    title: 'Erektil disfunksiya haqqında ümumi suallara cavablar',
+    excerpt: 'Əksər kişilərin həyatlarının müəyyən dövründə yaşadığı ED haqqında bilməli olduğunuz hər şey.',
+    readTime: 7,
+    slug: 'erektil-disfunksiya-haqqinda',
+  },
+]
+
+function FeaturedCard({ post }) {
+  return (
+    <Link
+      to={`/blog/${post.slug}`}
+      style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: '#ffffff', borderRadius: 8, border: '1px solid #e2e8f0', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 32px rgba(29,139,149,0.13)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
+    >
+      <div style={{ height: 220, flexShrink: 0, overflow: 'hidden' }}>
+        <img
+          src={post.image} alt={post.title}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px 8px 0 0', display: 'block' }}
+          onError={e => { e.currentTarget.style.display = 'none' }}
+        />
+      </div>
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: TEAL, fontFamily: FONT }}>{post.category}</p>
+        <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1e3a5f', lineHeight: 1.35, fontFamily: FONT }}>{post.title}</h3>
+        <p style={{ margin: 0, fontSize: 14, color: '#64748b', lineHeight: 1.6, fontFamily: FONT, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.excerpt}</p>
+        <p style={{ margin: 0, fontSize: 12, color: '#94a3b8', fontFamily: FONT }}>{post.readTime} dəq oxu</p>
+      </div>
+    </Link>
+  )
+}
+
 export default function BlogListingPage() {
   usePageTitle('Aslan Medical Tibbi Blog', 'Sağlamlıq, profilaktika, müayinə və müalicə mövzularında həkim tövsiyələri və maarifləndirici yazılar.')
 
@@ -257,6 +294,12 @@ export default function BlogListingPage() {
                 <button type="submit">Axtar</button>
               </form>
             </div>
+
+            {/* ── Featured posts grid ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, padding: '32px 0 0' }}>
+              {featuredPosts.map(post => <FeaturedCard key={post.id} post={post} />)}
+            </div>
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '32px 0 0' }} />
 
             <div id="blog-results" className="post-list">
               {visiblePosts.length ? (
