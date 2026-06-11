@@ -1,23 +1,56 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-export default function ProtectedRoute({ children, allowedRoles }) {
-  const token = localStorage.getItem('token');
+const SAFE_ROUTE_BY_ROLE = {
+  ADMIN: '/admin/dashboard',
+  SUPER_ADMIN: '/admin/dashboard',
+  DOCTOR: '/doctor/dashboard',
+  NURSE: '/nurse',
+  RECEPTIONIST: '/receptionist',
+  LAB_TECHNICIAN: '/lab',
+  PATIENT: '/patient',
+};
+
+function getStoredJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function getStoredAuth() {
+  return {
+    token: localStorage.getItem('token'),
+    user: getStoredJson('user'),
+  };
+}
+
+export default function ProtectedRoute({
+  children,
+  allowedRoles,
+  loginPath = '/login',
+  unauthorizedPath,
+}) {
   const location = useLocation();
+  const { token, user } = getStoredAuth();
 
   if (!token) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
-  if (allowedRoles) {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!allowedRoles.includes(user.role?.toUpperCase())) {
-        return <Navigate to="/" replace />;
-      }
-    } catch {
-      return <Navigate to="/login" replace />;
+  const role = user?.role?.toUpperCase();
+
+  if (allowedRoles?.length) {
+    const normalizedAllowedRoles = allowedRoles.map(item => item.toUpperCase());
+
+    if (!role) {
+      return <Navigate to={loginPath} state={{ from: location }} replace />;
+    }
+
+    if (!normalizedAllowedRoles.includes(role)) {
+      return <Navigate to={unauthorizedPath || SAFE_ROUTE_BY_ROLE[role] || '/'} replace />;
     }
   }
 
-  return children;
+  return children || <Outlet />;
 }

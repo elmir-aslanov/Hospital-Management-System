@@ -91,6 +91,31 @@ function RouteLoader() {
 const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu', '/e-netice', '/admin']);
 const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin', '/doctor'];
 
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'];
+const DOCTOR_ROLES = ['DOCTOR'];
+const NURSE_ROLES = ['NURSE'];
+const RECEPTIONIST_ROLES = ['RECEPTIONIST'];
+const LAB_ROLES = ['LAB_TECHNICIAN'];
+const PATIENT_ROLES = ['PATIENT'];
+const DASHBOARD_ROLES = ['ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'LAB_TECHNICIAN'];
+
+function getStoredUserRole() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')?.role?.toUpperCase();
+  } catch {
+    return null;
+  }
+}
+
+function AdminEntryRoute() {
+  const token = localStorage.getItem('token');
+  const role = getStoredUserRole();
+
+  if (!token || !role) return <AdminLoginPage />;
+  if (ADMIN_ROLES.includes(role)) return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/" replace />;
+}
+
 function Layout() {
   useLegacyI18nDom();
   const { pathname } = useLocation();
@@ -120,33 +145,44 @@ function Layout() {
         <Route path="/profile"             element={<UserProfilePage />} />
 
         {/* ── Admin ── */}
-        <Route path="/admin"              element={<AdminLoginPage />} />
-        <Route path="/admin/dashboard"    element={<AdminDashboard />} />
-        <Route path="/admin/doctors"      element={<AdminDoctors />} />
-        <Route path="/admin/patients"     element={<AdminPatients />} />
-        <Route path="/admin/appointments" element={<AdminAppointments />} />
-        <Route path="/admin/muraciet"     element={<AdminMuraciet />} />
-        <Route path="/admin/users"        element={<AdminUsers />} />
-        <Route path="/admin/departments"  element={<AdminDepartments />} />
-        <Route path="/admin/blog"         element={<AdminBlog />} />
-        <Route path="/admin/billing"      element={<AdminBilling />} />
-        <Route path="/admin/lab"          element={<AdminLab />} />
-        <Route path="/admin/inventory"    element={<AdminAnbar />} />
-        <Route path="/admin/pricelist"    element={<AdminPriceList />} />
-        <Route path="/admin/analytics"    element={<AdminAnalitika />} />
-        <Route path="/admin/settings"     element={<AdminSettings />} />
-        <Route path="/admin/discharge"    element={<AdminDischarge />} />
-        <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
-        <Route path="/nurse"              element={<NurseDashboard />} />
-        <Route path="/receptionist"       element={<ReceptionistDashboard />} />
-        <Route path="/lab"                element={<LabTechDashboard />} />
+        <Route path="/admin"              element={<AdminEntryRoute />} />
+        <Route element={<ProtectedRoute allowedRoles={ADMIN_ROLES} loginPath="/admin" />}>
+          <Route path="/admin/dashboard"    element={<AdminDashboard />} />
+          <Route path="/admin/doctors"      element={<AdminDoctors />} />
+          <Route path="/admin/patients"     element={<AdminPatients />} />
+          <Route path="/admin/appointments" element={<AdminAppointments />} />
+          <Route path="/admin/muraciet"     element={<AdminMuraciet />} />
+          <Route path="/admin/users"        element={<AdminUsers />} />
+          <Route path="/admin/departments"  element={<AdminDepartments />} />
+          <Route path="/admin/blog"         element={<AdminBlog />} />
+          <Route path="/admin/billing"      element={<AdminBilling />} />
+          <Route path="/admin/lab"          element={<AdminLab />} />
+          <Route path="/admin/inventory"    element={<AdminAnbar />} />
+          <Route path="/admin/pricelist"    element={<AdminPriceList />} />
+          <Route path="/admin/analytics"    element={<AdminAnalitika />} />
+          <Route path="/admin/settings"     element={<AdminSettings />} />
+          <Route path="/admin/discharge"    element={<AdminDischarge />} />
+          <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
+        </Route>
+        <Route element={<ProtectedRoute allowedRoles={NURSE_ROLES} loginPath="/admin" />}>
+          <Route path="/nurse"              element={<NurseDashboard />} />
+        </Route>
+        <Route element={<ProtectedRoute allowedRoles={RECEPTIONIST_ROLES} loginPath="/admin" />}>
+          <Route path="/receptionist"       element={<ReceptionistDashboard />} />
+        </Route>
+        <Route element={<ProtectedRoute allowedRoles={LAB_ROLES} loginPath="/admin" />}>
+          <Route path="/lab"                element={<LabTechDashboard />} />
+        </Route>
 
         {/* ── Doctor ── */}
-        <Route path="/doctor/dashboard"     element={<DoctorDashboard />} />
-        <Route path="/doctor/patients"      element={<DoctorPatients />} />
-        <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
-        <Route path="/doctor/analyses"      element={<DoctorAnalyses />} />
-        <Route path="/doctor/profile"       element={<DoctorProfile />} />
+        <Route element={<ProtectedRoute allowedRoles={DOCTOR_ROLES} loginPath="/admin" />}>
+          <Route path="/doctor"               element={<Navigate to="/doctor/dashboard" replace />} />
+          <Route path="/doctor/dashboard"     element={<DoctorDashboard />} />
+          <Route path="/doctor/patients"      element={<DoctorPatients />} />
+          <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
+          <Route path="/doctor/analyses"      element={<DoctorAnalyses />} />
+          <Route path="/doctor/profile"       element={<DoctorProfile />} />
+        </Route>
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />
@@ -155,20 +191,14 @@ function Layout() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* ── Patient portal ── */}
-        <Route path="/patient" element={
-          <ProtectedRoute allowedRoles={['PATIENT']}>
-            <PatientPortal />
-          </ProtectedRoute>
-        } />
-        <Route path="/patient/messages" element={
-          <ProtectedRoute allowedRoles={['PATIENT']}>
-            <PatientMessages />
-          </ProtectedRoute>
-        } />
+        <Route element={<ProtectedRoute allowedRoles={PATIENT_ROLES} />}>
+          <Route path="/patient"          element={<PatientPortal />} />
+          <Route path="/patient/messages" element={<PatientMessages />} />
+        </Route>
 
         {/* ── Staff dashboard ── */}
         <Route path="/dashboard" element={
-          <ProtectedRoute allowedRoles={['ADMIN','SUPER_ADMIN','DOCTOR','NURSE','RECEPTIONIST','LAB_TECHNICIAN']}>
+          <ProtectedRoute allowedRoles={DASHBOARD_ROLES}>
             <DashboardLayout />
           </ProtectedRoute>
         }>
