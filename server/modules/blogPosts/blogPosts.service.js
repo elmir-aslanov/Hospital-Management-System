@@ -1,4 +1,4 @@
-import Blog, { calcReadTime } from '../../models/Blog.model.js';
+import Blog from '../../models/Blog.model.js';
 import ApiError from '../../utils/ApiError.js';
 import { uploadImageBuffer } from '../../config/cloudinary.js';
 import { BLOG_CATEGORY_SLUGS } from '../../config/blogCategories.js';
@@ -9,7 +9,7 @@ const REVIEWER_POPULATE = {
   populate: { path: 'userId', select: 'fullName name surname' },
 };
 
-export const getAll = async ({ page = 1, limit = 9, category, search } = {}) => {
+export const getAll = async ({ page = 1, limit = 9, category, search, sort } = {}) => {
   const pg  = Math.max(1, parseInt(page) || 1);
   const lim = Math.min(50, Math.max(1, parseInt(limit) || 9));
   const skip = (pg - 1) * lim;
@@ -21,10 +21,14 @@ export const getAll = async ({ page = 1, limit = 9, category, search } = {}) => 
     { excerpt: { $regex: search, $options: 'i' } },
   ];
 
+  const sortOrder = sort === 'views'
+    ? { views: -1, publishedAt: -1, createdAt: -1 }
+    : { publishedAt: -1, createdAt: -1 };
+
   const [data, total] = await Promise.all([
     Blog.find(filter)
       .populate(REVIEWER_POPULATE)
-      .sort({ publishedAt: -1, createdAt: -1 })
+      .sort(sortOrder)
       .skip(skip)
       .limit(lim)
       .lean(),
@@ -75,8 +79,9 @@ export const create = async (data, authorId) => {
   }
   if (data.reviewedBy === '') data.reviewedBy = null;
 
+  const { readTime, ...rest } = data;
   const payload = {
-    ...data,
+    ...rest,
     excerpt: data.excerpt?.trim() || (data.content || '').slice(0, 200),
   };
   return Blog.create(payload);
@@ -88,15 +93,12 @@ export const update = async (id, data) => {
   }
   if (data.excerpt === '') delete data.excerpt;
   if (data.reviewedBy === '') data.reviewedBy = null;
+  delete data.readTime;
 
   const doc = await Blog.findById(id);
   if (!doc) throw new ApiError(404, 'Post not found');
 
   Object.assign(doc, data);
-
-  if (data.content !== undefined && data.readTime === undefined) {
-    doc.readTime = calcReadTime(doc.content);
-  }
 
   if (doc.status === 'published' && !doc.publishedAt) {
     doc.publishedAt = new Date();

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { blogCategoryLabel } from '../../data/blogCategories'
+import { cloudinaryResize } from '../../utils/cloudinaryImage'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
@@ -9,9 +10,16 @@ export default function BlogCard({ post, hoveredId, setHoveredId }) {
   const navigate = useNavigate()
   const imgSrc = post.coverImage ?? post.image ?? null
 
+  const goToPost = () => navigate(`/blog/${post.slug}`)
+
   return (
     <article
-      onClick={() => navigate(`/blog/${post.slug}`)}
+      role="link"
+      tabIndex={0}
+      aria-label={post.title}
+      className="blog-card"
+      onClick={goToPost}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToPost() } }}
       onMouseEnter={() => setHoveredId?.(post._id)}
       onMouseLeave={() => setHoveredId?.(null)}
       style={{
@@ -31,7 +39,7 @@ export default function BlogCard({ post, hoveredId, setHoveredId }) {
       <div style={{ height: 220, background: '#E6F7F8', overflow: 'hidden', flexShrink: 0 }}>
         {imgSrc && (
           <img
-            src={imgSrc}
+            src={cloudinaryResize(imgSrc, 600)}
             alt={post.title}
             width={400}
             height={220}
@@ -71,15 +79,18 @@ export default function BlogCard({ post, hoveredId, setHoveredId }) {
 
         <div style={{ display: 'flex', alignItems: 'center', marginTop: 4 }}>
           {post.readTime && (
-            <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: FONT }}>
+            <span style={{ fontSize: 12, color: '#64748B', fontFamily: FONT }}>
               {post.readTime} dəq oxu
             </span>
           )}
-          <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 12 }}>
+          <span style={{ fontSize: 12, color: '#64748B', marginLeft: 12 }}>
             {(post.publishedAt || post.createdAt) ? new Date(post.publishedAt || post.createdAt).toLocaleDateString('az-AZ') : ''}
           </span>
         </div>
       </div>
+      <style>{`
+        .blog-card:focus-visible { outline: 2px solid ${TEAL}; outline-offset: 2px; }
+      `}</style>
     </article>
   )
 }

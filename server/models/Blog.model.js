@@ -41,7 +41,7 @@ blogSchema.pre('save', async function (next) {
     this.slug = slug;
   }
 
-  if (!this.readTime) {
+  if (this.isModified('content') || !this.readTime) {
     this.readTime = calcReadTime(this.content);
   }
 

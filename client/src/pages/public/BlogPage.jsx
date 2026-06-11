@@ -165,7 +165,13 @@ export default function BlogPage() {
   }
 
   return (
-    <main style={{ background: '#F5F6F8', minHeight: '100vh', fontFamily: FONT }}>
+    <main className="blog-page" style={{ background: '#F5F6F8', minHeight: '100vh', fontFamily: FONT }}>
+      <style>{`
+        .blog-page a:focus-visible,
+        .blog-page button:focus-visible,
+        .blog-page input:focus-visible,
+        .blog-page [tabindex]:focus-visible { outline: 2px solid ${TEAL}; outline-offset: 2px; border-radius: 4px; }
+      `}</style>
       <div style={{ background: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', padding: '48px 32px', textAlign: 'center', marginBottom: 40 }}>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 8px' }}>ASLAN MEDİCAL CENTER</p>
         <h1 style={{ color: 'white', fontSize: 32, fontWeight: 800, margin: '0 0 12px', fontFamily: "'Raleway',sans-serif" }}>Tibbi Bloq</h1>
@@ -183,7 +189,7 @@ export default function BlogPage() {
             aria-label="Bloq yazılarında axtarış"
             style={{
               width: '100%', maxWidth: 420, padding: '10px 16px', borderRadius: 20,
-              border: '1.5px solid #E2E8F0', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: NAVY,
+              border: '1.5px solid #E2E8F0', fontSize: 13, fontFamily: 'inherit', color: NAVY,
             }}
           />
           <button type="submit" style={{
@@ -226,9 +232,23 @@ export default function BlogPage() {
         )}
 
         {!loading && posts.length === 0 && (
-          <p style={{ textAlign: 'center', color: '#94A3B8', padding: '80px 0', fontSize: 16 }}>
-            {activeCategory || searchQuery ? 'Axtarışınıza uyğun məqalə tapılmadı.' : 'Hazırda bloq yazısı yoxdur.'}
-          </p>
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <p style={{ color: '#64748B', fontSize: 16, margin: activeCategory || searchQuery ? '0 0 16px' : 0 }}>
+              {activeCategory || searchQuery ? 'Axtarışınıza uyğun məqalə tapılmadı.' : 'Hazırda bloq yazısı yoxdur.'}
+            </p>
+            {(activeCategory || searchQuery) && (
+              <button
+                type="button"
+                onClick={() => { setSearchInput(''); setSearchParams({}) }}
+                style={{
+                  padding: '9px 22px', borderRadius: 20, border: `1.5px solid ${TEAL}`,
+                  background: '#fff', color: TEAL, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Bütün məqalələr
+              </button>
+            )}
+          </div>
         )}
 
         {!loading && posts.length > 0 && (

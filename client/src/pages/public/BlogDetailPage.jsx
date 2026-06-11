@@ -4,6 +4,7 @@ import useSeoMeta from '../../hooks/useSeoMeta'
 import api from '../../api/axios'
 import { blogCategoryLabel } from '../../data/blogCategories'
 import BlogCard from '../../components/blog/BlogCard'
+import { cloudinaryResize } from '../../utils/cloudinaryImage'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const NAVY = '#0B1D34'
@@ -40,19 +41,11 @@ function getReviewerName(doctor) {
   return u.fullName || [u.name, u.surname].filter(Boolean).join(' ') || ''
 }
 
-function getHeroImageSrc(url, width = 1200) {
-  if (!url) return url
-  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    return url.replace('/upload/', `/upload/c_limit,w_${width},q_auto:good,f_auto,dpr_auto/`)
-  }
-  return url
-}
-
 const HERO_WIDTHS = [800, 1200, 1600]
 
 function getHeroImageSrcSet(url) {
   if (!url || !url.includes('res.cloudinary.com') || !url.includes('/upload/')) return undefined
-  return HERO_WIDTHS.map(w => `${getHeroImageSrc(url, w)} ${w}w`).join(', ')
+  return HERO_WIDTHS.map(w => `${cloudinaryResize(url, w)} ${w}w`).join(', ')
 }
 
 // Slugify heading text into an anchor id (mirrors server-side AZ transliteration).
@@ -190,6 +183,39 @@ function RelatedPosts({ category, excludeSlug }) {
   )
 }
 
+function PopularPosts({ excludeSlug }) {
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    api.get('/blog', { params: { sort: 'views', limit: 5 } })
+      .then(res => {
+        const data = res.data?.data ?? res.data ?? {}
+        const list = Array.isArray(data) ? data : (data.data ?? [])
+        setPosts(list.filter(p => p.slug !== excludeSlug).slice(0, 4))
+      })
+      .catch(() => setPosts([]))
+  }, [excludeSlug])
+
+  if (posts.length === 0) return null
+
+  return (
+    <section className="detail-widget popular-widget">
+      <h2>Populyar məqalələr</h2>
+      <div className="popular-list">
+        {posts.map(post => (
+          <Link key={post._id} to={`/blog/${post.slug}`} className="popular-item">
+            {post.coverImage && (
+              <img src={cloudinaryResize(post.coverImage, 150)} alt={post.title} loading="lazy" />
+            )}
+            {post.category && <span>{blogCategoryLabel(post.category)}</span>}
+            <strong>{post.title}</strong>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function ContentBody({ html }) {
   return <div className="article-body" dangerouslySetInnerHTML={{ __html: html || '' }} />
 }
@@ -240,6 +266,8 @@ function DetailSidebar({ post, headings, navigate }) {
           <li>Pasiyentlər üçün aydın izahlar</li>
         </ul>
       </section>
+
+      <PopularPosts excludeSlug={post.slug} />
     </aside>
   )
 }
@@ -348,7 +376,7 @@ export default function BlogDetailPage() {
               <div className="article-hero-wrap">
                 <img
                   className="article-hero-image"
-                  src={getHeroImageSrc(post.coverImage)}
+                  src={cloudinaryResize(post.coverImage, 1600)}
                   srcSet={getHeroImageSrcSet(post.coverImage)}
                   sizes="(max-width: 768px) 100vw, 1100px"
                   alt={post.title}
@@ -438,6 +466,15 @@ const baseStyles = `
   .related-section { margin: 30px 0 0; }
   .related-section h2 { margin: 0 0 18px; color: ${NAVY}; font-size: 22px; line-height: 1.25; font-weight: 900; font-family: 'Raleway', ${FONT}; }
   .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .popular-list { display: grid; gap: 14px; margin-top: 16px; }
+  .popular-item { display: grid; grid-template-columns: 72px 1fr; column-gap: 12px; align-items: center; color: inherit; text-decoration: none; }
+  .popular-item img { width: 72px; height: 72px; object-fit: cover; object-position: center; border-radius: 8px; grid-row: span 2; background: #E6F7F8; }
+  .popular-item span { color: ${TEAL}; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+  .popular-item strong { color: ${NAVY}; font-size: 14px; line-height: 1.35; }
+  .popular-item:hover strong { color: ${TEAL}; text-decoration: underline; }
+  .blog-detail-page a:focus-visible,
+  .blog-detail-page button:focus-visible,
+  .blog-detail-page [tabindex]:focus-visible { outline: 2px solid ${TEAL}; outline-offset: 2px; border-radius: 4px; }
   .bottom-cta { margin: 30px 0 44px; padding: 28px 32px; display: flex; align-items: center; justify-content: space-between; gap: 22px; }
   .bottom-cta p { margin-bottom: 0; max-width: 640px; }
   .not-found { max-width: 720px; text-align: center; padding-top: 96px; }

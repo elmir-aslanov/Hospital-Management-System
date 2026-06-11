@@ -4,8 +4,8 @@ import * as svc     from './blogPosts.service.js';
 import { BLOG_CATEGORIES } from '../../config/blogCategories.js';
 
 export const getAll = asyncHandler(async (req, res) => {
-  const { page, limit, category, search } = req.query;
-  const data = await svc.getAll({ page, limit, category, search });
+  const { page, limit, category, search, sort } = req.query;
+  const data = await svc.getAll({ page, limit, category, search, sort });
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.json(new ApiResponse(200, data));
 });
