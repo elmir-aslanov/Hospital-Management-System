@@ -8,6 +8,7 @@
     "dev": "nodemon --delay 1500ms --ignore node_modules/ --ignore logs/ server.js",
     "start": "node server.js",
     "seed": "node seed.js",
+    "seed:blog": "node seedBlog.js",
     "lint": "eslint ."
   },
   "dependencies": {

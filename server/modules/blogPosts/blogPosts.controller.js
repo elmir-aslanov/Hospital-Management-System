@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
 import * as svc     from './blogPosts.service.js';
+import { BLOG_CATEGORIES } from '../../config/blogCategories.js';
 
 export const getAll = asyncHandler(async (req, res) => {
   const { page, limit, category, search } = req.query;
@@ -9,9 +10,13 @@ export const getAll = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, data));
 });
 
+export const getCategories = asyncHandler(async (req, res) => {
+  res.json(new ApiResponse(200, BLOG_CATEGORIES));
+});
+
 export const getAdminAll = asyncHandler(async (req, res) => {
-  const { page, limit, category, search } = req.query;
-  const data = await svc.getAdminAll({ page, limit, category, search });
+  const { page, limit, category, search, status } = req.query;
+  const data = await svc.getAdminAll({ page, limit, category, search, status });
   res.json(new ApiResponse(200, data));
 });
 
@@ -21,7 +26,7 @@ export const getOne = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const data = await svc.create(req.body, req.user.id || req.user._id);
+  const data = await svc.create(req.body);
   res.status(201).json(new ApiResponse(201, data, 'Post created'));
 });
 

@@ -1,20 +1,30 @@
-import Blog from '../../models/Blog.model.js';
+import Blog, { calcReadTime } from '../../models/Blog.model.js';
 import ApiError from '../../utils/ApiError.js';
 import { uploadImageBuffer } from '../../config/cloudinary.js';
+import { BLOG_CATEGORY_SLUGS } from '../../config/blogCategories.js';
+
+const REVIEWER_POPULATE = {
+  path: 'reviewedBy',
+  select: 'specialization userId',
+  populate: { path: 'userId', select: 'fullName name surname' },
+};
 
 export const getAll = async ({ page = 1, limit = 9, category, search } = {}) => {
   const pg  = Math.max(1, parseInt(page) || 1);
   const lim = Math.min(50, Math.max(1, parseInt(limit) || 9));
   const skip = (pg - 1) * lim;
 
-  const filter = {};
+  const filter = { status: 'published' };
   if (category) filter.category = category;
-  if (search)   filter.title = { $regex: search, $options: 'i' };
+  if (search)   filter.$or = [
+    { title: { $regex: search, $options: 'i' } },
+    { excerpt: { $regex: search, $options: 'i' } },
+  ];
 
   const [data, total] = await Promise.all([
     Blog.find(filter)
-      .populate('author', 'fullName name surname photoUrl')
-      .sort({ createdAt: -1 })
+      .populate(REVIEWER_POPULATE)
+      .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(lim)
       .lean(),
@@ -24,18 +34,19 @@ export const getAll = async ({ page = 1, limit = 9, category, search } = {}) => 
   return { data, total, page: pg, pages: Math.ceil(total / lim) || 1 };
 };
 
-export const getAdminAll = async ({ page = 1, limit = 20, category, search } = {}) => {
+export const getAdminAll = async ({ page = 1, limit = 20, category, search, status } = {}) => {
   const pg  = Math.max(1, parseInt(page) || 1);
   const lim = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const skip = (pg - 1) * lim;
 
   const filter = {};
   if (category) filter.category = category;
+  if (status)   filter.status = status;
   if (search)   filter.title = { $regex: search, $options: 'i' };
 
   const [data, total] = await Promise.all([
     Blog.find(filter)
-      .populate('author', 'fullName name surname photoUrl')
+      .populate(REVIEWER_POPULATE)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(lim)
@@ -47,26 +58,51 @@ export const getAdminAll = async ({ page = 1, limit = 20, category, search } = {
 };
 
 export const getOne = async (slug) => {
-  const post = await Blog.findOne({ slug })
-    .populate('author', 'fullName name surname photoUrl')
+  const post = await Blog.findOneAndUpdate(
+    { slug, status: 'published' },
+    { $inc: { views: 1 } },
+    { new: true }
+  )
+    .populate(REVIEWER_POPULATE)
     .lean();
   if (!post) throw new ApiError(404, 'Post not found');
   return post;
 };
 
 export const create = async (data, authorId) => {
+  if (data.category && !BLOG_CATEGORY_SLUGS.includes(data.category)) {
+    throw new ApiError(400, 'Invalid category');
+  }
+  if (data.reviewedBy === '') data.reviewedBy = null;
+
   const payload = {
     ...data,
-    author: authorId,
     excerpt: data.excerpt?.trim() || (data.content || '').slice(0, 200),
   };
   return Blog.create(payload);
 };
 
 export const update = async (id, data) => {
+  if (data.category && !BLOG_CATEGORY_SLUGS.includes(data.category)) {
+    throw new ApiError(400, 'Invalid category');
+  }
   if (data.excerpt === '') delete data.excerpt;
-  const doc = await Blog.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  if (data.reviewedBy === '') data.reviewedBy = null;
+
+  const doc = await Blog.findById(id);
   if (!doc) throw new ApiError(404, 'Post not found');
+
+  Object.assign(doc, data);
+
+  if (data.content !== undefined && data.readTime === undefined) {
+    doc.readTime = calcReadTime(doc.content);
+  }
+
+  if (doc.status === 'published' && !doc.publishedAt) {
+    doc.publishedAt = new Date();
+  }
+
+  await doc.save();
   return doc;
 };
 

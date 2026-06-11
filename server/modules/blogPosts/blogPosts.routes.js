@@ -7,7 +7,8 @@ import { uploadImage } from '../../middleware/upload.middleware.js';
 const router = Router();
 
 // ── Public ─────────────────────────────────────────────────────────────────────
-router.get('/',        ctrl.getAll);
+router.get('/',            ctrl.getAll);
+router.get('/categories',  ctrl.getCategories);
 
 // ── Admin ──────────────────────────────────────────────────────────────────────
 router.get('/admin/all',

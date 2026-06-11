@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import usePageTitle from '../../hooks/usePageTitle'
 import api from '../../api/axios'
+import { blogCategoryLabel } from '../../data/blogCategories'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const NAVY = '#0B1D34'
@@ -12,20 +13,30 @@ const BORDER = '#E2E8F0'
 const MUTED = '#64748B'
 const TEXT = '#334155'
 
+const AZ_MONTHS = [
+  'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
+  'iyul', 'avqust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr',
+]
+
+// Manual az-AZ formatter (e.g. "10 iyun 2026") — Intl locale data for 'az' is unreliable across runtimes.
 function formatDate(dateStr) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('az-AZ', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return ''
+  return `${date.getDate()} ${AZ_MONTHS[date.getMonth()]} ${date.getFullYear()}`
 }
 
 function getAuthorName(author) {
-  if (!author) return 'Aslan Medical'
+  if (!author) return 'Aslan Medical Center'
+  if (typeof author === 'string') return author
   if (author.fullName) return author.fullName
   const name = [author.name, author.surname].filter(Boolean).join(' ')
-  return name || 'Aslan Medical'
+  return name || 'Aslan Medical Center'
+}
+
+function getReviewerName(doctor) {
+  const u = doctor?.userId || {}
+  return u.fullName || [u.name, u.surname].filter(Boolean).join(' ') || ''
 }
 
 function getHeroImageSrc(url, width = 1200) {
@@ -44,18 +55,12 @@ function getHeroImageSrcSet(url) {
 }
 
 function ContentBody({ content }) {
-  const blocks = (content || '').split(/\n\n+/).map(b => b.trim()).filter(Boolean)
-  return (
-    <div className="article-body">
-      {blocks.map((block, index) => {
-        const isHeading = block.length < 60 && !block.endsWith('.') && !block.includes('\n')
-        return isHeading ? <h2 key={index}>{block}</h2> : <p key={index}>{block}</p>
-      })}
-    </div>
-  )
+  return <div className="article-body" dangerouslySetInnerHTML={{ __html: content || '' }} />
 }
 
 function DetailSidebar({ post, navigate }) {
+  const reviewerName = getReviewerName(post.reviewedBy)
+
   return (
     <aside className="detail-sidebar" aria-label="Məqalə yan paneli">
       <section className="detail-widget appointment-widget">
@@ -67,10 +72,16 @@ function DetailSidebar({ post, navigate }) {
       <section className="detail-widget">
         <h2>Məqalə haqqında</h2>
         <dl>
-          <div><dt>Mövzu</dt><dd>{post.category}</dd></div>
+          <div><dt>Mövzu</dt><dd>{blogCategoryLabel(post.category)}</dd></div>
           <div><dt>Müəllif</dt><dd>{getAuthorName(post.author)}</dd></div>
           <div><dt>Oxuma vaxtı</dt><dd>{post.readTime} dəq</dd></div>
-          <div><dt>Yenilənib</dt><dd>{formatDate(post.createdAt)}</dd></div>
+          <div><dt>Yenilənib</dt><dd>{formatDate(post.publishedAt || post.createdAt)}</dd></div>
+          {reviewerName && (
+            <div>
+              <dt>Tibbi yoxlama</dt>
+              <dd><Link to="/doctors">Dr. {reviewerName}</Link></dd>
+            </div>
+          )}
         </dl>
       </section>
 
@@ -134,18 +145,18 @@ export default function BlogDetailPage() {
           <span>/</span>
           <Link to="/blog">Tibbi Blog</Link>
           <span>/</span>
-          <strong>{post.category}</strong>
+          <strong>{blogCategoryLabel(post.category)}</strong>
         </nav>
 
         <div className="article-layout">
           <article className="article-card">
             <header className="article-header">
               <div className="article-meta-row">
-                <span>{formatDate(post.createdAt)}</span>
+                <span>{formatDate(post.publishedAt || post.createdAt)}</span>
                 {post.category && (
                   <>
                     <span className="meta-sep">/</span>
-                    <Link to="/blog">{post.category}</Link>
+                    <Link to={`/blog?kateqoriya=${post.category}`}>{blogCategoryLabel(post.category)}</Link>
                   </>
                 )}
               </div>
@@ -210,10 +221,12 @@ const baseStyles = `
   .article-hero-wrap { padding: 22px 46px 0; }
   .article-hero-image { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; border-radius: 12px; background: #E6F7F8; }
   .article-body { padding: 38px 46px 48px; }
-  .article-body h2, .article-body h3, .article-body p { margin: 0 0 15px; }
+  .article-body h2, .article-body h3, .article-body p, .article-body ul { margin: 0 0 15px; }
   .article-body h2 { color: ${NAVY}; font-size: 18px; line-height: 1.25; font-weight: 900; }
   .article-body h3 { color: ${NAVY}; font-size: 16px; line-height: 1.3; font-weight: 800; }
   .article-body p { color: ${TEXT}; font-size: 15px; line-height: 1.7; }
+  .article-body ul { padding-left: 22px; color: ${TEXT}; font-size: 15px; line-height: 1.7; }
+  .article-body li { margin-bottom: 6px; }
   .detail-sidebar { display: grid; gap: 24px; position: sticky; top: 92px; }
   .detail-widget { padding: 24px; }
   .detail-widget h2, .bottom-cta h2 { margin: 0 0 10px; color: ${NAVY}; font-size: 22px; line-height: 1.25; font-weight: 900; }
