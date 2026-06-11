@@ -8,6 +8,11 @@ import {
 import validate    from '../../middleware/validate.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
 import authorize    from '../../middleware/rbac.middleware.js';
+import {
+  requirePatientOwnership,
+  requirePatientOwnershipForModel,
+} from '../../middleware/patientOwnership.middleware.js';
+import Appointment from '../../models/Appointment.model.js';
 
 const router = Router();
 
@@ -45,6 +50,7 @@ router.use(authenticate);
 router.get(
   '/patient/:patientId',
   authorize('ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PATIENT'),
+  requirePatientOwnership('params.patientId'),
   appointmentsController.getPatientAppointments
 );
 
@@ -114,6 +120,7 @@ router.post(
   '/',
   authorize('ADMIN', 'RECEPTIONIST', 'PATIENT'),
   validateCreateAppointment, validate,
+  requirePatientOwnership('body.patientId'),
   appointmentsController.createAppointment
 );
 
@@ -171,6 +178,7 @@ router.get(
 router.get(
   '/:id',
   authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
+  requirePatientOwnershipForModel(Appointment),
   appointmentsController.getAppointmentById
 );
 
