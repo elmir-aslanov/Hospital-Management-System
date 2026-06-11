@@ -28,12 +28,19 @@ function getAuthorName(author) {
   return name || 'Aslan Medical'
 }
 
-function getHeroImageSrc(url) {
+function getHeroImageSrc(url, width = 1200) {
   if (!url) return url
   if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    return url.replace('/upload/', '/upload/w_1400,q_auto,f_auto/')
+    return url.replace('/upload/', `/upload/c_limit,w_${width},q_auto:good,f_auto,dpr_auto/`)
   }
   return url
+}
+
+const HERO_WIDTHS = [800, 1200, 1600]
+
+function getHeroImageSrcSet(url) {
+  if (!url || !url.includes('res.cloudinary.com') || !url.includes('/upload/')) return undefined
+  return HERO_WIDTHS.map(w => `${getHeroImageSrc(url, w)} ${w}w`).join(', ')
 }
 
 function ContentBody({ content }) {
@@ -151,9 +158,12 @@ export default function BlogDetailPage() {
                 <img
                   className="article-hero-image"
                   src={getHeroImageSrc(post.coverImage)}
+                  srcSet={getHeroImageSrcSet(post.coverImage)}
+                  sizes="(max-width: 768px) 100vw, 1100px"
                   alt={post.title}
                   loading="eager"
                   decoding="async"
+                  fetchPriority="high"
                   onError={event => { event.currentTarget.style.display = 'none' }}
                 />
               </div>
