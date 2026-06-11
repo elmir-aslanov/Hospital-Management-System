@@ -1,11 +1,57 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import usePageTitle from '../../hooks/usePageTitle'
 import api from '../../api/axios'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
 const NAVY = '#0B1D34'
+
+const HEALTH_CATEGORIES = [
+  { name: 'Beyin və Sinir Sistemi', icon: '/icon-Brain-and-Nervous-System.png', slug: 'beyin-ve-sinir-sistemi' },
+  { name: 'Uşaq Sağlamlığı', icon: '/icon-Childrens-Health.png', slug: 'usaq-saglamligi' },
+  { name: 'İdman və Fitnes', icon: '/icon-Exercise-and-Fitness.png', slug: 'idman-ve-fitnes' },
+  { name: 'Ürək Sağlamlığı', icon: '/icon-Heart-Health.png', slug: 'urek-saglamligi' },
+  { name: 'Kişi Sağlamlığı', icon: '/icon-Mens-Health.png', slug: 'kisi-saglamligi' },
+  { name: 'Psixi Sağlamlıq', icon: '/icon-Mental-Health.png', slug: 'psixi-saglamliq' },
+  { name: 'Qidalanma', icon: '/icon-Nutrition.png', slug: 'qidalanma' },
+  { name: 'Ortopediya', icon: '/icon-Orthopaedics.png', slug: 'ortopediya' },
+  { name: 'İlkin Tibbi Yardım', icon: '/icon-Primary-Care.png', slug: 'ilkin-tibbi-yardim' },
+  { name: 'Dəri Baxımı və Gözəllik', icon: '/icon-Skin-Care-Beauty.png', slug: 'deri-baximi-ve-gozellik' },
+  { name: 'Sağlam Yaşam', icon: '/icon-Wellness.png', slug: 'saglam-yasam' },
+  { name: 'Qadın Sağlamlığı', icon: '/icon-Womens-Health.png', slug: 'qadin-saglamligi' },
+]
+
+function HealthCategoriesSection() {
+  return (
+    <section className="max-w-[1200px] mx-auto px-6 py-16 border-t" style={{ borderColor: '#E2E8F0' }}>
+      <h2 className="text-2xl font-bold mb-8" style={{ color: NAVY, fontFamily: "'Raleway',sans-serif" }}>
+        Kəşf etmək üçün sağlamlıq kateqoriyaları
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
+        {HEALTH_CATEGORIES.map(cat => (
+          <Link key={cat.slug} to="/blog" className="group flex flex-col items-center text-center">
+            <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition-colors">
+              <img
+                src={cat.icon}
+                alt={cat.name}
+                className="w-[72px] h-[72px] md:w-[84px] md:h-[84px] object-contain"
+              />
+            </div>
+            <span
+              className="mt-3 text-sm md:text-base underline underline-offset-4 transition-colors"
+              style={{ color: TEAL }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#0E8F96' }}
+              onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
+            >
+              {cat.name}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function BlogCard({ post, hoveredId, setHoveredId }) {
   const navigate = useNavigate()
@@ -159,6 +205,8 @@ export default function BlogPage() {
           </div>
         )}
       </div>
+
+      <HealthCategoriesSection />
     </main>
   )
 }
