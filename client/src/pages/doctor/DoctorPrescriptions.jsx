@@ -55,6 +55,7 @@ export default function DoctorPrescriptions() {
       let list = []
       if (Array.isArray(data)) list = data
       else if (Array.isArray(data.data)) list = data.data
+      else if (Array.isArray(data.data?.prescriptions)) list = data.data.prescriptions
       else if (Array.isArray(data.prescriptions)) list = data.prescriptions
       else if (Array.isArray(data.docs)) list = data.docs
       setPrescriptions(list)
@@ -78,6 +79,7 @@ export default function DoctorPrescriptions() {
       let list = []
       if (Array.isArray(data)) list = data
       else if (Array.isArray(data.data)) list = data.data
+      else if (Array.isArray(data.data?.patients)) list = data.data.patients
       else if (Array.isArray(data.patients)) list = data.patients
       setPatients(list)
     } catch {
@@ -94,9 +96,10 @@ export default function DoctorPrescriptions() {
   }
 
   const selectPatient = (pat) => {
-    setForm(f => ({ ...f, patientId: pat._id, patientName: pat.name || pat.fullName || '' }))
+    const name = pat.userId?.fullName || pat.name || pat.fullName || ''
+    setForm(f => ({ ...f, patientId: pat._id, patientName: name }))
     setPatients([])
-    setPatSearch(pat.name || pat.fullName || '')
+    setPatSearch(name)
   }
 
   const handleSave = async () => {
@@ -156,8 +159,8 @@ export default function DoctorPrescriptions() {
   }
 
   const filtered = (prescriptions || []).filter(p => {
-    const name = p.patientId?.name || p.patientId?.fullName || p.patientName || ''
-    const med  = p.medicine || p.medicationName || ''
+    const name = p.patientId?.userId?.fullName || p.patientId?.name || p.patientId?.fullName || p.patientName || ''
+    const med  = p.medications?.[0]?.name || p.medicine || p.medicationName || ''
     const q    = search.toLowerCase()
     return name.toLowerCase().includes(q) || med.toLowerCase().includes(q)
   })
@@ -211,11 +214,11 @@ export default function DoctorPrescriptions() {
                 {search ? 'Nəticə tapılmadı' : 'Hələ resept yoxdur'}
               </td></tr>
             ) : filtered.map(p => {
-              const patName = p.patientId?.name || p.patientId?.fullName || p.patientName || '—'
+              const patName = p.patientId?.userId?.fullName || p.patientId?.name || p.patientId?.fullName || p.patientName || '—'
               const patId   = p.patientId?.patientId || p.patientId?.pid || ''
-              const medicine = p.medicine || p.medicationName || '—'
-              const dose     = p.dose || p.dosage || '—'
-              const duration = p.duration || '—'
+              const medicine = p.medications?.[0]?.name || p.medicine || p.medicationName || '—'
+              const dose     = p.medications?.[0]?.dosage || p.dose || p.dosage || '—'
+              const duration = p.medications?.[0]?.duration || p.duration || '—'
               const status   = p.status || 'active'
               const sc       = STATUS_COLORS[status] || STATUS_COLORS.active
               return (
@@ -282,7 +285,7 @@ export default function DoctorPrescriptions() {
                         onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontWeight: 600 }}>{pat.name || pat.fullName}</span>
+                        <span style={{ fontWeight: 600 }}>{pat.userId?.fullName || pat.name || pat.fullName}</span>
                         {pat.patientId && <span style={{ color: '#94a3b8', marginLeft: 6, fontSize: 11 }}>{pat.patientId}</span>}
                       </div>
                     ))}

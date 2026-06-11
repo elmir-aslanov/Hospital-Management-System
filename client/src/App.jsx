@@ -207,7 +207,7 @@ function Layout() {
           <Route path="doctors"      element={<DoctorsPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="wards"        element={<WardsPage />} />
-          <Route path="doctors" element={<SiteDoctorsPage />} />
+          <Route path="site-doctors" element={<SiteDoctorsPage />} />
         </Route>
 
         {/* ── Catch-all ── */}

@@ -11,6 +11,7 @@ const router = Router();
 router.use(authenticate);
 
 // Specific sub-paths must come before parameterized ones
+router.get('/', authorize('ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE'), vitalsController.getVitals);
 router.get('/patient/:patientId/latest', authorize('ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'), requirePatientOwnership('params.patientId'), vitalsController.getLatestVitals);
 router.get('/patient/:patientId/trend',  authorize('ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'), requirePatientOwnership('params.patientId'), vitalsController.getVitalsTrend);
 router.get('/patient/:patientId',        authorize('ADMIN', 'DOCTOR', 'NURSE'),             vitalsController.getPatientVitalsHistory);

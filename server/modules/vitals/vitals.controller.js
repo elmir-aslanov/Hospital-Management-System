@@ -16,6 +16,17 @@ export const recordVitals = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, vitals, 'Vitals recorded'));
 });
 
+export const getVitals = asyncHandler(async (req, res) => {
+  const query = { ...req.query };
+
+  if (req.user.role === 'DOCTOR') {
+    query.doctorId = req.user.id;
+  }
+
+  const result = await vitalsService.getVitals(query);
+  res.status(200).json(new ApiResponse(200, result));
+});
+
 export const getVitalsByVisit = asyncHandler(async (req, res) => {
   const vitals = await vitalsService.getVitalsByVisit(req.params.visitId);
   res.status(200).json(new ApiResponse(200, vitals));

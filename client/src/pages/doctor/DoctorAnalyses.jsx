@@ -56,6 +56,7 @@ export default function DoctorAnalyses() {
       let list = []
       if (Array.isArray(data)) list = data
       else if (Array.isArray(data.data)) list = data.data
+      else if (Array.isArray(data.data?.vitals)) list = data.data.vitals
       else if (Array.isArray(data.vitals)) list = data.vitals
       else if (Array.isArray(data.docs)) list = data.docs
       setAnalyses(list)
@@ -71,7 +72,7 @@ export default function DoctorAnalyses() {
   const types = ['all', ...Array.from(new Set((analyses || []).map(a => a.type || a.testType || '').filter(Boolean)))]
 
   const filtered = (analyses || []).filter(a => {
-    const name = a.patientId?.name || a.patientId?.fullName || a.patientName || ''
+    const name = a.patientId?.userId?.fullName || a.patientId?.name || a.patientId?.fullName || a.patientName || ''
     const type = a.type || a.testType || ''
     const q    = search.toLowerCase()
     const matchSearch = name.toLowerCase().includes(q) || type.toLowerCase().includes(q)
@@ -132,7 +133,7 @@ export default function DoctorAnalyses() {
                 )}
               </td></tr>
             ) : filtered.map(a => {
-              const patName = a.patientId?.name || a.patientId?.fullName || a.patientName || '—'
+              const patName = a.patientId?.userId?.fullName || a.patientId?.name || a.patientId?.fullName || a.patientName || '—'
               const patId   = a.patientId?.patientId || a.patientId?.pid || ''
               const type    = a.type || a.testType || '—'
               const value   = a.value !== undefined ? `${a.value} ${a.unit || ''}`.trim() : (a.result || '—')
@@ -182,7 +183,7 @@ export default function DoctorAnalyses() {
             </div>
             <div style={{ padding: 22 }}>
               {[
-                ['Pasiyent', selected.patientId?.name || selected.patientId?.fullName || selected.patientName || '—'],
+                ['Pasiyent', selected.patientId?.userId?.fullName || selected.patientId?.name || selected.patientId?.fullName || selected.patientName || '—'],
                 ['Analiz növü', selected.type || selected.testType || '—'],
                 ['Nəticə', selected.value !== undefined ? `${selected.value} ${selected.unit || ''}`.trim() : (selected.result || '—')],
                 ['Normal aralıq', selected.normalRange || selected.referenceRange || '—'],

@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import Prescription from '../../models/Prescription.model.js';
 import Visit from '../../models/Visit.model.js';
+import Doctor from '../../models/Doctor.model.js';
 import ApiError from '../../utils/ApiError.js';
 import checkDrugAllergies, { checkDrugInteractions } from '../../utils/drugInteractionCheck.js';
 import logAction from '../../utils/auditLogger.js';
@@ -14,6 +16,16 @@ const paginate = (page = 1, limit = 10) => {
   const pg  = Math.max(1, parseInt(page));
   const lim = Math.min(100, Math.max(1, parseInt(limit)));
   return { pg, lim, skip: (pg - 1) * lim };
+};
+
+const resolveDoctorFilterId = async (doctorId) => {
+  if (!doctorId || !mongoose.isValidObjectId(doctorId)) return null;
+
+  const doctor = await Doctor.findOne({
+    $or: [{ _id: doctorId }, { userId: doctorId }],
+  }).select('_id');
+
+  return doctor?._id ?? doctorId;
 };
 
 export const createPrescription = async ({ visitId, patientId, medications, notes }, doctorId, req) => {
@@ -59,6 +71,24 @@ export const getPrescriptionById = async (prescriptionId) => {
   return prescription;
 };
 
+export const getPrescriptions = async ({ doctorId, patientId, page, limit } = {}) => {
+  const { pg, lim, skip } = paginate(page, limit);
+  const filter = {};
+
+  if (patientId) filter.patientId = patientId;
+  if (doctorId) {
+    const prescribedBy = await resolveDoctorFilterId(doctorId);
+    filter.prescribedBy = prescribedBy ?? new mongoose.Types.ObjectId();
+  }
+
+  const [prescriptions, total] = await Promise.all([
+    populatePrescription(Prescription.find(filter)).sort({ createdAt: -1 }).skip(skip).limit(lim),
+    Prescription.countDocuments(filter),
+  ]);
+
+  return { prescriptions, total, page: pg, limit: lim };
+};
+
 export const getPrescriptionsByVisit = async (visitId) => {
   return populatePrescription(Prescription.find({ visitId })).sort({ createdAt: -1 });
 };
@@ -70,4 +100,29 @@ export const getPatientPrescriptions = async (patientId, { page, limit } = {}) =
     Prescription.countDocuments({ patientId }),
   ]);
   return { prescriptions, total, page: pg, limit: lim };
+};
+
+export const deletePrescription = async (prescriptionId, { userRole, doctorId, userId, req } = {}) => {
+  const prescription = await Prescription.findById(prescriptionId);
+  if (!prescription) throw new ApiError(404, 'Prescription not found');
+
+  if (userRole === 'DOCTOR' && String(prescription.prescribedBy) !== String(doctorId)) {
+    throw new ApiError(403, 'You can only delete your own prescriptions');
+  }
+
+  await Prescription.findByIdAndDelete(prescription._id);
+  await Visit.findByIdAndUpdate(prescription.visitId, { $pull: { prescriptions: prescription._id } });
+
+  try {
+    logAction({
+      userId,
+      action: 'PRESCRIPTION_DELETE',
+      resourceType: 'Prescription',
+      resourceId: prescription._id,
+      description: `Prescription deleted for patient ${prescription.patientId}`,
+      req,
+    });
+  } catch (_) {}
+
+  return { id: prescription._id };
 };

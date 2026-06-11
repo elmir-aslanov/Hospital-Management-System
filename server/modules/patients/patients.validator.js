@@ -51,6 +51,7 @@ export const validateUpdatePatient = [
 ];
 
 export const validateSearchPatient = [
+  query('q').optional().isString().trim(),
   query('query').optional().isString().trim(),
   query('condition').optional().isString().trim(),
   query('page').optional().isInt({ min: 1 }).withMessage('page must be an integer >= 1'),

@@ -52,8 +52,8 @@ export const getMedicalHistory = asyncHandler(async (req, res) => {
 });
 
 export const searchPatients = asyncHandler(async (req, res) => {
-  const { query, condition, page, limit } = req.query;
-  const result = await patientsService.searchPatients({ query, condition, page, limit });
+  const { q, query, condition, page, limit } = req.query;
+  const result = await patientsService.searchPatients({ query: query || q, condition, page, limit });
   res.status(200).json(new ApiResponse(200, result));
 });
 
