@@ -4,6 +4,7 @@ import ApiError     from '../../utils/ApiError.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
 import User         from '../../models/User.model.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/generateTokens.js';
+import { getRefreshCookieOptions } from './auth.cookies.js';
 
 const require = createRequire(import.meta.url);
 
@@ -29,13 +30,6 @@ function getAdminAuth() {
   adminAuth = admin.auth();
   return adminAuth;
 }
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure:   process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge:   7 * 24 * 60 * 60 * 1000,
-};
 
 // POST /api/v1/auth/firebase-phone-login
 export const firebasePhoneLoginHandler = asyncHandler(async (req, res) => {
@@ -75,11 +69,10 @@ export const firebasePhoneLoginHandler = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   res
-    .cookie('refreshToken', refreshToken, COOKIE_OPTIONS)
+    .cookie('refreshToken', refreshToken, getRefreshCookieOptions())
     .status(200)
     .json(new ApiResponse(200, {
       accessToken,
-      refreshToken,
       user: {
         id:       user._id,
         fullName: user.fullName,

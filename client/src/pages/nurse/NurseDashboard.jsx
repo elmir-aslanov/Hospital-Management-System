@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate }         from 'react-router-dom'
+import api from '../../api/axios'
+import { clearAuthStorage } from '../../utils/authSession'
 
 const BASE  = 'http://localhost:5000'
 const token = () => localStorage.getItem('token')
@@ -52,10 +54,11 @@ export default function NurseDashboard() {
     }).finally(() => setLoading(false))
   }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    localStorage.removeItem('refreshToken')
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout') } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage()
     navigate('/login')
   }
 

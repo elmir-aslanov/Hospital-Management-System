@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BASE } from '../api/config.js'
+import { saveAccessSession } from '../utils/authSession'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
@@ -61,10 +62,9 @@ export default function AdminLoginPage() {
         return
       }
 
+      saveAccessSession(data.data.accessToken, user)
       localStorage.setItem('adminToken', data.data.accessToken)
       localStorage.setItem('adminUser', JSON.stringify(user))
-      localStorage.setItem('token', data.data.accessToken)
-      localStorage.setItem('user', JSON.stringify(user))
 
       if (user.role === 'DOCTOR') {
         navigate('/doctor/dashboard')

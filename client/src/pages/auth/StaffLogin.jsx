@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import api from '../../api/axios';
+import { saveAccessSession } from '../../utils/authSession';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -98,9 +99,7 @@ export default function StaffLogin() {
         return;
       }
 
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      window.dispatchEvent(new Event('storage'));
+      saveAccessSession(accessToken, user);
       toast.success(t('staffLogin.welcome', { name: user.fullName }));
       navigate(roleToRoute(user.role));
     } catch (err) {

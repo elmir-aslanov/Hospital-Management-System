@@ -1,7 +1,20 @@
 import axios from 'axios';
 import { toast } from 'sonner';
+import { clearAuthStorage } from '../utils/authSession';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const REFRESH_PATH = '/auth/refresh-token';
+const SKIP_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  REFRESH_PATH,
+  '/auth/request-email-otp',
+  '/auth/verify-email-otp',
+  '/auth/firebase-phone-login',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+];
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -27,6 +40,33 @@ const processQueue = (error, token = null) => {
   refreshQueue = [];
 };
 
+const getRequestPath = (url = '') => {
+  if (!url) return '';
+  try {
+    return new URL(url, BASE_URL).pathname.replace('/api/v1', '');
+  } catch {
+    return url;
+  }
+};
+
+const shouldSkipRefresh = (url) => {
+  const path = getRequestPath(url);
+  return SKIP_REFRESH_PATHS.some(item => path.startsWith(item));
+};
+
+const getLoginRedirectPath = () => {
+  const path = window.location.pathname;
+  const staffPaths = ['/admin', '/doctor', '/nurse', '/receptionist', '/lab', '/dashboard'];
+  return staffPaths.some(item => path.startsWith(item)) ? '/admin' : '/login';
+};
+
+const shouldRedirectAfterSessionExpiry = () => {
+  const path = window.location.pathname;
+  const publicRoutes = ['/login', '/register', '/staff-login', '/forgot-password', '/admin'];
+  const privateRoutes = ['/patient', '/dashboard', '/admin/', '/doctor', '/nurse', '/receptionist', '/lab'];
+  return !publicRoutes.includes(path) && privateRoutes.some(item => path.startsWith(item));
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -49,61 +89,46 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // ── 401 → try refresh token ──────────────────────────────────
-    if (status === 401 && !originalRequest._retry) {
-      const refreshToken = localStorage.getItem('refreshToken');
+    if (status === 401 && !originalRequest._retry && !shouldSkipRefresh(originalRequest.url)) {
+      originalRequest._retry = true;
 
-      if (refreshToken) {
-        if (isRefreshing) {
-          return new Promise((resolve, reject) => {
-            refreshQueue.push({ resolve, reject });
-          }).then(token => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          }).catch(err => Promise.reject(err));
-        }
-
-        originalRequest._retry = true;
-        isRefreshing = true;
-
-        try {
-          const res = await axios.post(`${BASE_URL}/auth/refresh-token`, {}, {
-            headers: { Authorization: `Bearer ${refreshToken}` },
-            withCredentials: true,
-          });
-          const newToken = res.data?.data?.accessToken || res.data?.accessToken;
-          if (!newToken) throw new Error('No token in refresh response');
-
-          localStorage.setItem('token', newToken);
-          api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-          processQueue(null, newToken);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          refreshQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
-        } catch (refreshError) {
-          processQueue(refreshError, null);
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.dispatchEvent(new Event('storage'));
-          const publicRoutes = ['/login', '/register', '/staff-login'];
-          if (!publicRoutes.includes(window.location.pathname)) {
-            toast.error('Sessiyanız bitib. Yenidən daxil olun.');
-            window.location.href = '/login';
-          }
-          return Promise.reject(refreshError);
-        } finally {
-          isRefreshing = false;
-        }
-      } else {
-        // No refresh token — just clear and redirect
-        const hadToken = !!localStorage.getItem('token');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.dispatchEvent(new Event('storage'));
-        const publicRoutes = ['/login', '/register', '/staff-login'];
-        if (hadToken && !publicRoutes.includes(window.location.pathname)) {
+        }).catch(err => Promise.reject(err));
+      }
+
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(`${BASE_URL}${REFRESH_PATH}`, null, {
+          withCredentials: true,
+        });
+        const newToken = res.data?.data?.accessToken || res.data?.accessToken;
+        if (!newToken) throw new Error('No token in refresh response');
+
+        localStorage.setItem('token', newToken);
+        localStorage.removeItem('refreshToken');
+        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        processQueue(null, newToken);
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        const shouldRedirect = shouldRedirectAfterSessionExpiry();
+        clearAuthStorage();
+        if (shouldRedirect) {
           toast.error('Sessiyanız bitib. Yenidən daxil olun.');
-          window.location.href = '/login';
+          window.location.href = getLoginRedirectPath();
         }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import * as authApi from '../api/authApi';
+import { clearAuthStorage, saveAccessSession } from '../utils/authSession';
 
 const AuthContext = createContext(null);
 
@@ -14,20 +15,18 @@ export function AuthProvider({ children }) {
   });
 
   const login = (accessToken, userData) => {
-    localStorage.setItem('token', accessToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    saveAccessSession(accessToken, userData);
     setToken(accessToken);
     setUser(userData);
-    window.dispatchEvent(new Event('storage'));
   };
 
   const logout = async () => {
-    try { await authApi.logout(); } catch {}
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    try { await authApi.logout(); } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage();
     setToken(null);
     setUser(null);
-    window.dispatchEvent(new Event('storage'));
   };
 
   // Sync state when other tabs or pages write to localStorage

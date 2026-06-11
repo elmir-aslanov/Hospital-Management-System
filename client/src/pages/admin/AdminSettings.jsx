@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import api from '../../api/axios'
+import { clearAuthStorage } from '../../utils/authSession'
 
 const BASE  = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'
 const tok   = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
@@ -417,11 +419,11 @@ function TabSecurity() {
     if (!window.confirm('Bütün aktiv sessiyalar bitiriləcək. Davam etmək istəyirsiniz?')) return
     setEnding(true)
     try {
-      await fetch(`${BASE}/api/v1/auth/logout`, { method: 'POST', headers: hdrs() })
-    } catch {}
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUser')
-    localStorage.removeItem('token')
+      await api.post('/auth/logout')
+    } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage()
     window.location.href = '/admin'
   }
 

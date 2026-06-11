@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import api from '../../api/axios'
+import { clearAuthStorage } from '../../utils/authSession'
 
 const NAV = [
   { key: 'dashboard',     label: 'Dashboard',    path: '/doctor/dashboard',     icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
@@ -15,11 +17,11 @@ export default function DoctorLayout({ children, activePage }) {
   const doctorUser = JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('doctorUser') || '{}')
   const initial   = doctorUser?.fullName?.[0]?.toUpperCase() || 'D'
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUser')
-    localStorage.removeItem('doctorToken')
-    localStorage.removeItem('doctorUser')
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout') } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage()
     navigate('/admin')
   }
 

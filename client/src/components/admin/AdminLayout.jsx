@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BASE } from '../../api/config.js'
+import api from '../../api/axios'
+import { clearAuthStorage } from '../../utils/authSession'
 import AvatarUpload from '../common/AvatarUpload'
 
 const NAV = [
@@ -68,11 +70,11 @@ export default function AdminLayout({ children, activePage }) {
       .catch(() => {})
   }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUser')
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout') } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage()
     navigate('/admin')
   }
 

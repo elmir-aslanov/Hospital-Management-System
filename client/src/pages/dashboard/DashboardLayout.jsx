@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/axios';
+import { clearAuthStorage } from '../../utils/authSession';
 import Icons from '../../components/Icons';
 import '../../styles/dashboard.css';
 
@@ -25,10 +26,10 @@ export default function DashboardLayout() {
   try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch {}
 
   const logout = async () => {
-    try { await api.post('/auth/logout'); } catch {}
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.dispatchEvent(new Event('storage'));
+    try { await api.post('/auth/logout'); } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage();
     toast.success('Sistemdən uğurla çıxdınız.');
     navigate('/');
   };

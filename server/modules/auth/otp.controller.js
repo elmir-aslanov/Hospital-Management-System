@@ -5,6 +5,7 @@ import User         from '../../models/User.model.js';
 import OTP          from '../../models/OTP.model.js';
 import { sendEmailOTP }                                   from '../../utils/otpService.js';
 import { generateAccessToken, generateRefreshToken }      from '../../utils/generateTokens.js';
+import { getRefreshCookieOptions } from './auth.cookies.js';
 
 const OTP_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -65,12 +66,7 @@ export const verifyEmailOtp = asyncHandler(async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save({ validateBeforeSave: false });
 
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge:   7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie('refreshToken', refreshToken, getRefreshCookieOptions());
 
   res.json(new ApiResponse(200, {
     accessToken,

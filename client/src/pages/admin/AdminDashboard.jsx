@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { API_URL as API } from '../../api/config.js'
+import api from '../../api/axios'
+import { clearAuthStorage } from '../../utils/authSession'
 
 const NAV_ITEMS = [
   { label: 'Ana səhifə',  path: '/admin/dashboard',     icon: HomeIcon },
@@ -160,11 +162,11 @@ export default function AdminDashboard() {
     Promise.allSettled([p1, p2, p3, p4, p5, p6, p7, p8, p9]).finally(() => setLoading(false))
   }, [navigate, token])
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUser')
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout') } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage()
     navigate('/admin')
   }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/axios';
+import { clearAuthStorage } from '../../utils/authSession';
 import AvatarUpload from '../../components/common/AvatarUpload';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
@@ -138,10 +139,10 @@ export default function PatientPortal() {
   }, [])
 
   const logout = async () => {
-    try { await api.post('/auth/logout'); } catch {}
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.dispatchEvent(new Event('storage'));
+    try { await api.post('/auth/logout'); } catch {
+      // Local session should still be cleared if server logout cannot complete.
+    }
+    clearAuthStorage();
     toast.success('Sistemdən uğurla çıxdınız.');
     navigate('/');
   };

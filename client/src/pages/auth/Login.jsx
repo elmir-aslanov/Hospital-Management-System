@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { BASE } from '../../api/config.js';
 import { showSuccess, showError, showWarning } from '../../utils/alert';
+import { saveAccessSession } from '../../utils/authSession';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -41,17 +42,14 @@ export default function Login() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'include',
     })
       .then(r => r.json())
       .then(data => {
         const token = data.data?.accessToken;
         const user  = data.data?.user;
         if (token && user) {
-          localStorage.setItem('token', token);
-          localStorage.setItem('user', JSON.stringify(user));
-          if (data.data?.refreshToken || data.refreshToken) {
-            localStorage.setItem('refreshToken', data.data?.refreshToken || data.refreshToken);
-          }
+          saveAccessSession(token, user);
           authLogin(token, user);
           showSuccess('Sistemə uğurla daxil oldunuz.');
           const role = user.role?.toUpperCase();
