@@ -7,69 +7,53 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
 const NAVY = '#0B1D34'
 
-const DEFAULT_CATEGORY_ICON = '/icon-Primary-Care.png'
-
-const CATEGORY_ICON_RULES = [
-  { test: /beyin|sinir/i, icon: '/icon-Brain-and-Nervous-System.png' },
-  { test: /uşaq|usaq|uşağ|usag|child/i, icon: '/icon-Childrens-Health.png' },
-  { test: /idman|fitnes|exercise/i, icon: '/icon-Exercise-and-Fitness.png' },
-  { test: /ürək|urek|heart/i, icon: '/icon-Heart-Health.png' },
-  { test: /kişi|kisi|men/i, icon: '/icon-Mens-Health.png' },
-  { test: /psixi|mental/i, icon: '/icon-Mental-Health.png' },
-  { test: /qida|nutrition/i, icon: '/icon-Nutrition.png' },
-  { test: /ortopediya|orthop/i, icon: '/icon-Orthopaedics.png' },
-  { test: /ilkin|primary/i, icon: '/icon-Primary-Care.png' },
-  { test: /dəri|deri|skin|gözəllik|gozellik/i, icon: '/icon-Skin-Care-Beauty.png' },
-  { test: /qadın|qadin|women/i, icon: '/icon-Womens-Health.png' },
-  { test: /sağlam|saglam|wellness|ümumi|umumi/i, icon: '/icon-Wellness.png' },
+const HEALTH_CATEGORIES = [
+  { name: 'Beyin və Sinir Sistemi', icon: '/icon-Brain-and-Nervous-System.png', slug: 'beyin-ve-sinir-sistemi' },
+  { name: 'Uşaq Sağlamlığı', icon: '/icon-Childrens-Health.png', slug: 'usaq-saglamligi' },
+  { name: 'İdman və Fitnes', icon: '/icon-Exercise-and-Fitness.png', slug: 'idman-ve-fitnes' },
+  { name: 'Ürək Sağlamlığı', icon: '/icon-Heart-Health.png', slug: 'urek-saglamligi' },
+  { name: 'Kişi Sağlamlığı', icon: '/icon-Mens-Health.png', slug: 'kisi-saglamligi' },
+  { name: 'Psixi Sağlamlıq', icon: '/icon-Mental-Health.png', slug: 'psixi-saglamliq' },
+  { name: 'Qidalanma', icon: '/icon-Nutrition.png', slug: 'qidalanma' },
+  { name: 'Ortopediya', icon: '/icon-Orthopaedics.png', slug: 'ortopediya' },
+  { name: 'İlkin Tibbi Yardım', icon: '/icon-Primary-Care.png', slug: 'ilkin-tibbi-yardim' },
+  { name: 'Dəri Baxımı və Gözəllik', icon: '/icon-Skin-Care-Beauty.png', slug: 'deri-baximi-ve-gozellik' },
+  { name: 'Sağlam Yaşam', icon: '/icon-Wellness.png', slug: 'saglam-yasam' },
+  { name: 'Qadın Sağlamlığı', icon: '/icon-Womens-Health.png', slug: 'qadin-saglamligi' },
 ]
 
-function getCategoryIcon(name) {
-  const rule = CATEGORY_ICON_RULES.find(r => r.test.test(name))
-  return rule ? rule.icon : DEFAULT_CATEGORY_ICON
-}
-
-function HealthCategoriesSection({ categories, loading, onSelectCategory }) {
-  if (!loading && categories.length === 0) return null
-
+function HealthCategoriesSection({ onSelectCategory }) {
   return (
     <section className="py-16 border-t" style={{ borderColor: '#E2E8F0' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' }}>
-        <h2 className="text-2xl font-bold mb-8 md:mb-10" style={{ color: NAVY, fontFamily: "'Raleway',sans-serif" }}>
+        <h2 className="text-2xl font-bold mb-8" style={{ color: NAVY, fontFamily: "'Raleway',sans-serif" }}>
           Kəşf etmək üçün sağlamlıq kateqoriyaları
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <div className="w-full aspect-square bg-sky-50 rounded-lg animate-pulse" />
-                  <div className="mt-3 h-4 w-2/3 bg-sky-50 rounded animate-pulse" />
-                </div>
-              ))
-            : categories.map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => onSelectCategory(cat)}
-                  className="group flex flex-col items-center text-center"
-                >
-                  <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition-colors">
-                    <img
-                      src={getCategoryIcon(cat)}
-                      alt={cat}
-                      className="w-16 h-16 md:w-20 md:h-20 object-contain"
-                    />
-                  </div>
-                  <span
-                    className="mt-3 text-sm md:text-base underline underline-offset-4 transition-colors"
-                    style={{ color: TEAL }}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#0E8F96' }}
-                    onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
-                  >
-                    {cat}
-                  </span>
-                </button>
-              ))}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-10 md:gap-x-8 md:gap-y-12">
+          {HEALTH_CATEGORIES.map(cat => (
+            <button
+              key={cat.slug}
+              type="button"
+              onClick={() => onSelectCategory(cat.name)}
+              className="group flex flex-col items-center text-center"
+            >
+              <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition-colors">
+                <img
+                  src={cat.icon}
+                  alt={cat.name}
+                  className="w-16 h-16 md:w-[72px] md:h-[72px] object-contain"
+                />
+              </div>
+              <span
+                className="mt-3 text-sm md:text-base underline underline-offset-4 transition-colors"
+                style={{ color: TEAL }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#0E8F96' }}
+                onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
+              >
+                {cat.name}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     </section>
@@ -185,7 +169,6 @@ export default function BlogPage() {
   }, [])
 
   const filteredPosts = activeCategory === 'Hamısı' ? posts : posts.filter(p => p.category === activeCategory)
-  const categories = [...new Set(posts.map(p => p.category).filter(Boolean))]
 
   const handleSelectCategory = (category) => {
     setActiveCategory(category)
@@ -235,7 +218,7 @@ export default function BlogPage() {
         )}
       </div>
 
-      <HealthCategoriesSection categories={categories} loading={loading} onSelectCategory={handleSelectCategory} />
+      <HealthCategoriesSection onSelectCategory={handleSelectCategory} />
     </main>
   )
 }
