@@ -24,30 +24,32 @@ const HEALTH_CATEGORIES = [
 
 function HealthCategoriesSection() {
   return (
-    <section className="max-w-[1200px] mx-auto px-6 py-16 border-t" style={{ borderColor: '#E2E8F0' }}>
-      <h2 className="text-2xl font-bold mb-8" style={{ color: NAVY, fontFamily: "'Raleway',sans-serif" }}>
-        Kəşf etmək üçün sağlamlıq kateqoriyaları
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
-        {HEALTH_CATEGORIES.map(cat => (
-          <Link key={cat.slug} to="/blog" className="group flex flex-col items-center text-center">
-            <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition-colors">
-              <img
-                src={cat.icon}
-                alt={cat.name}
-                className="w-[72px] h-[72px] md:w-[84px] md:h-[84px] object-contain"
-              />
-            </div>
-            <span
-              className="mt-3 text-sm md:text-base underline underline-offset-4 transition-colors"
-              style={{ color: TEAL }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#0E8F96' }}
-              onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
-            >
-              {cat.name}
-            </span>
-          </Link>
-        ))}
+    <section className="py-16 border-t" style={{ borderColor: '#E2E8F0' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' }}>
+        <h2 className="text-2xl font-bold mb-8" style={{ color: NAVY, fontFamily: "'Raleway',sans-serif" }}>
+          Kəşf etmək üçün sağlamlıq kateqoriyaları
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8">
+          {HEALTH_CATEGORIES.map(cat => (
+            <Link key={cat.slug} to="/blog" className="group flex flex-col items-center text-center">
+              <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition-colors">
+                <img
+                  src={cat.icon}
+                  alt={cat.name}
+                  className="w-[72px] h-[72px] md:w-[84px] md:h-[84px] object-contain"
+                />
+              </div>
+              <span
+                className="mt-3 text-sm md:text-base underline underline-offset-4 transition-colors"
+                style={{ color: TEAL }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#0E8F96' }}
+                onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
+              >
+                {cat.name}
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   )

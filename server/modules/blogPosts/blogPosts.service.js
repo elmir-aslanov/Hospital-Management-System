@@ -82,7 +82,7 @@ export const uploadCover = async (id, file) => {
 
   const result = await uploadImageBuffer(file.buffer, {
     folder: 'hms/blog',
-    transformation: [{ width: 1200, height: 630, crop: 'fill' }],
+    transformation: [{ width: 1600, height: 900, crop: 'fill' }],
   });
 
   post.coverImage = result.secure_url;
