@@ -25,7 +25,7 @@ const seed = async () => {
       return
     }
 
-    await mongoose.connect(process.env.MONGODB_URI)
+    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI)
     console.log('MongoDB connected')
 
     console.warn('⚠️  WARNING: About to delete all users. NODE_ENV =', process.env.NODE_ENV);

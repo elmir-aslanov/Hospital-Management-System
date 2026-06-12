@@ -5,14 +5,16 @@ export const generateOTP = () =>
 
 // ── Email OTP ──────────────────────────────────────────────────────────────
 
-// Use EMAIL_* vars, fall back to SMTP_* vars (shared mail config)
+// SMTP_* is canonical; EMAIL_* remains as a backward-compatible fallback.
+const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+
 const transporter = nodemailer.createTransport({
-  host:   process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com',
-  port:   parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587'),
-  secure: (process.env.EMAIL_SECURE || process.env.SMTP_SECURE || 'false') === 'true',
+  host:   process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port:   parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587'),
+  secure: (process.env.SMTP_SECURE || process.env.EMAIL_SECURE || 'false') === 'true',
   auth: {
-    user: process.env.EMAIL_USER || process.env.SMTP_USER,
-    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
+    user: smtpUser,
+    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
   },
 });
 
@@ -27,7 +29,7 @@ transporter.verify((error) => {
 export const sendEmailOTP = async (email, otp) => {
   try {
     await transporter.sendMail({
-      from:    process.env.EMAIL_FROM || `Aslan Medical Clinic <${process.env.EMAIL_USER}>`,
+      from:    process.env.SMTP_FROM || process.env.EMAIL_FROM || `Aslan Medical Clinic <${smtpUser}>`,
       to:      email,
       subject: 'Aslan Medical Clinic — Doğrulama Kodu',
       html: `
@@ -84,7 +86,7 @@ export const sendSmsOTP = async (phone, otp) => {
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     await client.messages.create({
       body: `Aslan Medical Clinic - Kodunuz: ${otp}. 5 deqiqe erzinde istifade edin.`,
-      from: process.env.TWILIO_PHONE_NUMBER,
+      from: process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER,
       to:   phone,
     });
     return { success: true };

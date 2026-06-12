@@ -40,7 +40,7 @@ const bodyToHtml = (body = []) => body.map(section => {
 }).join('')
 
 const run = async () => {
-  await mongoose.connect(process.env.MONGODB_URI)
+  await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI)
   console.log('MongoDB connected')
 
   let created = 0, skipped = 0

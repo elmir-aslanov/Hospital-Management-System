@@ -11,13 +11,17 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 5000
-      - key: MONGO_URI
+        value: "5000"
+      - key: MONGODB_URI
         sync: false
-      - key: JWT_SECRET
+      - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      - key: JWT_ACCESS_EXPIRES
+        value: 30m
+      - key: JWT_REFRESH_EXPIRES
+        value: 7d
       - key: CLIENT_URL
         sync: false
       - key: ALLOWED_ORIGINS
@@ -28,11 +32,15 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
-      - key: EMAIL_HOST
+      - key: SMTP_HOST
         value: smtp.gmail.com
-      - key: EMAIL_PORT
-        value: 587
-      - key: EMAIL_USER
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
         sync: false
-      - key: EMAIL_PASS
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
         sync: false

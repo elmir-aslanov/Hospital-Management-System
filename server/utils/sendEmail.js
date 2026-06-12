@@ -1,13 +1,15 @@
 import nodemailer from 'nodemailer';
 import logger from './logger.js';
 
+const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // STARTTLS
+  host: process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587),
+  secure: (process.env.SMTP_SECURE || process.env.EMAIL_SECURE || 'false') === 'true',
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: smtpUser,
+    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
   },
 });
 
@@ -18,7 +20,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ to, subject, html }) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Hospital System" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || process.env.EMAIL_FROM || `"Hospital System" <${smtpUser}>`,
       to,
       subject,
       html,

@@ -30,7 +30,7 @@
 2. **Database Access** → Add user with `readWrite` role
 3. **Network Access** → Add `0.0.0.0/0` (allow all IPs for Render)
 4. **Connect** → Drivers → copy connection string
-5. Paste in `MONGO_URI` (replace `<password>` and `<dbname>`)
+5. Paste in `MONGODB_URI` (replace `<password>` and `<dbname>`)
 
 ```
 mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/aslanmedical?retryWrites=true&w=majority
@@ -50,8 +50,12 @@ mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/aslanmedical?retryWri
 1. Google Account → Security → **2-Step Verification** → enable
 2. App Passwords → create password for "Mail"
 3. Add to Render:
-   - `EMAIL_USER` = your Gmail address
-   - `EMAIL_PASS` = 16-char app password (no spaces)
+   - `SMTP_HOST` = `smtp.gmail.com`
+   - `SMTP_PORT` = `587`
+   - `SMTP_SECURE` = `false`
+   - `SMTP_USER` = your Gmail address
+   - `SMTP_PASS` = 16-char app password (no spaces)
+   - `SMTP_FROM` = `Aslan Medical Clinic <yourname@gmail.com>`
 
 ## Post-deployment checklist
 
@@ -68,12 +72,24 @@ mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/aslanmedical?retryWri
 
 | Variable | Where | Example |
 |----------|-------|---------|
-| `MONGO_URI` | Render | `mongodb+srv://...` |
-| `JWT_SECRET` | Render | auto-generated |
+| `NODE_ENV` | Render | `production` |
+| `PORT` | Render | `5000` |
+| `MONGODB_URI` | Render | `mongodb+srv://...` |
+| `JWT_ACCESS_SECRET` | Render | auto-generated |
 | `JWT_REFRESH_SECRET` | Render | auto-generated |
+| `JWT_ACCESS_EXPIRES` | Render | `30m` |
+| `JWT_REFRESH_EXPIRES` | Render | `7d` |
 | `CLIENT_URL` | Render | `https://xxx.vercel.app` |
 | `ALLOWED_ORIGINS` | Render | `https://xxx.vercel.app` |
-| `CLOUDINARY_*` | Render | from Cloudinary dashboard |
-| `EMAIL_USER` | Render | `yourname@gmail.com` |
-| `EMAIL_PASS` | Render | Gmail app password |
+| `CLOUDINARY_CLOUD_NAME` | Render | from Cloudinary dashboard |
+| `CLOUDINARY_API_KEY` | Render | from Cloudinary dashboard |
+| `CLOUDINARY_API_SECRET` | Render | from Cloudinary dashboard |
+| `SMTP_HOST` | Render | `smtp.gmail.com` |
+| `SMTP_PORT` | Render | `587` |
+| `SMTP_SECURE` | Render | `false` |
+| `SMTP_USER` | Render | `yourname@gmail.com` |
+| `SMTP_PASS` | Render | Gmail app password |
+| `SMTP_FROM` | Render | `Aslan Medical Clinic <yourname@gmail.com>` |
 | `VITE_API_URL` | Vercel | `https://xxx.onrender.com/api/v1` |
+
+The current frontend code reads `VITE_API_URL` for the backend API URL. It does not require a separate `SERVER_URL`.

@@ -10,7 +10,8 @@ const RETRY_DELAY_MS = 3000;
 
 const connectDB = async (attempt = 1) => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    const conn = await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       family: 4,
