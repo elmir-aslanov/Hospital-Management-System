@@ -37,16 +37,15 @@ function ChevronIcon({ open }) {
 
 function ArrowRightIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 5 16 12 9 19" />
     </svg>
   );
 }
 
 function SkeletonRow() {
   return (
-    <div className="bg-white rounded-lg p-6 sm:p-8" style={{ border: '1px solid #E2E8F0' }}>
+    <div className="bg-white rounded-xl p-6 sm:p-8" style={{ border: '1px solid #E2E8F0' }}>
       <motion.div animate={{ opacity: [0.5, 0.9, 0.5] }} transition={{ duration: 1.4, repeat: Infinity }}
         style={{ height: 10, width: 120, borderRadius: 4, background: '#e8edf2', marginBottom: 14 }} />
       <motion.div animate={{ opacity: [0.5, 0.9, 0.5] }} transition={{ duration: 1.4, repeat: Infinity, delay: 0.1 }}
@@ -61,25 +60,20 @@ function SkeletonRow() {
 
 function DepartmentRow({ dept }) {
   return (
-    <div
-      className="bg-white rounded-lg p-6 sm:p-8 transition-all duration-200"
-      style={{ border: '1px solid #E2E8F0' }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(10,22,40,0.07)'; e.currentTarget.style.borderColor = TEAL; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
-    >
-      <p className="text-xs mb-2" style={{ color: '#64748B', fontWeight: 600, letterSpacing: '0.12em', fontFamily: FONT }}>
+    <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 md:p-8 hover:shadow-md transition-shadow duration-200">
+      <p className="uppercase tracking-widest text-xs text-[#64748B] font-medium mb-2" style={{ fontFamily: FONT }}>
         TİBBİ XİDMƏTLƏR
       </p>
-      <div className="flex items-center justify-between gap-4">
-        <h3 className="text-xl font-bold" style={{ color: '#0B1D34', fontFamily: "'Raleway', sans-serif" }}>
+      <div className="flex items-center gap-2">
+        <h3 className="text-xl font-bold text-[#0B1D34]" style={{ fontFamily: "'Raleway', sans-serif" }}>
           {dept.name}
         </h3>
-        <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 24, height: 24, border: '1.5px solid #CBD5E1', color: '#0B1D34' }}>
+        <span className="w-7 h-7 rounded-full border border-[#0B1D34] flex items-center justify-center flex-shrink-0 text-[#0B1D34]">
           <ArrowRightIcon />
         </span>
       </div>
       {dept.description && (
-        <p className="text-sm mt-2 line-clamp-3" style={{ color: '#64748B', lineHeight: 1.6, fontFamily: FONT }}>
+        <p className="text-sm md:text-base text-[#64748B] mt-2 line-clamp-2" style={{ lineHeight: 1.6, fontFamily: FONT }}>
           {dept.description}
         </p>
       )}
@@ -337,7 +331,7 @@ export default function DepartmentsPage() {
                 </div>
 
                 {loading && (
-                  <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-5">
                     {[...Array(4)].map((_, i) => <SkeletonRow key={i} />)}
                   </div>
                 )}
@@ -364,7 +358,7 @@ export default function DepartmentsPage() {
 
                 {!loading && total > 0 && (
                   <>
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-5">
                       {paged.map((dept, i) => <DepartmentRow key={dept._id ?? i} dept={dept} />)}
                     </div>
                     <Pagination page={currentPage} pages={totalPages} onChange={handlePageChange} />

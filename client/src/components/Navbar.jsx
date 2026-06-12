@@ -280,8 +280,8 @@ export default function Navbar() {
 
           {/* 1. Logo */}
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
-            <img src="/logo.png" alt="Aslan Medical"
-              style={{ height: '44px', width: 'auto', objectFit: 'contain' }}
+            <img src="/logonew.jpg" alt="Aslan Medical"
+              style={{ height: '56px', maxWidth: '190px', width: 'auto', objectFit: 'contain' }}
               className="navbar-logo"
               onError={e => {
                 e.currentTarget.style.display = 'none';
@@ -797,7 +797,7 @@ export default function Navbar() {
           .nav-layer3  { display: none !important; }
           .mid-bar     { overflow: hidden; }
           .mid-bar > div { height: 60px !important; padding: 0 16px !important; }
-          .navbar-logo { height: 36px !important; }
+          .navbar-logo { height: 42px !important; max-width: 150px !important; width: auto !important; object-fit: contain !important; }
         }
         @media (min-width: 768px) and (max-width: 1024px) {
           .top-bar     { display: none !important; }

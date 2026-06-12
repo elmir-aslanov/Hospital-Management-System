@@ -207,7 +207,7 @@ export default function PatientPortal() {
     <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${TEAL} 100%)`, padding: '20px 6vw', marginBottom: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src="/logo.png" alt="logo" style={{ height: 44 }} onError={e => e.currentTarget.style.display = 'none'} />
+          <img src="/logonew.jpg" alt="logo" style={{ height: 44, maxWidth: 160, width: 'auto', objectFit: 'contain' }} onError={e => e.currentTarget.style.display = 'none'} />
           <div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: '1.5px', textTransform: 'uppercase', fontFamily: FONT }}>Pasiyent Portalı</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', fontFamily: FONT }}>

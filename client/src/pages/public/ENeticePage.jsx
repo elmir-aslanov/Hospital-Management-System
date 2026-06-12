@@ -13,7 +13,7 @@ const ASSETS = {
   googlePlay: '/google.jpeg',
   info: '/nidamodul.jpeg',
   insurance: '/icbaritibbisigorta.jpeg',
-  logo: '/logo.png',
+  logo: '/logonew.jpg',
   phone: '/mainmobile.jpeg',
   protocol: '/icbaritibbisigortaumunesi.jpeg',
   tabib: '/tabibenetice.jpeg',
@@ -363,9 +363,9 @@ export default function ENeticePage() {
         }
 
         .enetice-form-logo {
-          width: 120px;
-          max-width: 48%;
-          height: auto;
+          height: 60px;
+          max-width: 210px;
+          width: auto;
           object-fit: contain;
           margin-bottom: 16px;
         }
@@ -934,7 +934,8 @@ export default function ENeticePage() {
           }
 
           .enetice-form-logo {
-            width: 124px;
+            height: 48px;
+            max-width: 170px;
             margin-bottom: 14px;
           }
 

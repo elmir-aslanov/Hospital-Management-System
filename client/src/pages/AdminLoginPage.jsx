@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
 
       <main className="admin-login-card" aria-label={t('adminLogin.aria')}>
         <section className="admin-login-brand">
-          <img src="/logo.png" alt="Aslan Medical Center" className="admin-login-logo" />
+          <img src="/logonew.jpg" alt="Aslan Medical Center" className="admin-login-logo" />
 
           <div>
             <h1>{t('adminLogin.welcomeTitle')}</h1>
@@ -323,8 +323,9 @@ export default function AdminLoginPage() {
         }
 
         .admin-login-logo {
-          width: min(190px, 78%);
-          height: auto;
+          height: 72px;
+          max-width: min(260px, 78%);
+          width: auto;
           object-fit: contain;
         }
 
@@ -729,7 +730,8 @@ export default function AdminLoginPage() {
           }
 
           .admin-login-logo {
-            width: 158px;
+            height: 60px;
+            max-width: 220px;
           }
 
           .admin-login-brand h1,

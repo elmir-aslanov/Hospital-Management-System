@@ -87,11 +87,13 @@ export default function PageLoader() {
           >
             <div style={{ textAlign: 'center', marginBottom: '8px' }}>
               <img
-                src="/logo.png"
+                src="/logonew.jpg"
                 alt="Aslan Medical Clinic"
                 style={{
                   height: '90px',
+                  maxWidth: '320px',
                   width: 'auto',
+                  objectFit: 'contain',
                   filter: 'drop-shadow(0 4px 24px rgba(0,188,212,0.35))',
                   display: 'block',
                   margin: '0 auto',

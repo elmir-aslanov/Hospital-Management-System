@@ -54,8 +54,8 @@ export default function DashboardLayout() {
           flexShrink: 0,
         }}>
           {!collapsed && (
-            <img src="/logo.png" alt="Aslan Medical"
-              style={{ height: '36px', width: 'auto', filter: 'brightness(10)', flexShrink: 0 }}
+            <img src="/logonew.jpg" alt="Aslan Medical"
+              style={{ height: '38px', maxWidth: '150px', width: 'auto', objectFit: 'contain', flexShrink: 0 }}
               onError={e => e.currentTarget.style.display = 'none'}
             />
           )}
