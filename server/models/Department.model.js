@@ -12,6 +12,9 @@ const departmentSchema = new mongoose.Schema({
   description: { type: String, default: '', trim: true },
   icon:        { type: String, default: '' },
   image:       { type: String, default: '' },
+  phone:       { type: String, default: '', trim: true },
+  fax:         { type: String, default: '', trim: true },
+  room:        { type: String, default: '', trim: true },
   order:       { type: Number, default: 0 },
   isActive:    { type: Boolean, default: true },
 }, { timestamps: true });

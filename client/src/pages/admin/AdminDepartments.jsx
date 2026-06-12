@@ -187,69 +187,70 @@ export default function AdminDepartments() {
         </button>
       </div>
 
-      {/* ── Loading ───────────────────────────────────────────────────── */}
-      {loading && (
-        <div style={{ display:'flex', justifyContent:'center', padding:80 }}>
-          <div style={{ width:32, height:32, border:'3px solid #e2e8f0', borderTopColor:'#00848e', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-        </div>
-      )}
-
-      {/* ── Empty state ──────────────────────────────────────────────── */}
-      {!loading && depts.length === 0 && (
-        <div style={{ textAlign:'center', padding:80, color:'#94a3b8', fontSize:14 }}>Şöbə tapılmadı</div>
-      )}
-
-      {/* ── Dept grid ────────────────────────────────────────────────── */}
-      {!loading && depts.length > 0 && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px,1fr))', gap:18 }}>
-          {depts.map(dept => (
-            <div key={dept._id}
-              style={{ background:'white', borderRadius:14, border:'1px solid #e2e8f0', padding:20, display:'flex', flexDirection:'column' }}>
-
-              {/* top row */}
-              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
-                <div style={{ width:48, height:48, borderRadius:12, background:'rgba(0,132,142,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
-                  {dept.icon || '🏥'}
-                </div>
-                <span style={{
-                  fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20,
-                  background: dept.isActive ? '#f0fdf4' : '#fef2f2',
-                  color:      dept.isActive ? '#16a34a' : '#dc2626',
-                }}>
-                  {dept.isActive ? 'Aktiv' : 'Deaktiv'}
-                </span>
-              </div>
-
-              {/* middle */}
-              <div style={{ marginTop:12, fontSize:15, fontWeight:700, color:'#0f1b2d' }}>{dept.name}</div>
-              {dept.description && (
-                <div style={{ marginTop:4, fontSize:12, color:'#64748b', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-                  {dept.description}
-                </div>
-              )}
-              <div style={{ marginTop:8, fontSize:12, color:'#00848e', fontWeight:600 }}>
-                {deptDoctorCount(dept)} həkim
-              </div>
-
-              {/* actions */}
-              <div style={{ marginTop:16, display:'flex', gap:8 }}>
-                <button onClick={() => openApptModal(dept)}
-                  style={{ fontSize:12, fontWeight:600, padding:'6px 12px', borderRadius:8, cursor:'pointer', border:'1px solid #00848e', color:'#00848e', background:'white' }}>
-                  Randevu Al
-                </button>
-                <button onClick={() => openEditDept(dept)}
-                  style={{ fontSize:12, fontWeight:600, padding:'6px 12px', borderRadius:8, cursor:'pointer', border:'1px solid #e2e8f0', color:'#475569', background:'white' }}>
-                  Redaktə
-                </button>
-                <button onClick={() => deleteDept(dept)}
-                  style={{ fontSize:12, fontWeight:600, padding:'6px 12px', borderRadius:8, cursor:'pointer', border:'1px solid #fee2e2', color:'#ef4444', background:'white' }}>
-                  Sil
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* ── Dept table ───────────────────────────────────────────────── */}
+      <div style={{ background:'white', borderRadius:14, border:'1px solid #f1f5f9', overflow:'auto' }}>
+        {loading ? (
+          <div style={{ display:'flex', justifyContent:'center', padding:60 }}>
+            <div style={{ width:32, height:32, border:'3px solid #e2e8f0', borderTopColor:'#00848e', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+          </div>
+        ) : depts.length === 0 ? (
+          <div style={{ textAlign:'center', padding:60, color:'#94a3b8', fontSize:14 }}>Şöbə tapılmadı</div>
+        ) : (
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom:'1px solid #f1f5f9' }}>
+                <th style={{ padding:'10px 16px', textAlign:'left', fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>AD</th>
+                <th style={{ padding:'10px 16px', textAlign:'left', fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>STATUS</th>
+                <th style={{ padding:'10px 16px', textAlign:'left', fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>HƏKİM SAYI</th>
+                <th style={{ padding:'10px 16px', textAlign:'right', fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {depts.map(dept => (
+                <tr key={dept._id}
+                  style={{ borderBottom:'1px solid #f8fafc', transition:'background 0.1s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
+                >
+                  <td style={{ padding:'12px 16px' }}>
+                    <button onClick={() => openEditDept(dept)}
+                      style={{ background:'none', border:'none', padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, fontSize:13, fontWeight:600, color:'#1D8B95' }}
+                      onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
+                      onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
+                    >
+                      <span style={{ fontSize:16 }}>{dept.icon || '🏥'}</span>
+                      {dept.name}
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </td>
+                  <td style={{ padding:'12px 16px' }}>
+                    <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20, background: dept.isActive ? '#f0fdf4' : '#fef2f2', color: dept.isActive ? '#16a34a' : '#dc2626' }}>
+                      {dept.isActive ? 'Aktiv' : 'Deaktiv'}
+                    </span>
+                  </td>
+                  <td style={{ padding:'12px 16px', fontSize:12, color:'#64748b' }}>{deptDoctorCount(dept)} həkim</td>
+                  <td style={{ padding:'12px 16px' }}>
+                    <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                      <button onClick={() => openApptModal(dept)}
+                        style={{ padding:'5px 12px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                        Randevu Al
+                      </button>
+                      <button onClick={() => openEditDept(dept)}
+                        style={{ padding:'5px 12px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                        Redaktə
+                      </button>
+                      <button onClick={() => deleteDept(dept)}
+                        style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fee2e2', background:'white', fontSize:11, cursor:'pointer', color:'#ef4444' }}>
+                        Sil
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {/* ════ DEPT MODAL ════════════════════════════════════════════════ */}
       {deptModal && (

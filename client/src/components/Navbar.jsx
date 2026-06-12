@@ -797,7 +797,7 @@ export default function Navbar() {
           .nav-layer3  { display: none !important; }
           .mid-bar     { overflow: hidden; }
           .mid-bar > div { height: 60px !important; padding: 0 16px !important; }
-          .navbar-logo { height: 42px !important; max-width: 150px !important; width: auto !important; object-fit: contain !important; }
+          .navbar-logo { height: 48px !important; max-width: 150px !important; width: auto !important; object-fit: contain !important; }
         }
         @media (min-width: 768px) and (max-width: 1024px) {
           .top-bar     { display: none !important; }
