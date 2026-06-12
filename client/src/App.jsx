@@ -38,6 +38,7 @@ import AdminDepartments     from './pages/admin/AdminDepartments';
 import AdminBlog            from './pages/admin/AdminBlog';
 import AdminBilling         from './pages/admin/AdminBilling';
 import AdminAnalitika       from './pages/admin/AdminAnalitika';
+import AdminAuditLog        from './pages/admin/AdminAuditLog';
 import AdminAnbar           from './pages/admin/AdminAnbar';
 import AdminPriceList       from './pages/admin/AdminPriceList';
 import AdminSettings        from './pages/admin/AdminSettings';
@@ -160,6 +161,7 @@ function Layout() {
           <Route path="/admin/inventory"    element={<AdminAnbar />} />
           <Route path="/admin/pricelist"    element={<AdminPriceList />} />
           <Route path="/admin/analytics"    element={<AdminAnalitika />} />
+          <Route path="/admin/audit-log"    element={<AdminAuditLog />} />
           <Route path="/admin/settings"     element={<AdminSettings />} />
           <Route path="/admin/discharge"    element={<AdminDischarge />} />
           <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
