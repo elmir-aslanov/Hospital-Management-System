@@ -17,3 +17,12 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, message: 'Too many auth attempts, please try again later.' },
 });
+
+// Public lab result lookup — limit guessing of protocol/FIN combinations
+export const labLookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Çox sayda cəhd. Zəhmət olmasa bir az sonra yenidən cəhd edin.' },
+});

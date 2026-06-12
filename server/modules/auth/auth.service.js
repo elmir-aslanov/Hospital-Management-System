@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import User from '../../models/User.model.js';
 import OTP from '../../models/OTP.model.js';
 import ApiError from '../../utils/ApiError.js';
@@ -25,8 +26,9 @@ export const registerUser = async ({ fullName, email, password }, req) => {
   // Send email verification OTP
   try {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-    await OTP.create({ email, type: 'email_verify', hashedOtp: otp, expiresAt });
+    await OTP.create({ email, type: 'email_verify', hashedOtp, expiresAt });
     await sendEmail({
       to: email,
       subject: 'Aslan Medical — E-poçt doğrulaması',

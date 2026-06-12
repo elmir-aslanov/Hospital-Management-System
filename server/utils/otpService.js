@@ -75,9 +75,7 @@ export const sendEmailOTP = async (email, otp) => {
 
 export const sendSmsOTP = async (phone, otp) => {
   if (process.env.NODE_ENV === 'development') {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📱 SMS OTP for ${phone}: ${otp}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`SMS OTP requested for ${phone}. Configure an SMS provider to deliver OTP values.`);
     return { success: true };
   }
 

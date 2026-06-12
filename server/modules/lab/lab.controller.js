@@ -15,3 +15,6 @@ export const getPatientResults = asyncHandler(async (req, res) => { const d = aw
 export const searchPublicResult = asyncHandler(async (req, res) => { const d = await svc.searchPublicResult(req.body);          res.json(new ApiResponse(200, d, 'Analiz nəticəsi tapıldı')); });
 export const verifyResult      = asyncHandler(async (req, res) => { const d = await svc.verifyResult(req.params.id, uid(req)); res.json(new ApiResponse(200, d, 'Verified')); });
 export const getLabSummary     = asyncHandler(async (req, res) => { const d = await svc.getLabSummary();                       res.json(new ApiResponse(200, d)); });
+export const lookupPublicResult = asyncHandler(async (req, res) => { const d = await svc.lookupPublicResult(req.body);         res.json(new ApiResponse(200, d)); });
+export const updateResult      = asyncHandler(async (req, res) => { const d = await svc.updateResult(req.params.id, req.body, uid(req)); res.json(new ApiResponse(200, d, 'Result updated')); });
+export const uploadResultAttachment = asyncHandler(async (req, res) => { const d = await svc.uploadResultAttachment(req.params.id, req.file, uid(req)); res.json(new ApiResponse(200, d, 'Attachment uploaded')); });

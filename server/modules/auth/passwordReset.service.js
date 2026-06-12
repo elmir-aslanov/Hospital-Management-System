@@ -37,7 +37,7 @@ export const forgotPassword = async (email) => {
       `,
     });
   } catch {
-    // Email failed (SMTP not configured) — OTP still saved in DB for dev testing
+    // Email failed (SMTP not configured) — hashed OTP remains saved until expiry.
     // In production, configure SMTP credentials in .env
   }
 

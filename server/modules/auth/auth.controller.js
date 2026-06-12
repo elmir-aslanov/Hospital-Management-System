@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import ApiError from '../../utils/ApiError.js';
@@ -6,6 +7,8 @@ import { forgotPassword, resetPassword } from './passwordReset.service.js';
 import { getClearRefreshCookieOptions, getRefreshCookieOptions } from './auth.cookies.js';
 import User from '../../models/User.model.js';
 import OTP from '../../models/OTP.model.js';
+
+const BCRYPT_HASH_PREFIX = /^\$2[aby]\$\d{2}\$/;
 
 export const register = asyncHandler(async (req, res) => {
   const { user, accessToken, refreshToken } = await authService.registerUser(req.body, req);
@@ -54,19 +57,27 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
   if (!email || !otp) throw new ApiError(400, 'E-poçt və OTP tələb olunur');
 
+  const normalizedEmail = email.toLowerCase().trim();
+
   // Accept both 'email_verify' and 'email' type OTPs (resend uses 'email' type)
-  const record = await OTP.findOne({ email, usedAt: null })
+  const record = await OTP.findOne({ email: normalizedEmail, usedAt: null })
     .sort({ createdAt: -1 });
   if (!record) throw new ApiError(400, 'OTP tapılmadı');
   if (new Date() > record.expiresAt) {
     await OTP.deleteOne({ _id: record._id });
     throw new ApiError(400, 'OTP müddəti bitib');
   }
-  if (record.hashedOtp !== otp.trim()) throw new ApiError(400, 'OTP yanlışdır');
+  if (!BCRYPT_HASH_PREFIX.test(record.hashedOtp)) {
+    await OTP.deleteOne({ _id: record._id });
+    throw new ApiError(400, 'OTP müddəti bitib');
+  }
+
+  const isMatch = await bcrypt.compare(otp.trim(), record.hashedOtp);
+  if (!isMatch) throw new ApiError(400, 'OTP yanlışdır');
 
   record.usedAt = new Date();
   await record.save();
 
-  await User.findOneAndUpdate({ email }, { isEmailVerified: true });
+  await User.findOneAndUpdate({ email: normalizedEmail }, { isEmailVerified: true });
   res.json(new ApiResponse(200, null, 'E-poçt uğurla təsdiqləndi'));
 });

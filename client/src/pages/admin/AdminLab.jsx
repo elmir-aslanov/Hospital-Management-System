@@ -64,9 +64,11 @@ export default function AdminLab() {
   const [showResultModal, setShowResultModal] = useState(false)
   const [resultOrderId,   setResultOrderId]   = useState(null)
   const [resultOrder,     setResultOrder]     = useState(null)
+  const [resultId,        setResultId]        = useState(null)
   const [resultForm,      setResultForm]      = useState(emptyResult)
   const [resultSaving,    setResultSaving]    = useState(false)
   const [resultErr,       setResultErr]       = useState('')
+  const [pdfFile,         setPdfFile]         = useState(null)
 
   /* inline status update */
   const [statusEditId, setStatusEditId] = useState(null)
@@ -163,28 +165,66 @@ export default function AdminLab() {
 
   /* ── result modal ────────────────────────────────────────────────── */
   const openResultModal = (order) => {
-    setResultOrderId(order._id); setResultOrder(order)
-    setResultForm({
-      results: order.tests.map(t => ({ testName: t.testName, testCode: t.testCode||'', value:'', unit:'', referenceRange:'', status:'normal', notes:'' })),
-      summary: '',
-    })
-    setResultErr(''); setShowResultModal(true)
+    setResultOrderId(order._id); setResultOrder(order); setResultId(null); setPdfFile(null)
+    setResultErr('')
+    if (order.status === 'completed') {
+      fetch(`${BASE}/api/v1/lab/results/order/${order._id}`, { headers })
+        .then(r => r.json())
+        .then(d => {
+          if (d.data) {
+            setResultId(d.data._id)
+            setResultForm({
+              results: (d.data.results||[]).map(r => ({ testName:r.testName, testCode:r.testCode||'', value:r.value||'', unit:r.unit||'', referenceRange:r.referenceRange||'', status:r.status||'normal', notes:r.notes||'' })),
+              summary: d.data.summary || '',
+            })
+          }
+        }).catch(() => {})
+    } else {
+      setResultForm({
+        results: order.tests.map(t => ({ testName: t.testName, testCode: t.testCode||'', value:'', unit:'', referenceRange:'', status:'normal', notes:'' })),
+        summary: '',
+      })
+    }
+    setShowResultModal(true)
   }
 
-  const updateResult = (i, k, v) => setResultForm(f => ({ ...f, results: f.results.map((r,idx) => idx===i ? {...r,[k]:v} : r) }))
+  const updateResultRow = (i, k, v) => setResultForm(f => ({ ...f, results: f.results.map((r,idx) => idx===i ? {...r,[k]:v} : r) }))
 
   const saveResult = async () => {
     if (resultForm.results.some(r => !r.value.trim())) { setResultErr('Bütün testlər üçün dəyər daxil edin'); return }
     setResultSaving(true); setResultErr('')
     try {
-      const r    = await fetch(`${BASE}/api/v1/lab/results`, {
-        method:'POST', headers:{ ...headers,'Content-Type':'application/json' },
-        body: JSON.stringify({ labOrderId: resultOrderId, ...resultForm }),
-      })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
+      let savedResultId = resultId
+      if (resultId) {
+        const r    = await fetch(`${BASE}/api/v1/lab/results/${resultId}`, {
+          method:'PATCH', headers:{ ...headers,'Content-Type':'application/json' },
+          body: JSON.stringify(resultForm),
+        })
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
+      } else {
+        const r    = await fetch(`${BASE}/api/v1/lab/results`, {
+          method:'POST', headers:{ ...headers,'Content-Type':'application/json' },
+          body: JSON.stringify({ labOrderId: resultOrderId, ...resultForm }),
+        })
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
+        savedResultId = data.data._id
+      }
+
+      if (pdfFile) {
+        const fd = new FormData()
+        fd.append('document', pdfFile)
+        const r2 = await fetch(`${BASE}/api/v1/lab/results/${savedResultId}/attachment`, { method:'POST', headers, body: fd })
+        const d2 = await r2.json()
+        if (!r2.ok) throw new Error(d2.message || 'PDF yüklənmədi')
+      }
+
       setOrders(prev => prev.map(o => o._id === resultOrderId ? { ...o, status:'completed' } : o))
-      if (selected === resultOrderId) setDetail(d => ({ ...d, status:'completed' }))
+      if (selected === resultOrderId) {
+        setDetail(d => ({ ...d, status:'completed' }))
+        loadDetailResult()
+      }
       setShowResultModal(false)
     } catch(e) { setResultErr(e.message) }
     finally { setResultSaving(false) }
@@ -255,7 +295,7 @@ export default function AdminLab() {
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom:'1px solid #f1f5f9' }}>
-                    {['Sifariş №','Pasiyent','Həkim','Testlər','Prioritet','Status',''].map(h => (
+                    {['Sifariş №','Protokol №','Pasiyent','Həkim','Testlər','Prioritet','Status',''].map(h => (
                       <th key={h} style={{ padding:'12px 14px', textAlign:'left', fontSize:11, fontWeight:600, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -272,6 +312,7 @@ export default function AdminLab() {
                         onMouseEnter={e => { if (!isSel) e.currentTarget.style.background='#f8fafc' }}
                         onMouseLeave={e => { if (!isSel) e.currentTarget.style.background='white' }}>
                         <td style={{ padding:'11px 14px', fontSize:12, fontWeight:700, color:'#0f1b2d' }}>{o.orderNumber||'—'}</td>
+                        <td style={{ padding:'11px 14px', fontSize:12, fontWeight:600, color:'#00848e' }}>{o.protocolNo||'—'}</td>
                         <td style={{ padding:'11px 14px', fontSize:13, color:'#334155' }}>{patFull(o.patientId)}</td>
                         <td style={{ padding:'11px 14px', fontSize:12, color:'#64748b' }}>{docFull(o.doctorId)}</td>
                         <td style={{ padding:'11px 14px', fontSize:12, color:'#334155', fontWeight:500 }}>{o.tests?.length||0} test</td>
@@ -284,10 +325,10 @@ export default function AdminLab() {
                         <td style={{ padding:'11px 14px' }} onClick={e => e.stopPropagation()}>
                           <div style={{ display:'flex', gap:5, alignItems:'center' }}>
                             {/* Nəticə button */}
-                            {['sample_collected','processing'].includes(o.status) && (
+                            {['sample_collected','processing','completed'].includes(o.status) && (
                               <button onClick={() => openResultModal(o)}
                                 style={{ padding:'4px 9px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                                Nəticə
+                                {o.status === 'completed' ? 'Nəticəni redaktə et' : 'Nəticə'}
                               </button>
                             )}
                             {/* Status dropdown */}
@@ -343,6 +384,17 @@ export default function AdminLab() {
                   <p style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{detail.orderNumber||'—'}</p>
                   <p style={{ margin:'4px 0 12px', fontSize:12, color:'#64748b' }}>{fmtDate(detail.createdAt)}</p>
 
+                  {detail.protocolNo && (
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, padding:'8px 12px', background:'#f0fdfa', border:'1px solid #ccfbf1', borderRadius:8 }}>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em' }}>Protokol №</span>
+                      <span style={{ fontSize:14, fontWeight:700, color:'#00848e', flex:1 }}>{detail.protocolNo}</span>
+                      <button onClick={() => navigator.clipboard?.writeText(detail.protocolNo)}
+                        style={{ padding:'3px 8px', border:'1px solid #00848e', borderRadius:6, background:'white', color:'#00848e', fontSize:10, fontWeight:600, cursor:'pointer' }}>
+                        Kopyala
+                      </button>
+                    </div>
+                  )}
+
                   <div style={{ display:'flex', gap:8, marginBottom:14 }}>
                     {(() => { const sc=STATUS_CFG[detail.status]||STATUS_CFG.pending; return <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20, background:sc.bg, color:sc.color }}>{sc.label}</span> })()}
                     {(() => { const pc=PRIORITY_CFG[detail.priority]||PRIORITY_CFG.routine; return <span style={{ fontSize:11, fontWeight:700, color:pc.color }}>{pc.label}</span> })()}
@@ -397,6 +449,12 @@ export default function AdminLab() {
                         </table>
                       </div>
                       {detailResult.summary && <p style={{ fontSize:12, color:'#334155', marginTop:10, padding:'8px 12px', background:'#f0fdf4', borderRadius:8 }}>{detailResult.summary}</p>}
+                      {detailResult.attachmentUrl && (
+                        <a href={detailResult.attachmentUrl} target="_blank" rel="noreferrer"
+                          style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', textDecoration:'none' }}>
+                          PDF yüklə
+                        </a>
+                      )}
                     </div>
                   )}
                 </>
@@ -503,8 +561,13 @@ export default function AdminLab() {
 
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
               <div>
-                <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>Nəticə Daxil Et</h2>
-                {resultOrder && <p style={{ margin:'3px 0 0', fontSize:12, color:'#64748b' }}>{resultOrder.orderNumber} — {patFull(resultOrder.patientId)}</p>}
+                <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{resultId ? 'Nəticəni Redaktə Et' : 'Nəticə Daxil Et'}</h2>
+                {resultOrder && (
+                  <p style={{ margin:'3px 0 0', fontSize:12, color:'#64748b' }}>
+                    {resultOrder.orderNumber} — {patFull(resultOrder.patientId)}
+                    {resultOrder.protocolNo && <span style={{ marginLeft:8, fontWeight:700, color:'#00848e' }}>Protokol: {resultOrder.protocolNo}</span>}
+                  </p>
+                )}
               </div>
               <button onClick={() => setShowResultModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:22 }}>×</button>
             </div>
@@ -527,16 +590,16 @@ export default function AdminLab() {
                       <tr key={i} style={{ borderBottom:'1px solid #f1f5f9' }}>
                         <td style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#0f1b2d' }}>{r.testName}</td>
                         <td style={{ padding:'6px 8px' }}>
-                          <input style={{ ...inp, padding:'6px 10px' }} placeholder="0.00" value={r.value} onChange={e => updateResult(i,'value',e.target.value)} />
+                          <input style={{ ...inp, padding:'6px 10px' }} placeholder="0.00" value={r.value} onChange={e => updateResultRow(i,'value',e.target.value)} />
                         </td>
                         <td style={{ padding:'6px 8px' }}>
-                          <input style={{ ...inp, padding:'6px 10px' }} placeholder="mg/dL" value={r.unit} onChange={e => updateResult(i,'unit',e.target.value)} />
+                          <input style={{ ...inp, padding:'6px 10px' }} placeholder="mg/dL" value={r.unit} onChange={e => updateResultRow(i,'unit',e.target.value)} />
                         </td>
                         <td style={{ padding:'6px 8px' }}>
-                          <input style={{ ...inp, padding:'6px 10px' }} placeholder="0-100" value={r.referenceRange} onChange={e => updateResult(i,'referenceRange',e.target.value)} />
+                          <input style={{ ...inp, padding:'6px 10px' }} placeholder="0-100" value={r.referenceRange} onChange={e => updateResultRow(i,'referenceRange',e.target.value)} />
                         </td>
                         <td style={{ padding:'6px 8px' }}>
-                          <select style={{ ...inp, padding:'6px 10px' }} value={r.status} onChange={e => updateResult(i,'status',e.target.value)}>
+                          <select style={{ ...inp, padding:'6px 10px' }} value={r.status} onChange={e => updateResultRow(i,'status',e.target.value)}>
                             {Object.entries(RESULT_STATUS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                           </select>
                         </td>
@@ -553,6 +616,19 @@ export default function AdminLab() {
                   placeholder="Laborant şərhi..."
                   value={resultForm.summary}
                   onChange={e => setResultForm(f => ({ ...f, summary: e.target.value }))} />
+              </div>
+
+              {/* PDF upload */}
+              <div style={{ marginTop:14 }}>
+                <label style={lbl}>Nəticə PDF-i</label>
+                <input type="file" accept="application/pdf,image/jpeg,image/png" onChange={e => setPdfFile(e.target.files?.[0] || null)}
+                  style={{ fontSize:12, color:'#475569' }} />
+                {resultOrder?.resultPdf && !pdfFile && (
+                  <a href={resultOrder.resultPdf} target="_blank" rel="noreferrer"
+                    style={{ marginLeft:10, fontSize:12, fontWeight:600, color:'#00848e' }}>
+                    Mövcud PDF-ə bax
+                  </a>
+                )}
               </div>
             </div>
 

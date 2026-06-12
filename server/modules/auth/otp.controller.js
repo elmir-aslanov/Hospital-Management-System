@@ -1,3 +1,4 @@
+import bcrypt       from 'bcryptjs';
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
 import ApiError     from '../../utils/ApiError.js';
@@ -8,6 +9,7 @@ import { generateAccessToken, generateRefreshToken }      from '../../utils/gene
 import { getRefreshCookieOptions } from './auth.cookies.js';
 
 const OTP_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const BCRYPT_HASH_PREFIX = /^\$2[aby]\$\d{2}\$/;
 
 // ── POST /api/v1/auth/request-email-otp ──────────────────────────────────────
 
@@ -23,12 +25,13 @@ export const requestEmailOtp = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(404, 'İstifadəçi tapılmadı.');
 
   const otp       = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedOtp = await bcrypt.hash(otp, 10);
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
   // Remove any previous unused OTPs for this email
   await OTP.deleteMany({ email: normalizedEmail, type: 'email', usedAt: null });
 
-  await OTP.create({ email: normalizedEmail, type: 'email', hashedOtp: otp, expiresAt, lastResendAt: new Date() });
+  await OTP.create({ email: normalizedEmail, type: 'email', hashedOtp, expiresAt, lastResendAt: new Date() });
 
   const result = await sendEmailOTP(email, otp);
   if (!result.success) throw new ApiError(500, 'Email göndərilmədi. Yenidən cəhd edin.');
@@ -51,7 +54,13 @@ export const verifyEmailOtp = asyncHandler(async (req, res) => {
     await OTP.deleteOne({ _id: record._id });
     throw new ApiError(400, 'OTP müddəti bitib və ya tapılmadı.');
   }
-  if (record.hashedOtp !== otp.trim()) throw new ApiError(400, 'OTP yanlışdır.');
+  if (!BCRYPT_HASH_PREFIX.test(record.hashedOtp)) {
+    await OTP.deleteOne({ _id: record._id });
+    throw new ApiError(400, 'OTP müddəti bitib və ya tapılmadı.');
+  }
+
+  const isMatch = await bcrypt.compare(otp.trim(), record.hashedOtp);
+  if (!isMatch) throw new ApiError(400, 'OTP yanlışdır.');
 
   record.usedAt = new Date();
   await record.save();

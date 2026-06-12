@@ -22,6 +22,11 @@ const ASSETS = {
 const START_DATE_HINT = 'Laboratoriya nəticələrinin siyahılanacağı başlanğıc tarixini daxil edin. Tarix aralığı 30 günü keçməməlidir.'
 const END_DATE_HINT = 'Laboratoriya nəticələrinin siyahılanacağı son tarixi daxil edin. Tarix aralığı 30 günü keçməməlidir.'
 
+const FIN_REGEX = /^[A-Za-z0-9]{7}$/
+
+const FLAG_LABELS = { normal: 'Normal', low: 'Aşağı', high: 'Yüksək', critical: 'Kritik' }
+const FLAG_COLORS = { normal: '#64748b', low: '#d97706', high: '#d97706', critical: '#dc2626' }
+
 function Spinner() {
   return <span className="enetice-spinner" aria-hidden="true" />
 }
@@ -105,6 +110,7 @@ export default function ENeticePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [pending, setPending] = useState(false)
   const [modal, setModal] = useState(null)
   const [tooltip, setTooltip] = useState(null)
 
@@ -118,6 +124,7 @@ export default function ENeticePage() {
     setSearchMode(mode)
     setError(null)
     setResult(null)
+    setPending(false)
     if (mode === 'fin') {
       setDob('')
     } else {
@@ -154,7 +161,10 @@ export default function ENeticePage() {
   }
 
   const validateForm = () => {
-    if (searchMode === 'fin' && !patientId.trim()) return 'FİN kod daxil edilməlidir'
+    if (searchMode === 'fin') {
+      if (!patientId.trim()) return 'FİN kod daxil edilməlidir'
+      if (!FIN_REGEX.test(patientId.trim())) return 'FİN kod 7 simvoldan ibarət olmalıdır'
+    }
     if (searchMode === 'birth' && !dateOfBirth) return 'Doğum tarixi daxil edilməlidir'
     if (!protocol.trim()) return 'Protokol nömrəsi daxil edilməlidir'
     if (dateRangeError) return dateRangeError
@@ -163,8 +173,7 @@ export default function ENeticePage() {
 
   const buildPayload = () => {
     const payload = {
-      searchType: searchMode === 'fin' ? 'fin' : 'birthDate',
-      protocol: protocol.trim(),
+      protocolNo: protocol.trim(),
     }
 
     if (searchMode === 'fin') {
@@ -191,22 +200,23 @@ export default function ENeticePage() {
     setLoading(true)
     setError(null)
     setResult(null)
+    setPending(false)
 
     try {
-      const res = await api.post('/lab-results/search', buildPayload())
+      const res = await api.post('/lab-results/lookup', buildPayload())
       const data = res.data?.data || null
       if (!data) {
-        setError('Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı.')
+        setError('Məlumatlar uyğun gəlmədi və ya nəticə tapılmadı')
+        return
+      }
+      if (data.status === 'pending') {
+        setPending(true)
         return
       }
       setResult(data)
     } catch (err) {
       if (!err.response) {
         setError('Bağlantı xətası baş verdi')
-      } else if (err.response.status === 400) {
-        setError(err.response.data?.message || 'Məlumatları düzgün doldurun')
-      } else if (err.response.status === 404) {
-        setError(err.response.data?.message || 'Analiz nəticəsi tapılmadı')
       } else if (err.response.status >= 500) {
         setError('Server xətası baş verdi')
       } else {
@@ -220,6 +230,7 @@ export default function ENeticePage() {
   function reset() {
     setResult(null)
     setError(null)
+    setPending(false)
     setSearchMode('fin')
     setPatientId('')
     setProtocol('')
@@ -720,7 +731,7 @@ export default function ENeticePage() {
 
         .enetice-result-row {
           display: grid;
-          grid-template-columns: minmax(160px, 1.5fr) minmax(90px, 0.8fr) minmax(90px, 0.8fr) minmax(130px, 1fr);
+          grid-template-columns: minmax(140px, 1.4fr) minmax(80px, 0.8fr) minmax(70px, 0.6fr) minmax(110px, 0.9fr) minmax(80px, 0.7fr);
           gap: 12px;
           align-items: center;
           padding: 11px 13px;
@@ -1154,29 +1165,42 @@ export default function ENeticePage() {
             <img className="tabib-logo" src={ASSETS.tabib} alt="TƏBİB" />
           </div>
 
+          {pending && (
+            <div className="enetice-result">
+              <div className="enetice-result-card">
+                <p className="enetice-result-subtitle" style={{ fontSize: 14, fontWeight: 700, color: NAVY }}>
+                  Nəticə hələ hazır deyil
+                </p>
+              </div>
+              <button className="enetice-reset" type="button" onClick={reset}>
+                Yeni Sorğu
+              </button>
+            </div>
+          )}
+
           {result && (
             <div className="enetice-result">
               <div className="enetice-result-card">
                 <div className="enetice-result-header">
                   <div>
-                    <h2 className="enetice-result-name">{result.patientFullName || 'Pasiyent'}</h2>
+                    <h2 className="enetice-result-name">{result.patientName || 'Pasiyent'}</h2>
                     <p className="enetice-result-subtitle">Analiz nəticəsi tapıldı</p>
                   </div>
-                  <span className="enetice-result-badge">{result.status || 'Hazırdır'}</span>
+                  <span className="enetice-result-badge">Hazırdır</span>
                 </div>
 
                 <div className="enetice-result-meta">
                   <div className="enetice-mini-card">
                     <div className="enetice-mini-label">Protokol</div>
-                    <div className="enetice-mini-value">{result.protocol || '—'}</div>
+                    <div className="enetice-mini-value">{result.protocolNo || '—'}</div>
                   </div>
                   <div className="enetice-mini-card">
-                    <div className="enetice-mini-label">Tarix</div>
-                    <div className="enetice-mini-value">{formatDate(result.resultDate)}</div>
+                    <div className="enetice-mini-label">Sifariş tarixi</div>
+                    <div className="enetice-mini-value">{formatDate(result.orderDate)}</div>
                   </div>
                   <div className="enetice-mini-card">
-                    <div className="enetice-mini-label">Analiz adı</div>
-                    <div className="enetice-mini-value">{result.analysisName || 'Laborator analiz'}</div>
+                    <div className="enetice-mini-label">Tamamlanma tarixi</div>
+                    <div className="enetice-mini-value">{formatDate(result.completedAt)}</div>
                   </div>
                   <div className="enetice-mini-card">
                     <div className="enetice-mini-label">Həkim</div>
@@ -1184,20 +1208,24 @@ export default function ENeticePage() {
                   </div>
                 </div>
 
-                {Array.isArray(result.results) && result.results.length > 0 && (
+                {Array.isArray(result.tests) && result.tests.length > 0 && (
                   <div className="enetice-result-table">
                     <div className="enetice-result-row is-head">
+                      <span>Test</span>
                       <span>Nəticə</span>
-                      <span>Dəyər</span>
                       <span>Vahid</span>
                       <span>Referans</span>
+                      <span>Status</span>
                     </div>
-                    {result.results.map((item, index) => (
-                      <div className="enetice-result-row" key={`${item.name || item.testName || 'test'}-${index}`}>
-                        <span className="enetice-result-test">{item.name || item.testName || 'Analiz'}</span>
+                    {result.tests.map((item, index) => (
+                      <div className="enetice-result-row" key={`${item.testName || 'test'}-${index}`}>
+                        <span className="enetice-result-test">{item.testName || 'Analiz'}</span>
                         <span>{item.value || '—'}</span>
                         <span>{item.unit || '—'}</span>
                         <span>{item.referenceRange || '—'}</span>
+                        <span style={{ fontWeight: 800, color: FLAG_COLORS[item.flag] || FLAG_COLORS.normal }}>
+                          {FLAG_LABELS[item.flag] || FLAG_LABELS.normal}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1205,8 +1233,8 @@ export default function ENeticePage() {
 
                 {result.summary && <p className="enetice-result-subtitle" style={{ marginTop: 12 }}>{result.summary}</p>}
 
-                {(result.pdfUrl || result.fileUrl) && (
-                  <a className="enetice-result-link" href={result.pdfUrl || result.fileUrl} target="_blank" rel="noreferrer">
+                {result.resultPdf && (
+                  <a className="enetice-result-link" href={result.resultPdf} target="_blank" rel="noreferrer">
                     PDF yüklə
                   </a>
                 )}

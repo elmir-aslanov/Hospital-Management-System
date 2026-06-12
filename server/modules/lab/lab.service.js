@@ -2,6 +2,7 @@ import LabOrder  from '../../models/LabOrder.model.js';
 import LabResult from '../../models/LabResult.model.js';
 import ApiError  from '../../utils/ApiError.js';
 import logAction from '../../utils/auditLogger.js';
+import { uploadBuffer } from '../../config/cloudinary.js';
 
 const POP_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POP_DOCTOR  = { path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } };
@@ -18,6 +19,14 @@ const displayName = (user) => {
   const name = [user.name, user.surname].filter(Boolean).join(' ').trim();
   return name || user.fullName || '';
 };
+
+const maskName = (user) => {
+  const full = displayName(user);
+  if (!full) return 'Pasiyent';
+  return full.split(/\s+/).filter(Boolean).map(word => `${word.charAt(0).toUpperCase()}***`).join(' ');
+};
+
+const FIN_REGEX = /^[A-Za-z0-9]{7}$/;
 
 const parseDateInput = (value, fieldName) => {
   if (!value) return null;
@@ -105,6 +114,7 @@ export const updateOrderStatus = async (id, status) => {
     throw new ApiError(400, `Cannot transition from '${order.status}' to '${status}'`);
   }
   order.status = status;
+  if (status === 'completed' && !order.completedAt) order.completedAt = new Date();
   await order.save();
   return order;
 };
@@ -128,6 +138,7 @@ export const createResult = async (data, userId) => {
   if (existing) throw new ApiError(409, 'Result already exists for this order. Use update instead.');
   const result = await LabResult.create({ ...data, patientId: order.patientId, performedBy: userId });
   order.status = 'completed';
+  if (!order.completedAt) order.completedAt = new Date();
   await order.save();
   try { logAction({ userId, action: 'CREATE_LAB_RESULT', resourceType: 'LabResult', resourceId: result._id, description: `Result entered for order ${data.labOrderId}` }); } catch (_) {}
   return result.populate([POP_PERF]);
@@ -230,4 +241,109 @@ export const getLabSummary = async () => {
     LabOrder.countDocuments({ createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } }),
   ]);
   return { byStatus, todayOrders };
+};
+
+// ── Public lookup ────────────────────────────────────────────
+const GENERIC_NOT_FOUND = 'Məlumatlar uyğun gəlmədi və ya nəticə tapılmadı';
+
+export const lookupPublicResult = async ({ fin, birthDate, protocolNo, startDate, endDate } = {}) => {
+  const cleanProtocol = trim(protocolNo);
+  const cleanFin = trim(fin);
+  const cleanBirthDate = trim(birthDate);
+
+  if (!cleanProtocol) {
+    throw new ApiError(400, 'Protokol nömrəsi daxil edilməlidir');
+  }
+  if (!cleanFin && !cleanBirthDate) {
+    throw new ApiError(400, 'FİN kod və ya doğum tarixi daxil edilməlidir');
+  }
+  if (cleanFin && !FIN_REGEX.test(cleanFin)) {
+    throw new ApiError(400, 'FİN kod 7 simvoldan ibarət olmalıdır');
+  }
+
+  // Validate optional date range inputs (presence-only check; not used to filter)
+  parseDateInput(startDate, 'Məlumatları düzgün doldurun');
+  parseDateInput(endDate, 'Məlumatları düzgün doldurun');
+
+  const order = await LabOrder.findOne({ protocolNo: cleanProtocol }).populate([POP_PUBLIC_PATIENT, POP_PUBLIC_DOCTOR]);
+
+  if (!order) {
+    throw new ApiError(404, GENERIC_NOT_FOUND);
+  }
+
+  const patientUser = order.patientId?.userId;
+  const matches = cleanFin
+    ? normalize(patientUser?.sexiyyatId) === normalize(cleanFin)
+    : sameDate(patientUser?.birthDate, cleanBirthDate);
+
+  if (!matches) {
+    throw new ApiError(404, GENERIC_NOT_FOUND);
+  }
+
+  if (order.status !== 'completed') {
+    return { status: 'pending', message: 'Nəticə hələ hazır deyil' };
+  }
+
+  const result = await LabResult.findOne({ labOrderId: order._id });
+  const doctorUser = order.doctorId?.userId;
+
+  return {
+    status: 'completed',
+    protocolNo: order.protocolNo,
+    patientName: maskName(patientUser),
+    orderDate: order.orderedAt || order.createdAt,
+    completedAt: order.completedAt,
+    doctorName: displayName(doctorUser),
+    tests: (result?.results || []).map(item => ({
+      testName: item.testName,
+      value: item.value,
+      unit: item.unit || '',
+      referenceRange: item.referenceRange || '',
+      flag: item.status || 'normal',
+    })),
+    summary: result?.summary || '',
+    resultPdf: result?.attachmentUrl || order.resultPdf || null,
+  };
+};
+
+// ── Result editing & attachments ────────────────────────────
+export const updateResult = async (id, data, userId) => {
+  const result = await LabResult.findById(id);
+  if (!result) throw new ApiError(404, 'Result not found');
+
+  if (Array.isArray(data.results)) result.results = data.results;
+  if (data.summary !== undefined) result.summary = data.summary;
+
+  await result.save();
+
+  const order = await LabOrder.findById(result.labOrderId);
+  if (order && order.status !== 'completed') {
+    order.status = 'completed';
+    if (!order.completedAt) order.completedAt = new Date();
+    await order.save();
+  }
+
+  try { logAction({ userId, action: 'UPDATE_LAB_RESULT', resourceType: 'LabResult', resourceId: result._id, description: `Result updated for order ${result.labOrderId}` }); } catch (_) {}
+  return result.populate([POP_PERF]);
+};
+
+export const uploadResultAttachment = async (id, file, userId) => {
+  if (!file) throw new ApiError(400, 'No file uploaded');
+  const result = await LabResult.findById(id);
+  if (!result) throw new ApiError(404, 'Result not found');
+
+  const url = await uploadBuffer(file.buffer, { folder: 'hms/lab-results', resource_type: 'auto' });
+
+  result.attachmentUrl = url;
+  await result.save();
+
+  const order = await LabOrder.findById(result.labOrderId);
+  if (order) {
+    order.resultPdf = url;
+    if (!order.completedAt) order.completedAt = new Date();
+    await order.save();
+  }
+
+  try { logAction({ userId, action: 'UPLOAD_LAB_RESULT_ATTACHMENT', resourceType: 'LabResult', resourceId: result._id, description: `Attachment uploaded for order ${result.labOrderId}` }); } catch (_) {}
+  return result.populate([POP_PERF]);
 };
