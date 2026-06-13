@@ -79,7 +79,6 @@ function DoctorCard({ doctor }) {
   const showPhoto  = photo && !imageFailed
   const initials   = fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'DR'
   const isAvailable = doctor.isAvailable !== false
-  const fee        = doctor.consultationFee || 0
 
   const days = []
   let d = new Date()
@@ -165,10 +164,9 @@ function DoctorCard({ doctor }) {
             <span style={{ fontSize: 13, color: TEAL, fontWeight: 700 }}>+994 50 836 36 94</span>
           </a>
 
-          {(exp > 0 || fee > 0) && (
+          {exp > 0 && (
             <div style={{ display: 'flex', gap: 16 }}>
-              {exp > 0 && <span style={{ fontSize: 12, color: '#64748b' }}>{exp} il təcrübə</span>}
-              {fee > 0  && <span style={{ fontSize: 12, color: '#64748b' }}>Konsultasiya: <strong style={{ color: NAVY }}>{fee} ₼</strong></span>}
+              <span style={{ fontSize: 12, color: '#64748b' }}>{exp} il təcrübə</span>
             </div>
           )}
         </div>
