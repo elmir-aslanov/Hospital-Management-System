@@ -183,11 +183,12 @@ export default function DepartmentsPage() {
                       <Link
                         key={dept._id}
                         to={`/departments/${dept.slug}`}
-                        className="text-[15px] md:text-base hover:underline"
+                        className="flex items-center gap-2 text-[15px] md:text-base hover:underline"
                         style={{ color: TEAL }}
                         onMouseEnter={e => { e.currentTarget.style.color = TEAL_HOVER }}
                         onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
                       >
+                        <span className="text-[18px] leading-none">{dept.icon || '🏥'}</span>
                         {dept.name}
                       </Link>
                     ))}
