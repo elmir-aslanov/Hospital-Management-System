@@ -1,10 +1,12 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import useSeoMeta from '../../hooks/useSeoMeta'
 import api from '../../api/axios'
 import { blogCategoryLabel } from '../../data/blogCategories'
 import BlogCard from '../../components/blog/BlogCard'
 import { cloudinaryResize } from '../../utils/cloudinaryImage'
+import { fadeUp } from '../../utils/animations'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const NAVY = '#0B1D34'
@@ -172,14 +174,20 @@ function RelatedPosts({ category, excludeSlug }) {
   if (posts.length === 0) return null
 
   return (
-    <section className="related-section">
+    <motion.section
+      className="related-section"
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+    >
       <h2>Oxşar məqalələr</h2>
       <div className="related-grid">
         {posts.map(post => (
           <BlogCard key={post._id} post={post} hoveredId={hoveredId} setHoveredId={setHoveredId} />
         ))}
       </div>
-    </section>
+    </motion.section>
   )
 }
 
@@ -356,7 +364,12 @@ export default function BlogDetailPage() {
         </nav>
 
         <div className="article-layout">
-          <article className="article-card">
+          <motion.article
+            className="article-card"
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+          >
             <header className="article-header">
               <div className="article-meta-row">
                 <span>{formatDate(post.publishedAt || post.createdAt)}</span>
@@ -391,20 +404,33 @@ export default function BlogDetailPage() {
             <ContentBody html={contentHtml} />
 
             <DisclaimerBox navigate={navigate} />
-          </article>
+          </motion.article>
 
-          <DetailSidebar post={post} headings={headings} navigate={navigate} />
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <DetailSidebar post={post} headings={headings} navigate={navigate} />
+          </motion.div>
         </div>
 
         <RelatedPosts category={post.category} excludeSlug={post.slug} />
 
-        <section className="bottom-cta">
+        <motion.section
+          className="bottom-cta"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
           <div>
             <h2>Həkimlə məsləhətləşmək istəyirsiniz?</h2>
             <p>Randevu yaradın və mütəxəssislərimizdən dəstək alın.</p>
           </div>
           <button type="button" onClick={() => navigate('/randevu')}>Randevu al</button>
-        </section>
+        </motion.section>
       </div>
 
       <style>{baseStyles}</style>
@@ -432,8 +458,8 @@ const baseStyles = `
   .article-title { margin: 0 0 12px; color: ${NAVY}; font-family: 'Raleway', ${FONT}; font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -0.01em; }
   .article-subtitle { margin: 0; color: ${MUTED}; font-size: 17px; line-height: 1.6; max-width: 760px; }
   .share-row { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
-  .share-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #F1F5F9; color: ${MUTED}; border: 0; cursor: pointer; transition: all .15s; text-decoration: none; }
-  .share-btn:hover { background: ${TEAL}; color: #fff; }
+  .share-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #F1F5F9; color: ${MUTED}; border: 0; cursor: pointer; transition: all .2s; text-decoration: none; }
+  .share-btn:hover { background: ${TEAL}; color: #fff; transform: scale(1.05); }
   .share-copied { font-size: 12px; color: ${TEAL}; font-weight: 700; }
   .article-hero-wrap { padding: 22px 46px 0; }
   .article-hero-image { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; border-radius: 12px; background: #E6F7F8; }

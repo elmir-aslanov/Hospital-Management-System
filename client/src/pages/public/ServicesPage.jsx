@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
+import { fadeUp } from '../../utils/animations';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -30,10 +31,11 @@ function ServiceCard({ service, index }) {
   const imgSrc = resolveImage(service.image);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
       viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: index * 0.06 }}
+      transition={{ ...fadeUp.visible.transition, delay: index * 0.06 }}
       style={{
         background: '#ffffff', borderRadius: 16, padding: '28px 24px',
         border: '1px solid #e8eef4', boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
@@ -101,7 +103,7 @@ export default function ServicesPage() {
       {/* Hero */}
       <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)', padding: '72px 0 80px', textAlign: 'center', width: '100%' }}>
         <div className="page-container">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <motion.div variants={fadeUp} initial="hidden" animate="visible">
           <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(77,208,225,0.85)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14, fontFamily: FONT }}>
             Aslan Medical Center
           </p>

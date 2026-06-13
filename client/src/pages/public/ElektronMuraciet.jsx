@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { showSuccess, showError, showWarning } from '../../utils/alert'
+import { fadeUp } from '../../utils/animations'
 
 const FONT  = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL  = '#1D8B95'
@@ -153,7 +155,12 @@ export default function ElektronMuraciet() {
       `}</style>
 
       {/* Info text section */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '32px 16px 28px' : '48px 48px 40px' }}>
+      <motion.div
+        style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '32px 16px 28px' : '48px 48px 40px' }}
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+      >
         <h2 style={{ fontSize: isMobile ? 24 : 28, fontWeight: 800, lineHeight: 1.25, color: '#0B1D34', marginBottom: 22, fontFamily: FONT }}>
           Hörmətli istifadəçi!
         </h2>
@@ -166,15 +173,21 @@ export default function ElektronMuraciet() {
         <p style={{ maxWidth: 1200, fontSize: isMobile ? 15 : 16, fontWeight: 400, color: '#475569', lineHeight: isMobile ? 1.7 : 1.85, marginBottom: 0 }}>
           Aslan Medical Center təhlükəsizlik səbəbindən bu domenlərdən məktub qəbul etmir: yandex.ru, mail.ru, list.ru, inbox.ru, bk.ru, yahoo.com.
         </p>
-      </div>
+      </motion.div>
 
       {/* Form card */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '0 16px 40px' : '0 48px 60px' }}>
-        <div style={{
-          background: '#FFFFFF', borderRadius: 20, padding: isMobile ? 24 : 40,
-          border: '1px solid rgba(29, 139, 149, 0.10)',
-          boxShadow: '0 12px 35px rgba(11, 29, 52, 0.06)',
-        }}>
+        <motion.div
+          style={{
+            background: '#FFFFFF', borderRadius: 20, padding: isMobile ? 24 : 40,
+            border: '1px solid rgba(29, 139, 149, 0.10)',
+            boxShadow: '0 12px 35px rgba(11, 29, 52, 0.06)',
+          }}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
           <form onSubmit={handleSubmit}>
 
             {/* Row 1 — Ad, Soyad, Ata adı */}
@@ -241,10 +254,11 @@ export default function ElektronMuraciet() {
                   padding: '14px 34px', fontSize: 14, fontWeight: 700,
                   borderRadius: 12, cursor: loading ? 'not-allowed' : 'pointer',
                   fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 8,
-                  transition: 'background 0.2s, box-shadow 0.2s',
+                  transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
                   boxShadow: loading ? 'none' : '0 12px 24px rgba(29, 139, 149, 0.22)',
                   width: isMobile ? '100%' : 'auto',
                   justifyContent: 'center',
+                  transform: hovering && !loading ? 'scale(1.03)' : 'scale(1)',
                 }}
                 onMouseEnter={() => setHovering(true)}
                 onMouseLeave={() => setHovering(false)}
@@ -254,7 +268,7 @@ export default function ElektronMuraciet() {
             </div>
 
           </form>
-        </div>
+        </motion.div>
       </div>
 
     </div>

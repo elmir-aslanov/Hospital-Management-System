@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
+import { fadeUp } from '../../utils/animations';
 
 const FALLBACK_STORIES = []; // No hardcoded data — API returns real content
 
@@ -45,9 +46,9 @@ export default function PatientStoriesPage() {
       }}>
         <div className="page-container">
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
           style={{
             fontSize: '12px', letterSpacing: '3px',
             color: '#4DD0E1', fontWeight: 700,
@@ -57,9 +58,10 @@ export default function PatientStoriesPage() {
           {t('patientStoriesPage.overline')}
         </motion.p>
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ ...fadeUp.visible.transition, delay: 0.1 }}
           style={{
             fontSize: '52px', fontWeight: 800,
             color: 'white', lineHeight: 1.2, marginBottom: '16px',
@@ -68,9 +70,10 @@ export default function PatientStoriesPage() {
           {t('patientStoriesPage.title')}
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ ...fadeUp.visible.transition, delay: 0.2 }}
           style={{
             fontSize: '18px', color: 'rgba(255,255,255,0.75)',
             maxWidth: '560px', margin: '0 auto',
@@ -96,11 +99,12 @@ export default function PatientStoriesPage() {
         ) : fullStories.map((story, i) => (
           <motion.div
             key={story.id}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
             whileHover={{ y: -6, boxShadow: '0 20px 48px rgba(0,0,0,0.12)' }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.1 }}
+            transition={{ ...fadeUp.visible.transition, delay: (i % 3) * 0.05 }}
             style={{
               background: 'white',
               borderRadius: '20px',
@@ -162,9 +166,10 @@ export default function PatientStoriesPage() {
             borderRadius: '50px', padding: '12px 28px',
             color: '#00848e', fontSize: '15px', fontWeight: 700,
             cursor: 'pointer',
+            transition: 'transform 0.2s, background 0.2s, color 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#00848e'; e.currentTarget.style.color = 'white'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#00848e'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#00848e'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#00848e'; e.currentTarget.style.transform = 'scale(1)'; }}
         >
           {t('patientStoriesPage.backHome')}
         </button>

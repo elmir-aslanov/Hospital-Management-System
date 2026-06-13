@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import AboutDirector from '../../components/sections/AboutDirector'
 import api from '../../api/axios'
+import { fadeUp } from '../../utils/animations'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
@@ -114,10 +115,10 @@ function DoctorCard({ doctor }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
       viewport={{ once: true }}
-      transition={{ duration: 0.4 }}
       style={{ background: '#F8FDFD', borderRadius: 8, boxShadow: '0 2px 16px rgba(0,132,142,0.08)', border: '1px solid #C8E9EB', fontFamily: FONT, overflow: 'hidden' }}
     >
       {/* ── MAIN: Photo col + Info col + Appointment col ── */}
@@ -269,10 +270,10 @@ export default function HekimlerPage() {
 
           <motion.div
             className="doctors-page-header"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
           >
             <div>
               <h2 className="doctors-page-title">Həkimlərimiz</h2>

@@ -1,7 +1,9 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import api from '../../api/axios'
+import { fadeUp } from '../../utils/animations'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
@@ -81,7 +83,13 @@ export default function DepartmentDetailPage() {
           }}
         />
 
-        <div className="relative px-4" style={{ maxWidth: 1320, margin: '0 auto' }}>
+        <motion.div
+          className="relative px-4"
+          style={{ maxWidth: 1320, margin: '0 auto' }}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+        >
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-[14px] mb-10 text-white/80">
             <a href="/" className="hover:underline text-white/80">Ana Səhifə</a>
@@ -95,7 +103,7 @@ export default function DepartmentDetailPage() {
           <h1 className="text-center text-4xl md:text-5xl font-light text-white">
             {loading ? 'Yüklənir...' : (dept?.name || 'Şöbə tapılmadı')}
           </h1>
-        </div>
+        </motion.div>
       </section>
 
       {/* ── Body ──────────────────────────────────────────────────────── */}
@@ -117,26 +125,46 @@ export default function DepartmentDetailPage() {
             <>
               {/* Description */}
               {dept.description && (
-                <p className="text-[15px] leading-relaxed mb-8" style={{ color: '#334155', maxWidth: 800 }}>
+                <motion.p
+                  className="text-[15px] leading-relaxed mb-8"
+                  style={{ color: '#334155', maxWidth: 800 }}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                >
                   {dept.description}
-                </p>
+                </motion.p>
               )}
 
               {/* Contact card */}
               {hasContact && (
-                <div className="bg-white rounded-lg p-6 mb-8" style={{ border: '1px solid #E2E8F0', maxWidth: 480 }}>
+                <motion.div
+                  className="bg-white rounded-lg p-6 mb-8"
+                  style={{ border: '1px solid #E2E8F0', maxWidth: 480 }}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                >
                   <h2 className="text-sm font-semibold mb-3" style={{ color: NAVY }}>Əlaqə məlumatları</h2>
                   <div className="text-[14px] leading-[1.9]" style={{ color: '#334155' }}>
                     {dept.phone && <div>Tel: {dept.phone}</div>}
                     {dept.fax   && <div>Faks: {dept.fax}</div>}
                     {dept.room  && <div>Otaq: {dept.room}</div>}
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Doctors */}
               {doctors.length > 0 && (
-                <div className="mb-8">
+                <motion.div
+                  className="mb-8"
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                >
                   <h2 className="text-xl font-semibold mb-6" style={{ color: NAVY }}>Şöbə həkimləri</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                     {doctors.map(doc => {
@@ -145,7 +173,7 @@ export default function DepartmentDetailPage() {
                       const spec  = getDoctorSpecialty(doc)
                       const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
                       return (
-                        <div key={doc._id} className="rounded-xl p-4 text-center transition-shadow hover:shadow-md mx-auto w-full" style={{ border: '1px solid #E2E8F0', maxWidth: 280 }}>
+                        <div key={doc._id} className="rounded-xl p-4 text-center transition-all hover:shadow-md hover:scale-[1.02] mx-auto w-full" style={{ border: '1px solid #E2E8F0', maxWidth: 280 }}>
                           {photo ? (
                             <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover mx-auto" />
                           ) : (
@@ -169,13 +197,13 @@ export default function DepartmentDetailPage() {
                       )
                     })}
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Back link */}
               <Link
                 to="/departments"
-                className="inline-flex items-center gap-1.5 text-sm hover:underline mt-8"
+                className="inline-flex items-center gap-1.5 text-sm hover:underline mt-8 transition-transform duration-200 hover:scale-105"
                 style={{ color: TEAL }}
                 onMouseEnter={e => { e.currentTarget.style.color = TEAL_HOVER }}
                 onMouseLeave={e => { e.currentTarget.style.color = TEAL }}

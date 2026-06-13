@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import usePageTitle from '../../hooks/usePageTitle'
 import api from '../../api/axios'
 import { BLOG_CATEGORIES } from '../../data/blogCategories'
 import BlogCard from '../../components/blog/BlogCard'
+import { fadeUp } from '../../utils/animations'
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
@@ -29,7 +31,14 @@ const CATEGORY_ICONS = {
 
 function HealthCategoriesSection({ onSelectCategory }) {
   return (
-    <section className="py-16 border-t" style={{ borderColor: '#E2E8F0' }}>
+    <motion.section
+      className="py-16 border-t"
+      style={{ borderColor: '#E2E8F0' }}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+    >
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' }}>
         <h2 className="text-2xl font-bold mb-8" style={{ color: NAVY, fontFamily: "'Raleway',sans-serif" }}>
           Kəşf etmək üçün sağlamlıq kateqoriyaları
@@ -42,7 +51,7 @@ function HealthCategoriesSection({ onSelectCategory }) {
               onClick={() => onSelectCategory(cat.slug)}
               className="group flex flex-col items-center text-center"
             >
-              <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-200 rounded-lg flex items-center justify-center transition-colors">
+              <div className="w-full aspect-square bg-sky-50 group-hover:bg-sky-200 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105">
                 <img
                   src={CATEGORY_ICONS[cat.slug]}
                   alt={cat.label}
@@ -61,7 +70,7 @@ function HealthCategoriesSection({ onSelectCategory }) {
           ))}
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }
 
@@ -172,11 +181,16 @@ export default function BlogPage() {
         .blog-page input:focus-visible,
         .blog-page [tabindex]:focus-visible { outline: 2px solid ${TEAL}; outline-offset: 2px; border-radius: 4px; }
       `}</style>
-      <div style={{ background: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', padding: '48px 32px', textAlign: 'center', marginBottom: 40 }}>
+      <motion.div
+        style={{ background: 'linear-gradient(135deg,#0a1628 0%,#00848e 100%)', padding: '48px 32px', textAlign: 'center', marginBottom: 40 }}
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+      >
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 8px' }}>ASLAN MEDİCAL CENTER</p>
         <h1 style={{ color: 'white', fontSize: 32, fontWeight: 800, margin: '0 0 12px', fontFamily: "'Raleway',sans-serif" }}>Tibbi Bloq</h1>
         <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 15, margin: 0 }}>Sağlamlıq, müalicə və profilaktika üzrə məqalə və yeniliklər.</p>
-      </div>
+      </motion.div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' }}>
 
@@ -255,7 +269,16 @@ export default function BlogPage() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
               {posts.map((post, i) => (
-                <BlogCard key={post._id ?? i} post={post} hoveredId={hoveredId} setHoveredId={setHoveredId} />
+                <motion.div
+                  key={post._id ?? i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  transition={{ ...fadeUp.visible.transition, delay: (i % 3) * 0.05 }}
+                >
+                  <BlogCard post={post} hoveredId={hoveredId} setHoveredId={setHoveredId} />
+                </motion.div>
               ))}
             </div>
             <Pagination page={page} pages={pages} onChange={handlePageChange} />

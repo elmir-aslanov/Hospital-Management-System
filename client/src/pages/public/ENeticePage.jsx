@@ -1,6 +1,8 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import api from '../../api/axios'
+import { fadeUp } from '../../utils/animations'
 
 const FONT = "'Poppins', 'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
@@ -607,7 +609,7 @@ export default function ENeticePage() {
 
         .enetice-submit:not(:disabled):hover {
           background: #0e8f96;
-          transform: translateY(-1px);
+          transform: translateY(-1px) scale(1.02);
         }
 
         .enetice-submit:disabled {
@@ -811,6 +813,11 @@ export default function ENeticePage() {
           cursor: pointer;
           font: 800 14px/1 ${FONT};
           padding: 12px;
+          transition: transform 0.2s ease;
+        }
+
+        .enetice-reset:hover {
+          transform: scale(1.02);
         }
 
         .enetice-modal-backdrop {
@@ -1008,15 +1015,15 @@ export default function ENeticePage() {
       `}</style>
 
       <div className="enetice-shell">
-        <aside className="enetice-promo" aria-label="Aslan Medical mobil tətbiqi">
+        <motion.aside className="enetice-promo" aria-label="Aslan Medical mobil tətbiqi" variants={fadeUp} initial="hidden" animate="visible">
           <a href="/" style={{
             alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 5,
             fontSize: 13, fontWeight: 600, color: TEAL, textDecoration: 'none',
             padding: '6px 14px', border: `1.5px solid ${TEAL}`, borderRadius: 8,
-            background: 'transparent', transition: 'background 0.15s, color 0.15s',
+            background: 'transparent', transition: 'background 0.15s, color 0.15s, transform 0.2s',
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEAL }}>
+            onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.05)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEAL; e.currentTarget.style.transform = 'scale(1)' }}>
             ← Ana səhifə
           </a>
           <div className="enetice-promo-copy">
@@ -1032,9 +1039,9 @@ export default function ENeticePage() {
             <img src={ASSETS.googlePlay} alt="Google Play" />
             <img src={ASSETS.appStore} alt="App Store" />
           </div>
-        </aside>
+        </motion.aside>
 
-        <main className="enetice-form-panel">
+        <motion.main className="enetice-form-panel" variants={fadeUp} initial="hidden" animate="visible" transition={{ ...fadeUp.visible.transition, delay: 0.1 }}>
           <img className="enetice-form-logo" src={ASSETS.logo} alt="Aslan Medical Center" />
 
           <h1>Laborator analiz nəticələri</h1>
@@ -1246,7 +1253,7 @@ export default function ENeticePage() {
               </button>
             </div>
           )}
-        </main>
+        </motion.main>
       </div>
 
       {modal && <InfoModal type={modal} onClose={() => setModal(null)} />}

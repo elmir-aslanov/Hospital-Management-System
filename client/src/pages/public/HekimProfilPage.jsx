@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import api from '../../api/axios'
+import { fadeUp } from '../../utils/animations'
 
 const TEAL   = '#1D8B95'
 const NAVY   = '#0B1D34'
@@ -257,7 +259,7 @@ export default function HekimProfilPage() {
       <div className="hp-grid">
 
         {/* LEFT CARD */}
-        <div className="hp-card hp-left">
+        <motion.div className="hp-card hp-left" variants={fadeUp} initial="hidden" animate="visible">
           {photo
             ? <img src={photo} alt={name} className="hp-photo" onError={() => setFailedImageSrc(photo)} />
             : (
@@ -308,10 +310,10 @@ export default function HekimProfilPage() {
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* RIGHT CARD */}
-        <div className="hp-card hp-right">
+        <motion.div className="hp-card hp-right" variants={fadeUp} initial="hidden" animate="visible" transition={{ ...fadeUp.visible.transition, delay: 0.1 }}>
           <div className="hp-tabbar">
             {TABS.map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key)} className={`hp-tab ${activeTab === t.key ? 'hp-tab-active' : ''}`}>
@@ -409,7 +411,7 @@ export default function HekimProfilPage() {
             )}
 
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <style>{`
@@ -480,11 +482,12 @@ export default function HekimProfilPage() {
           border-bottom: 2px solid transparent;
           margin-bottom: -2px;
           white-space: nowrap;
-          transition: color 0.15s, border-color 0.15s;
+          transition: color 0.2s, border-color 0.2s, transform 0.2s;
         }
 
         .hp-tab:hover {
           color: ${NAVY};
+          transform: scale(1.05);
         }
 
         .hp-tab-active {
