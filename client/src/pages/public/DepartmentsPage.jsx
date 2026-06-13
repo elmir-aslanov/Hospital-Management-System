@@ -97,7 +97,7 @@ export default function DepartmentsPage() {
         className="relative overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${TEAL} 0%, #176F7E 48%, ${NAVY} 100%)`,
-          padding: '84px 0 88px',
+          padding: '72px 0 76px',
         }}
       >
         {/* subtle diagonal geometric overlay */}
@@ -127,36 +127,118 @@ export default function DepartmentsPage() {
             background: 'radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 70%)',
           }}
         />
+        <style>{`
+          .departments-hero-content {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+          }
+          .departments-hero-title {
+            margin: 0;
+            color: #ffffff;
+            font-size: clamp(40px, 5vw, 64px);
+            font-weight: 700;
+            line-height: 1.08;
+          }
+          .departments-hero-subtitle {
+            max-width: 760px;
+            margin: 14px auto 0;
+            color: rgba(255,255,255,0.86);
+            font-size: clamp(16px, 1.8vw, 18px);
+            line-height: 1.55;
+            text-align: center;
+          }
+          .departments-hero-search {
+            width: min(100%, 780px);
+            margin: 28px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+          }
+          .departments-hero-field {
+            height: 56px;
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 22px;
+            background: #ffffff;
+            border-radius: 999px;
+            box-shadow: 0 18px 32px rgba(6,28,48,0.18);
+          }
+          .departments-hero-input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #1f2937;
+            font-size: 16px;
+          }
+          .departments-hero-input::placeholder {
+            color: #64748B;
+          }
+          .departments-hero-button {
+            width: 132px;
+            min-width: 132px;
+            height: 56px;
+            border: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            box-shadow: 0 18px 32px rgba(6,28,48,0.18);
+            transition: background 180ms ease, transform 180ms ease;
+          }
+          .departments-hero-button:hover {
+            transform: translateY(-1px);
+          }
+          @media (max-width: 640px) {
+            .departments-hero-search {
+              max-width: 420px;
+              flex-direction: column;
+              gap: 12px;
+            }
+            .departments-hero-field,
+            .departments-hero-button {
+              width: 100%;
+              min-width: 0;
+            }
+          }
+        `}</style>
 
         <motion.div
-          className="relative px-4 text-center"
-          style={{ maxWidth: 1280, width: '100%', margin: '0 auto' }}
+          className="departments-hero-content"
           variants={fadeUp}
           initial="hidden"
           animate="visible"
         >
           {/* Title */}
-          <h1
-            className="text-4xl md:text-6xl font-bold text-white"
-            style={{ lineHeight: 1.08 }}
-          >
+          <h1 className="departments-hero-title">
             Şöbələrimiz
           </h1>
 
-          <p
-            className="text-base md:text-lg text-white/85 mx-auto"
-            style={{
-              maxWidth: 720,
-              marginTop: 16,
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="departments-hero-subtitle">
             Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
           </p>
 
           {/* Search bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mx-auto w-full" style={{ maxWidth: 720, marginTop: 32 }}>
-            <label className="flex items-center bg-white rounded-full pl-5 pr-5 h-12 md:h-14 flex-1 min-w-0 gap-3 shadow-lg">
+          <div className="departments-hero-search">
+            <label className="departments-hero-field">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
@@ -166,12 +248,12 @@ export default function DepartmentsPage() {
                 placeholder="Şöbə axtarın"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 min-w-0 outline-none text-[15px] md:text-base text-gray-700 bg-transparent placeholder:text-[#64748B]"
+                className="departments-hero-input"
               />
             </label>
             <button
               type="button"
-              className="flex-shrink-0 h-12 md:h-14 flex items-center justify-center whitespace-nowrap rounded-full px-8 text-[15px] md:text-base font-semibold text-white shadow-lg transition-colors"
+              className="departments-hero-button"
               style={{ background: TEAL }}
               onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
               onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
