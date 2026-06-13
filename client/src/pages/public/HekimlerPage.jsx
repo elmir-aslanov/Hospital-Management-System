@@ -1,5 +1,5 @@
 import usePageTitle from '../../hooks/usePageTitle'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import AboutDirector from '../../components/sections/AboutDirector'
@@ -223,6 +223,16 @@ export default function HekimlerPage() {
   const [visibleCount, setVisibleCount] = useState(8)
   const [view, setView] = useState('table')
   const [expandedId, setExpandedId] = useState(null)
+  const [hoveredId, setHoveredId] = useState(null)
+  const hoverOpenTimer  = useRef(null)
+  const hoverCloseTimer = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(hoverOpenTimer.current)
+      clearTimeout(hoverCloseTimer.current)
+    }
+  }, [])
 
   useEffect(() => {
     // Public site-doctors endpoint — no auth required
@@ -344,10 +354,10 @@ export default function HekimlerPage() {
           {!loading && !error && filtered.length > 0 && (
             <>
               {view === 'table' && (
-                <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
+                <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'visible', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
 
                   {/* Header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '2px solid #e5e7eb', background: '#f9fafb' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '2px solid #e5e7eb', background: '#f9fafb', borderRadius: '12px 12px 0 0' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ad</span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Şöbə</span>
                   </div>
@@ -358,8 +368,21 @@ export default function HekimlerPage() {
                     const dept      = doc.specialization || doc.department || doc.specialty || '—'
                     const isLinked  = !!doc._id
                     const isOpen    = expandedId === doc._id
+                    const isHovered = !isOpen && hoveredId === doc._id
+                    const openHoverPreview = () => {
+                      if (!isLinked) return
+                      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
+                      clearTimeout(hoverCloseTimer.current)
+                      hoverOpenTimer.current = setTimeout(() => setHoveredId(doc._id), 180)
+                    }
+                    const closeHoverPreview = () => {
+                      clearTimeout(hoverOpenTimer.current)
+                      hoverCloseTimer.current = setTimeout(() => {
+                        setHoveredId(prev => prev === doc._id ? null : prev)
+                      }, 150)
+                    }
                     return (
-                      <div key={doc._id || i}>
+                      <div key={doc._id || i} style={{ position: 'relative' }} onMouseEnter={openHoverPreview} onMouseLeave={closeHoverPreview}>
                         <div
                           style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '1px solid #f3f4f6', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s', background: isOpen ? '#f0fafb' : 'white' }}
                           onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#f9fafb' }}
@@ -376,6 +399,25 @@ export default function HekimlerPage() {
                         </div>
                         {isOpen && (
                           <div style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <DoctorCard doctor={doc} />
+                          </div>
+                        )}
+                        {isHovered && (
+                          <div
+                            className="doctor-hover-preview"
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              zIndex: 30,
+                              marginTop: 6,
+                              background: '#FFFFFF',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: 10,
+                              boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
+                            }}
+                          >
                             <DoctorCard doctor={doc} />
                           </div>
                         )}
@@ -753,6 +795,16 @@ export default function HekimlerPage() {
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
+        }
+
+        @keyframes doctorPreviewFade {
+          from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .doctor-hover-preview {
+          animation: doctorPreviewFade 0.18s ease forwards;
+          transform-origin: top center;
         }
 
         @media (max-width: 1180px) {
