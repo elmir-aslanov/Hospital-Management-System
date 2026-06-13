@@ -128,17 +128,17 @@ export default function DepartmentsPage() {
           }}
         />
         <motion.div
-          className="relative mx-auto flex w-full max-w-[900px] flex-col items-center px-4 text-center"
+          className="relative mx-auto flex w-full max-w-[1280px] flex-col items-center px-4 text-center md:px-8"
           variants={fadeUp}
           initial="hidden"
           animate="visible"
         >
           {/* Title */}
-          <h1 className="m-0 text-4xl font-bold leading-tight text-white md:text-6xl">
+          <h1 className="m-0 text-4xl font-light leading-tight text-white md:text-5xl">
             Şöbələrimiz
           </h1>
 
-          <p className="mx-auto mt-4 w-full max-w-[760px] text-center text-base leading-relaxed text-white/85 md:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-center text-base leading-relaxed text-white/80">
             Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
           </p>
 
