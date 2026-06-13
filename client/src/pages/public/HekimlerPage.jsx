@@ -398,7 +398,18 @@ export default function HekimlerPage() {
                           <span style={{ fontSize: 14, color: '#374151', fontWeight: 400 }}>{dept}</span>
                         </div>
                         {isOpen && (
-                          <div style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              zIndex: 20,
+                              marginTop: 6,
+                              borderRadius: 10,
+                              boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
+                            }}
+                          >
                             <DoctorCard doctor={doc} />
                           </div>
                         )}
