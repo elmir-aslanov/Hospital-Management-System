@@ -21,6 +21,7 @@ import PatientStoriesPage   from './pages/public/PatientStoriesPage';
 import HekimlerPage          from './pages/public/HekimlerPage';
 import HekimProfilPage       from './pages/public/HekimProfilPage';
 import DepartmentsPage       from './pages/public/DepartmentsPage';
+import DepartmentDetailPage  from './pages/public/DepartmentDetailPage';
 import ServicesPage          from './pages/public/ServicesPage';
 import BlogPage              from './pages/public/BlogPage';
 import BlogDetailPage        from './pages/public/BlogDetailPage';
@@ -132,6 +133,7 @@ function Layout() {
         <Route path="/about"       element={<ComingSoon title="Haqqımızda" />} />
         <Route path="/doctors"     element={<ComingSoon title="Həkimlər" />} />
         <Route path="/departments" element={<DepartmentsPage />} />
+        <Route path="/departments/:slug" element={<DepartmentDetailPage />} />
         <Route path="/services"    element={<ServicesPage />} />
         <Route path="/patients"    element={<ComingSoon title="Pasiyent Mərkəzi" />} />
         <Route path="/blog"        element={<BlogPage />} />

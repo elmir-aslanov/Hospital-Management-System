@@ -37,7 +37,7 @@ export default function AdminDepartments() {
   /* dept modal */
   const [deptModal,  setDeptModal]  = useState(false)
   const [editDept,   setEditDept]   = useState(null)
-  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'🏥', order:0, isActive:true })
+  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'🏥', order:0, isActive:true, phone:'', fax:'', room:'' })
   const [deptSaving, setDeptSaving] = useState(false)
   const [deptErr,    setDeptErr]    = useState('')
 
@@ -88,7 +88,7 @@ export default function AdminDepartments() {
   /* ── dept CRUD ─────────────────────────────────────────────────────── */
   const openAddDept = () => {
     setEditDept(null)
-    setDeptForm({ name:'', description:'', icon:'🏥', order: depts.length, isActive:true })
+    setDeptForm({ name:'', description:'', icon:'🏥', order: depts.length, isActive:true, phone:'', fax:'', room:'' })
     setDeptErr('')
     setDeptModal(true)
   }
@@ -98,6 +98,7 @@ export default function AdminDepartments() {
     setDeptForm({
       name: dept.name, description: dept.description || '',
       icon: dept.icon || '🏥', order: dept.order || 0, isActive: dept.isActive,
+      phone: dept.phone || '', fax: dept.fax || '', room: dept.room || '',
     })
     setDeptErr('')
     setDeptModal(true)
@@ -112,6 +113,9 @@ export default function AdminDepartments() {
       icon:        deptForm.icon,
       order:       Number(deptForm.order) || 0,
       isActive:    deptForm.isActive,
+      phone:       deptForm.phone.trim(),
+      fax:         deptForm.fax.trim(),
+      room:        deptForm.room.trim(),
     }
     try {
       const url    = editDept ? `${BASE}/api/v1/departments/${editDept._id}` : `${BASE}/api/v1/departments`
@@ -296,6 +300,24 @@ export default function AdminDepartments() {
                   <label style={lbl}>Sıra nömrəsi</label>
                   <input type="number" style={inp} value={deptForm.order} onChange={e => setDF('order', e.target.value)} />
                 </div>
+              </div>
+
+              {/* Phone + Fax */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                <div>
+                  <label style={lbl}>Telefon</label>
+                  <input style={inp} value={deptForm.phone} onChange={e => setDF('phone', e.target.value)} />
+                </div>
+                <div>
+                  <label style={lbl}>Faks</label>
+                  <input style={inp} value={deptForm.fax} onChange={e => setDF('fax', e.target.value)} />
+                </div>
+              </div>
+
+              {/* Room */}
+              <div>
+                <label style={lbl}>Otaq/Mərtəbə</label>
+                <input style={inp} value={deptForm.room} onChange={e => setDF('room', e.target.value)} />
               </div>
 
               {/* isActive */}
