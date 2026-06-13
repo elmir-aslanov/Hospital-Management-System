@@ -87,7 +87,7 @@ export default function PageLoader() {
           >
             <div style={{ textAlign: 'center', marginBottom: '8px' }}>
               <img
-                src="/logonew.jpg"
+                src="/yenilogo.png"
                 alt="Aslan Medical Clinic"
                 style={{
                   height: '90px',

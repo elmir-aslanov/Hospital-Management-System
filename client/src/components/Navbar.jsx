@@ -280,7 +280,7 @@ export default function Navbar() {
 
           {/* 1. Logo */}
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
-            <img src="/logonew.jpg" alt="Aslan Medical"
+            <img src="/yenilogo.png" alt="Aslan Medical"
               style={{ height: '56px', maxWidth: '190px', width: 'auto', objectFit: 'contain' }}
               className="navbar-logo"
               onError={e => {

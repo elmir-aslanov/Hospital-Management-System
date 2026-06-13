@@ -78,7 +78,7 @@ export default function ContactPage() {
             padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
             boxShadow: '0 8px 32px rgba(0,0,0,0.14)', minWidth: 190,
           }}>
-            <img src="/logonew.jpg" alt="Aslan Medical"
+            <img src="/yenilogo.png" alt="Aslan Medical"
               style={{ height: 36, maxWidth: 140, width: 'auto', objectFit: 'contain' }}
               onError={e => e.target.style.display = 'none'} />
             <div>

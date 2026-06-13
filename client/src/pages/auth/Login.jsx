@@ -93,7 +93,7 @@ export default function Login() {
 
             {/* Logo + name */}
             <div style={{ marginBottom: 32 }}>
-              <img src="/logonew.jpg" alt="Aslan Medical" style={{ height: 72, maxWidth: 260, width: 'auto', objectFit: 'contain', marginRight: 10, verticalAlign: 'middle' }} onError={e => e.currentTarget.style.display = 'none'} />
+              <img src="/yenilogo.png" alt="Aslan Medical" style={{ height: 72, maxWidth: 260, width: 'auto', objectFit: 'contain', marginRight: 10, verticalAlign: 'middle' }} onError={e => e.currentTarget.style.display = 'none'} />
               <span style={{ fontSize: 18, fontWeight: 800, color: NAVY, fontFamily: FONT, verticalAlign: 'middle' }}>Aslan Medical</span>
             </div>
 

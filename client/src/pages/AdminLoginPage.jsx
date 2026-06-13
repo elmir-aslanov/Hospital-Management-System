@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
 
       <main className="admin-login-card" aria-label={t('adminLogin.aria')}>
         <section className="admin-login-brand">
-          <img src="/logonew.jpg" alt="Aslan Medical Center" className="admin-login-logo" />
+          <img src="/yenilogo.png" alt="Aslan Medical Center" className="admin-login-logo" />
 
           <div>
             <h1>{t('adminLogin.welcomeTitle')}</h1>

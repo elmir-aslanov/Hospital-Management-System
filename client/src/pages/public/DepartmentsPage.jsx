@@ -31,6 +31,7 @@ export default function DepartmentsPage() {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(false);
   const [search, setSearch]           = useState('');
+  const [activeLetter, setActiveLetter] = useState(null);
 
   useEffect(() => {
     api.get('/departments')
@@ -60,8 +61,29 @@ export default function DepartmentsPage() {
   }, [filtered]);
 
   const scrollToLetter = (letter) => {
+    setActiveLetter(letter);
     document.getElementById(`letter-${letter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  useEffect(() => {
+    if (grouped.size === 0) return;
+    const letters = ALPHABET.filter(letter => grouped.has(letter));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setActiveLetter(entry.target.id.replace('letter-', ''));
+          }
+        });
+      },
+      { rootMargin: '-20% 0px -70% 0px', threshold: 0 }
+    );
+    letters.forEach(letter => {
+      const el = document.getElementById(`letter-${letter}`);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [grouped]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -138,6 +160,7 @@ export default function DepartmentsPage() {
           >
             {ALPHABET.map(letter => {
               const hasItems = grouped.has(letter);
+              const isActive = hasItems && activeLetter === letter;
               return (
                 <button
                   key={letter}
@@ -145,7 +168,9 @@ export default function DepartmentsPage() {
                   onClick={() => hasItems && scrollToLetter(letter)}
                   className={`w-10 h-10 rounded text-base font-medium border transition-all
                     ${hasItems
-                      ? 'border-[#E2E8F0] text-[#0B1D34] cursor-pointer hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95] hover:scale-105'
+                      ? (isActive
+                          ? 'bg-[#1D8B95] text-white border-[#1D8B95] cursor-pointer hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95] hover:scale-105'
+                          : 'border-[#E2E8F0] text-[#0B1D34] cursor-pointer hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95] hover:scale-105')
                       : 'border-[#E2E8F0] text-[#CBD5E1] cursor-not-allowed'
                     }`}
                 >
@@ -235,7 +260,7 @@ export default function DepartmentsPage() {
                 transition={{ ...fadeUp.visible.transition, delay: (idx % 5) * 0.05 }}
               >
                 <div className="md:w-32 flex-shrink-0">
-                  <h2 id={`letter-${letter}`} className="text-6xl md:text-8xl font-extralight leading-none" style={{ color: TEAL }}>
+                  <h2 id={`letter-${letter}`} className="text-6xl md:text-8xl font-extralight leading-none" style={{ color: TEAL, scrollMarginTop: 180 }}>
                     {letter}
                   </h2>
                 </div>

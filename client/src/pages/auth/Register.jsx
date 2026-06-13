@@ -287,7 +287,7 @@ export default function Register() {
           <div style={{ background: '#fff', borderRadius: 20, padding: 40, maxWidth: 420, width: '90%', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
 
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <img src="/logonew.jpg" alt="logo" style={{ height: 72, maxWidth: 260, width: 'auto', objectFit: 'contain', marginBottom: 16 }} onError={e => e.currentTarget.style.display = 'none'} />
+              <img src="/yenilogo.png" alt="logo" style={{ height: 72, maxWidth: 260, width: 'auto', objectFit: 'contain', marginBottom: 16 }} onError={e => e.currentTarget.style.display = 'none'} />
               <p style={{ fontSize: 12, fontWeight: 700, color: TEAL, letterSpacing: '1.5px', textTransform: 'uppercase', margin: '0 0 12px', fontFamily: FONT }}>
                 Addım 2/2 — E-poçt təsdiqi
               </p>

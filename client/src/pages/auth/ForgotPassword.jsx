@@ -61,7 +61,7 @@ export default function ForgotPassword() {
       <div style={{ width:'100%', maxWidth:'420px' }}>
 
         <div style={{ textAlign:'center', marginBottom:'32px' }}>
-          <img src="/logonew.jpg" alt="Aslan Medical" style={{ height: '72px', maxWidth: '260px', width: 'auto', objectFit: 'contain' }} onError={e => e.currentTarget.style.display='none'} />
+          <img src="/yenilogo.png" alt="Aslan Medical" style={{ height: '72px', maxWidth: '260px', width: 'auto', objectFit: 'contain' }} onError={e => e.currentTarget.style.display='none'} />
         </div>
 
         <div style={{ background:'#fff', borderRadius:'20px', padding:'40px 36px', boxShadow:'0 4px 32px rgba(0,0,0,0.08)' }}>

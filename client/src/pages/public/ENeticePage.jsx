@@ -15,7 +15,7 @@ const ASSETS = {
   googlePlay: '/google.jpeg',
   info: '/nidamodul.jpeg',
   insurance: '/icbaritibbisigorta.jpeg',
-  logo: '/logonew.jpg',
+  logo: '/yenilogo.png',
   phone: '/mainmobile.jpeg',
   protocol: '/icbaritibbisigortaumunesi.jpeg',
   tabib: '/tabibenetice.jpeg',

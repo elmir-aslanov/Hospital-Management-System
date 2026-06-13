@@ -59,7 +59,7 @@ export default function Footer() {
         {/* Col 1 — Brand */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <img src="/logonew.jpg" alt="Aslan Medical" style={{ height: isMobile ? 48 : 60, maxWidth: isMobile ? 170 : 210, width: 'auto', objectFit: 'contain' }} onError={e => (e.target.style.display = 'none')} />
+            <img src="/yenilogo.png" alt="Aslan Medical" style={{ height: isMobile ? 48 : 60, maxWidth: isMobile ? 170 : 210, width: 'auto', objectFit: 'contain' }} onError={e => (e.target.style.display = 'none')} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.08em' }}>ASLAN</div>
               <div style={{ fontSize: 9, color: TEAL, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>MEDICAL CENTER</div>
