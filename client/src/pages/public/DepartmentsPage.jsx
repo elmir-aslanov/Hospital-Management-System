@@ -93,7 +93,13 @@ export default function DepartmentsPage() {
     <main className="bg-white" style={{ fontFamily: FONT }}>
 
       {/* ── Hero / Banner ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${NAVY} 100%)`, padding: '90px 0' }}>
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${TEAL} 0%, #176F7E 48%, ${NAVY} 100%)`,
+          padding: '84px 0 88px',
+        }}
+      >
         {/* subtle diagonal geometric overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -105,25 +111,53 @@ export default function DepartmentsPage() {
         <div
           className="absolute pointer-events-none"
           style={{
-            opacity: 0.06, right: -120, top: -120, width: 360, height: 360,
-            borderRadius: '50%', border: '40px solid #ffffff',
+            opacity: 0.07, right: -128, top: -128, width: 390, height: 390,
+            borderRadius: '50%', border: '42px solid #ffffff',
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            opacity: 0.08,
+            right: 78,
+            bottom: -96,
+            width: 220,
+            height: 220,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 70%)',
           }}
         />
 
         <motion.div
-          className="relative px-4"
-          style={{ maxWidth: 1320, margin: '0 auto' }}
+          className="relative px-4 text-center"
+          style={{ maxWidth: 1280, width: '100%', margin: '0 auto' }}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
         >
           {/* Title */}
-          <h1 className="text-center text-4xl md:text-5xl font-light text-white mb-8">Şöbələrimiz</h1>
+          <h1
+            className="text-4xl md:text-6xl font-bold text-white"
+            style={{ lineHeight: 1.08 }}
+          >
+            Şöbələrimiz
+          </h1>
+
+          <p
+            className="text-base md:text-lg text-white/85 mx-auto"
+            style={{
+              maxWidth: 720,
+              marginTop: 16,
+              lineHeight: 1.6,
+            }}
+          >
+            Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
+          </p>
 
           {/* Search bar */}
-          <div className="flex items-center gap-2 max-w-lg mx-auto w-full">
-            <label className="flex items-center bg-white rounded-full pl-4 pr-4 h-11 flex-1 min-w-0 gap-2 shadow-lg">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mx-auto w-full" style={{ maxWidth: 720, marginTop: 32 }}>
+            <label className="flex items-center bg-white rounded-full pl-5 pr-5 h-12 md:h-14 flex-1 min-w-0 gap-3 shadow-lg">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
@@ -132,12 +166,12 @@ export default function DepartmentsPage() {
                 placeholder="Şöbə axtarın"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 min-w-0 outline-none text-sm text-gray-700 bg-transparent placeholder:text-[#64748B]"
+                className="flex-1 min-w-0 outline-none text-[15px] md:text-base text-gray-700 bg-transparent placeholder:text-[#64748B]"
               />
             </label>
             <button
               type="button"
-              className="flex-shrink-0 h-11 flex items-center justify-center whitespace-nowrap rounded-full px-5 text-sm font-semibold text-white shadow-lg transition-colors"
+              className="flex-shrink-0 h-12 md:h-14 flex items-center justify-center whitespace-nowrap rounded-full px-8 text-[15px] md:text-base font-semibold text-white shadow-lg transition-colors"
               style={{ background: TEAL }}
               onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
               onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
@@ -150,7 +184,7 @@ export default function DepartmentsPage() {
 
       {/* ── A-Z Letter Navigation ────────────────────────────────────────*/}
       <section className="bg-white">
-        <div className="px-4" style={{ maxWidth: 1320, margin: '0 auto', padding: '32px 16px' }}>
+        <div className="px-4" style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '32px 16px' }}>
           <motion.div
             className="flex flex-wrap gap-2"
             variants={fadeUp}
@@ -184,7 +218,7 @@ export default function DepartmentsPage() {
 
       {/* ── Departments List ─────────────────────────────────────────────*/}
       <section className="bg-white">
-        <div className="px-4" style={{ maxWidth: 1320, margin: '0 auto', padding: '0 16px 80px' }}>
+        <div className="px-4" style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '0 16px 80px' }}>
 
           {error && !loading && (
             <EmptyState
