@@ -144,11 +144,11 @@ export default function DepartmentsPage() {
 
           {/* Search bar */}
           <form
-            className="mx-auto mt-8 flex w-full max-w-[820px] flex-col items-center justify-center gap-4 sm:flex-row"
+            className="mx-auto mt-8 flex w-full max-w-2xl flex-col items-center justify-center gap-4 sm:flex-row"
             onSubmit={e => e.preventDefault()}
           >
-            <div className="relative w-full sm:max-w-[620px] sm:flex-1">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
+            <div className="relative w-full sm:flex-1">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
@@ -157,7 +157,7 @@ export default function DepartmentsPage() {
                 placeholder="Şöbə axtarın"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="h-14 w-full rounded-full border-0 bg-white pl-[52px] pr-5 text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
+                className="h-14 w-full rounded-full border-0 bg-white pl-11 pr-5 text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
               />
             </div>
             <button
