@@ -124,7 +124,7 @@ export default function DepartmentDetailPage() {
 
               {/* Contact card */}
               {hasContact && (
-                <div className="bg-white rounded-lg p-6 mb-12" style={{ border: '1px solid #E2E8F0', maxWidth: 480 }}>
+                <div className="bg-white rounded-lg p-6 mb-8" style={{ border: '1px solid #E2E8F0', maxWidth: 480 }}>
                   <h2 className="text-sm font-semibold mb-3" style={{ color: NAVY }}>Əlaqə məlumatları</h2>
                   <div className="text-[14px] leading-[1.9]" style={{ color: '#334155' }}>
                     {dept.phone && <div>Tel: {dept.phone}</div>}
@@ -136,29 +136,29 @@ export default function DepartmentDetailPage() {
 
               {/* Doctors */}
               {doctors.length > 0 && (
-                <div className="mb-12">
-                  <h2 className="text-2xl font-light mb-6" style={{ color: NAVY }}>Şöbə həkimləri</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold mb-6" style={{ color: NAVY }}>Şöbə həkimləri</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                     {doctors.map(doc => {
                       const photo = getDoctorImage(doc)
                       const name  = getDoctorName(doc)
                       const spec  = getDoctorSpecialty(doc)
                       const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
                       return (
-                        <div key={doc._id} className="rounded-lg p-5 text-center" style={{ border: '1px solid #E2E8F0' }}>
+                        <div key={doc._id} className="rounded-xl p-4 text-center transition-shadow hover:shadow-md mx-auto w-full" style={{ border: '1px solid #E2E8F0', maxWidth: 280 }}>
                           {photo ? (
-                            <img src={photo} alt={name} className="w-16 h-16 rounded-full mx-auto mb-3 object-cover" />
+                            <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover mx-auto" />
                           ) : (
-                            <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-semibold" style={{ background: TEAL }}>
+                            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-white font-semibold" style={{ background: TEAL }}>
                               {initials}
                             </div>
                           )}
-                          <div className="text-[15px] font-semibold" style={{ color: NAVY }}>{name}</div>
+                          <div className="mt-3 text-[15px] font-semibold" style={{ color: NAVY }}>{name}</div>
                           {spec && <div className="text-[13px] mt-1" style={{ color: '#64748B' }}>{spec}</div>}
                           <button
                             type="button"
                             onClick={() => navigate(`/randevu?doctorId=${doc._id}`)}
-                            className="mt-4 text-sm font-semibold rounded-full px-5 py-2 text-white transition-colors"
+                            className="mt-4 inline-block text-sm font-semibold rounded-full py-2 px-4 text-white transition-colors"
                             style={{ background: TEAL }}
                             onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
                             onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
@@ -175,12 +175,16 @@ export default function DepartmentDetailPage() {
               {/* Back link */}
               <Link
                 to="/departments"
-                className="inline-block text-sm hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm hover:underline mt-8"
                 style={{ color: TEAL }}
                 onMouseEnter={e => { e.currentTarget.style.color = TEAL_HOVER }}
                 onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
               >
-                ← Bütün şöbələr
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Bütün şöbələr
               </Link>
             </>
           )}
