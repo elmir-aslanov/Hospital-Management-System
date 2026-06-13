@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
+import { fadeUp } from '../../utils/animations';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#1D8B95';
@@ -90,9 +91,9 @@ export default function DepartmentsPage() {
         <motion.div
           className="relative px-4"
           style={{ maxWidth: 1320, margin: '0 auto' }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
         >
           {/* Title */}
           <h1 className="text-center text-4xl md:text-5xl font-light text-white mb-8">Şöbələrimiz</h1>
@@ -128,7 +129,13 @@ export default function DepartmentsPage() {
       {/* ── A-Z Letter Navigation ────────────────────────────────────────*/}
       <section className="bg-white">
         <div className="px-4" style={{ maxWidth: 1320, margin: '0 auto', padding: '32px 16px' }}>
-          <div className="flex flex-wrap gap-2">
+          <motion.div
+            className="flex flex-wrap gap-2"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             {ALPHABET.map(letter => {
               const hasItems = grouped.has(letter);
               return (
@@ -146,7 +153,7 @@ export default function DepartmentsPage() {
                 </button>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -221,10 +228,11 @@ export default function DepartmentsPage() {
               <motion.div
                 key={letter}
                 className="border-t border-[#E2E8F0] py-10 md:py-14 flex flex-col md:flex-row gap-6 md:gap-12"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: (idx % 5) * 0.05 }}
+                transition={{ ...fadeUp.visible.transition, delay: (idx % 5) * 0.05 }}
               >
                 <div className="md:w-32 flex-shrink-0">
                   <h2 id={`letter-${letter}`} className="text-6xl md:text-8xl font-extralight leading-none" style={{ color: TEAL }}>
@@ -252,7 +260,7 @@ export default function DepartmentsPage() {
                     <button
                       type="button"
                       onClick={scrollToTop}
-                      className="flex items-center gap-1 text-sm transition-colors"
+                      className="flex items-center gap-1 text-sm transition-colors transition-transform duration-200 hover:scale-105"
                       style={{ color: '#64748B' }}
                       onMouseEnter={e => { e.currentTarget.style.color = TEAL }}
                       onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
