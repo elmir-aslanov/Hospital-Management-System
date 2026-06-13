@@ -222,6 +222,7 @@ export default function HekimlerPage() {
   const [view, setView] = useState('table')
   const [expandedId, setExpandedId] = useState(null)
   const [hoveredId, setHoveredId] = useState(null)
+  const [panelHeights, setPanelHeights] = useState({})
   const hoverOpenTimer  = useRef(null)
   const hoverCloseTimer = useRef(null)
 
@@ -379,10 +380,17 @@ export default function HekimlerPage() {
                         setHoveredId(prev => prev === doc._id ? null : prev)
                       }, 150)
                     }
+                    const measurePanel = (el) => {
+                      if (!el) return
+                      const h = el.offsetHeight
+                      if (h && panelHeights[doc._id] !== h) {
+                        setPanelHeights(prev => ({ ...prev, [doc._id]: h }))
+                      }
+                    }
                     return (
-                      <div key={doc._id || i} style={{ position: 'relative' }} onMouseEnter={openHoverPreview} onMouseLeave={closeHoverPreview}>
+                      <div key={doc._id || i} onMouseEnter={openHoverPreview} onMouseLeave={closeHoverPreview}>
                         <div
-                          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '1px solid #f3f4f6', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s', background: isOpen ? '#f0fafb' : 'white' }}
+                          style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '1px solid #f3f4f6', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s', background: isOpen ? '#f0fafb' : 'white' }}
                           onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#f9fafb' }}
                           onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'white' }}
                           onClick={() => isLinked && setExpandedId(isOpen ? null : doc._id)}
@@ -394,41 +402,47 @@ export default function HekimlerPage() {
                             </svg>
                           </span>
                           <span style={{ fontSize: 14, color: '#374151', fontWeight: 400 }}>{dept}</span>
+
+                          {isOpen && (
+                            <div
+                              ref={measurePanel}
+                              style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                zIndex: 20,
+                                marginTop: 6,
+                                borderRadius: 10,
+                                boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
+                              }}
+                            >
+                              <DoctorCard doctor={doc} />
+                            </div>
+                          )}
+                          {isHovered && (
+                            <div
+                              ref={measurePanel}
+                              className="doctor-hover-preview"
+                              style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                zIndex: 30,
+                                marginTop: 6,
+                                background: '#FFFFFF',
+                                border: '1px solid #E2E8F0',
+                                borderRadius: 10,
+                                boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
+                              }}
+                            >
+                              <DoctorCard doctor={doc} />
+                            </div>
+                          )}
                         </div>
-                        {isOpen && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              right: 0,
-                              zIndex: 20,
-                              marginTop: 6,
-                              borderRadius: 10,
-                              boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
-                            }}
-                          >
-                            <DoctorCard doctor={doc} />
-                          </div>
-                        )}
-                        {isHovered && (
-                          <div
-                            className="doctor-hover-preview"
-                            style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              right: 0,
-                              zIndex: 30,
-                              marginTop: 6,
-                              background: '#FFFFFF',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: 10,
-                              boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
-                            }}
-                          >
-                            <DoctorCard doctor={doc} />
-                          </div>
+                        {(isOpen || isHovered) && (
+                          <div style={{ height: panelHeights[doc._id] ? panelHeights[doc._id] + 6 : 0 }} aria-hidden="true" />
                         )}
                       </div>
                     )
