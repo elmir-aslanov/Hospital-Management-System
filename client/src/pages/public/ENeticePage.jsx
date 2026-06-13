@@ -16,7 +16,7 @@ const ASSETS = {
   info: '/nidamodul.jpeg',
   insurance: '/icbaritibbisigorta.jpeg',
   logo: '/yenilogo.png',
-  phone: '/mainmobile.jpeg',
+  phone: '/mainmobile1.png',
   protocol: '/icbaritibbisigortaumunesi.jpeg',
   tabib: '/tabibenetice.jpeg',
 }
@@ -291,7 +291,7 @@ export default function ENeticePage() {
 
         .enetice-promo h2 {
           margin: 0;
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 700;
           line-height: 1.3;
           letter-spacing: 0;
@@ -301,7 +301,7 @@ export default function ENeticePage() {
           margin: 8px auto 0;
           max-width: 360px;
           color: #475569;
-          font-size: 14.5px;
+          font-size: 13.5px;
           font-weight: 400;
           line-height: 1.5;
           letter-spacing: 0;
@@ -309,9 +309,9 @@ export default function ENeticePage() {
 
         .enetice-phone-frame {
           position: relative;
-          width: min(54%, 226px);
-          height: 410px;
-          margin: 12px auto 10px;
+          width: min(70%, 300px);
+          height: 420px;
+          margin: 10px auto 8px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -338,8 +338,8 @@ export default function ENeticePage() {
           display: block;
           width: 100%;
           height: 100%;
-          object-fit: cover;
-          object-position: center top;
+          object-fit: contain;
+          object-position: center center;
         }
 
         .enetice-store-row {
@@ -374,7 +374,7 @@ export default function ENeticePage() {
 
         .enetice-form-panel h1 {
           margin: 0 0 7px;
-          font-size: clamp(30px, 2.2vw, 36px);
+          font-size: clamp(30px, 2vw, 34px);
           font-weight: 800;
           line-height: 1.15;
           letter-spacing: 0;
@@ -385,7 +385,7 @@ export default function ENeticePage() {
           max-width: 560px;
           margin: 0 0 22px;
           color: #475569;
-          font-size: 15.5px;
+          font-size: 14px;
           line-height: 1.5;
           font-weight: 400;
         }
@@ -418,7 +418,7 @@ export default function ENeticePage() {
           align-items: center;
           gap: 9px;
           color: #101828;
-          font-size: 14.5px;
+          font-size: 14px;
           font-weight: 600;
           line-height: 1.25;
           cursor: pointer;
@@ -470,7 +470,7 @@ export default function ENeticePage() {
           gap: 8px;
           margin-bottom: 6px;
           color: #0b1d34;
-          font-size: 14.5px;
+          font-size: 13px;
           font-weight: 600;
           line-height: 1.2;
         }
@@ -490,7 +490,7 @@ export default function ENeticePage() {
           border-radius: 9px;
           background: #ffffff;
           color: ${NAVY};
-          font: 500 15.5px/1.2 ${FONT};
+          font: 500 15px/1.2 ${FONT};
           padding: 0 48px 0 16px;
           outline: none;
           transition: border-color 0.18s ease, box-shadow 0.18s ease;
@@ -499,7 +499,8 @@ export default function ENeticePage() {
 
         .enetice-input::placeholder {
           color: #cbd5e1;
-          font-weight: 600;
+          font-size: 15px;
+          font-weight: 500;
         }
 
         .enetice-input:focus {
@@ -597,7 +598,7 @@ export default function ENeticePage() {
           border-radius: 11px;
           background: #9fd4f2;
           color: #ffffff;
-          font: 700 16.5px/1 ${FONT};
+          font: 700 15px/1 ${FONT};
           cursor: pointer;
           transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
         }
@@ -811,7 +812,7 @@ export default function ENeticePage() {
           background: transparent;
           color: ${TEAL};
           cursor: pointer;
-          font: 800 14px/1 ${FONT};
+          font: 800 13.5px/1 ${FONT};
           padding: 12px;
           transition: transform 0.2s ease;
         }
@@ -910,8 +911,8 @@ export default function ENeticePage() {
           }
 
           .enetice-phone-frame {
-            width: min(250px, 70%);
-            max-width: 250px;
+            width: min(280px, 76%);
+            max-width: 280px;
           }
 
           .enetice-form-panel {
@@ -929,11 +930,11 @@ export default function ENeticePage() {
           }
 
           .enetice-promo h2 {
-            font-size: 24px;
+            font-size: 22px;
           }
 
           .enetice-promo p {
-            font-size: 15px;
+            font-size: 13.5px;
           }
 
           .enetice-store-row img {
@@ -951,7 +952,7 @@ export default function ENeticePage() {
           }
 
           .enetice-subtitle {
-            font-size: 16px;
+            font-size: 14px;
             margin-bottom: 22px;
           }
 
@@ -974,12 +975,12 @@ export default function ENeticePage() {
           .enetice-choice,
           .enetice-field > label,
           .enetice-label-row {
-            font-size: 15px;
+            font-size: 14px;
           }
 
           .enetice-input {
             height: 52px;
-            font-size: 16px;
+            font-size: 15px;
           }
 
           .enetice-actions {
@@ -988,14 +989,14 @@ export default function ENeticePage() {
 
           .enetice-tooltip {
             width: min(320px, calc(100vw - 40px));
-            font-size: 17px;
+            font-size: 14px;
             padding: 18px 20px;
           }
 
           .enetice-submit {
             width: 100%;
             height: 54px;
-            font-size: 18px;
+            font-size: 15.5px;
           }
 
           .enetice-partner-strip {

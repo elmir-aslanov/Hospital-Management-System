@@ -22,32 +22,120 @@ function resolveImage(src) {
 
 const getDoctorName      = (d) => d.userId?.fullName || d.fullName || d.name || 'Həkim'
 const getDoctorImage     = (d) => resolveImage(d.image || d.userId?.photoUrl || d.photoUrl || d.photo)
-const getDoctorSpecialty = (d) => d.specialization || d.specialty || ''
 const getDoctorDeptId    = (d) => d.departmentId?._id || d.departmentId
+
+const isHtml = (str) => /<[a-z][\s\S]*>/i.test(str || '')
+
+const replaceLegacyBranding = (value) => {
+  if (typeof value !== 'string') return value
+  return value
+    .replace(/\bLIV BONA DEA HOSPITAL BAK[ÜU]\b/gi, 'ASLAN MEDICAL CENTER, BAKI')
+    .replace(/\bLiv Bona Dea Hospital Bak[üu]\b/gi, 'Aslan Medical Center, Bakı')
+    .replace(/\bLiv Bona Dea Hospital\b/gi, 'Aslan Medical Center')
+    .replace(/\bLiv Bona Dea\b/gi, 'Aslan Medical Center')
+    .replace(/\bLiv\b/g, 'Aslan Medical')
+    .replace(/\bLIV\b/g, 'ASLAN MEDICAL')
+}
+
+const getDoctorSpecialty = (d) => replaceLegacyBranding(d.specialization || d.specialty || '')
+
+const CARDIOLOGY_CONTENT = {
+  name: 'Kardiologiya şöbəsi',
+  heroSubtitle: 'Aslan Medical Center-in Kardiologiya şöbəsində ürək-damar sistemi xəstəliklərinin müasir diaqnostikası, müalicəsi və profilaktikası təcrübəli həkimlər tərəfindən həyata keçirilir.',
+  aboutHeading: 'Kardiologiyada hansı xidmətlər göstərilir?',
+  aboutBody: [
+    'Aslan Medical Center-in Kardiologiya şöbəsində ürək və damar xəstəliklərinin diaqnostikası, müalicəsi və izlənməsi həyata keçirilir. Şöbədə arterial hipertenziya, işemik ürək xəstəliyi, ürək ritm pozuntuları, ürək çatışmazlığı və digər kardioloji problemlərin qiymətləndirilməsi aparılır.',
+    'Müasir tibbi yanaşmalar və diaqnostik üsullar vasitəsilə pasiyentlərə elektrokardioqramma (EKQ), exokardioqrafiya, Holter monitorinqi, təzyiq nəzarəti, laborator müayinələr və digər müvafiq xidmətlər göstərilir. Məqsəd ürək sağlamlığını vaxtında qiymətləndirmək, riskləri azaltmaq və pasiyent üçün ən uyğun müalicə planını müəyyən etməkdir.',
+  ].join('\n\n'),
+  contentSections: [
+    {
+      title: 'Kardiologiyaya nə zaman müraciət etmək lazımdır?',
+      body: [
+        'Sinə nahiyəsində ağrı, təngnəfəslik, ürəkdöyünmə, arterial təzyiqin yüksəlməsi, tez yorulma, başgicəllənmə, ayaqlarda şişkinlik və ya ürək ritmində dəyişiklik kimi hallar olduqda kardioloqa müraciət etmək vacibdir.',
+        'Eyni zamanda ailəsində ürək-damar xəstəlikləri olan şəxslər, diabet, piylənmə, yüksək xolesterin və ya hipertoniya riski daşıyan pasiyentlər mütəmadi kardioloji müayinədən keçməlidirlər. Erkən diaqnostika ürək-damar xəstəliklərinin qarşısının alınmasında və effektiv müalicəsində mühüm rol oynayır.',
+      ].join('\n\n'),
+    },
+    {
+      title: 'Niyə Aslan Medical Center Kardiologiya şöbəsi?',
+      body: 'Aslan Medical Center-də kardioloji yanaşma pasiyentin fərdi vəziyyətinə uyğun qurulur. Müasir avadanlıq, peşəkar tibbi heyət və sistemli izləmə sayəsində pasiyentlərə etibarlı və keyfiyyətli xidmət təqdim olunur.',
+    },
+  ],
+}
+
+const isCardiologyDepartment = (dept, slug) => {
+  const values = [slug, dept?.slug, dept?.name].filter(Boolean).join(' ').toLowerCase()
+  return values.includes('kardiolog') || values.includes('cardiolog') || values.includes('kardio')
+}
+
+const sanitizeSections = (sections) =>
+  Array.isArray(sections)
+    ? sections.map(section => ({
+      ...section,
+      title: replaceLegacyBranding(section.title),
+      body: replaceLegacyBranding(section.body),
+    }))
+    : []
+
+const buildDepartmentViewModel = (data, slug) => {
+  const sanitized = {
+    ...data,
+    name: replaceLegacyBranding(data.name),
+    description: replaceLegacyBranding(data.description),
+    contentSections: sanitizeSections(data.contentSections),
+  }
+
+  if (!isCardiologyDepartment(data, slug)) return sanitized
+
+  return {
+    ...sanitized,
+    name: CARDIOLOGY_CONTENT.name,
+    heroSubtitle: CARDIOLOGY_CONTENT.heroSubtitle,
+    aboutHeading: CARDIOLOGY_CONTENT.aboutHeading,
+    description: CARDIOLOGY_CONTENT.aboutBody,
+    contentSections: CARDIOLOGY_CONTENT.contentSections,
+  }
+}
+
+const formatDate = (value) => {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${dd}.${mm}.${d.getFullYear()}`
+}
 
 export default function DepartmentDetailPage() {
   const { slug }   = useParams()
   const navigate   = useNavigate()
 
-  const [dept, setDept]       = useState(null)
-  const [doctors, setDoctors] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(false)
+  const [deptState, setDeptState] = useState({ slug: null, data: null, error: false })
+  const [doctors, setDoctors]     = useState([])
 
-  usePageTitle(dept?.name || 'Şöbə', dept?.description || 'Tibbi mərkəzimizin şöbəsi haqqında məlumat.')
+  const dept = deptState.slug === slug ? deptState.data : null
+  const loading = deptState.slug !== slug
+  const error = deptState.slug === slug && deptState.error
+
+  usePageTitle(dept?.name || 'Şöbə', dept?.heroSubtitle || dept?.description || 'Tibbi mərkəzimizin şöbəsi haqqında məlumat.')
 
   useEffect(() => {
-    setLoading(true)
-    setError(false)
-    setDept(null)
+    let ignore = false
+
     api.get(`/departments/${slug}`)
       .then(res => {
         const data = res.data?.data ?? res.data
         if (!data) throw new Error('not found')
-        setDept(data)
+        if (!ignore) {
+          setDeptState({ slug, data: buildDepartmentViewModel(data, slug), error: false })
+        }
       })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
+      .catch(() => {
+        if (!ignore) {
+          setDeptState({ slug, data: null, error: true })
+        }
+      })
+
+    return () => { ignore = true }
   }, [slug])
 
   useEffect(() => {
@@ -62,6 +150,11 @@ export default function DepartmentDetailPage() {
   }, [dept])
 
   const hasContact = dept && (dept.phone || dept.fax || dept.room)
+  const heroSubtitle = dept?.heroSubtitle || dept?.description
+  const aboutHeading = dept?.aboutHeading || 'Haqqında'
+  const relatedDoctors = dept?._id
+    ? doctors.filter(d => String(getDoctorDeptId(d)) === String(dept._id))
+    : []
 
   return (
     <main className="bg-white" style={{ fontFamily: FONT }}>
@@ -100,9 +193,25 @@ export default function DepartmentDetailPage() {
           </nav>
 
           {/* Title */}
-          <h1 className="text-center text-4xl md:text-5xl font-light text-white">
+          <h1 className="text-center text-4xl md:text-5xl font-light text-white" style={{ textAlign: 'center' }}>
             {loading ? 'Yüklənir...' : (dept?.name || 'Şöbə tapılmadı')}
           </h1>
+
+          {/* Subtitle */}
+          {!loading && heroSubtitle && (
+            <p
+              className="text-base text-white/80"
+              style={{
+                maxWidth: 760,
+                width: '100%',
+                margin: '16px auto 0',
+                textAlign: 'center',
+                lineHeight: 1.6,
+              }}
+            >
+              {heroSubtitle}
+            </p>
+          )}
         </motion.div>
       </section>
 
@@ -123,97 +232,143 @@ export default function DepartmentDetailPage() {
 
           {!error && !loading && dept && (
             <>
-              {/* Description */}
-              {dept.description && (
-                <motion.p
-                  className="text-[15px] leading-relaxed mb-8"
-                  style={{ color: '#334155', maxWidth: 800 }}
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
-                  {dept.description}
-                </motion.p>
-              )}
+              <div className="flex flex-col md:flex-row gap-10">
 
-              {/* Contact card */}
-              {hasContact && (
-                <motion.div
-                  className="bg-white rounded-lg p-6 mb-8"
-                  style={{ border: '1px solid #E2E8F0', maxWidth: 480 }}
+                {/* LEFT — Doctors sidebar */}
+                <motion.aside
+                  className="w-full md:w-[30%] md:sticky md:top-24 self-start"
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
                 >
-                  <h2 className="text-sm font-semibold mb-3" style={{ color: NAVY }}>Əlaqə məlumatları</h2>
-                  <div className="text-[14px] leading-[1.9]" style={{ color: '#334155' }}>
-                    {dept.phone && <div>Tel: {dept.phone}</div>}
-                    {dept.fax   && <div>Faks: {dept.fax}</div>}
-                    {dept.room  && <div>Otaq: {dept.room}</div>}
-                  </div>
-                </motion.div>
-              )}
+                  <h2 className="text-base font-semibold mb-4" style={{ color: TEAL }}>Əlaqədar Həkimlər</h2>
 
-              {/* Doctors */}
-              {doctors.length > 0 && (
-                <motion.div
-                  className="mb-8"
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-xl font-semibold mb-6" style={{ color: NAVY }}>Şöbə həkimləri</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                    {doctors.map(doc => {
-                      const photo = getDoctorImage(doc)
-                      const name  = getDoctorName(doc)
-                      const spec  = getDoctorSpecialty(doc)
-                      const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
-                      return (
-                        <div key={doc._id} className="rounded-xl p-4 text-center transition-all hover:shadow-md hover:scale-[1.02] mx-auto w-full" style={{ border: '1px solid #E2E8F0', maxWidth: 280 }}>
-                          {photo ? (
-                            <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover mx-auto" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-white font-semibold" style={{ background: TEAL }}>
-                              {initials}
+                  {relatedDoctors.length > 0 ? (
+                    <div className="overflow-y-auto pr-1" style={{ maxHeight: 400 }}>
+                      {relatedDoctors.map(doc => {
+                        const photo = getDoctorImage(doc)
+                        const name  = getDoctorName(doc)
+                        const spec  = getDoctorSpecialty(doc)
+                        const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
+                        return (
+                          <div key={doc._id} className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid #E2E8F0' }}>
+                            {photo ? (
+                              <img src={photo} alt={name} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold" style={{ background: TEAL }}>
+                                {initials}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              {spec && <div className="text-[11px] uppercase tracking-wide truncate" style={{ color: '#64748B' }}>{spec}</div>}
+                              <div className="text-sm font-semibold truncate" style={{ color: NAVY }}>{name}</div>
                             </div>
-                          )}
-                          <div className="mt-3 text-[15px] font-semibold" style={{ color: NAVY }}>{name}</div>
-                          {spec && <div className="text-[13px] mt-1" style={{ color: '#64748B' }}>{spec}</div>}
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/randevu?doctorId=${doc._id}`)}
-                            className="mt-4 inline-block text-sm font-semibold rounded-full py-2 px-4 text-white transition-colors"
-                            style={{ background: TEAL }}
-                            onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
-                            onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
-                          >
-                            Randevu al
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </motion.div>
-              )}
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/randevu?doctorId=${doc._id}`)}
+                              className="flex-shrink-0 text-sm font-semibold rounded px-3 py-1 text-white transition-colors"
+                              style={{ background: TEAL }}
+                              onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
+                              onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
+                            >
+                              Randevu al
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm" style={{ color: '#64748B' }}>Bu şöbə üzrə həkim tapılmadı.</p>
+                  )}
+                </motion.aside>
 
-              {/* Back link */}
-              <Link
-                to="/departments"
-                className="inline-flex items-center gap-1.5 text-sm hover:underline mt-8 transition-transform duration-200 hover:scale-105"
-                style={{ color: TEAL }}
-                onMouseEnter={e => { e.currentTarget.style.color = TEAL_HOVER }}
-                onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="19" y1="12" x2="5" y2="12" />
-                  <polyline points="12 19 5 12 12 5" />
-                </svg>
-                Bütün şöbələr
-              </Link>
+                {/* RIGHT — Content */}
+                <motion.div
+                  className="w-full md:w-[70%]"
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                >
+                  {dept.updatedAt && (
+                    <div className="text-right text-xs mb-4" style={{ color: '#64748B' }}>
+                      Son yenilənmə: {formatDate(dept.updatedAt)}
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {dept.description && (
+                    <div className="mb-8">
+                      <h2 className="text-base font-bold mb-3" style={{ color: NAVY }}>{aboutHeading}</h2>
+                      {isHtml(dept.description) ? (
+                        <div
+                          className="text-[15px] leading-relaxed [&_p]:mb-4"
+                          style={{ color: '#334155' }}
+                          dangerouslySetInnerHTML={{ __html: dept.description }}
+                        />
+                      ) : (
+                        dept.description.split(/\n+/).filter(Boolean).map((para, i) => (
+                          <p key={i} className="text-[15px] leading-relaxed mb-4" style={{ color: '#334155' }}>
+                            {para}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {/* Additional content sections */}
+                  {dept.contentSections?.filter(s => s.title || s.body).map((section, i) => (
+                    <div key={i} className="mt-8">
+                      {section.title && (
+                        <h2 className="text-base font-bold mb-3" style={{ color: NAVY }}>{section.title}</h2>
+                      )}
+                      {section.body && (
+                        isHtml(section.body) ? (
+                          <div
+                            className="text-sm leading-relaxed [&_p]:mb-4"
+                            style={{ color: '#475569' }}
+                            dangerouslySetInnerHTML={{ __html: section.body }}
+                          />
+                        ) : (
+                          section.body.split(/\n+/).filter(Boolean).map((para, j) => (
+                            <p key={j} className="text-sm leading-relaxed mb-4" style={{ color: '#475569' }}>
+                              {para}
+                            </p>
+                          ))
+                        )
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Contact card */}
+                  {hasContact && (
+                    <div className="bg-white rounded-lg p-6 mb-8" style={{ border: '1px solid #E2E8F0', maxWidth: 480 }}>
+                      <h2 className="text-base font-bold mb-3" style={{ color: NAVY }}>Əlaqə məlumatları</h2>
+                      <div className="text-[14px] leading-[1.9]" style={{ color: '#334155' }}>
+                        {dept.phone && <div>Tel: {dept.phone}</div>}
+                        {dept.fax   && <div>Faks: {dept.fax}</div>}
+                        {dept.room  && <div>Otaq: {dept.room}</div>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Back link */}
+                  <Link
+                    to="/departments"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline mt-2 transition-transform duration-200 hover:scale-105"
+                    style={{ color: TEAL }}
+                    onMouseEnter={e => { e.currentTarget.style.color = TEAL_HOVER }}
+                    onMouseLeave={e => { e.currentTarget.style.color = TEAL }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12" />
+                      <polyline points="12 19 5 12 12 5" />
+                    </svg>
+                    Bütün şöbələr
+                  </Link>
+                </motion.div>
+              </div>
             </>
           )}
         </div>

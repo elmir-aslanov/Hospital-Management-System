@@ -5,6 +5,7 @@ import WorkSchedule from '../../models/WorkSchedule.model.js';
 import Appointment from '../../models/Appointment.model.js';
 import ApiError from '../../utils/ApiError.js';
 import logger from '../../utils/logger.js';
+import sendEmail from '../../utils/sendEmail.js';
 import { uploadImageBuffer, deleteImage } from '../../config/cloudinary.js';
 
 const POPULATE_USER = 'fullName name surname email phone photoUrl department role';
@@ -372,8 +373,28 @@ export const adminCreateDoctor = async ({ fullName, email, specialization, exper
 
     await doctor.populate('userId', POPULATE_USER);
 
-    // TODO: send email with autoPassword when email service is configured
-    console.log(`[Doctor Created] ${fullName} | ${email} | Password: ${autoPassword} | License: ${licenseNumber}`);
+    try {
+      const loginUrl = `${process.env.CLIENT_URL || 'http://localhost:5174'}/daxil-ol`;
+      await sendEmail({
+        to:      email,
+        subject: 'Hesabınız yaradıldı — Aslan Medical Center',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #eee;border-radius:8px">
+            <h2 style="color:#1a1a2e">Xoş gəlmisiniz, Dr. ${fullName}</h2>
+            <p>Aslan Medical Center sistemində sizin üçün həkim hesabı yaradıldı. Daxil olmaq üçün məlumatlarınız:</p>
+            <p style="margin:4px 0"><strong>E-poçt:</strong> ${email}</p>
+            <p style="margin:4px 0"><strong>Müvəqqəti şifrə:</strong> <span style="font-size:18px;font-weight:bold;letter-spacing:2px;color:#1a1a2e">${autoPassword}</span></p>
+            <p>Zəhmət olmasa ilk daxil olduqdan sonra şifrənizi dəyişdirin.</p>
+            <p style="margin:20px 0"><a href="${loginUrl}" style="display:inline-block;padding:10px 20px;background:#1D8B95;color:#fff;text-decoration:none;border-radius:6px">Sistemə daxil ol</a></p>
+            <p style="color:#888;font-size:12px">Bu e-poçtu siz tələb etməmisinizsə, zəhmət olmasa administrator ilə əlaqə saxlayın.</p>
+          </div>
+        `,
+      });
+    } catch (err) {
+      // Email failed (SMTP not configured or send error) — doctor account still created.
+      logger.error(`Failed to send auto-password email to ${email}: ${err.message}`);
+      logger.info(`[Doctor Created] ${fullName} | ${email} | Password: ${autoPassword} | License: ${licenseNumber}`);
+    }
 
     return { doctor, autoPassword, licenseNumber };
   } catch (err) {

@@ -6,10 +6,16 @@ const toSlug = (str) =>
     .replace(/ü/g,'u').replace(/ç/g,'c').replace(/ş/g,'s')
     .replace(/ğ/g,'g').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
+const contentSectionSchema = new mongoose.Schema({
+  title: { type: String, default: '', trim: true },
+  body:  { type: String, default: '', trim: true },
+}, { _id: false });
+
 const departmentSchema = new mongoose.Schema({
   name:        { type: String, required: true, trim: true },
   slug:        { type: String, unique: true, lowercase: true, trim: true, sparse: true },
   description: { type: String, default: '', trim: true },
+  contentSections: { type: [contentSectionSchema], default: [] },
   icon:        { type: String, default: '' },
   image:       { type: String, default: '' },
   phone:       { type: String, default: '', trim: true },

@@ -37,7 +37,7 @@ export default function AdminDepartments() {
   /* dept modal */
   const [deptModal,  setDeptModal]  = useState(false)
   const [editDept,   setEditDept]   = useState(null)
-  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'🏥', order:0, isActive:true, phone:'', fax:'', room:'' })
+  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'🏥', order:0, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
   const [deptSaving, setDeptSaving] = useState(false)
   const [deptErr,    setDeptErr]    = useState('')
 
@@ -88,7 +88,7 @@ export default function AdminDepartments() {
   /* ── dept CRUD ─────────────────────────────────────────────────────── */
   const openAddDept = () => {
     setEditDept(null)
-    setDeptForm({ name:'', description:'', icon:'🏥', order: depts.length, isActive:true, phone:'', fax:'', room:'' })
+    setDeptForm({ name:'', description:'', icon:'🏥', order: depts.length, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
     setDeptErr('')
     setDeptModal(true)
   }
@@ -99,6 +99,7 @@ export default function AdminDepartments() {
       name: dept.name, description: dept.description || '',
       icon: dept.icon || '🏥', order: dept.order || 0, isActive: dept.isActive,
       phone: dept.phone || '', fax: dept.fax || '', room: dept.room || '',
+      contentSections: (dept.contentSections || []).map(s => ({ title: s.title || '', body: s.body || '' })),
     })
     setDeptErr('')
     setDeptModal(true)
@@ -116,6 +117,9 @@ export default function AdminDepartments() {
       phone:       deptForm.phone.trim(),
       fax:         deptForm.fax.trim(),
       room:        deptForm.room.trim(),
+      contentSections: deptForm.contentSections
+        .map(s => ({ title: s.title.trim(), body: s.body.trim() }))
+        .filter(s => s.title || s.body),
     }
     try {
       const url    = editDept ? `${BASE}/api/v1/departments/${editDept._id}` : `${BASE}/api/v1/departments`
@@ -173,6 +177,28 @@ export default function AdminDepartments() {
   /* ── setField helpers ──────────────────────────────────────────────── */
   const setDF = (k, v) => setDeptForm(f => ({ ...f, [k]: v }))
   const setAF = (k, v) => setApptForm(f => ({ ...f, [k]: v }))
+
+  /* ── content sections helpers ─────────────────────────────────────── */
+  const addSection = () =>
+    setDeptForm(f => ({ ...f, contentSections: [...f.contentSections, { title:'', body:'' }] }))
+
+  const removeSection = (idx) =>
+    setDeptForm(f => ({ ...f, contentSections: f.contentSections.filter((_, i) => i !== idx) }))
+
+  const updateSection = (idx, key, value) =>
+    setDeptForm(f => ({
+      ...f,
+      contentSections: f.contentSections.map((s, i) => i === idx ? { ...s, [key]: value } : s),
+    }))
+
+  const moveSection = (idx, dir) =>
+    setDeptForm(f => {
+      const target = idx + dir
+      if (target < 0 || target >= f.contentSections.length) return f
+      const next = [...f.contentSections]
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return { ...f, contentSections: next }
+    })
 
   /* ════════════════════════════════════════════════════════════════════ */
   return (
@@ -318,6 +344,42 @@ export default function AdminDepartments() {
               <div>
                 <label style={lbl}>Otaq/Mərtəbə</label>
                 <input style={inp} value={deptForm.room} onChange={e => setDF('room', e.target.value)} />
+              </div>
+
+              {/* Content sections */}
+              <div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                  <label style={{ ...lbl, marginBottom:0 }}>Əlavə bölmələr</label>
+                  <button type="button" onClick={addSection}
+                    style={{ padding:'4px 10px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                    + Bölmə əlavə et
+                  </button>
+                </div>
+                {deptForm.contentSections.length === 0 ? (
+                  <p style={{ fontSize:12, color:'#94a3b8', margin:0 }}>Heç bir əlavə bölmə yoxdur.</p>
+                ) : (
+                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                    {deptForm.contentSections.map((section, idx) => (
+                      <div key={idx} style={{ border:'1px solid #e2e8f0', borderRadius:9, padding:12, display:'flex', flexDirection:'column', gap:8 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <input style={{ ...inp, flex:1 }} placeholder="Başlıq"
+                            value={section.title} onChange={e => updateSection(idx, 'title', e.target.value)} />
+                          <button type="button" onClick={() => moveSection(idx, -1)} disabled={idx === 0}
+                            style={{ padding:'5px 8px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, cursor: idx === 0 ? 'not-allowed' : 'pointer', opacity: idx === 0 ? 0.4 : 1 }}>↑</button>
+                          <button type="button" onClick={() => moveSection(idx, 1)} disabled={idx === deptForm.contentSections.length - 1}
+                            style={{ padding:'5px 8px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, cursor: idx === deptForm.contentSections.length - 1 ? 'not-allowed' : 'pointer', opacity: idx === deptForm.contentSections.length - 1 ? 0.4 : 1 }}>↓</button>
+                          <button type="button" onClick={() => removeSection(idx)}
+                            style={{ padding:'5px 10px', borderRadius:7, border:'1px solid #fee2e2', background:'white', fontSize:11, cursor:'pointer', color:'#ef4444' }}>
+                            Sil
+                          </button>
+                        </div>
+                        <textarea rows={3} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}
+                          placeholder="Mətn"
+                          value={section.body} onChange={e => updateSection(idx, 'body', e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* isActive */}
