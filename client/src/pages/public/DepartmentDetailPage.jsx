@@ -236,38 +236,38 @@ export default function DepartmentDetailPage() {
 
                 {/* LEFT — Doctors sidebar */}
                 <motion.aside
-                  className="w-full md:w-[30%] md:sticky md:top-24 self-start"
+                  className="w-full md:w-[34%] md:sticky md:top-24 self-start"
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
                 >
-                  <h2 className="text-base font-semibold mb-4" style={{ color: TEAL }}>Əlaqədar Həkimlər</h2>
+                  <h2 className="text-lg font-semibold mb-4" style={{ color: TEAL }}>Əlaqədar Həkimlər</h2>
 
                   {relatedDoctors.length > 0 ? (
-                    <div className="overflow-y-auto pr-1" style={{ maxHeight: 400 }}>
+                    <div className="overflow-y-auto pr-1" style={{ maxHeight: 460 }}>
                       {relatedDoctors.map(doc => {
                         const photo = getDoctorImage(doc)
                         const name  = getDoctorName(doc)
                         const spec  = getDoctorSpecialty(doc)
                         const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
                         return (
-                          <div key={doc._id} className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid #E2E8F0' }}>
+                          <div key={doc._id} className="flex items-center gap-4 py-4" style={{ borderBottom: '1px solid #E2E8F0' }}>
                             {photo ? (
-                              <img src={photo} alt={name} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+                              <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
                             ) : (
-                              <div className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold" style={{ background: TEAL }}>
+                              <div className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center text-white text-lg font-semibold" style={{ background: TEAL }}>
                                 {initials}
                               </div>
                             )}
                             <div className="min-w-0 flex-1">
-                              {spec && <div className="text-[11px] uppercase tracking-wide truncate" style={{ color: '#64748B' }}>{spec}</div>}
-                              <div className="text-sm font-semibold truncate" style={{ color: NAVY }}>{name}</div>
+                              {spec && <div className="text-xs uppercase tracking-wide truncate" style={{ color: '#64748B' }}>{spec}</div>}
+                              <div className="text-base font-semibold truncate" style={{ color: NAVY }}>{name}</div>
                             </div>
                             <button
                               type="button"
                               onClick={() => navigate(`/randevu?doctorId=${doc._id}`)}
-                              className="flex-shrink-0 text-sm font-semibold rounded px-3 py-1 text-white transition-colors"
+                              className="flex-shrink-0 whitespace-nowrap text-[15px] font-semibold rounded px-3.5 py-1.5 text-white transition-colors"
                               style={{ background: TEAL }}
                               onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
                               onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
@@ -285,7 +285,7 @@ export default function DepartmentDetailPage() {
 
                 {/* RIGHT — Content */}
                 <motion.div
-                  className="w-full md:w-[70%]"
+                  className="w-full md:w-[66%]"
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
