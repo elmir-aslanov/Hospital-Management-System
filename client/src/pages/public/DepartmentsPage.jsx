@@ -128,7 +128,7 @@ export default function DepartmentsPage() {
           }}
         />
         <motion.div
-          className="relative mx-auto flex w-full max-w-4xl flex-col items-center px-4 text-center"
+          className="relative mx-auto flex w-full max-w-[900px] flex-col items-center px-4 text-center"
           variants={fadeUp}
           initial="hidden"
           animate="visible"
@@ -138,16 +138,16 @@ export default function DepartmentsPage() {
             Şöbələrimiz
           </h1>
 
-          <p className="mx-auto mt-4 max-w-3xl text-center text-base leading-relaxed text-white/85 md:text-lg">
+          <p className="mx-auto mt-4 w-full max-w-[760px] text-center text-base leading-relaxed text-white/85 md:text-lg">
             Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
           </p>
 
           {/* Search bar */}
           <form
-            className="mx-auto mt-8 flex w-full max-w-3xl flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
+            className="mx-auto mt-8 flex w-full max-w-[820px] flex-col items-center justify-center gap-4 sm:flex-row"
             onSubmit={e => e.preventDefault()}
           >
-            <div className="relative w-full sm:w-[420px]">
+            <div className="relative w-full sm:max-w-[620px] sm:flex-1">
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
@@ -157,12 +157,12 @@ export default function DepartmentsPage() {
                 placeholder="Şöbə axtarın"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="h-14 w-full rounded-full border-0 bg-white pl-12 pr-5 text-base text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
+                className="h-14 w-full rounded-full border-0 bg-white pl-[52px] pr-5 text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
               />
             </div>
             <button
               type="submit"
-              className="h-14 w-full min-w-[132px] rounded-full px-8 text-base font-bold text-white shadow-lg transition-colors sm:w-auto"
+              className="h-14 w-full flex-shrink-0 rounded-full px-8 text-base font-bold text-white shadow-lg transition-colors sm:w-[132px]"
               style={{ background: TEAL }}
               onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
               onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
