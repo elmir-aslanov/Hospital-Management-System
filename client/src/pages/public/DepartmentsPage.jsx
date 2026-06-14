@@ -157,7 +157,7 @@ export default function DepartmentsPage() {
                 placeholder="Şöbə axtarın"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="h-14 w-full rounded-full border-0 bg-white pl-11 pr-5 text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
+                className="h-14 w-full rounded-full border-0 bg-white pl-12 pr-5 text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
               />
             </div>
             <button
