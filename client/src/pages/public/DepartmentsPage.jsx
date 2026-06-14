@@ -128,7 +128,7 @@ export default function DepartmentsPage() {
           }}
         />
         <motion.div
-          className="max-w-3xl mx-auto text-center flex flex-col items-center px-4"
+          className="max-w-4xl mx-auto text-center flex flex-col items-center px-4"
           variants={fadeUp}
           initial="hidden"
           animate="visible"
@@ -138,13 +138,13 @@ export default function DepartmentsPage() {
             Şöbələrimiz
           </h1>
 
-          <p className="mt-4 text-base leading-relaxed text-white/80">
+          <p className="mt-4 w-full max-w-xl mx-auto text-base leading-relaxed text-white/80 text-center">
             Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
           </p>
 
           {/* Search bar */}
           <form
-            className="flex justify-center items-center gap-2 w-full max-w-2xl mt-8 flex-col sm:flex-row"
+            className="flex justify-center items-center gap-2 w-full max-w-2xl mx-auto mt-8 flex-col sm:flex-row"
             onSubmit={e => e.preventDefault()}
           >
             <div className="relative w-full sm:flex-1">
