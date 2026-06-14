@@ -128,7 +128,7 @@ export default function DepartmentsPage() {
           }}
         />
         <motion.div
-          className="relative mx-auto flex w-full max-w-[1280px] flex-col items-center px-4 text-center md:px-8"
+          className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center md:px-8"
           variants={fadeUp}
           initial="hidden"
           animate="visible"
