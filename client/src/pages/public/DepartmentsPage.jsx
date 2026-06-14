@@ -128,7 +128,8 @@ export default function DepartmentsPage() {
           }}
         />
         <motion.div
-          className="max-w-4xl mx-auto text-center flex flex-col items-center px-4"
+          className="text-center flex flex-col items-center px-4"
+          style={{ width: '100%', maxWidth: 896, marginLeft: 'auto', marginRight: 'auto' }}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
@@ -143,33 +144,40 @@ export default function DepartmentsPage() {
           </p>
 
           {/* Search bar */}
-          <form
-            className="flex justify-center items-center gap-2 w-full max-w-2xl mx-auto mt-8 flex-col sm:flex-row"
-            onSubmit={e => e.preventDefault()}
-          >
-            <div className="relative w-full sm:flex-1">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Şöbə axtarın"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="h-14 w-full rounded-full border-0 bg-white pl-12 pr-5 text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
-              />
-            </div>
-            <button
-              type="submit"
-              className="h-14 w-full flex-shrink-0 rounded-full px-8 text-base font-bold text-white shadow-lg transition-colors sm:w-[132px]"
-              style={{ background: TEAL }}
-              onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
-              onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
+          <div className="w-full max-w-2xl mx-auto mt-8">
+            <form
+              className="flex flex-col items-center justify-center gap-2 w-full sm:flex-row"
+              onSubmit={e => e.preventDefault()}
             >
-              Axtarın
-            </button>
-          </form>
+              <div className="relative w-full sm:flex-1" style={{ position: 'relative' }}>
+                <svg
+                  width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className="text-gray-400 pointer-events-none"
+                  style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Şöbə axtarın"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="h-14 w-full rounded-full border-0 bg-white text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
+                  style={{ paddingLeft: 48, paddingRight: 20 }}
+                />
+              </div>
+              <button
+                type="submit"
+                className="h-14 w-full flex-shrink-0 rounded-full px-8 text-base font-bold text-white shadow-lg transition-colors sm:w-[132px]"
+                style={{ background: TEAL }}
+                onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
+                onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
+              >
+                Axtarın
+              </button>
+            </form>
+          </div>
         </motion.div>
       </section>
 
