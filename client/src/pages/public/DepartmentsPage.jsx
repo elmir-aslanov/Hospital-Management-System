@@ -85,10 +85,6 @@ export default function DepartmentsPage() {
     return () => observer.disconnect();
   }, [grouped]);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <main className="bg-white" style={{ fontFamily: FONT }}>
 
@@ -280,60 +276,44 @@ export default function DepartmentsPage() {
             />
           )}
 
-          {!error && !loading && grouped.size > 0 && ALPHABET.filter(letter => grouped.has(letter)).map((letter, idx) => {
-            const items = grouped.get(letter);
-            return (
-              <motion.div
-                key={letter}
-                className="border-t border-[#E2E8F0] py-8 md:py-10 flex flex-col md:flex-row gap-4 md:gap-8"
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                transition={{ ...fadeUp.visible.transition, delay: (idx % 5) * 0.05 }}
-              >
-                <div className="md:w-20 flex-shrink-0">
-                  <span
-                    id={`letter-${letter}`}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-semibold text-white"
-                    style={{ background: TEAL, scrollMarginTop: 180 }}
+          {!error && !loading && grouped.size > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+              {ALPHABET.filter(letter => grouped.has(letter)).map((letter, idx) => {
+                const items = grouped.get(letter);
+                return (
+                  <motion.div
+                    key={letter}
+                    variants={fadeUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    transition={{ ...fadeUp.visible.transition, delay: (idx % 6) * 0.05 }}
                   >
-                    {letter}
-                  </span>
-                </div>
+                    <div id={`letter-${letter}`} style={{ scrollMarginTop: 180 }}>
+                      <h2 className="text-2xl md:text-3xl font-bold" style={{ color: NAVY, margin: 0 }}>{letter}</h2>
+                      <span aria-hidden="true" style={{ display: 'block', width: 44, height: 3, borderRadius: 2, background: TEAL, marginTop: 8, marginBottom: 16 }} />
+                    </div>
 
-                <div className="flex-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                    {items.map(dept => (
-                      <Link
-                        key={dept._id}
-                        to={`/departments/${dept.slug}`}
-                        className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-[15px] md:text-base font-medium text-[#0B1D34] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                        style={{ borderColor: '#E2E8F0' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL_HOVER }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = NAVY }}
-                      >
-                        {dept.name}
-                      </Link>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-end mt-6">
-                    <button
-                      type="button"
-                      onClick={scrollToTop}
-                      className="flex items-center gap-1 text-sm transition-colors transition-transform duration-200 hover:scale-105"
-                      style={{ color: '#64748B' }}
-                      onMouseEnter={e => { e.currentTarget.style.color = TEAL }}
-                      onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
-                    >
-                      <span>↑</span> Yuxarı qayıt
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                    <div className="flex flex-col gap-3">
+                      {items.map(dept => (
+                        <Link
+                          key={dept._id}
+                          to={`/departments/${dept.slug}`}
+                          className="flex items-center gap-3 rounded-lg border px-4 py-3 text-sm md:text-base font-semibold transition-all"
+                          style={{ borderColor: '#E2E8F0', background: '#F8FAFC', color: NAVY, boxShadow: 'none' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29, 139, 149, 0.12)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.boxShadow = 'none' }}
+                        >
+                          <span aria-hidden="true" style={{ color: TEAL, fontSize: 18, fontWeight: 700, lineHeight: 1 }}>›</span>
+                          {dept.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </main>
