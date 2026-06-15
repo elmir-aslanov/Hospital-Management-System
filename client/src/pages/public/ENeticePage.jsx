@@ -284,9 +284,42 @@ export default function ENeticePage() {
           justify-content: space-between;
         }
 
+        .enetice-promo-top {
+          width: 100%;
+        }
+
+        .enetice-back-row {
+          width: 100%;
+          display: flex;
+          justify-content: flex-start;
+          margin-bottom: 20px;
+        }
+
+        .enetice-back-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #64748b;
+          text-decoration: none;
+          padding: 6px 14px;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          background: transparent;
+          transition: color 0.15s ease, border-color 0.15s ease, transform 0.2s ease;
+        }
+
+        .enetice-back-link:hover {
+          color: #1d8b95;
+          border-color: #1d8b95;
+          transform: scale(1.05);
+        }
+
         .enetice-promo-copy {
           width: min(100%, 410px);
           text-align: center;
+          margin: 0 auto;
         }
 
         .enetice-promo h2 {
@@ -1017,19 +1050,20 @@ export default function ENeticePage() {
 
       <div className="enetice-shell">
         <motion.aside className="enetice-promo" aria-label="Aslan Medical mobil tətbiqi" variants={fadeUp} initial="hidden" animate="visible">
-          <a href="/" style={{
-            alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 5,
-            fontSize: 13, fontWeight: 600, color: TEAL, textDecoration: 'none',
-            padding: '6px 14px', border: `1.5px solid ${TEAL}`, borderRadius: 8,
-            background: 'transparent', transition: 'background 0.15s, color 0.15s, transform 0.2s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.05)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEAL; e.currentTarget.style.transform = 'scale(1)' }}>
-            ← Ana səhifə
-          </a>
-          <div className="enetice-promo-copy">
-            <h2>Analiz nəticələriniz hər zaman əlinizin altında</h2>
-            <p>Tətbiqdən istifadə edərək laborator analiz nəticələrinizi onlayn rejimdə rahat şəkildə əldə edə bilərsiniz.</p>
+          <div className="enetice-promo-top">
+            <div className="enetice-back-row">
+              <a href="/" className="enetice-back-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Ana səhifə
+              </a>
+            </div>
+            <div className="enetice-promo-copy">
+              <h2>Analiz nəticələriniz hər zaman əlinizin altında</h2>
+              <p>Tətbiqdən istifadə edərək laborator analiz nəticələrinizi onlayn rejimdə rahat şəkildə əldə edə bilərsiniz.</p>
+            </div>
           </div>
 
           <div className="enetice-phone-frame">
