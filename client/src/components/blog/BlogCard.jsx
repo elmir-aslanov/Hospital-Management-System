@@ -26,7 +26,7 @@ export default function BlogCard({ post, hoveredId, setHoveredId }) {
         background: '#fff',
         borderRadius: 10,
         overflow: 'hidden',
-        border: '1px solid #E2E8F0',
+        border: `1px solid ${hoveredId === post._id ? TEAL : '#E2E8F0'}`,
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',

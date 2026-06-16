@@ -213,7 +213,7 @@ export default function DepartmentsPage() {
 
       {/* ── Departments List ─────────────────────────────────────────────*/}
       <section className="bg-white">
-        <div className="px-4" style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '0 16px 80px' }}>
+        <div style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '0 24px 80px', boxSizing: 'border-box' }}>
 
           {error && !loading && (
             <EmptyState
@@ -277,42 +277,108 @@ export default function DepartmentsPage() {
           )}
 
           {!error && !loading && grouped.size > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {ALPHABET.filter(letter => grouped.has(letter)).map((letter, idx) => {
-                const items = grouped.get(letter);
-                return (
-                  <motion.div
-                    key={letter}
-                    variants={fadeUp}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    transition={{ ...fadeUp.visible.transition, delay: (idx % 6) * 0.05 }}
-                  >
-                    <div id={`letter-${letter}`} style={{ scrollMarginTop: 180 }}>
-                      <h2 className="text-2xl md:text-3xl font-bold" style={{ color: NAVY, margin: 0 }}>{letter}</h2>
-                      <span aria-hidden="true" style={{ display: 'block', width: 44, height: 3, borderRadius: 2, background: TEAL, marginTop: 8, marginBottom: 16 }} />
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      {items.map(dept => (
-                        <Link
-                          key={dept._id}
-                          to={`/departments/${dept.slug}`}
-                          className="flex items-center gap-3 rounded-lg border px-4 py-3 text-sm md:text-base font-semibold transition-all"
-                          style={{ borderColor: '#E2E8F0', background: '#F8FAFC', color: NAVY, boxShadow: 'none' }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29, 139, 149, 0.12)' }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.boxShadow = 'none' }}
-                        >
-                          <span aria-hidden="true" style={{ color: TEAL, fontSize: 18, fontWeight: 700, lineHeight: 1 }}>›</span>
-                          {dept.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+            <>
+              <style>{`
+                .dept-groups-grid {
+                  display: grid;
+                  grid-template-columns: repeat(3, 1fr);
+                  column-gap: 36px;
+                  row-gap: 56px;
+                }
+                .dept-card-link {
+                  display: flex;
+                  align-items: center;
+                  gap: 20px;
+                  min-height: 72px;
+                  padding: 0 28px;
+                  background: #f6f8fa;
+                  border-radius: 14px;
+                  border: 1.5px solid transparent;
+                  color: #0B1D34;
+                  font-size: 18px;
+                  font-weight: 600;
+                  font-family: 'Source Sans 3', 'Raleway', sans-serif;
+                  text-decoration: none;
+                  margin-bottom: 14px;
+                  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+                }
+                .dept-card-link:last-child { margin-bottom: 0; }
+                .dept-card-link:hover {
+                  border-color: rgba(29, 139, 149, 0.28);
+                  background: #ffffff;
+                  box-shadow: 0 4px 16px rgba(29, 139, 149, 0.13);
+                  color: #0B1D34;
+                }
+                .dept-card-arrow {
+                  flex-shrink: 0;
+                  transition: transform 0.18s ease;
+                }
+                .dept-card-link:hover .dept-card-arrow {
+                  transform: translateX(3px);
+                }
+                @media (max-width: 1024px) {
+                  .dept-groups-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                    column-gap: 28px;
+                    row-gap: 44px;
+                  }
+                }
+                @media (max-width: 640px) {
+                  .dept-groups-grid {
+                    grid-template-columns: 1fr;
+                    row-gap: 36px;
+                  }
+                  .dept-card-link {
+                    min-height: 64px;
+                    padding: 0 20px;
+                    font-size: 16px;
+                    gap: 16px;
+                  }
+                }
+              `}</style>
+              <div style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                border: '1px solid #e8edf2',
+                boxShadow: '0 2px 12px rgba(11, 29, 52, 0.05)',
+                padding: '40px 32px 48px',
+              }}>
+                <div className="dept-groups-grid">
+                  {ALPHABET.filter(letter => grouped.has(letter)).map((letter, idx) => {
+                    const items = grouped.get(letter);
+                    return (
+                      <motion.div
+                        key={letter}
+                        variants={fadeUp}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        transition={{ ...fadeUp.visible.transition, delay: (idx % 6) * 0.05 }}
+                      >
+                        <div id={`letter-${letter}`} style={{ scrollMarginTop: 180 }}>
+                          <h2 style={{ color: NAVY, margin: 0, fontSize: 30, fontWeight: 700, fontFamily: "'Raleway', sans-serif", lineHeight: 1 }}>{letter}</h2>
+                          <span aria-hidden="true" style={{ display: 'block', width: 64, height: 3, borderRadius: 2, background: TEAL, marginTop: 10, marginBottom: 24 }} />
+                        </div>
+                        <div>
+                          {items.map(dept => (
+                            <Link
+                              key={dept._id}
+                              to={`/departments/${dept.slug}`}
+                              className="dept-card-link"
+                            >
+                              <svg className="dept-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D8B95" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6"/>
+                              </svg>
+                              <span>{dept.name}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
         </div>
       </section>

@@ -567,7 +567,13 @@ export default function DepartmentDetailPage() {
                         const spec  = getDoctorSpecialty(doc)
                         const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
                         return (
-                          <div key={doc._id} className="flex items-center gap-4 py-4" style={{ borderBottom: '1px solid #E2E8F0' }}>
+                          <div
+                            key={doc._id}
+                            className="flex items-center gap-4 rounded-lg border transition-all"
+                            style={{ borderColor: '#E2E8F0', background: '#F8FAFC', padding: '14px 16px', marginBottom: 12, boxShadow: 'none' }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29, 139, 149, 0.12)' }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = 'none' }}
+                          >
                             {photo ? (
                               <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
                             ) : (

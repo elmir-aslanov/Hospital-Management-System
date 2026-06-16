@@ -1,5 +1,5 @@
 import usePageTitle from '../../hooks/usePageTitle'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import AboutDirector from '../../components/sections/AboutDirector'
@@ -118,7 +118,7 @@ function DoctorCard({ doctor }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      style={{ background: '#F8FDFD', borderRadius: 8, boxShadow: '0 2px 16px rgba(0,132,142,0.08)', border: '1px solid #C8E9EB', fontFamily: FONT, overflow: 'hidden' }}
+      style={{ background: '#F8FAFC', borderRadius: 8, boxShadow: '0 4px 16px rgba(29, 139, 149, 0.08)', border: '1px solid #E2E8F0', fontFamily: FONT, overflow: 'hidden' }}
     >
       {/* ── MAIN: Photo col + Info col + Appointment col ── */}
       <div style={{ display: 'flex', gap: 0 }}>
@@ -221,17 +221,6 @@ export default function HekimlerPage() {
   const [visibleCount, setVisibleCount] = useState(8)
   const [view, setView] = useState('table')
   const [expandedId, setExpandedId] = useState(null)
-  const [hoveredId, setHoveredId] = useState(null)
-  const [panelHeights, setPanelHeights] = useState({})
-  const hoverOpenTimer  = useRef(null)
-  const hoverCloseTimer = useRef(null)
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(hoverOpenTimer.current)
-      clearTimeout(hoverCloseTimer.current)
-    }
-  }, [])
 
   useEffect(() => {
     // Public site-doctors endpoint — no auth required
@@ -367,28 +356,8 @@ export default function HekimlerPage() {
                     const dept      = doc.specialization || doc.department || doc.specialty || '—'
                     const isLinked  = !!doc._id
                     const isOpen    = expandedId === doc._id
-                    const isHovered = !isOpen && hoveredId === doc._id
-                    const openHoverPreview = () => {
-                      if (!isLinked) return
-                      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
-                      clearTimeout(hoverCloseTimer.current)
-                      hoverOpenTimer.current = setTimeout(() => setHoveredId(doc._id), 180)
-                    }
-                    const closeHoverPreview = () => {
-                      clearTimeout(hoverOpenTimer.current)
-                      hoverCloseTimer.current = setTimeout(() => {
-                        setHoveredId(prev => prev === doc._id ? null : prev)
-                      }, 150)
-                    }
-                    const measurePanel = (el) => {
-                      if (!el) return
-                      const h = el.offsetHeight
-                      if (h && panelHeights[doc._id] !== h) {
-                        setPanelHeights(prev => ({ ...prev, [doc._id]: h }))
-                      }
-                    }
                     return (
-                      <div key={doc._id || i} onMouseEnter={openHoverPreview} onMouseLeave={closeHoverPreview}>
+                      <div key={doc._id || i}>
                         <div
                           style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '14px 24px', borderBottom: '1px solid #f3f4f6', cursor: isLinked ? 'pointer' : 'default', transition: 'background 0.1s', background: isOpen ? '#f0fafb' : 'white' }}
                           onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#f9fafb' }}
@@ -405,7 +374,6 @@ export default function HekimlerPage() {
 
                           {isOpen && (
                             <div
-                              ref={measurePanel}
                               style={{
                                 position: 'absolute',
                                 top: '100%',
@@ -420,30 +388,7 @@ export default function HekimlerPage() {
                               <DoctorCard doctor={doc} />
                             </div>
                           )}
-                          {isHovered && (
-                            <div
-                              ref={measurePanel}
-                              className="doctor-hover-preview"
-                              style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                right: 0,
-                                zIndex: 30,
-                                marginTop: 6,
-                                background: '#FFFFFF',
-                                border: '1px solid #E2E8F0',
-                                borderRadius: 10,
-                                boxShadow: '0 12px 32px rgba(11, 29, 52, 0.14)',
-                              }}
-                            >
-                              <DoctorCard doctor={doc} />
-                            </div>
-                          )}
                         </div>
-                        {(isOpen || isHovered) && (
-                          <div style={{ height: panelHeights[doc._id] ? panelHeights[doc._id] + 6 : 0 }} aria-hidden="true" />
-                        )}
                       </div>
                     )
                   })}
