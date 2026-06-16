@@ -179,7 +179,7 @@ export default function DepartmentsPage() {
 
       {/* ── A-Z Letter Navigation ────────────────────────────────────────*/}
       <section className="bg-white">
-        <div className="px-4" style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '32px 16px' }}>
+        <div style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '22px 24px 16px', boxSizing: 'border-box' }}>
           <motion.div
             className="flex flex-wrap gap-2"
             variants={fadeUp}
@@ -283,30 +283,30 @@ export default function DepartmentsPage() {
                   display: grid;
                   grid-template-columns: repeat(3, 1fr);
                   column-gap: 36px;
-                  row-gap: 56px;
+                  row-gap: 42px;
                 }
                 .dept-card-link {
                   display: flex;
                   align-items: center;
-                  gap: 20px;
-                  min-height: 72px;
-                  padding: 0 28px;
+                  gap: 14px;
+                  min-height: 58px;
+                  padding: 0 20px;
                   background: #f6f8fa;
-                  border-radius: 14px;
+                  border-radius: 12px;
                   border: 1.5px solid transparent;
                   color: #0B1D34;
-                  font-size: 18px;
+                  font-size: 16px;
                   font-weight: 600;
                   font-family: 'Source Sans 3', 'Raleway', sans-serif;
                   text-decoration: none;
-                  margin-bottom: 14px;
+                  margin-bottom: 8px;
                   transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
                 }
                 .dept-card-link:last-child { margin-bottom: 0; }
                 .dept-card-link:hover {
                   border-color: rgba(29, 139, 149, 0.28);
                   background: #ffffff;
-                  box-shadow: 0 4px 16px rgba(29, 139, 149, 0.13);
+                  box-shadow: 0 4px 14px rgba(29, 139, 149, 0.12);
                   color: #0B1D34;
                 }
                 .dept-card-arrow {
@@ -319,29 +319,29 @@ export default function DepartmentsPage() {
                 @media (max-width: 1024px) {
                   .dept-groups-grid {
                     grid-template-columns: repeat(2, 1fr);
-                    column-gap: 28px;
-                    row-gap: 44px;
+                    column-gap: 26px;
+                    row-gap: 34px;
                   }
                 }
                 @media (max-width: 640px) {
                   .dept-groups-grid {
                     grid-template-columns: 1fr;
-                    row-gap: 36px;
+                    row-gap: 26px;
                   }
                   .dept-card-link {
-                    min-height: 64px;
-                    padding: 0 20px;
-                    font-size: 16px;
-                    gap: 16px;
+                    min-height: 52px;
+                    padding: 0 16px;
+                    font-size: 15px;
+                    gap: 12px;
                   }
                 }
               `}</style>
               <div style={{
                 background: '#ffffff',
-                borderRadius: 16,
+                borderRadius: 12,
                 border: '1px solid #e8edf2',
-                boxShadow: '0 2px 12px rgba(11, 29, 52, 0.05)',
-                padding: '40px 32px 48px',
+                boxShadow: '0 2px 10px rgba(11, 29, 52, 0.05)',
+                padding: '28px 28px 34px',
               }}>
                 <div className="dept-groups-grid">
                   {ALPHABET.filter(letter => grouped.has(letter)).map((letter, idx) => {
@@ -356,8 +356,8 @@ export default function DepartmentsPage() {
                         transition={{ ...fadeUp.visible.transition, delay: (idx % 6) * 0.05 }}
                       >
                         <div id={`letter-${letter}`} style={{ scrollMarginTop: 180 }}>
-                          <h2 style={{ color: NAVY, margin: 0, fontSize: 30, fontWeight: 700, fontFamily: "'Raleway', sans-serif", lineHeight: 1 }}>{letter}</h2>
-                          <span aria-hidden="true" style={{ display: 'block', width: 64, height: 3, borderRadius: 2, background: TEAL, marginTop: 10, marginBottom: 24 }} />
+                          <h2 style={{ color: NAVY, margin: 0, fontSize: 28, fontWeight: 700, fontFamily: "'Raleway', sans-serif", lineHeight: 1 }}>{letter}</h2>
+                          <span aria-hidden="true" style={{ display: 'block', width: 56, height: 3, borderRadius: 2, background: TEAL, marginTop: 8, marginBottom: 16 }} />
                         </div>
                         <div>
                           {items.map(dept => (
@@ -366,7 +366,7 @@ export default function DepartmentsPage() {
                               to={`/departments/${dept.slug}`}
                               className="dept-card-link"
                             >
-                              <svg className="dept-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D8B95" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <svg className="dept-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D8B95" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <path d="m9 18 6-6-6-6"/>
                               </svg>
                               <span>{dept.name}</span>
