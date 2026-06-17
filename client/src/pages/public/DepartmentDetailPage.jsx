@@ -556,7 +556,7 @@ export default function DepartmentDetailPage() {
                 {/* LEFT — Doctors sidebar
                     Sticky wrapper is a plain div (no Framer Motion transform) so
                     position:sticky is not disrupted by translateY during animation. */}
-                <div className="w-full md:w-[34%] md:self-start md:sticky md:top-28">
+                <div className="w-full md:w-[34%] md:self-start lg:sticky lg:top-[160px]">
                   <motion.aside
                     variants={fadeUp}
                     initial="hidden"

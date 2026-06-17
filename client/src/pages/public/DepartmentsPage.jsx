@@ -96,83 +96,94 @@ export default function DepartmentsPage() {
 
       {/* ── Hero / Banner ─────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden"
+        className="relative overflow-hidden flex items-center"
         style={{
-          background: `linear-gradient(135deg, ${TEAL} 0%, #176F7E 48%, ${NAVY} 100%)`,
-          padding: '72px 0 76px',
+          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.82) 40%, rgba(255,255,255,0.48) 100%), url('/sobeler.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center right',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '460px',
+          padding: '80px 0 90px',
         }}
       >
-        {/* subtle diagonal geometric overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            opacity: 0.08,
-            backgroundImage: 'repeating-linear-gradient(45deg, #ffffff 0px, #ffffff 2px, transparent 2px, transparent 64px)',
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            opacity: 0.07, right: -128, top: -128, width: 390, height: 390,
-            borderRadius: '50%', border: '42px solid #ffffff',
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            opacity: 0.08,
-            right: 78,
-            bottom: -96,
-            width: 220,
-            height: 220,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 46%, rgba(255,255,255,0) 70%)',
-          }}
-        />
         <motion.div
-          className="text-center flex flex-col items-center px-4"
-          style={{ width: '100%', maxWidth: 896, marginLeft: 'auto', marginRight: 'auto' }}
+          className="w-full text-center flex flex-col items-center px-4"
+          style={{ maxWidth: 960, marginLeft: 'auto', marginRight: 'auto' }}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
         >
+          {/* Teal eyebrow accent */}
+          <div className="flex items-center gap-3 mb-5">
+            <span style={{ display: 'block', width: 28, height: 2.5, background: TEAL, borderRadius: 2 }} />
+            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', color: TEAL, textTransform: 'uppercase' }}>
+              Aslan Medical Center
+            </span>
+            <span style={{ display: 'block', width: 28, height: 2.5, background: TEAL, borderRadius: 2 }} />
+          </div>
+
           {/* Title */}
-          <h1 className="m-0 text-4xl font-light leading-tight text-white md:text-5xl">
+          <h1
+            className="m-0 leading-tight"
+            style={{ color: NAVY, fontSize: 'clamp(38px, 5.5vw, 62px)', fontWeight: 300, letterSpacing: '-0.01em' }}
+          >
             Şöbələrimiz
           </h1>
 
-          <p className="mt-4 w-full max-w-xl mx-auto text-base leading-relaxed text-white/80 text-center">
+          {/* Teal rule under title */}
+          <span style={{ display: 'block', width: 64, height: 3, background: TEAL, borderRadius: 2, marginTop: 18, marginBottom: 20 }} />
+
+          {/* Subtitle */}
+          <p
+            className="text-center leading-relaxed mx-auto"
+            style={{ maxWidth: 680, fontSize: 18, color: '#475569', margin: 0 }}
+          >
             Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
           </p>
 
           {/* Search bar */}
-          <div className="w-full max-w-2xl mx-auto mt-8">
+          <div className="w-full mx-auto mt-10" style={{ maxWidth: 760 }}>
             <form
-              className="flex flex-col items-center justify-center gap-2 w-full sm:flex-row"
+              className="flex flex-col items-stretch gap-3 w-full sm:flex-row sm:items-center"
               onSubmit={e => e.preventDefault()}
             >
-              <div className="relative w-full sm:flex-1" style={{ position: 'relative' }}>
+              <div className="relative flex-1 min-w-0" style={{ position: 'relative' }}>
                 <svg
-                  width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  className="text-gray-400 pointer-events-none"
-                  style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                  width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  style={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
                   type="text"
-                  placeholder="Şöbə axtarın"
+                  placeholder="Şöbə axtarın..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="h-14 w-full rounded-full border-0 bg-white text-base leading-normal text-gray-700 shadow-lg outline-none placeholder:text-[#64748B]"
-                  style={{ paddingLeft: 48, paddingRight: 20 }}
+                  style={{
+                    width: '100%', height: 60, paddingLeft: 52, paddingRight: 24,
+                    borderRadius: 999, border: '1.5px solid #e2e8f0', background: '#ffffff',
+                    fontSize: 16, color: '#1e293b', outline: 'none',
+                    boxShadow: '0 2px 12px rgba(11,29,52,0.08)',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = TEAL }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#e2e8f0' }}
                 />
               </div>
               <button
                 type="submit"
-                className="h-14 w-full flex-shrink-0 rounded-full px-8 text-base font-bold text-white shadow-lg transition-colors sm:w-[132px]"
-                style={{ background: TEAL }}
+                className="w-full sm:w-[160px] flex-shrink-0"
+                style={{
+                  height: 60,
+                  background: TEAL, color: 'white',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 16, fontWeight: 700,
+                  boxShadow: '0 2px 12px rgba(29,139,149,0.25)',
+                  cursor: 'pointer', transition: 'background 0.2s',
+                  padding: '0 32px',
+                }}
                 onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
                 onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
               >
@@ -187,7 +198,7 @@ export default function DepartmentsPage() {
       <section className="bg-white">
         <div style={{ maxWidth: 1280, width: '100%', margin: '0 auto', padding: '22px 24px 16px', boxSizing: 'border-box' }}>
           <motion.div
-            className="flex flex-wrap gap-2"
+            className="flex flex-wrap justify-center gap-2.5"
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
@@ -200,9 +211,9 @@ export default function DepartmentsPage() {
                   key={letter}
                   type="button"
                   onClick={() => scrollToLetter(letter)}
-                  className={`w-10 h-10 rounded text-base font-medium border transition-all cursor-pointer hover:scale-105
+                  className={`w-11 h-11 md:w-14 md:h-[52px] rounded-lg text-lg md:text-xl font-semibold border transition-colors cursor-pointer
                     ${isActive
-                      ? 'bg-[#1D8B95] text-white border-[#1D8B95] hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95]'
+                      ? 'bg-[#1D8B95] text-white border-[#1D8B95]'
                       : 'border-[#E2E8F0] text-[#0B1D34] hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95]'
                     }`}
                 >
