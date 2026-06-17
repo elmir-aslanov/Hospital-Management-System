@@ -66,6 +66,11 @@ export default function DepartmentsPage() {
     document.getElementById(`letter-${letter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Reset active letter if search filters out the currently highlighted section
+  useEffect(() => {
+    if (activeLetter && !grouped.has(activeLetter)) setActiveLetter(null);
+  }, [grouped, activeLetter]);
+
   useEffect(() => {
     if (grouped.size === 0) return;
     const letters = ALPHABET.filter(letter => grouped.has(letter));
@@ -188,20 +193,17 @@ export default function DepartmentsPage() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {ALPHABET.map(letter => {
-              const hasItems = grouped.has(letter);
-              const isActive = hasItems && activeLetter === letter;
+            {ALPHABET.filter(l => grouped.has(l)).map(letter => {
+              const isActive = activeLetter === letter;
               return (
                 <button
                   key={letter}
                   type="button"
-                  onClick={() => hasItems && scrollToLetter(letter)}
-                  className={`w-10 h-10 rounded text-base font-medium border transition-all
-                    ${hasItems
-                      ? (isActive
-                          ? 'bg-[#1D8B95] text-white border-[#1D8B95] cursor-pointer hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95] hover:scale-105'
-                          : 'border-[#E2E8F0] text-[#0B1D34] cursor-pointer hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95] hover:scale-105')
-                      : 'border-[#E2E8F0] text-[#CBD5E1] cursor-not-allowed'
+                  onClick={() => scrollToLetter(letter)}
+                  className={`w-10 h-10 rounded text-base font-medium border transition-all cursor-pointer hover:scale-105
+                    ${isActive
+                      ? 'bg-[#1D8B95] text-white border-[#1D8B95] hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95]'
+                      : 'border-[#E2E8F0] text-[#0B1D34] hover:bg-[#1D8B95] hover:text-white hover:border-[#1D8B95]'
                     }`}
                 >
                   {letter}
