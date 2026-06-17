@@ -646,7 +646,7 @@ export default function DepartmentDetailPage() {
                   )}
 
                   {/* Additional content sections */}
-                  {dept.contentSections?.filter(s => s.title || s.body).map((section, i) => (
+                  {(dept.contentSections || []).filter(s => s.title || s.body).map((section, i) => (
                     <div key={i} className="mt-8">
                       {section.title && (
                         <h2 className="text-base font-bold mb-3" style={{ color: NAVY }}>{section.title}</h2>

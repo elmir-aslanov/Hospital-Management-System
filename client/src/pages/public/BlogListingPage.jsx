@@ -97,7 +97,7 @@ function RelatedTopics({ onSelectTopic }) {
             <article key={topic} className="topic-item">
               <div>
                 <h3>{topic}</h3>
-                <p>{count || 1} məqalə · 5 dəq əvvəl yeniləndi</p>
+                <p>{count || 0} məqalə · 5 dəq əvvəl yeniləndi</p>
               </div>
               <button type="button" onClick={() => onSelectTopic(topic)}>Bax</button>
             </article>

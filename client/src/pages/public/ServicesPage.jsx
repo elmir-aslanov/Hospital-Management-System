@@ -101,7 +101,15 @@ export default function ServicesPage() {
   return (
     <main style={{ fontFamily: FONT }}>
       {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, #0a1628 0%, #00848e 100%)', padding: '72px 0 80px', textAlign: 'center', width: '100%' }}>
+      <section style={{
+        backgroundImage: "linear-gradient(to right, rgba(10,22,40,0.72) 0%, rgba(0,132,142,0.45) 100%), url('/xidmetler.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        padding: '72px 0 80px',
+        textAlign: 'center',
+        width: '100%',
+      }}>
         <div className="page-container">
         <motion.div variants={fadeUp} initial="hidden" animate="visible">
           <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(77,208,225,0.85)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 14, fontFamily: FONT }}>

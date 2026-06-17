@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
-
-const BASE  = 'http://localhost:5000'
+import { BASE } from '../../api/config.js'
 const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
 const hdrs  = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
 const TEAL  = '#00848e'
