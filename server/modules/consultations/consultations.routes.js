@@ -17,10 +17,10 @@ router.post('/', asyncHandler(async (req, res) => {
 }));
 
 // GET /api/v1/consultations — public endpoint for patient stories page
-// Only name, message, aiResponse are returned — email and phone are never exposed
+// Only closed (admin-reviewed) records are returned; email and phone never exposed
 router.get('/', asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 6, 20);
-  const list = await Consultation.find()
+  const list = await Consultation.find({ status: 'closed' })
     .sort({ createdAt: -1 })
     .limit(limit)
     .select('name message aiResponse createdAt');

@@ -244,6 +244,20 @@ i18n.on('languageChanged', (lng) => {
 // Set on initial load
 document.documentElement.lang = i18n.language || 'az';
 
+function PublicWhatsApp() {
+  const { pathname } = useLocation();
+  const isPanel =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/crm') ||
+    pathname.startsWith('/patient') ||
+    pathname.startsWith('/doctor') ||
+    pathname.startsWith('/nurse') ||
+    pathname.startsWith('/receptionist') ||
+    pathname.startsWith('/lab');
+  return isPanel ? null : <WhatsAppButton />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -251,7 +265,7 @@ export default function App() {
         <BrowserRouter>
           <RouteLoader />
           <Layout />
-          <WhatsAppButton />
+          <PublicWhatsApp />
         </BrowserRouter>
       </I18nextProvider>
     </AuthProvider>

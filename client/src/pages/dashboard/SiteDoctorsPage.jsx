@@ -27,10 +27,16 @@ function Modal({ doctor, onClose, onSaved }) {
     }
     setSaving(true);
     try {
+      // Controller expects fullName/specialization/photoUrl; model stores as name/specialty/image
       const payload = {
-        ...form,
-        experience: toBoundedNumber(form.experience, { min: 0, integer: true }),
-        order: toBoundedNumber(form.order, { min: 0, integer: true }),
+        fullName:       form.name,
+        specialization: form.specialty,
+        photoUrl:       form.image,
+        department:     form.department,
+        bio:            form.bio,
+        isActive:       form.isActive,
+        experience:     toBoundedNumber(form.experience, { min: 0, integer: true }),
+        order:          toBoundedNumber(form.order,      { min: 0, integer: true }),
       };
       if (isEdit) {
         await api.put(`/site-doctors/${doctor._id}`, payload);
