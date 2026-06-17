@@ -401,13 +401,17 @@ const buildDepartmentViewModel = (data, slug) => {
   const departmentName = cleanDepartmentName(sanitized.name)
   const content = getDepartmentContent(sanitized, slug) || createGenericDepartmentContent(departmentName)
 
+  // DB content takes priority; fall back to hardcoded only when the DB fields are empty
+  const hasDbDescription = Boolean(sanitized.description?.trim())
+  const hasDbSections    = sanitized.contentSections.some(s => s.title || s.body)
+
   return {
     ...sanitized,
-    name: content.name,
-    heroSubtitle: content.heroSubtitle,
-    aboutHeading: content.aboutHeading,
-    description: content.aboutBody,
-    contentSections: content.contentSections,
+    name:            content.name,
+    heroSubtitle:    content.heroSubtitle,
+    aboutHeading:    content.aboutHeading,
+    description:     hasDbDescription ? sanitized.description : content.aboutBody,
+    contentSections: hasDbSections    ? sanitized.contentSections : content.contentSections,
   }
 }
 

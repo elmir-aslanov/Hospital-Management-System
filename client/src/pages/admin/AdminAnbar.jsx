@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
 const BASE  = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'
 const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
@@ -110,7 +111,12 @@ export default function AdminAnbar() {
     try {
       const url    = editItem ? `${BASE}/api/v1/inventory/medicines/${editItem._id}` : `${BASE}/api/v1/inventory/medicines`
       const method = editItem ? 'PUT' : 'POST'
-      const body   = { ...form, quantity: Number(form.quantity), minStock: Number(form.minStock), unitPrice: Number(form.unitPrice) }
+      const body   = {
+        ...form,
+        quantity: toBoundedNumber(form.quantity, { min: 0, integer: true }),
+        minStock: toBoundedNumber(form.minStock, { min: 0, integer: true }),
+        unitPrice: toBoundedNumber(form.unitPrice, { min: 0 }),
+      }
       const r    = await fetch(url, { method, headers: { ...hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await r.json()
       if (!r.ok) throw new Error(data.message || 'Xəta')
@@ -146,7 +152,7 @@ export default function AdminAnbar() {
       const r    = await fetch(`${BASE}/api/v1/inventory/medicines/${stockItem._id}/${endpoint}`, {
         method: 'POST',
         headers: { ...hdrs(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: Number(stockQty), note: stockNote }),
+        body: JSON.stringify({ quantity: toBoundedNumber(stockQty, { min: 1, integer: true }), note: stockNote }),
       })
       const data = await r.json()
       if (!r.ok) throw new Error(data.message || 'Xəta')
@@ -282,17 +288,17 @@ export default function AdminAnbar() {
 
               <div>
                 <label style={lbl}>Miqdar</label>
-                <input type="number" min="0" style={inp} value={form.quantity} onChange={e => setF('quantity', e.target.value)} />
+                <input type="number" min="0" style={inp} value={form.quantity} onChange={e => setF('quantity', clampNumberInput(e.target.value, { min: 0, integer: true }))} />
               </div>
 
               <div>
                 <label style={lbl}>Min stok hədd</label>
-                <input type="number" min="0" style={inp} value={form.minStock} onChange={e => setF('minStock', e.target.value)} />
+                <input type="number" min="0" style={inp} value={form.minStock} onChange={e => setF('minStock', clampNumberInput(e.target.value, { min: 0, integer: true }))} />
               </div>
 
               <div>
                 <label style={lbl}>Vahid qiymət (₼)</label>
-                <input type="number" min="0" step="0.01" style={inp} value={form.unitPrice} onChange={e => setF('unitPrice', e.target.value)} />
+                <input type="number" min="0" step="0.01" style={inp} value={form.unitPrice} onChange={e => setF('unitPrice', clampNumberInput(e.target.value, { min: 0 }))} />
               </div>
 
               <div style={{ gridColumn: '1/-1' }}>
@@ -331,7 +337,7 @@ export default function AdminAnbar() {
                   max={stockType === 'out' ? (stockItem.stock ?? stockItem.quantity ?? 0) : undefined}
                   style={inp}
                   value={stockQty}
-                  onChange={e => setStockQty(Number(e.target.value))}
+                  onChange={e => setStockQty(clampNumberInput(e.target.value, { min: 1, integer: true }))}
                 />
                 {stockType === 'out' && stockQty > (stockItem.stock ?? stockItem.quantity ?? 0) && (
                   <p style={{ margin: '5px 0 0', fontSize: 12, color: '#dc2626' }}>⚠️ Mövcud stokdan çox ola bilməz</p>

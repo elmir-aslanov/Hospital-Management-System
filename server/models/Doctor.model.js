@@ -14,7 +14,7 @@ const doctorSchema = new mongoose.Schema(
     departmentId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Department', default: null },
     image:           { type: String, default: '' },
     imagePublicId:   { type: String, default: '' },
-    order:           { type: Number, default: 0 },
+    order:           { type: Number, default: 0, min: 0 },
     isActive:        { type: Boolean, default: true },
     consultationFee: { type: Number, default: 0, min: 0 },
     languages:       [{ type: String, trim: true }],

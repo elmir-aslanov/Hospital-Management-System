@@ -21,7 +21,7 @@ export const validateCreateRoom = [
   body('roomNumber').trim().notEmpty().withMessage('roomNumber is required'),
   body('type').optional().isIn(['single', 'double', 'icu'])
     .withMessage('type must be one of: single, double, icu'),
-  body('floor').optional().isInt().withMessage('floor must be an integer'),
+  body('floor').optional().isInt({ min: 0 }).withMessage('floor must be a non-negative integer'),
 ];
 
 export const validateCreateBed = [

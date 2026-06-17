@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
 const BASE  = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'
 const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
@@ -79,7 +80,7 @@ export default function AdminPriceList() {
     try {
       const url    = editPrice ? `${BASE}/api/v1/pricelist/${editPrice._id}` : `${BASE}/api/v1/pricelist`
       const method = editPrice ? 'PUT' : 'POST'
-      const body   = { ...form, price: Number(form.price) }
+      const body   = { ...form, price: toBoundedNumber(form.price, { min: 0 }) }
       const r      = await fetch(url, { method, headers: { ...hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data   = await r.json()
       if (!r.ok) throw new Error(data.message || 'Xəta')
@@ -249,7 +250,7 @@ export default function AdminPriceList() {
 
               <div>
                 <label style={lbl}>Qiymət (AZN) *</label>
-                <input type="number" min="0" step="0.01" style={inp} value={form.price} onChange={e => setF('price', e.target.value)} />
+                <input type="number" min="0" step="0.01" style={inp} value={form.price} onChange={e => setF('price', clampNumberInput(e.target.value, { min: 0 }))} />
               </div>
 
               <div>

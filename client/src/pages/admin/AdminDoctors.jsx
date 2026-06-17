@@ -3,6 +3,7 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import { BASE } from '../../api/config.js'
 import AvatarUpload from '../../components/common/AvatarUpload'
 import { showSuccess, showError, getErrorMessage } from '../../utils/alert'
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
 export default function AdminDoctors() {
   const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
@@ -143,11 +144,11 @@ export default function AdminDoctors() {
       if (!specialization.trim()) { setError('İxtisas tələb olunur'); return }
       setSaving(true); setError('')
       try {
-        const updates = { specialization: specialization.trim(), experience: Number(experience) || 0, bio: bio.trim(), isAvailable }
+        const updates = { specialization: specialization.trim(), experience: toBoundedNumber(experience, { min: 0, integer: true }), bio: bio.trim(), isAvailable }
         if (department.trim())       updates.department      = department.trim()
         if (departmentId)            updates.departmentId    = departmentId
-        if (consultationFee !== '')  updates.consultationFee = Number(consultationFee)
-        updates.order    = Number(order)
+        if (consultationFee !== '')  updates.consultationFee = toBoundedNumber(consultationFee, { min: 0 })
+        updates.order    = toBoundedNumber(order, { min: 0, integer: true })
         updates.isActive = isActive
 
         const r    = await fetch(`${BASE}/api/v1/doctors/${editDoctor._id}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + token }, body: toFormData(updates) })
@@ -172,12 +173,12 @@ export default function AdminDoctors() {
           fullName:        newFullName.trim(),
           email:           newEmail.trim(),
           specialization:  specialization.trim(),
-          experience:      Number(experience) || 0,
+          experience:      toBoundedNumber(experience, { min: 0, integer: true }),
           bio:             bio.trim(),
           department:      department?.trim() || '',
           departmentId:    departmentId || undefined,
-          consultationFee: Number(consultationFee) || 0,
-          order:           Number(order) || 0,
+          consultationFee: toBoundedNumber(consultationFee, { min: 0 }),
+          order:           toBoundedNumber(order, { min: 0, integer: true }),
         }
         const r = await fetch(`${BASE}/api/v1/doctors/admin-create`, {
           method: 'POST',
@@ -455,7 +456,7 @@ export default function AdminDoctors() {
             {/* Shared fields — create and edit */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <MF label="İxtisas *"    value={specialization} onChange={setSpecialization} placeholder="məs. Kardiologiya" />
-              <MF label="Təcrübə (il)" value={experience}     onChange={setExperience}     type="number" placeholder="0" />
+              <MF label="Təcrübə (il)" value={experience}     onChange={setExperience}     type="number" min={0} integer placeholder="0" />
               <div style={{ gridColumn: 'span 2' }}>
                 <MF label="Bio" value={bio} onChange={setBio} placeholder="Həkim haqqında qısa məlumat..." />
               </div>
@@ -477,8 +478,8 @@ export default function AdminDoctors() {
                   ))}
                 </select>
               </div>
-              <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" placeholder="0" />
-              <MF label="Göstərilmə sırası" value={order} onChange={setOrder} type="number" placeholder="0" />
+              <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" min={0} placeholder="0" />
+              <MF label="Göstərilmə sırası" value={order} onChange={setOrder} type="number" min={0} integer placeholder="0" />
 
               <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <input
@@ -523,11 +524,15 @@ export default function AdminDoctors() {
 const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
 
-function MF({ label, value, onChange, type = 'text', placeholder = '' }) {
+function MF({ label, value, onChange, type = 'text', placeholder = '', min, integer = false }) {
+  const handleChange = (e) => {
+    onChange(type === 'number' ? clampNumberInput(e.target.value, { min, integer }) : e.target.value)
+  }
+
   return (
     <div>
       <label style={lbl}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inp} />
+      <input type={type} min={min} value={value} onChange={handleChange} placeholder={placeholder} style={inp} />
     </div>
   )
 }

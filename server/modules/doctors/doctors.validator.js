@@ -17,6 +17,14 @@ export const validateCreateDoctor = [
     .optional()
     .isInt({ min: 0 }).withMessage('Experience must be a non-negative integer'),
 
+  body('consultationFee')
+    .optional()
+    .isFloat({ min: 0 }).withMessage('Consultation fee must be non-negative'),
+
+  body('order')
+    .optional()
+    .isInt({ min: 0 }).withMessage('Order must be a non-negative integer'),
+
   body('bio')
     .optional()
     .isString().isLength({ max: 500 }).withMessage('Bio must be at most 500 characters').trim(),
@@ -26,6 +34,8 @@ export const validateUpdateDoctor = [
   body('specialization').optional().isString().trim(),
   body('licenseNumber').optional().isString().trim(),
   body('experience').optional().isInt({ min: 0 }).withMessage('Experience must be a non-negative integer'),
+  body('consultationFee').optional().isFloat({ min: 0 }).withMessage('Consultation fee must be non-negative'),
+  body('order').optional().isInt({ min: 0 }).withMessage('Order must be a non-negative integer'),
   body('bio').optional().isString().isLength({ max: 500 }).withMessage('Bio must be at most 500 characters').trim(),
   body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean'),
 ];

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import api from '../../api/axios';
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -48,6 +49,7 @@ export default function Register() {
   const [otpError, setOtpError]   = useState('');
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const setNumber = (k, options) => (e) => setForm(f => ({ ...f, [k]: clampNumberInput(e.target.value, options) }));
 
   /* ── Submit ── */
   const handleSubmit = async (e) => {
@@ -58,7 +60,7 @@ export default function Register() {
       toast.warning('Zəhmət olmasa bütün sahələri doldurun.');
       return;
     }
-    const ageNum = Number(age);
+    const ageNum = toBoundedNumber(age, { min: 1, max: 120, integer: true, fallback: 0 });
     if (ageNum < 1 || ageNum > 120) {
       toast.warning('Yaş 1–120 arasında olmalıdır.');
       return;
@@ -231,7 +233,7 @@ export default function Register() {
                 {/* Row 2 */}
                 <div>
                   <Label>Yaş</Label>
-                  <input type="number" placeholder="25" min={1} max={120} value={form.age} onChange={set('age')} style={inputBase} onFocus={focusIn} onBlur={focusOut} />
+                  <input type="number" placeholder="25" min={1} max={120} value={form.age} onChange={setNumber('age', { min: 1, max: 120, integer: true })} style={inputBase} onFocus={focusIn} onBlur={focusOut} />
                 </div>
                 <div>
                   <Label>Şəxsiyyət vəsiqəsi kodu</Label>

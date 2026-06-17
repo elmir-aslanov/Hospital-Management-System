@@ -4,7 +4,7 @@ const stockTransactionSchema = new mongoose.Schema(
   {
     medicineId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Medicine',     required: true },
     type:           { type: String, enum: ['stock_in', 'stock_out', 'adjustment'], required: true },
-    quantity:       { type: Number, required: true },
+    quantity:       { type: Number, required: true, min: 1 },
     previousStock:  { type: Number, required: true },
     newStock:       { type: Number, required: true },
     reason:         { type: String, required: true, trim: true },

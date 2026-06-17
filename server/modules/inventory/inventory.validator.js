@@ -5,10 +5,10 @@ export const validateAddMedicine = [
   body('genericName').optional().isString().trim(),
   body('category').optional().isString().trim(),
   body('unit').notEmpty().isString().trim().withMessage('unit is required'),
-  body('stock').optional().isNumeric().withMessage('stock must be a number'),
-  body('quantity').optional().isNumeric(),        // frontend alias for stock
-  body('minStockLevel').optional().isNumeric(),
-  body('minStock').optional().isNumeric(),         // frontend alias for minStockLevel
+  body('stock').optional().isFloat({ min: 0 }).withMessage('stock must be >= 0'),
+  body('quantity').optional().isFloat({ min: 0 }).withMessage('quantity must be >= 0'),        // frontend alias for stock
+  body('minStockLevel').optional().isFloat({ min: 0 }).withMessage('minStockLevel must be >= 0'),
+  body('minStock').optional().isFloat({ min: 0 }).withMessage('minStock must be >= 0'),         // frontend alias for minStockLevel
   body('unitPrice').notEmpty().isFloat({ min: 0 }).withMessage('unitPrice must be >= 0'),
   body('manufacturer').optional().isString().trim(),
   body('expiryDate').optional().isISO8601().withMessage('expiryDate must be a valid date'),

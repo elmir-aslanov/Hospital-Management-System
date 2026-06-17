@@ -7,7 +7,7 @@ const medicineSchema = new mongoose.Schema(
     category:      { type: String, trim: true, default: 'other' },
     unit:          { type: String, trim: true, required: true },
     stock:         { type: Number, required: true, default: 0, min: 0 },
-    minStockLevel: { type: Number, default: 10 },
+    minStockLevel: { type: Number, default: 10, min: 0 },
     unitPrice:     { type: Number, required: true, min: 0 },
     manufacturer:  { type: String, trim: true },
     expiryDate:    { type: Date },

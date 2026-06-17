@@ -221,6 +221,8 @@ export default function HekimlerPage() {
   const [visibleCount, setVisibleCount] = useState(8)
   const [view, setView] = useState('table')
   const [expandedId, setExpandedId] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const DOCTORS_PER_PAGE = 10
 
   useEffect(() => {
     // Public site-doctors endpoint — no auth required
@@ -257,6 +259,34 @@ export default function HekimlerPage() {
     .flatMap(d => [getDoctorDepartment(d), getDoctorSpecialty(d)])
     .filter(Boolean)
   ))]
+
+  // Reset to page 1 whenever search or filter changes
+  useEffect(() => { setCurrentPage(1) }, [search, activeSpec])
+
+  // Clamp currentPage if the filtered list shrinks below the current page
+  useEffect(() => {
+    const total = Math.ceil(filtered.length / DOCTORS_PER_PAGE)
+    if (total > 0 && currentPage > total) setCurrentPage(total)
+  }, [filtered.length, currentPage])
+
+  const totalPages = Math.ceil(filtered.length / DOCTORS_PER_PAGE)
+  const paginatedDoctors = filtered.slice(
+    (currentPage - 1) * DOCTORS_PER_PAGE,
+    currentPage * DOCTORS_PER_PAGE,
+  )
+
+  // Build compact page-number list (shows ellipsis when totalPages > 7)
+  const pageNumbers = (() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
+    const pages = [1]
+    if (currentPage > 3) pages.push('…')
+    const start = Math.max(2, currentPage - 1)
+    const end   = Math.min(totalPages - 1, currentPage + 1)
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (currentPage < totalPages - 2) pages.push('…')
+    pages.push(totalPages)
+    return pages
+  })()
 
   return (
     <main style={{ fontFamily: FONT }}>
@@ -351,7 +381,7 @@ export default function HekimlerPage() {
                   </div>
 
                   {/* Rows */}
-                  {filtered.map((doc, i) => {
+                  {paginatedDoctors.map((doc, i) => {
                     const name      = doc.userId?.fullName || doc.fullName || doc.name || '—'
                     const dept      = doc.specialization || doc.department || doc.specialty || '—'
                     const isLinked  = !!doc._id
@@ -393,6 +423,67 @@ export default function HekimlerPage() {
                     )
                   })}
 
+                </div>
+              )}
+
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 20, flexWrap: 'wrap' }}>
+                  {/* Əvvəlki */}
+                  <button
+                    onClick={() => { setCurrentPage(p => p - 1); setExpandedId(null) }}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: '7px 14px', borderRadius: 8,
+                      border: '1px solid #e2e8f0', background: 'white',
+                      color: currentPage === 1 ? '#94a3b8' : NAVY,
+                      fontSize: 13, fontWeight: 600, fontFamily: FONT,
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    Əvvəlki
+                  </button>
+
+                  {/* Page numbers */}
+                  {pageNumbers.map((page, idx) =>
+                    page === '…'
+                      ? <span key={`ell-${idx}`} style={{ padding: '0 2px', color: '#94a3b8', fontSize: 13, userSelect: 'none' }}>…</span>
+                      : (
+                        <button
+                          key={page}
+                          onClick={() => { setCurrentPage(page); setExpandedId(null) }}
+                          style={{
+                            width: 36, height: 36, borderRadius: 8,
+                            border: page === currentPage ? 'none' : '1px solid #e2e8f0',
+                            background: page === currentPage ? TEAL : 'white',
+                            color: page === currentPage ? 'white' : NAVY,
+                            fontSize: 13, fontWeight: 600, fontFamily: FONT,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {page}
+                        </button>
+                      )
+                  )}
+
+                  {/* Növbəti */}
+                  <button
+                    onClick={() => { setCurrentPage(p => p + 1); setExpandedId(null) }}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: '7px 14px', borderRadius: 8,
+                      border: '1px solid #e2e8f0', background: 'white',
+                      color: currentPage === totalPages ? '#94a3b8' : NAVY,
+                      fontSize: 13, fontWeight: 600, fontFamily: FONT,
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      opacity: currentPage === totalPages ? 0.5 : 1,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    Növbəti
+                  </button>
                 </div>
               )}
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
 import { BASE } from '../../api/config.js'
 const token = () => localStorage.getItem('token') || localStorage.getItem('adminToken')
@@ -112,7 +113,7 @@ export default function AdminDepartments() {
       name:        deptForm.name.trim(),
       description: deptForm.description,
       icon:        deptForm.icon,
-      order:       Number(deptForm.order) || 0,
+      order:       toBoundedNumber(deptForm.order, { min: 0, integer: true }),
       isActive:    deptForm.isActive,
       phone:       deptForm.phone.trim(),
       fax:         deptForm.fax.trim(),
@@ -324,7 +325,7 @@ export default function AdminDepartments() {
                 </div>
                 <div>
                   <label style={lbl}>Sıra nömrəsi</label>
-                  <input type="number" style={inp} value={deptForm.order} onChange={e => setDF('order', e.target.value)} />
+                  <input type="number" min="0" style={inp} value={deptForm.order} onChange={e => setDF('order', clampNumberInput(e.target.value, { min: 0, integer: true }))} />
                 </div>
               </div>
 

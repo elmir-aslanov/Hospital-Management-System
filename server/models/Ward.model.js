@@ -8,7 +8,7 @@ const wardSchema = new mongoose.Schema(
       required: true,
       enum: ['general', 'icu', 'emergency', 'maternity', 'pediatric'],
     },
-    floor:      { type: Number, required: true },
+    floor:      { type: Number, required: true, min: 0 },
     totalBeds:  { type: Number, required: true, min: 1 },
     headNurseId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import api from '../../api/axios';
 import Icons from '../../components/Icons';
 import '../../styles/dashboard.css';
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -15,6 +16,7 @@ function Modal({ doctor, onClose, onSaved }) {
   const isEdit = !!doctor?._id;
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const setNumber = (k, options) => e => setForm(f => ({ ...f, [k]: clampNumberInput(e.target.value, options) }));
   const setCheck = k => e => setForm(f => ({ ...f, [k]: e.target.checked }));
 
   const handleSubmit = async (e) => {
@@ -27,8 +29,8 @@ function Modal({ doctor, onClose, onSaved }) {
     try {
       const payload = {
         ...form,
-        experience: form.experience === '' ? 0 : Number(form.experience),
-        order: form.order === '' ? 0 : Number(form.order),
+        experience: toBoundedNumber(form.experience, { min: 0, integer: true }),
+        order: toBoundedNumber(form.order, { min: 0, integer: true }),
       };
       if (isEdit) {
         await api.put(`/doctors/${doctor._id}`, payload);
@@ -99,13 +101,13 @@ function Modal({ doctor, onClose, onSaved }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelStyle}>Təcrübə (il)</label>
-              <input type="number" min="0" value={form.experience} onChange={set('experience')} placeholder="10" style={inputStyle}
+              <input type="number" min="0" value={form.experience} onChange={setNumber('experience', { min: 0, integer: true })} placeholder="10" style={inputStyle}
                 onFocus={e => e.target.style.borderColor = TEAL}
                 onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
             </div>
             <div>
               <label style={labelStyle}>Sıra (order)</label>
-              <input type="number" min="0" value={form.order} onChange={set('order')} placeholder="1" style={inputStyle}
+              <input type="number" min="0" value={form.order} onChange={setNumber('order', { min: 0, integer: true })} placeholder="1" style={inputStyle}
                 onFocus={e => e.target.style.borderColor = TEAL}
                 onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
             </div>

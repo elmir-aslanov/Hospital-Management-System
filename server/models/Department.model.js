@@ -21,7 +21,7 @@ const departmentSchema = new mongoose.Schema({
   phone:       { type: String, default: '', trim: true },
   fax:         { type: String, default: '', trim: true },
   room:        { type: String, default: '', trim: true },
-  order:       { type: Number, default: 0 },
+  order:       { type: Number, default: 0, min: 0 },
   isActive:    { type: Boolean, default: true },
 }, { timestamps: true });
 

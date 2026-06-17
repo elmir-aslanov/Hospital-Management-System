@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
 import { BASE } from '../../api/config.js'
 
@@ -124,7 +125,7 @@ export default function AdminBilling() {
   }
 
   const subtotal = formItems.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 1), 0)
-  const total    = subtotal - (Number(form.discount) || 0) + (Number(form.tax) || 0)
+  const total    = Math.max(0, subtotal - (Number(form.discount) || 0) + (Number(form.tax) || 0))
 
   const saveInvoice = async () => {
     if (!form.patientId) { setFormErr('Pasiyent seçin'); return }
@@ -135,14 +136,18 @@ export default function AdminBilling() {
         patientId: form.patientId,
         notes:     form.notes,
         status:    form.status,
-        discount:  Number(form.discount) || 0,
-        tax:       Number(form.tax) || 0,
-        items:     formItems.map(it => ({
-          description: it.description,
-          quantity:    Number(it.quantity) || 1,
-          unitPrice:   Number(it.unitPrice) || 0,
-          total:       (Number(it.unitPrice) || 0) * (Number(it.quantity) || 1),
-        })),
+        discount:  toBoundedNumber(form.discount, { min: 0 }),
+        tax:       toBoundedNumber(form.tax, { min: 0 }),
+        items:     formItems.map(it => {
+          const quantity = toBoundedNumber(it.quantity, { min: 1 })
+          const unitPrice = toBoundedNumber(it.unitPrice, { min: 0 })
+          return {
+            description: it.description,
+            quantity,
+            unitPrice,
+            total: unitPrice * quantity,
+          }
+        }),
       }
       const r    = await fetch(`${BASE}/api/v1/billing`, {
         method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
@@ -186,7 +191,7 @@ export default function AdminBilling() {
     try {
       const body = {
         invoiceId:     selected,
-        amount:        Number(payForm.amount),
+        amount:        toBoundedNumber(payForm.amount, { min: 0 }),
         method:        payForm.method,
         transactionId: txId,
         note:          extraNote || undefined,
@@ -562,8 +567,8 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                   {formItems.map((it, i) => (
                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 90px 70px 28px', gap: 6, alignItems: 'center' }}>
                       <input style={inp} placeholder="Xidmət adı" value={it.description} onChange={e => updateItem(i, 'description', e.target.value)} />
-                      <input style={inp} type="number" min="1" placeholder="Miq." value={it.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} />
-                      <input style={inp} type="number" min="0" step="0.01" placeholder="Qiymət" value={it.unitPrice} onChange={e => updateItem(i, 'unitPrice', e.target.value)} />
+                      <input style={inp} type="number" min="1" placeholder="Miq." value={it.quantity} onChange={e => updateItem(i, 'quantity', clampNumberInput(e.target.value, { min: 1 }))} />
+                      <input style={inp} type="number" min="0" step="0.01" placeholder="Qiymət" value={it.unitPrice} onChange={e => updateItem(i, 'unitPrice', clampNumberInput(e.target.value, { min: 0 }))} />
                       <span style={{ fontSize: 13, fontWeight: 600, color: '#0f1b2d', textAlign: 'right' }}>{fmt((Number(it.unitPrice)||0)*(Number(it.quantity)||1))}</span>
                       {formItems.length > 1 && (
                         <button onClick={() => setFormItems(prev => prev.filter((_, idx) => idx !== i))}
@@ -582,11 +587,11 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
                   <label style={lbl}>Endirim (AZN)</label>
-                  <input style={inp} type="number" min="0" step="0.01" value={form.discount} onChange={e => setF('discount', e.target.value)} />
+                  <input style={inp} type="number" min="0" step="0.01" value={form.discount} onChange={e => setF('discount', clampNumberInput(e.target.value, { min: 0 }))} />
                 </div>
                 <div>
                   <label style={lbl}>Vergi (AZN)</label>
-                  <input style={inp} type="number" min="0" step="0.01" value={form.tax} onChange={e => setF('tax', e.target.value)} />
+                  <input style={inp} type="number" min="0" step="0.01" value={form.tax} onChange={e => setF('tax', clampNumberInput(e.target.value, { min: 0 }))} />
                 </div>
               </div>
 
@@ -683,7 +688,7 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                   <div>
                     <label style={lbl}>Məbləğ (AZN) *</label>
                     <input style={inp} type="number" min="0" step="0.01" value={payForm.amount}
-                      onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))} />
+                      onChange={e => setPayForm(f => ({ ...f, amount: clampNumberInput(e.target.value, { min: 0 }) }))} />
                   </div>
 
                   {/* Method */}
