@@ -22,12 +22,13 @@ function Skel({ w = '100%', h = 16 }) {
 }
 
 const STATUS_COLORS = {
-  scheduled: { bg: '#dbeafe', color: '#1d4ed8', label: 'Gözləyir' },
-  confirmed:  { bg: '#dcfce7', color: '#166534', label: 'Təsdiqləndi' },
-  completed:  { bg: '#d1fae5', color: '#065f46', label: 'Tamamlandı' },
-  cancelled:  { bg: '#fee2e2', color: '#991b1b', label: 'Ləğv edildi' },
-  missed:     { bg: '#fef9c3', color: '#854d0e', label: 'Gəlmədi' },
-  no_show:    { bg: '#fef3c7', color: '#92400e', label: 'Gəlmədi' },
+  scheduled:   { bg: '#dbeafe', color: '#1d4ed8', label: 'Gözləyir'   },
+  waiting:     { bg: '#fff7ed', color: '#ea580c', label: 'Növbədə'    },
+  in_progress: { bg: '#eff6ff', color: '#2563eb', label: 'Müayinədə'  },
+  completed:   { bg: '#d1fae5', color: '#065f46', label: 'Tamamlandı' },
+  cancelled:   { bg: '#fee2e2', color: '#991b1b', label: 'Ləğv edildi' },
+  missed:      { bg: '#fef9c3', color: '#854d0e', label: 'Gəlmədi'    },
+  no_show:     { bg: '#fef3c7', color: '#92400e', label: 'Gəlmədi'    },
 };
 
 function StatusBadge({ status }) {

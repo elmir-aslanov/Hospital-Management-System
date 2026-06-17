@@ -103,12 +103,12 @@ export default function DepartmentsPage() {
       <section
         className="relative overflow-hidden flex items-center"
         style={{
-          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.72) 35%, rgba(255,255,255,0.18) 100%), url('/sobeler.png')",
+          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.82) 40%, rgba(255,255,255,0.05) 100%), url('/sobepng.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center right',
           backgroundRepeat: 'no-repeat',
-          minHeight: '380px',
-          padding: '68px 0 76px',
+          minHeight: '320px',
+          padding: '52px 0 58px',
         }}
       >
         <motion.div
@@ -122,7 +122,7 @@ export default function DepartmentsPage() {
           <h1
             className="m-0 text-center"
             style={{
-              fontSize: 'clamp(32px, 4.2vw, 58px)',
+              fontSize: 'clamp(28px, 3.4vw, 50px)',
               fontWeight: 700,
               letterSpacing: '0.1em',
               lineHeight: 1.05,
@@ -135,7 +135,7 @@ export default function DepartmentsPage() {
           </h1>
 
           {/* Underline search */}
-          <div className="w-full mt-8" style={{ maxWidth: 760 }}>
+          <div className="w-full mt-6" style={{ maxWidth: 700 }}>
             <form
               onSubmit={e => e.preventDefault()}
               style={{ position: 'relative', width: '100%' }}
@@ -148,12 +148,12 @@ export default function DepartmentsPage() {
                 className="hero-search-input"
                 style={{
                   width: '100%',
-                  height: 52,
+                  height: 46,
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: `2px solid ${NAVY}`,
+                  borderBottom: `1.5px solid ${NAVY}`,
                   outline: 'none',
-                  fontSize: 'clamp(17px, 2vw, 26px)',
+                  fontSize: 'clamp(15px, 1.6vw, 22px)',
                   fontWeight: 400,
                   color: NAVY,
                   paddingLeft: 2,
@@ -164,8 +164,8 @@ export default function DepartmentsPage() {
                   transition: 'border-color 0.25s',
                   display: 'block',
                 }}
-                onFocus={e => { e.currentTarget.style.borderBottomColor = TEAL }}
-                onBlur={e => { e.currentTarget.style.borderBottomColor = NAVY }}
+                onFocus={e => { e.currentTarget.style.borderBottomColor = TEAL; e.currentTarget.style.borderBottomWidth = '1.5px' }}
+                onBlur={e => { e.currentTarget.style.borderBottomColor = NAVY; e.currentTarget.style.borderBottomWidth = '1.5px' }}
               />
               {/* Search icon — right side, acts as submit */}
               <button
@@ -182,7 +182,7 @@ export default function DepartmentsPage() {
                 onMouseEnter={e => { e.currentTarget.style.color = TEAL }}
                 onMouseLeave={e => { e.currentTarget.style.color = '#b0bec5' }}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
               </button>

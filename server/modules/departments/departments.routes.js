@@ -6,16 +6,17 @@ import authorize    from '../../middleware/rbac.middleware.js';
 const router = Router();
 
 // ── Public — no auth ───────────────────────────────────────────────────────────
-router.get('/',           ctrl.getAll);
-router.get('/:slug',      ctrl.getBySlug);
+router.get('/', ctrl.getAll);
 
 // ── Protected — ADMIN only ─────────────────────────────────────────────────────
-router.use(authenticate);
-router.use(authorize('ADMIN', 'SUPER_ADMIN'));
+// Must be registered BEFORE /:slug so the static path wins
+router.get('/admin/all', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), ctrl.getAll);
 
-router.get('/admin/all',  ctrl.getAll);
-router.post('/',          ctrl.create);
-router.put('/:id',        ctrl.update);
-router.delete('/:id',     ctrl.remove);
+router.post('/',    authenticate, authorize('ADMIN', 'SUPER_ADMIN'), ctrl.create);
+router.put('/:id',  authenticate, authorize('ADMIN', 'SUPER_ADMIN'), ctrl.update);
+router.delete('/:id', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), ctrl.remove);
+
+// ── Dynamic slug — public, must come after all static paths ───────────────────
+router.get('/:slug', ctrl.getBySlug);
 
 export default router;

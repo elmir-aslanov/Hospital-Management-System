@@ -13,20 +13,21 @@ router.get('/patient-results', ehrController.getPatientResults);
 
 router.use(authenticate);
 
-// EHR (new)
+// EHR summary
 router.get('/patient/:patientId/summary', authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE'), ehrController.getEHRSummary);
-router.get('/patient/:patientId',         authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE','PATIENT'), requirePatientOwnership('params.patientId'), ehrController.getPatientEHR);
-router.post('/records',                   authorize('ADMIN','SUPER_ADMIN','DOCTOR'),         ehrController.addEHRRecord);
-router.put('/records/:id',                authorize('ADMIN','SUPER_ADMIN','DOCTOR'),         ehrController.updateEHRRecord);
-router.delete('/records/:id',             authorize('ADMIN','SUPER_ADMIN'),                  ehrController.deleteEHRRecord);
 
-// Create a medical record (append-only — no DELETE route)
+// Get full EHR for a patient (single definition — was duplicated before)
+router.get('/patient/:patientId', authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE','PATIENT'), requirePatientOwnership('params.patientId'), validateEHRParam, validate, ehrController.getPatientEHR);
+
+// Create a medical record (append-only)
 router.post('/', authorize('DOCTOR', 'LAB_TECHNICIAN'), validateCreateRecord, validate, ehrController.createRecord);
 
-// Get all records for a patient
-router.get('/patient/:patientId', authorize('ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'), requirePatientOwnership('params.patientId'), validateEHRParam, validate, ehrController.getRecordsByPatient);
+// Add EHR record via dedicated endpoint
+router.post('/records', authorize('ADMIN','SUPER_ADMIN','DOCTOR'), ehrController.addEHRRecord);
+router.put('/records/:id',    authorize('ADMIN','SUPER_ADMIN','DOCTOR'), ehrController.updateEHRRecord);
+router.delete('/records/:id', authorize('ADMIN','SUPER_ADMIN'),          ehrController.deleteEHRRecord);
 
 // Get a single record
-router.get('/:id', authorize('ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE'), ehrController.getRecordById);
+router.get('/:id', authorize('ADMIN','SUPER_ADMIN','DOCTOR','NURSE'), ehrController.getRecordById);
 
 export default router;

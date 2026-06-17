@@ -171,9 +171,10 @@ export default function AdminAppointments() {
   const handleStatusPatch = async (id, status) => {
     setPatchId(id)
     try {
-      await fetch(`${BASE}/api/v1/appointments/${id}/status`, {
+      const res = await fetch(`${BASE}/api/v1/appointments/${id}/status`, {
         method: 'PATCH', headers, body: JSON.stringify({ status }),
       })
+      if (!res.ok) return  // keep existing state — backend rejected the update
       setAppts(prev => prev.map(a => a._id === id ? { ...a, status } : a))
     } catch {}
     finally { setPatchId(null) }
@@ -374,7 +375,6 @@ export default function AdminAppointments() {
                           <option value="scheduled">Planlandı</option>
                           <option value="waiting">Növbədə</option>
                           <option value="in_progress">Müayinədə</option>
-                          <option value="confirmed">Təsdiqləndi</option>
                           <option value="completed">Tamamlandı</option>
                           <option value="cancelled">Ləğv edildi</option>
                           <option value="missed">Buraxıldı</option>

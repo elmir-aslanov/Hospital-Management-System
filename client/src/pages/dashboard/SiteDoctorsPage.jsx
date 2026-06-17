@@ -33,10 +33,10 @@ function Modal({ doctor, onClose, onSaved }) {
         order: toBoundedNumber(form.order, { min: 0, integer: true }),
       };
       if (isEdit) {
-        await api.put(`/doctors/${doctor._id}`, payload);
+        await api.put(`/site-doctors/${doctor._id}`, payload);
         toast.success('Həkim yeniləndi.');
       } else {
-        await api.post('/doctors', payload);
+        await api.post('/site-doctors', payload);
         toast.success('Həkim əlavə edildi.');
       }
       onSaved();
@@ -158,7 +158,7 @@ export default function SiteDoctorsPage() {
 
   const load = () => {
     setLoading(true);
-    api.get('/doctors/all')
+    api.get('/site-doctors/all')
       .then(res => {
         const data = res.data?.data ?? res.data;
         setDoctors(Array.isArray(data) ? data : []);
@@ -173,7 +173,7 @@ export default function SiteDoctorsPage() {
     if (!window.confirm(`"${name}" silinsin?`)) return;
     setDeleting(id);
     try {
-      await api.delete(`/doctors/${id}`);
+      await api.delete(`/site-doctors/${id}`);
       toast.success('Həkim silindi.');
       load();
     } catch {

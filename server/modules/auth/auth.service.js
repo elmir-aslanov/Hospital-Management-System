@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../../models/User.model.js';
 import OTP from '../../models/OTP.model.js';
+import Patient from '../../models/Patient.model.js';
 import ApiError from '../../utils/ApiError.js';
 import sendEmail from '../../utils/sendEmail.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/generateTokens.js';
@@ -22,6 +23,13 @@ export const registerUser = async ({ fullName, email, password }, req) => {
 
   const role = 'PATIENT';
   const user = await User.create({ fullName, email, password, role });
+
+  // Create linked Patient profile so the patient portal can find this user
+  try {
+    await Patient.create({ userId: user._id });
+  } catch (e) {
+    console.error('Patient profile create failed:', e.message);
+  }
 
   // Send email verification OTP
   try {
