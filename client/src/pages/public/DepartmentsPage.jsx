@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
 import { fadeUp } from '../../utils/animations';
+import { DeptIcon } from '../../components/Icons';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#1D8B95';
@@ -366,10 +367,11 @@ export default function DepartmentsPage() {
                               to={`/departments/${dept.slug}`}
                               className="dept-card-link"
                             >
-                              <svg className="dept-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D8B95" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <DeptIcon icon={dept.icon} name={dept.name} size={18} color="#1D8B95" />
+                              <span>{dept.name}</span>
+                              <svg className="dept-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D8B95" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginLeft: 'auto' }}>
                                 <path d="m9 18 6-6-6-6"/>
                               </svg>
-                              <span>{dept.name}</span>
                             </Link>
                           ))}
                         </div>

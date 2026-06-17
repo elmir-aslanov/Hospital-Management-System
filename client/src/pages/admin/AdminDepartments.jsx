@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
+import { DeptIcon, DEPT_ICON_OPTIONS, resolveIconKey } from '../../components/Icons'
 
 import { BASE } from '../../api/config.js'
 const token = () => localStorage.getItem('token') || localStorage.getItem('adminToken')
@@ -38,7 +39,7 @@ export default function AdminDepartments() {
   /* dept modal */
   const [deptModal,  setDeptModal]  = useState(false)
   const [editDept,   setEditDept]   = useState(null)
-  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'🏥', order:0, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
+  const [deptForm,   setDeptForm]   = useState({ name:'', description:'', icon:'stethoscope', order:0, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
   const [deptSaving, setDeptSaving] = useState(false)
   const [deptErr,    setDeptErr]    = useState('')
 
@@ -53,16 +54,22 @@ export default function AdminDepartments() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [d, doc, pat] = await Promise.all([
+        const [dRes, docRes, patRes] = await Promise.allSettled([
           fetch(`${BASE}/api/v1/departments/admin/all`,     { headers: hdrs() }).then(r => r.json()),
           fetch(`${BASE}/api/v1/doctors?limit=200`,         { headers: hdrs() }).then(r => r.json()),
           fetch(`${BASE}/api/v1/patients?page=1&limit=200`, { headers: hdrs() }).then(r => r.json()),
         ])
-        setDepts(d.data || [])
-        setDoctors(doc.data?.doctors   || [])
-        setPatients(pat.data?.patients || [])
+        if (dRes.status === 'fulfilled') {
+          const d = dRes.value
+          if (d.success === false) console.warn('AdminDepartments: departments fetch error —', d.message)
+          setDepts(d.data || [])
+        } else {
+          console.error('AdminDepartments: departments fetch failed —', dRes.reason)
+        }
+        if (docRes.status === 'fulfilled') setDoctors(docRes.value.data?.doctors || [])
+        if (patRes.status === 'fulfilled') setPatients(patRes.value.data?.patients || [])
       } catch (err) {
-        console.error('AdminDepartments: failed to load data —', err.message)
+        console.error('AdminDepartments: unexpected error —', err.message)
       } finally {
         setLoading(false)
       }
@@ -89,7 +96,7 @@ export default function AdminDepartments() {
   /* ── dept CRUD ─────────────────────────────────────────────────────── */
   const openAddDept = () => {
     setEditDept(null)
-    setDeptForm({ name:'', description:'', icon:'🏥', order: depts.length, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
+    setDeptForm({ name:'', description:'', icon:'stethoscope', order: depts.length, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
     setDeptErr('')
     setDeptModal(true)
   }
@@ -98,7 +105,7 @@ export default function AdminDepartments() {
     setEditDept(dept)
     setDeptForm({
       name: dept.name, description: dept.description || '',
-      icon: dept.icon || '🏥', order: dept.order || 0, isActive: dept.isActive,
+      icon: resolveIconKey(dept.icon || ''), order: dept.order || 0, isActive: dept.isActive,
       phone: dept.phone || '', fax: dept.fax || '', room: dept.room || '',
       contentSections: (dept.contentSections || []).map(s => ({ title: s.title || '', body: s.body || '' })),
     })
@@ -249,7 +256,7 @@ export default function AdminDepartments() {
                       onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
                       onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
                     >
-                      <span style={{ fontSize:16 }}>{dept.icon || '🏥'}</span>
+                      <DeptIcon icon={dept.icon} name={dept.name} size={17} color='#1D8B95' />
                       {dept.name}
                       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
                     </button>
@@ -320,8 +327,26 @@ export default function AdminDepartments() {
               {/* Icon + Order */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div>
-                  <label style={lbl}>İkon (emoji)</label>
-                  <input style={inp} value={deptForm.icon} onChange={e => setDF('icon', e.target.value)} />
+                  <label style={lbl}>İkon</label>
+                  <div style={{ display:'flex', alignItems:'stretch', gap:8 }}>
+                    <select
+                      style={{ ...inp, flex:1, minWidth:0, width:'auto' }}
+                      value={deptForm.icon}
+                      onChange={e => setDF('icon', e.target.value)}
+                    >
+                      {DEPT_ICON_OPTIONS.map(o => (
+                        <option key={o.key} value={o.key}>{o.label}</option>
+                      ))}
+                    </select>
+                    <div style={{
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      flexShrink:0, width:44,
+                      border:'1px solid #e2e8f0', borderRadius:9,
+                      background:'#f8fafc',
+                    }}>
+                      <DeptIcon icon={deptForm.icon} name={deptForm.name} size={22} color='#00848e' />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label style={lbl}>Sıra nömrəsi</label>
