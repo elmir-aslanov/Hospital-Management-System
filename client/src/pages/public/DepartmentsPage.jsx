@@ -107,8 +107,8 @@ export default function DepartmentsPage() {
           backgroundSize: 'cover',
           backgroundPosition: 'center right',
           backgroundRepeat: 'no-repeat',
-          minHeight: '480px',
-          padding: '90px 0 100px',
+          minHeight: '380px',
+          padding: '68px 0 76px',
         }}
       >
         <motion.div
@@ -122,7 +122,7 @@ export default function DepartmentsPage() {
           <h1
             className="m-0 text-center"
             style={{
-              fontSize: 'clamp(42px, 6.5vw, 74px)',
+              fontSize: 'clamp(32px, 4.2vw, 58px)',
               fontWeight: 700,
               letterSpacing: '0.1em',
               lineHeight: 1.05,
@@ -135,7 +135,7 @@ export default function DepartmentsPage() {
           </h1>
 
           {/* Underline search */}
-          <div className="w-full mt-12" style={{ maxWidth: 880 }}>
+          <div className="w-full mt-8" style={{ maxWidth: 760 }}>
             <form
               onSubmit={e => e.preventDefault()}
               style={{ position: 'relative', width: '100%' }}
@@ -148,12 +148,12 @@ export default function DepartmentsPage() {
                 className="hero-search-input"
                 style={{
                   width: '100%',
-                  height: 60,
+                  height: 52,
                   background: 'transparent',
                   border: 'none',
                   borderBottom: `2px solid ${NAVY}`,
                   outline: 'none',
-                  fontSize: 'clamp(20px, 2.8vw, 32px)',
+                  fontSize: 'clamp(17px, 2vw, 26px)',
                   fontWeight: 400,
                   color: NAVY,
                   paddingLeft: 2,
