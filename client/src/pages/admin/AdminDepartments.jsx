@@ -94,9 +94,12 @@ export default function AdminDepartments() {
     : doctors
 
   /* ── dept CRUD ─────────────────────────────────────────────────────── */
+  const nextOrder = () =>
+    depts.length === 0 ? 1 : Math.max(...depts.map(d => d.order || 0)) + 1
+
   const openAddDept = () => {
     setEditDept(null)
-    setDeptForm({ name:'', description:'', icon:'stethoscope', order: depts.length, isActive:true, phone:'', fax:'', room:'', contentSections:[] })
+    setDeptForm({ name:'', description:'', icon:'stethoscope', order: nextOrder(), isActive:true, phone:'', fax:'', room:'', contentSections:[] })
     setDeptErr('')
     setDeptModal(true)
   }
@@ -105,7 +108,7 @@ export default function AdminDepartments() {
     setEditDept(dept)
     setDeptForm({
       name: dept.name, description: dept.description || '',
-      icon: resolveIconKey(dept.icon || ''), order: dept.order || 0, isActive: dept.isActive,
+      icon: resolveIconKey(dept.icon || ''), order: Math.max(1, dept.order || 1), isActive: dept.isActive,
       phone: dept.phone || '', fax: dept.fax || '', room: dept.room || '',
       contentSections: (dept.contentSections || []).map(s => ({ title: s.title || '', body: s.body || '' })),
     })
@@ -120,7 +123,7 @@ export default function AdminDepartments() {
       name:        deptForm.name.trim(),
       description: deptForm.description,
       icon:        deptForm.icon,
-      order:       toBoundedNumber(deptForm.order, { min: 0, integer: true }),
+      order:       Math.max(1, toBoundedNumber(deptForm.order, { min: 1, integer: true })),
       isActive:    deptForm.isActive,
       phone:       deptForm.phone.trim(),
       fax:         deptForm.fax.trim(),
@@ -294,129 +297,146 @@ export default function AdminDepartments() {
       {deptModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' }}
           onClick={e => { if (e.target === e.currentTarget) setDeptModal(false) }}>
-          <div style={{ background:'white', borderRadius:16, width:480, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', padding:28 }}>
+          <div style={{ background:'white', borderRadius:16, width:520, maxWidth:'95vw', maxHeight:'92vh', display:'flex', flexDirection:'column' }}>
 
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
+            {/* ── Modal header ─────────────────────────────────── */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'22px 28px 18px', flexShrink:0, borderBottom:'1px solid #f1f5f9' }}>
               <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>
                 {editDept ? 'Şöbəni Redaktə Et' : 'Yeni Şöbə'}
               </h2>
               <button onClick={() => setDeptModal(false)}
-                style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:22, lineHeight:1 }}>×</button>
+                style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:22, lineHeight:1, padding:'0 2px' }}>×</button>
             </div>
 
-            {deptErr && (
-              <div style={{ background:'#fef2f2', color:'#ef4444', borderRadius:8, padding:'10px 14px', fontSize:13, marginBottom:16 }}>{deptErr}</div>
-            )}
+            {/* ── Scrollable body ──────────────────────────────── */}
+            <div style={{ flex:1, overflowY:'auto', padding:'20px 28px' }}>
 
-            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              {/* Name */}
-              <div>
-                <label style={lbl}>Şöbə adı *</label>
-                <input style={inp} value={deptForm.name}
-                  onChange={e => setDF('name', e.target.value)} />
-              </div>
+              {deptErr && (
+                <div style={{ background:'#fef2f2', color:'#ef4444', borderRadius:8, padding:'10px 14px', fontSize:13, marginBottom:16 }}>{deptErr}</div>
+              )}
 
-              {/* Description */}
-              <div>
-                <label style={lbl}>Açıqlama</label>
-                <textarea rows={3} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}
-                  value={deptForm.description}
-                  onChange={e => setDF('description', e.target.value)} />
-              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
-              {/* Icon + Order */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                {/* Name */}
                 <div>
-                  <label style={lbl}>İkon</label>
-                  <div style={{ display:'flex', alignItems:'stretch', gap:8 }}>
-                    <select
-                      style={{ ...inp, flex:1, minWidth:0, width:'auto' }}
-                      value={deptForm.icon}
-                      onChange={e => setDF('icon', e.target.value)}
-                    >
-                      {DEPT_ICON_OPTIONS.map(o => (
-                        <option key={o.key} value={o.key}>{o.label}</option>
-                      ))}
-                    </select>
-                    <div style={{
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      flexShrink:0, width:44,
-                      border:'1px solid #e2e8f0', borderRadius:9,
-                      background:'#f8fafc',
-                    }}>
-                      <DeptIcon icon={deptForm.icon} name={deptForm.name} size={22} color='#00848e' />
+                  <label style={lbl}>Şöbə adı *</label>
+                  <input style={inp} value={deptForm.name}
+                    onChange={e => setDF('name', e.target.value)} />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label style={lbl}>Açıqlama</label>
+                  <textarea rows={3} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}
+                    value={deptForm.description}
+                    onChange={e => setDF('description', e.target.value)} />
+                </div>
+
+                {/* Icon + Order — single flex row */}
+                <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
+                  {/* Icon select + preview */}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <label style={lbl}>İkon</label>
+                    <div style={{ display:'flex', alignItems:'stretch', gap:8 }}>
+                      <select
+                        style={{ ...inp, flex:1, minWidth:0, width:'auto' }}
+                        value={deptForm.icon}
+                        onChange={e => setDF('icon', e.target.value)}
+                      >
+                        {DEPT_ICON_OPTIONS.map(o => (
+                          <option key={o.key} value={o.key}>{o.label}</option>
+                        ))}
+                      </select>
+                      <div style={{
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        flexShrink:0, width:44,
+                        border:'1px solid #e2e8f0', borderRadius:9,
+                        background:'#f8fafc',
+                      }}>
+                        <DeptIcon icon={deptForm.icon} name={deptForm.name} size={22} color='#00848e' />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label style={lbl}>Sıra nömrəsi</label>
-                  <input type="number" min="0" style={inp} value={deptForm.order} onChange={e => setDF('order', clampNumberInput(e.target.value, { min: 0, integer: true }))} />
-                </div>
-              </div>
-
-              {/* Phone + Fax */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                <div>
-                  <label style={lbl}>Telefon</label>
-                  <input style={inp} value={deptForm.phone} onChange={e => setDF('phone', e.target.value)} />
-                </div>
-                <div>
-                  <label style={lbl}>Faks</label>
-                  <input style={inp} value={deptForm.fax} onChange={e => setDF('fax', e.target.value)} />
-                </div>
-              </div>
-
-              {/* Room */}
-              <div>
-                <label style={lbl}>Otaq/Mərtəbə</label>
-                <input style={inp} value={deptForm.room} onChange={e => setDF('room', e.target.value)} />
-              </div>
-
-              {/* Content sections */}
-              <div>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                  <label style={{ ...lbl, marginBottom:0 }}>Əlavə bölmələr</label>
-                  <button type="button" onClick={addSection}
-                    style={{ padding:'4px 10px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                    + Bölmə əlavə et
-                  </button>
-                </div>
-                {deptForm.contentSections.length === 0 ? (
-                  <p style={{ fontSize:12, color:'#94a3b8', margin:0 }}>Heç bir əlavə bölmə yoxdur.</p>
-                ) : (
-                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                    {deptForm.contentSections.map((section, idx) => (
-                      <div key={idx} style={{ border:'1px solid #e2e8f0', borderRadius:9, padding:12, display:'flex', flexDirection:'column', gap:8 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                          <input style={{ ...inp, flex:1 }} placeholder="Başlıq"
-                            value={section.title} onChange={e => updateSection(idx, 'title', e.target.value)} />
-                          <button type="button" onClick={() => moveSection(idx, -1)} disabled={idx === 0}
-                            style={{ padding:'5px 8px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, cursor: idx === 0 ? 'not-allowed' : 'pointer', opacity: idx === 0 ? 0.4 : 1 }}>↑</button>
-                          <button type="button" onClick={() => moveSection(idx, 1)} disabled={idx === deptForm.contentSections.length - 1}
-                            style={{ padding:'5px 8px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, cursor: idx === deptForm.contentSections.length - 1 ? 'not-allowed' : 'pointer', opacity: idx === deptForm.contentSections.length - 1 ? 0.4 : 1 }}>↓</button>
-                          <button type="button" onClick={() => removeSection(idx)}
-                            style={{ padding:'5px 10px', borderRadius:7, border:'1px solid #fee2e2', background:'white', fontSize:11, cursor:'pointer', color:'#ef4444' }}>
-                            Sil
-                          </button>
-                        </div>
-                        <textarea rows={3} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}
-                          placeholder="Mətn"
-                          value={section.body} onChange={e => updateSection(idx, 'body', e.target.value)} />
-                      </div>
-                    ))}
+                  {/* Order number */}
+                  <div style={{ width:120, flexShrink:0 }}>
+                    <label style={{ ...lbl, whiteSpace:'nowrap' }}>Sıra nömrəsi</label>
+                    <input
+                      type="number" min="1"
+                      style={inp}
+                      value={deptForm.order}
+                      onChange={e => setDF('order', clampNumberInput(e.target.value, { min: 1, integer: true }))}
+                    />
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* isActive */}
-              <label style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, cursor:'pointer', color:'#475569' }}>
-                <input type="checkbox" checked={deptForm.isActive} onChange={e => setDF('isActive', e.target.checked)}
-                  style={{ width:15, height:15, accentColor:'#00848e' }} />
-                Aktiv
-              </label>
+                {/* Phone + Fax */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  <div>
+                    <label style={lbl}>Telefon</label>
+                    <input style={inp} placeholder="Məs: +994 12 000 00 00"
+                      value={deptForm.phone} onChange={e => setDF('phone', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Faks</label>
+                    <input style={inp} placeholder="Məs: +994 12 000 00 01"
+                      value={deptForm.fax} onChange={e => setDF('fax', e.target.value)} />
+                  </div>
+                </div>
+
+                {/* Room / Floor */}
+                <div>
+                  <label style={lbl}>Otaq / Mərtəbə</label>
+                  <input style={inp} placeholder="Məs: 2-ci mərtəbə, otaq 205"
+                    value={deptForm.room} onChange={e => setDF('room', e.target.value)} />
+                </div>
+
+                {/* Content sections */}
+                <div>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                    <label style={{ ...lbl, marginBottom:0 }}>Əlavə bölmələr</label>
+                    <button type="button" onClick={addSection}
+                      style={{ padding:'4px 10px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      + Bölmə əlavə et
+                    </button>
+                  </div>
+                  {deptForm.contentSections.length === 0 ? (
+                    <p style={{ fontSize:12, color:'#94a3b8', margin:0 }}>Heç bir əlavə bölmə yoxdur.</p>
+                  ) : (
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      {deptForm.contentSections.map((section, idx) => (
+                        <div key={idx} style={{ border:'1px solid #e2e8f0', borderRadius:9, padding:12, display:'flex', flexDirection:'column', gap:8 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <input style={{ ...inp, flex:1 }} placeholder="Başlıq"
+                              value={section.title} onChange={e => updateSection(idx, 'title', e.target.value)} />
+                            <button type="button" onClick={() => moveSection(idx, -1)} disabled={idx === 0}
+                              style={{ padding:'5px 8px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, cursor: idx === 0 ? 'not-allowed' : 'pointer', opacity: idx === 0 ? 0.4 : 1 }}>↑</button>
+                            <button type="button" onClick={() => moveSection(idx, 1)} disabled={idx === deptForm.contentSections.length - 1}
+                              style={{ padding:'5px 8px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, cursor: idx === deptForm.contentSections.length - 1 ? 'not-allowed' : 'pointer', opacity: idx === deptForm.contentSections.length - 1 ? 0.4 : 1 }}>↓</button>
+                            <button type="button" onClick={() => removeSection(idx)}
+                              style={{ padding:'5px 10px', borderRadius:7, border:'1px solid #fee2e2', background:'white', fontSize:11, cursor:'pointer', color:'#ef4444' }}>
+                              Sil
+                            </button>
+                          </div>
+                          <textarea rows={3} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}
+                            placeholder="Mətn"
+                            value={section.body} onChange={e => updateSection(idx, 'body', e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* isActive */}
+                <label style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, cursor:'pointer', color:'#475569' }}>
+                  <input type="checkbox" checked={deptForm.isActive} onChange={e => setDF('isActive', e.target.checked)}
+                    style={{ width:15, height:15, accentColor:'#00848e' }} />
+                  Aktiv
+                </label>
+              </div>
             </div>
 
-            <div style={{ display:'flex', gap:10, marginTop:22, justifyContent:'flex-end' }}>
+            {/* ── Sticky footer ────────────────────────────────── */}
+            <div style={{ display:'flex', gap:10, padding:'16px 28px', flexShrink:0, borderTop:'1px solid #f1f5f9', justifyContent:'flex-end' }}>
               <button onClick={() => setDeptModal(false)}
                 style={{ padding:'10px 20px', border:'1px solid #e2e8f0', borderRadius:9, background:'white', fontSize:13, cursor:'pointer', color:'#475569' }}>
                 Ləğv et
