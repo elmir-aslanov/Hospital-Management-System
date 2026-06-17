@@ -95,99 +95,96 @@ export default function DepartmentsPage() {
     <main className="bg-white" style={{ fontFamily: FONT }}>
 
       {/* ── Hero / Banner ─────────────────────────────────────────────── */}
+      <style>{`
+        .hero-search-input::placeholder { color: #94a3b8; }
+        .hero-search-input::-webkit-input-placeholder { color: #94a3b8; }
+        .hero-search-input::-moz-placeholder { color: #94a3b8; opacity: 1; }
+      `}</style>
       <section
         className="relative overflow-hidden flex items-center"
         style={{
-          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.82) 40%, rgba(255,255,255,0.48) 100%), url('/sobeler.png')",
+          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.72) 35%, rgba(255,255,255,0.18) 100%), url('/sobeler.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center right',
           backgroundRepeat: 'no-repeat',
-          minHeight: '460px',
-          padding: '80px 0 90px',
+          minHeight: '480px',
+          padding: '90px 0 100px',
         }}
       >
         <motion.div
-          className="w-full text-center flex flex-col items-center px-4"
-          style={{ maxWidth: 960, marginLeft: 'auto', marginRight: 'auto' }}
+          className="w-full flex flex-col items-center px-6"
+          style={{ maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' }}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
         >
-          {/* Teal eyebrow accent */}
-          <div className="flex items-center gap-3 mb-5">
-            <span style={{ display: 'block', width: 28, height: 2.5, background: TEAL, borderRadius: 2 }} />
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', color: TEAL, textTransform: 'uppercase' }}>
-              Aslan Medical Center
-            </span>
-            <span style={{ display: 'block', width: 28, height: 2.5, background: TEAL, borderRadius: 2 }} />
-          </div>
-
-          {/* Title */}
+          {/* Split-colour title */}
           <h1
-            className="m-0 leading-tight"
-            style={{ color: NAVY, fontSize: 'clamp(38px, 5.5vw, 62px)', fontWeight: 300, letterSpacing: '-0.01em' }}
+            className="m-0 text-center"
+            style={{
+              fontSize: 'clamp(42px, 6.5vw, 74px)',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              lineHeight: 1.05,
+              userSelect: 'none',
+              margin: 0,
+            }}
           >
-            Şöbələrimiz
+            <span style={{ color: TEAL }}>ŞÖBƏ </span>
+            <span style={{ color: NAVY }}>TAPIN</span>
           </h1>
 
-          {/* Teal rule under title */}
-          <span style={{ display: 'block', width: 64, height: 3, background: TEAL, borderRadius: 2, marginTop: 18, marginBottom: 20 }} />
-
-          {/* Subtitle */}
-          <p
-            className="text-center leading-relaxed mx-auto"
-            style={{ maxWidth: 680, fontSize: 18, color: '#475569', margin: 0 }}
-          >
-            Aslan Medical Center-də fəaliyyət göstərən bütün şöbələrə bağlı ətraflı məlumat əldə edə bilərsiniz.
-          </p>
-
-          {/* Search bar */}
-          <div className="w-full mx-auto mt-10" style={{ maxWidth: 760 }}>
+          {/* Underline search */}
+          <div className="w-full mt-12" style={{ maxWidth: 880 }}>
             <form
-              className="flex flex-col items-stretch gap-3 w-full sm:flex-row sm:items-center"
               onSubmit={e => e.preventDefault()}
+              style={{ position: 'relative', width: '100%' }}
             >
-              <div className="relative flex-1 min-w-0" style={{ position: 'relative' }}>
-                <svg
-                  width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round"
-                  style={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
-                >
-                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Şöbə axtarın..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  style={{
-                    width: '100%', height: 60, paddingLeft: 52, paddingRight: 24,
-                    borderRadius: 999, border: '1.5px solid #e2e8f0', background: '#ffffff',
-                    fontSize: 16, color: '#1e293b', outline: 'none',
-                    boxShadow: '0 2px 12px rgba(11,29,52,0.08)',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s',
-                  }}
-                  onFocus={e => { e.currentTarget.style.borderColor = TEAL }}
-                  onBlur={e => { e.currentTarget.style.borderColor = '#e2e8f0' }}
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Şöbə axtarın..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="hero-search-input"
+                style={{
+                  width: '100%',
+                  height: 60,
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: `2px solid ${NAVY}`,
+                  outline: 'none',
+                  fontSize: 'clamp(20px, 2.8vw, 32px)',
+                  fontWeight: 400,
+                  color: NAVY,
+                  paddingLeft: 2,
+                  paddingRight: 56,
+                  boxSizing: 'border-box',
+                  caretColor: TEAL,
+                  fontFamily: FONT,
+                  transition: 'border-color 0.25s',
+                  display: 'block',
+                }}
+                onFocus={e => { e.currentTarget.style.borderBottomColor = TEAL }}
+                onBlur={e => { e.currentTarget.style.borderBottomColor = NAVY }}
+              />
+              {/* Search icon — right side, acts as submit */}
               <button
                 type="submit"
-                className="w-full sm:w-[160px] flex-shrink-0"
+                aria-label="Axtarın"
                 style={{
-                  height: 60,
-                  background: TEAL, color: 'white',
-                  border: 'none', borderRadius: 999,
-                  fontSize: 16, fontWeight: 700,
-                  boxShadow: '0 2px 12px rgba(29,139,149,0.25)',
-                  cursor: 'pointer', transition: 'background 0.2s',
-                  padding: '0 32px',
+                  position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '4px 2px',
+                  display: 'flex', alignItems: 'center',
+                  color: '#b0bec5',
+                  transition: 'color 0.2s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
-                onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
+                onMouseEnter={e => { e.currentTarget.style.color = TEAL }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#b0bec5' }}
               >
-                Axtarın
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
               </button>
             </form>
           </div>
