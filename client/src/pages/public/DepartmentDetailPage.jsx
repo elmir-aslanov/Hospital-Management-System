@@ -553,60 +553,63 @@ export default function DepartmentDetailPage() {
             <>
               <div className="flex flex-col md:flex-row gap-10">
 
-                {/* LEFT — Doctors sidebar */}
-                <motion.aside
-                  className="w-full md:w-[34%] md:sticky md:top-24 self-start"
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-lg font-semibold mb-4" style={{ color: TEAL }}>Əlaqədar Həkimlər</h2>
+                {/* LEFT — Doctors sidebar
+                    Sticky wrapper is a plain div (no Framer Motion transform) so
+                    position:sticky is not disrupted by translateY during animation. */}
+                <div className="w-full md:w-[34%] md:self-start md:sticky md:top-28">
+                  <motion.aside
+                    variants={fadeUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                  >
+                    <h2 className="text-lg font-semibold mb-4" style={{ color: TEAL }}>Əlaqədar Həkimlər</h2>
 
-                  {relatedDoctors.length > 0 ? (
-                    <div className="overflow-y-auto pr-1" style={{ maxHeight: 460 }}>
-                      {relatedDoctors.map(doc => {
-                        const photo = getDoctorImage(doc)
-                        const name  = getDoctorName(doc)
-                        const spec  = getDoctorSpecialty(doc)
-                        const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
-                        return (
-                          <div
-                            key={doc._id}
-                            className="flex items-center gap-4 rounded-lg border transition-all"
-                            style={{ borderColor: '#E2E8F0', background: '#F8FAFC', padding: '14px 16px', marginBottom: 12, boxShadow: 'none' }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29, 139, 149, 0.12)' }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = 'none' }}
-                          >
-                            {photo ? (
-                              <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
-                            ) : (
-                              <div className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center text-white text-lg font-semibold" style={{ background: TEAL }}>
-                                {initials}
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              {spec && <div className="text-xs uppercase tracking-wide truncate" style={{ color: '#64748B' }}>{spec}</div>}
-                              <div className="text-base font-semibold truncate" style={{ color: NAVY }}>{name}</div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/randevu?doctorId=${doc._id}`)}
-                              className="flex-shrink-0 whitespace-nowrap text-[15px] font-semibold rounded px-3.5 py-1.5 text-white transition-colors"
-                              style={{ background: TEAL }}
-                              onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
-                              onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
+                    {relatedDoctors.length > 0 ? (
+                      <div className="overflow-y-auto pr-1" style={{ maxHeight: 460 }}>
+                        {relatedDoctors.map(doc => {
+                          const photo = getDoctorImage(doc)
+                          const name  = getDoctorName(doc)
+                          const spec  = getDoctorSpecialty(doc)
+                          const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'DR'
+                          return (
+                            <div
+                              key={doc._id}
+                              className="flex items-center gap-4 rounded-lg border transition-all"
+                              style={{ borderColor: '#E2E8F0', background: '#F8FAFC', padding: '14px 16px', marginBottom: 12, boxShadow: 'none' }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29, 139, 149, 0.12)' }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = 'none' }}
                             >
-                              Randevu al
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-sm" style={{ color: '#64748B' }}>Bu şöbə üzrə həkim tapılmadı.</p>
-                  )}
-                </motion.aside>
+                              {photo ? (
+                                <img src={photo} alt={name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center text-white text-lg font-semibold" style={{ background: TEAL }}>
+                                  {initials}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                {spec && <div className="text-xs uppercase tracking-wide truncate" style={{ color: '#64748B' }}>{spec}</div>}
+                                <div className="text-base font-semibold truncate" style={{ color: NAVY }}>{name}</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/randevu?doctorId=${doc._id}`)}
+                                className="flex-shrink-0 whitespace-nowrap text-[15px] font-semibold rounded px-3.5 py-1.5 text-white transition-colors"
+                                style={{ background: TEAL }}
+                                onMouseEnter={e => { e.currentTarget.style.background = TEAL_HOVER }}
+                                onMouseLeave={e => { e.currentTarget.style.background = TEAL }}
+                              >
+                                Randevu al
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm" style={{ color: '#64748B' }}>Bu şöbə üzrə həkim tapılmadı.</p>
+                    )}
+                  </motion.aside>
+                </div>
 
                 {/* RIGHT — Content */}
                 <motion.div
