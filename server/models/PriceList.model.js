@@ -16,6 +16,24 @@ const priceListSchema = new mongoose.Schema(
     serviceSlug: { type: String, trim: true, lowercase: true, default: '' },
     serviceId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
     isActive: { type: Boolean, default: true },
+
+    /* ── Optional dynamic detail-page content (admin-editable, public detail page) ── */
+    about: { type: String, trim: true, default: '' },
+    technicalDetails: {
+      department:        { type: String, trim: true, default: '' },
+      method:             { type: String, trim: true, default: '' },
+      transport:          { type: String, trim: true, default: '' },
+      turnaround:         { type: String, trim: true, default: '' },
+      sampleVolume:       { type: String, trim: true, default: '' },
+      sampleType:         { type: String, trim: true, default: '' },
+      rejectionCriteria:  { type: String, trim: true, default: '' },
+      synonyms:           { type: String, trim: true, default: '' },
+      preparation:        { type: String, trim: true, default: '' },
+      tube:               { type: String, trim: true, default: '' },
+    },
+    // Free-text reference/interpretation guidance — never auto-generated numeric limits.
+    referenceInfo:        { type: String, trim: true, default: '' },
+    homeServiceAvailable: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

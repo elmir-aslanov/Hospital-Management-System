@@ -6,7 +6,8 @@ import authorize     from '../../middleware/rbac.middleware.js';
 const router = Router();
 
 // Public — patients and doctors can view prices
-router.get('/', ctrl.getPrices);
+router.get('/',    ctrl.getPrices);
+router.get('/:id', ctrl.getPriceById);
 
 // Protected — admin only
 router.use(authenticate);

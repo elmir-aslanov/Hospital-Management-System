@@ -24,6 +24,7 @@ import DepartmentsPage       from './pages/public/DepartmentsPage';
 import DepartmentDetailPage  from './pages/public/DepartmentDetailPage';
 import ServicesPage          from './pages/public/ServicesPage';
 import ServiceTestsPage      from './pages/public/ServiceTestsPage';
+import TestDetailPage        from './pages/public/TestDetailPage';
 import BlogPage              from './pages/public/BlogPage';
 import BlogDetailPage        from './pages/public/BlogDetailPage';
 import ContactPage           from './pages/public/ContactPage';
@@ -142,6 +143,7 @@ function Layout() {
         <Route path="/departments/:slug" element={<DepartmentDetailPage />} />
         <Route path="/services"         element={<ServicesPage />} />
         <Route path="/services/:slug"   element={<ServiceTestsPage />} />
+        <Route path="/services/:slug/tests/:testId" element={<TestDetailPage />} />
         <Route path="/patients"    element={<ComingSoon title="Pasiyent Mərkəzi" />} />
         <Route path="/blog"        element={<BlogPage />} />
         <Route path="/blog/:slug"  element={<BlogDetailPage />} />

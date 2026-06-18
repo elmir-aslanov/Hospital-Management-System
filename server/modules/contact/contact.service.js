@@ -1,6 +1,7 @@
 import { resolveMx } from 'dns/promises';
 import mongoose       from 'mongoose';
 import ContactMessage from '../../models/ContactMessage.model.js';
+import PriceList      from '../../models/PriceList.model.js';
 import ApiError       from '../../utils/ApiError.js';
 import { createNotification } from '../notifications/notifications.service.js';
 import User      from '../../models/User.model.js';
@@ -146,6 +147,89 @@ export const submit = async ({ fullName, email, message, consentAccepted }) => {
   return { id: contactMsg._id };
 };
 
+export const submitHomeService = async ({ fullName, phone, email, address, preferredDate, preferredTimeRange, note, consentAccepted, priceListId }) => {
+  if (!mongoose.Types.ObjectId.isValid(priceListId)) throw new ApiError(400, 'Yanlış xidmət identifikatoru.');
+
+  const test = await PriceList.findOne({ _id: priceListId, isActive: true });
+  if (!test) throw new ApiError(404, 'Test tapılmadı.');
+  if (!test.homeServiceAvailable) throw new ApiError(400, 'Bu test üçün ev xidməti mövcud deyil.');
+
+  const normalizedEmail = email?.trim() ? email.trim().toLowerCase() : '';
+  const normalizedPhone = phone.trim();
+
+  // Per-contact rate limit: max 5 home-service requests per hour (by phone, and by email if given)
+  const recentCount = await ContactMessage.countDocuments({
+    requestType: 'home_service',
+    createdAt:   { $gte: new Date(Date.now() - 60 * 60 * 1000) },
+    $or: [
+      { phone: normalizedPhone },
+      ...(normalizedEmail ? [{ email: normalizedEmail }] : []),
+    ],
+  });
+  if (recentCount >= 5) {
+    throw new ApiError(429, 'Həddindən artıq müraciət göndərildi. Bir az sonra cəhd edin.');
+  }
+
+  const displayName = fullName.trim();
+
+  const contactMsg = await ContactMessage.create({
+    fullName:           displayName,
+    name:                displayName,
+    email:               normalizedEmail,
+    phone:               normalizedPhone,
+    address:             address.trim(),
+    preferredDate:       preferredDate ? new Date(preferredDate) : null,
+    preferredTimeRange:  preferredTimeRange?.trim() || '',
+    message:             note?.trim() || '',
+    requestType:         'home_service',
+    consentAccepted:     !!consentAccepted,
+    consentAcceptedAt:   consentAccepted ? new Date() : undefined,
+    service: {
+      priceListId: test._id,
+      name:        test.name,
+      code:        test.serviceCode || '',
+      price:       test.price,
+      currency:    test.currency || 'AZN',
+    },
+  });
+
+  // Notify admins in-app (fire-and-forget)
+  try {
+    const admins = await User.find({ role: { $in: ['ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'] }, isActive: true }).select('_id');
+    await Promise.all(admins.map(a => createNotification({
+      userId:  a._id,
+      title:   'Yeni ev xidməti müraciəti',
+      message: `${displayName} "${test.name}" testi üçün ev xidməti sifariş etdi.`,
+      type:    'general',
+      link:    '/admin/muraciet',
+    })));
+  } catch (_) {}
+
+  // Email admin inbox (fire-and-forget)
+  try {
+    const adminEmail = process.env.SMTP_ADMIN_INBOX || process.env.SMTP_USER;
+    if (adminEmail) {
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5174';
+      const summary = [
+        `Test: ${test.name} (${test.serviceCode || '—'})`,
+        `Qiymət: ${test.price} ${test.currency || 'AZN'}`,
+        `Telefon: ${normalizedPhone}`,
+        `Ünvan: ${address.trim()}`,
+        preferredDate       ? `Tarix: ${new Date(preferredDate).toLocaleDateString('az-AZ')}` : null,
+        preferredTimeRange  ? `Vaxt aralığı: ${preferredTimeRange.trim()}` : null,
+        note?.trim()        ? `Qeyd: ${note.trim()}` : null,
+      ].filter(Boolean).join('\n');
+      await sendEmail({
+        to:      adminEmail,
+        subject: `Yeni ev xidməti müraciəti: ${displayName}`,
+        html:    adminNotificationHtml({ fullName: displayName, email: normalizedEmail || '—', message: summary, clientUrl }),
+      });
+    }
+  } catch (_) {}
+
+  return { id: contactMsg._id };
+};
+
 export const getAll = ({ status } = {}) => {
   const filter = {};
   if (status) filter.status = status;
@@ -166,6 +250,14 @@ export const markRead = async (id) => {
 export const markReplied = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID');
   const doc = await ContactMessage.findByIdAndUpdate(id, { status: 'replied' }, { new: true });
+  if (!doc) throw new ApiError(404, 'Message not found');
+  return doc;
+};
+
+export const updateStatus = async (id, status) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID');
+  if (!['new', 'read', 'replied'].includes(status)) throw new ApiError(400, 'Yanlış status.');
+  const doc = await ContactMessage.findByIdAndUpdate(id, { status }, { new: true });
   if (!doc) throw new ApiError(404, 'Message not found');
   return doc;
 };

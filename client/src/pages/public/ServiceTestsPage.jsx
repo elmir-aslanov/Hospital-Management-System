@@ -13,7 +13,7 @@ const fmtPrice = (price) =>
   Number.isInteger(Number(price)) ? String(Math.round(price)) : Number(price).toFixed(2);
 
 /* ── TestCard ────────────────────────────────────────────────────────────── */
-function TestCard({ test, directionName }) {
+function TestCard({ test, directionName, slug }) {
   const [hov, setHov] = useState(false);
   const { t } = useTranslation();
 
@@ -25,7 +25,8 @@ function TestCard({ test, directionName }) {
       transition={{ duration: 0.26 }}
       style={{ display: 'flex' }}
     >
-      <div
+      <Link
+        to={`/services/${slug}/tests/${test._id}`}
         className="stc"
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
@@ -42,7 +43,9 @@ function TestCard({ test, directionName }) {
           padding:       '32px 36px',
           minHeight:     220,
           boxSizing:     'border-box',
-          cursor:        'default',
+          cursor:        'pointer',
+          textDecoration: 'none',
+          color:         'inherit',
         }}
       >
         {/* Direction / category label */}
@@ -92,7 +95,7 @@ function TestCard({ test, directionName }) {
             {test.currency || 'AZN'}
           </span>
         </p>
-      </div>
+      </Link>
     </motion.div>
   );
 }
@@ -290,7 +293,7 @@ export default function ServiceTestsPage() {
         {!loading && !error && tests.length > 0 && (
           <div className="stc-grid">
             {tests.map((test, i) => (
-              <TestCard key={test._id ?? i} test={test} directionName={serviceName} />
+              <TestCard key={test._id ?? i} test={test} directionName={serviceName} slug={slug} />
             ))}
           </div>
         )}

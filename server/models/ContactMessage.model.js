@@ -13,15 +13,35 @@ const replySchema = new mongoose.Schema({
 const contactMessageSchema = new mongoose.Schema({
   fullName: { type: String, trim: true, default: '' },
   name:     { type: String, trim: true, default: '' },  // legacy compat
-  email:    { type: String, required: true, trim: true, lowercase: true },
+  email:    {
+    type: String, trim: true, lowercase: true, default: '',
+    required: function () { return this.requestType !== 'home_service'; },
+  },
   phone:    { type: String, default: '', trim: true },
   subject:  { type: String, default: '', trim: true },
-  message:  { type: String, required: true, trim: true },
+  message:  {
+    type: String, trim: true, default: '',
+    required: function () { return this.requestType !== 'home_service'; },
+  },
 
   consentAccepted:   { type: Boolean, default: false },
   consentAcceptedAt: { type: Date },
 
   status:  { type: String, enum: ['new', 'read', 'replied'], default: 'new' },
+
+  /* ── Home-service test requests ───────────────────────────────────────── */
+  requestType:        { type: String, enum: ['contact', 'home_service'], default: 'contact' },
+  address:            { type: String, trim: true, default: '' },
+  preferredDate:       { type: Date, default: null },
+  preferredTimeRange: { type: String, trim: true, default: '' },
+  // Trusted snapshot taken from the PriceList record at submission time — never from client input.
+  service: {
+    priceListId: { type: mongoose.Schema.Types.ObjectId, ref: 'PriceList', default: null },
+    name:        { type: String, trim: true, default: '' },
+    code:        { type: String, trim: true, default: '' },
+    price:       { type: Number, default: null },
+    currency:    { type: String, trim: true, default: '' },
+  },
 
   replies: [replySchema],
 }, { timestamps: true });

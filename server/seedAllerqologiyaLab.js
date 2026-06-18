@@ -30,7 +30,30 @@ const SERVICE = {
 /* ── 2. The only two tests that should be active for this direction ──────── */
 const TESTS = [
   { name: 'H1 Ev tozu',                  serviceCode: 'LAB-14-016', price: 26 },
-  { name: 'Fox Qida Həssaslığı Testi',   serviceCode: 'LAB-14-008', price: 442 },
+  {
+    name: 'Fox Qida Həssaslığı Testi',   serviceCode: 'LAB-14-008', price: 442,
+    detail: {
+      about:
+        'Fox Qida Həssaslığı Testi qida antigenlərinə qarşı IgG cavabını qiymətləndirir. ' +
+        'Nəticə tək başına diaqnoz qoymur — klinik simptomlarla və həkimin qiymətləndirməsi ilə birlikdə şərh edilməlidir.',
+      technicalDetails: {
+        department:       'Allerqologiya',
+        method:            'Nano-bead əsaslı immunoassay',
+        transport:         'Soyuq zəncir şəraitində, şaquli vəziyyətdə',
+        turnaround:        '2 iş günü',
+        sampleVolume:      '300 µL',
+        sampleType:        'Serum',
+        rejectionCriteria: 'Hemolizə olunmuş, lipemik və ya yararsız nümunələr',
+        synonyms:          'FOX test, Food Explorer',
+        preparation:       'Xüsusi hazırlıq tələb olunmur',
+        tube:              'Sarı qapaqlı serum borucuğu',
+      },
+      referenceInfo:
+        'İstinad aralıqları hazırlanan rəsmi nəticə hesabatında göstərilir. ' +
+        'Nəticələr klinik simptomlarla birlikdə ixtisaslaşmış həkim tərəfindən şərh edilməlidir.',
+      homeServiceAvailable: true,
+    },
+  },
 ];
 
 const run = async () => {
@@ -52,21 +75,27 @@ const run = async () => {
   const keepCodes = TESTS.map(t => t.serviceCode);
 
   for (const test of TESTS) {
+    const set = {
+      name:        test.name,
+      serviceName: SERVICE.name,
+      serviceCode: test.serviceCode,
+      category:    'lab',
+      price:       test.price,
+      currency:    'AZN',
+      serviceSlug: SERVICE.slug,
+      serviceId:   svc._id,
+      isActive:    true,
+    };
+    if (test.detail) {
+      set.about                = test.detail.about;
+      set.technicalDetails     = test.detail.technicalDetails;
+      set.referenceInfo        = test.detail.referenceInfo;
+      set.homeServiceAvailable = test.detail.homeServiceAvailable;
+    }
+
     const doc = await PriceList.findOneAndUpdate(
       { serviceCode: test.serviceCode },
-      {
-        $set: {
-          name:        test.name,
-          serviceName: SERVICE.name,
-          serviceCode: test.serviceCode,
-          category:    'lab',
-          price:       test.price,
-          currency:    'AZN',
-          serviceSlug: SERVICE.slug,
-          serviceId:   svc._id,
-          isActive:    true,
-        },
-      },
+      { $set: set },
       { upsert: true, new: true, runValidators: true },
     );
     console.log(`  🧪  Test: "${doc.name}"  (${doc.serviceCode})  ${doc.price} AZN`);

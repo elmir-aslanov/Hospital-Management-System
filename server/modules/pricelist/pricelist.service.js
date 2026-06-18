@@ -1,3 +1,4 @@
+import mongoose  from 'mongoose';
 import PriceList from '../../models/PriceList.model.js';
 import ApiError  from '../../utils/ApiError.js';
 
@@ -17,6 +18,13 @@ export const getPrices = async ({ category, serviceSlug, search, page = 1, limit
     PriceList.countDocuments(filter),
   ]);
   return { prices, total, page: pg, limit: lim };
+};
+
+export const getPriceById = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID');
+  const doc = await PriceList.findOne({ _id: id, isActive: true });
+  if (!doc) throw new ApiError(404, 'Test tapılmadı');
+  return doc;
 };
 
 export const createPrice = async (data) => PriceList.create(data);

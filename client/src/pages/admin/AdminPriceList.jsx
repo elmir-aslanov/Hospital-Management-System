@@ -26,7 +26,23 @@ const CATEGORY_COLOR = {
   other:        { bg: '#f8fafc', color: '#64748b' },
 }
 
-const EMPTY_FORM = { name: '', serviceCode: '', category: 'consultation', price: 0, currency: 'AZN', description: '', serviceSlug: '', isActive: true }
+const EMPTY_TECH = { department: '', method: '', transport: '', turnaround: '', sampleVolume: '', sampleType: '', rejectionCriteria: '', synonyms: '', preparation: '', tube: '' }
+const EMPTY_FORM = {
+  name: '', serviceCode: '', category: 'consultation', price: 0, currency: 'AZN', description: '', serviceSlug: '', isActive: true,
+  about: '', referenceInfo: '', homeServiceAvailable: false, technicalDetails: EMPTY_TECH,
+}
+const TECH_FIELDS = [
+  ['department',        'Şöbə'],
+  ['method',             'Metod'],
+  ['transport',          'Daşınma şərtləri'],
+  ['turnaround',         'Nəticə müddəti'],
+  ['sampleVolume',       'Nümunə həcmi'],
+  ['sampleType',         'Nümunə növü'],
+  ['rejectionCriteria',  'Rədd kriteriyaları'],
+  ['synonyms',           'Sinonimlər'],
+  ['preparation',        'Hazırlıq'],
+  ['tube',               'Borucuq növü'],
+]
 
 const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
@@ -78,10 +94,16 @@ export default function AdminPriceList() {
   const openAdd = () => { setEditPrice(null); setForm(EMPTY_FORM); setFormErr(''); setShowModal(true) }
   const openEdit = (p) => {
     setEditPrice(p)
-    setForm({ name: p.name, serviceCode: p.serviceCode || '', category: p.category, price: p.price, currency: p.currency || 'AZN', description: p.description || '', serviceSlug: p.serviceSlug || '', isActive: p.isActive !== false })
+    setForm({
+      name: p.name, serviceCode: p.serviceCode || '', category: p.category, price: p.price, currency: p.currency || 'AZN',
+      description: p.description || '', serviceSlug: p.serviceSlug || '', isActive: p.isActive !== false,
+      about: p.about || '', referenceInfo: p.referenceInfo || '', homeServiceAvailable: !!p.homeServiceAvailable,
+      technicalDetails: { ...EMPTY_TECH, ...(p.technicalDetails || {}) },
+    })
     setFormErr(''); setShowModal(true)
   }
-  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setF    = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setTech = (k, v) => setForm(f => ({ ...f, technicalDetails: { ...f.technicalDetails, [k]: v } }))
 
   /* ── save ─────────────────────────────────────────────────── */
   const handleSave = async () => {
@@ -285,6 +307,43 @@ export default function AdminPriceList() {
                 <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
                   value={form.description} onChange={e => setF('description', e.target.value)} />
               </div>
+
+              {form.category === 'lab' && (
+                <>
+                  <div style={{ gridColumn: '1/-1', borderTop: '1px solid #f1f5f9', paddingTop: 14, marginTop: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Detal səhifəsi (ictimai test detal səhifəsi üçün)
+                    </span>
+                  </div>
+
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <label style={lbl}>Haqqında (About)</label>
+                    <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                      value={form.about} onChange={e => setF('about', e.target.value)}
+                      placeholder="Testin nə qiymətləndirdiyi və klinik kontekstdə necə şərh edilməli olduğu" />
+                  </div>
+
+                  {TECH_FIELDS.map(([key, label]) => (
+                    <div key={key}>
+                      <label style={lbl}>{label}</label>
+                      <input style={inp} value={form.technicalDetails[key]} onChange={e => setTech(key, e.target.value)} />
+                    </div>
+                  ))}
+
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <label style={lbl}>İstinad məlumatı (Reference Range)</label>
+                    <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                      value={form.referenceInfo} onChange={e => setF('referenceInfo', e.target.value)}
+                      placeholder="Rəsmi nəticə hesabatına istinad edən izahlı mətn (ədədi hədlər uydurulmamalıdır)" />
+                  </div>
+
+                  <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="checkbox" id="homeServiceAvailable" checked={form.homeServiceAvailable} onChange={e => setF('homeServiceAvailable', e.target.checked)}
+                      style={{ width: 15, height: 15, accentColor: '#00848e' }} />
+                    <label htmlFor="homeServiceAvailable" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>Ev xidməti mövcuddur</label>
+                  </div>
+                </>
+              )}
 
               <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setF('isActive', e.target.checked)}

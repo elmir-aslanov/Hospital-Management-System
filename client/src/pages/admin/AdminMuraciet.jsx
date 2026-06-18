@@ -148,6 +148,7 @@ export default function AdminMuraciet() {
     ? new Date(item.createdAt).toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—'
   const isUnread = (item) => item._type === 'muraciet' && !item.isRead
+  const typeLabel = (item) => item._type === 'muraciet' ? 'Müraciət' : item.requestType === 'home_service' ? 'Ev xidməti' : 'Əlaqə'
 
   /* ── date boundaries ── */
   const now        = new Date()
@@ -195,7 +196,8 @@ export default function AdminMuraciet() {
 
   const handleStatusChange = async (item, status) => {
     updateItem(item._id, { status })
-    api.patch(`/muraciet/${item._id}/status`, { status }).catch(() => {})
+    const endpoint = item._type === 'contact' ? `/contact/${item._id}/status` : `/muraciet/${item._id}/status`
+    api.patch(endpoint, { status }).catch(() => {})
   }
 
   const handleDelete = async (item) => {
@@ -300,8 +302,8 @@ export default function AdminMuraciet() {
                         <div style={{ fontSize: 10, color: '#94a3b8' }}>{getDate(item)}</div>
                         <div style={{ display: 'flex', gap: 4 }}>
                           <StatusBadge item={item} />
-                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: item._type === 'muraciet' ? '#e0f2fe' : '#f3e8ff', color: item._type === 'muraciet' ? '#0369a1' : '#7c3aed' }}>
-                            {item._type === 'muraciet' ? 'Müraciət' : 'Əlaqə'}
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: item._type === 'muraciet' ? '#e0f2fe' : item.requestType === 'home_service' ? '#fef3c7' : '#f3e8ff', color: item._type === 'muraciet' ? '#0369a1' : item.requestType === 'home_service' ? '#92400e' : '#7c3aed' }}>
+                            {typeLabel(item)}
                           </span>
                         </div>
                       </div>
@@ -328,8 +330,8 @@ export default function AdminMuraciet() {
                   {getFullName(selected)?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#0f1b2d' }}>{getFullName(selected)}</div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: selected._type === 'muraciet' ? '#e0f2fe' : '#f3e8ff', color: selected._type === 'muraciet' ? '#0369a1' : '#7c3aed', display: 'inline-block', marginTop: 6 }}>
-                  {selected._type === 'muraciet' ? 'Elektron Müraciət' : 'Əlaqə Forması'}
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: selected._type === 'muraciet' ? '#e0f2fe' : selected.requestType === 'home_service' ? '#fef3c7' : '#f3e8ff', color: selected._type === 'muraciet' ? '#0369a1' : selected.requestType === 'home_service' ? '#92400e' : '#7c3aed', display: 'inline-block', marginTop: 6 }}>
+                  {selected._type === 'muraciet' ? 'Elektron Müraciət' : selected.requestType === 'home_service' ? 'Ev xidməti müraciəti' : 'Əlaqə Forması'}
                 </span>
               </div>
 
@@ -340,6 +342,18 @@ export default function AdminMuraciet() {
               {selected.unvan   && <DRow label="Ünvan"  value={selected.unvan} />}
               <DRow label="Tarix"   value={getDate(selected)} />
               {selected.subject && <DRow label="Mövzu"  value={selected.subject} />}
+
+              {/* Home-service request details */}
+              {selected._type === 'contact' && selected.requestType === 'home_service' && (
+                <>
+                  <DRow label="Xidmət"     value={selected.service?.name || '—'} />
+                  <DRow label="Xidmət kodu" value={selected.service?.code || '—'} />
+                  <DRow label="Qiymət"     value={selected.service?.price != null ? `${selected.service.price} ${selected.service.currency || 'AZN'}` : '—'} />
+                  {selected.address && <DRow label="Ünvan" value={selected.address} />}
+                  {selected.preferredDate && <DRow label="İstənilən tarix" value={new Date(selected.preferredDate).toLocaleDateString('az-AZ')} />}
+                  {selected.preferredTimeRange && <DRow label="Vaxt aralığı" value={selected.preferredTimeRange} />}
+                </>
+              )}
 
               {getText(selected) && (
                 <div style={{ marginTop: 16 }}>
@@ -366,7 +380,7 @@ export default function AdminMuraciet() {
                 </div>
               )}
 
-              {/* Status dropdown — muraciet only */}
+              {/* Status dropdown — muraciet */}
               {selected._type === 'muraciet' && (
                 <div style={{ marginTop: 20 }}>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Status</label>
@@ -382,8 +396,34 @@ export default function AdminMuraciet() {
                 </div>
               )}
 
+              {/* Status dropdown — contact / home-service */}
+              {selected._type === 'contact' && (
+                <div style={{ marginTop: 20 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Status</label>
+                  <select
+                    value={selected.status || 'new'}
+                    onChange={e => handleStatusChange(selected, e.target.value)}
+                    style={{ width: '100%', height: 36, border: '1px solid #e2e8f0', borderRadius: 8, padding: '0 10px', fontSize: 13, color: '#334155', background: 'white', outline: 'none', cursor: 'pointer' }}
+                  >
+                    <option value="new">Yeni</option>
+                    <option value="read">Baxıldı</option>
+                    <option value="replied">Cavablandı</option>
+                  </select>
+                </div>
+              )}
+
               {/* Action buttons */}
               <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Call — any item with a phone number */}
+                {(selected.telefon || selected.phone) && (
+                  <a
+                    href={`tel:${(selected.telefon || selected.phone).replace(/\s/g, '')}`}
+                    style={{ display: 'block', textAlign: 'center', padding: '8px 16px', borderRadius: 8, background: '#f0fdf4', color: '#166534', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    ☎ Zəng et
+                  </a>
+                )}
+
                 {/* Reply modal — contact only */}
                 {selected._type === 'contact' && selected.email && (
                   <button
