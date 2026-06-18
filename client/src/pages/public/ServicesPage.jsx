@@ -108,7 +108,7 @@ function LabCard({ service, index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      transition={{ duration: 0.3, delay: index * 0.07 }}
+      transition={{ duration: 0.28, delay: index * 0.06 }}
     >
       <div
         className="lab-card"
@@ -118,69 +118,30 @@ function LabCard({ service, index }) {
           display: 'flex',
           alignItems: 'center',
           background: CARD_BG,
-          border: `1px solid ${hovered ? TEAL : CARD_BDR}`,
-          borderRadius: 8,
-          padding: '30px',
+          border: `1px solid ${hovered ? TEAL : '#DCDCDC'}`,
+          borderRadius: 5,
+          paddingLeft: 50,
+          paddingRight: 24,
           boxSizing: 'border-box',
-          boxShadow: hovered ? '0 4px 18px rgba(20,143,153,0.10)' : 'none',
-          transition: 'border-color 0.18s, box-shadow 0.18s',
-          cursor: 'default',
-          minHeight: 200,
-          position: 'relative',
+          height: 138,
+          boxShadow: hovered ? '0 2px 12px rgba(20,143,153,0.08)' : 'none',
+          transition: 'border-color 0.16s, box-shadow 0.16s',
+          cursor: 'pointer',
         }}
       >
-        {/* Icon box */}
-        <div
-          className="lab-icon-box"
+        <h3
+          className="lab-title"
           style={{
-            width: 120, height: 120,
-            background: ICON_BG,
-            borderRadius: 8,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
+            fontSize: 27, fontWeight: 600,
+            color: hovered ? TEAL : NAVY,
+            margin: 0, fontFamily: FONT,
+            lineHeight: 1.25,
+            letterSpacing: 'normal',
+            transition: 'color 0.16s',
           }}
         >
-          <LabIcon iconKey={service.iconKey} size={64} color={TEAL} />
-        </div>
-
-        {/* Text */}
-        <div
-          className="lab-text"
-          style={{ marginLeft: 40, flex: 1, minWidth: 0 }}
-        >
-          <h3
-            className="lab-title"
-            style={{
-              fontSize: 20, fontWeight: 700, color: NAVY,
-              margin: 0, fontFamily: FONT, lineHeight: 1.3,
-            }}
-          >
-            {service.name}
-          </h3>
-          <p
-            className="lab-desc"
-            style={{
-              fontSize: 15, fontWeight: 400, color: MUTED, lineHeight: 1.55,
-              margin: '10px 0 0', fontFamily: FONT,
-              maxWidth: 360,
-            }}
-          >
-            {service.description}
-          </p>
-        </div>
-
-        {/* Chevron */}
-        <div
-          className="lab-chevron"
-          style={{
-            flexShrink: 0,
-            paddingLeft: 24,
-            transition: 'transform 0.18s',
-            transform: hovered ? 'translateX(2px)' : 'none',
-          }}
-        >
-          <Chevron size={26} color={TEAL} />
-        </div>
+          {service.name}
+        </h3>
       </div>
     </motion.div>
   );
@@ -193,24 +154,16 @@ function SkeletonCard() {
       className="lab-card"
       style={{
         display: 'flex', alignItems: 'center',
-        background: CARD_BG, border: `1px solid ${CARD_BDR}`,
-        borderRadius: 8, padding: '30px', minHeight: 200,
-        boxSizing: 'border-box',
+        background: CARD_BG, border: '1px solid #DCDCDC',
+        borderRadius: 5, paddingLeft: 50, paddingRight: 24,
+        height: 138, boxSizing: 'border-box',
       }}
     >
       <motion.div
         animate={{ opacity: [0.5, 0.85, 0.5] }}
         transition={{ duration: 1.4, repeat: Infinity }}
-        style={{ width: 120, height: 120, borderRadius: 8, background: '#e8edf2', flexShrink: 0 }}
+        style={{ height: 22, width: '40%', borderRadius: 4, background: '#e8edf2' }}
       />
-      <div style={{ marginLeft: 40, flex: 1 }}>
-        <motion.div animate={{ opacity: [0.5, 0.85, 0.5] }} transition={{ duration: 1.4, repeat: Infinity }}
-          style={{ height: 20, width: '55%', borderRadius: 4, background: '#e8edf2', marginBottom: 14 }} />
-        <motion.div animate={{ opacity: [0.5, 0.85, 0.5] }} transition={{ duration: 1.4, repeat: Infinity, delay: 0.08 }}
-          style={{ height: 14, width: '85%', borderRadius: 4, background: '#e8edf2', marginBottom: 8 }} />
-        <motion.div animate={{ opacity: [0.5, 0.85, 0.5] }} transition={{ duration: 1.4, repeat: Infinity, delay: 0.16 }}
-          style={{ height: 14, width: '70%', borderRadius: 4, background: '#e8edf2' }} />
-      </div>
     </div>
   );
 }
@@ -277,8 +230,8 @@ export default function ServicesPage() {
       {/* ── Laboratory directions section ──────────────────────────────────── */}
       <section style={{ background: SECT_BG, padding: '72px 0 80px' }}>
         <div style={{
-          maxWidth: 1360, margin: '0 auto',
-          padding: '0 48px', boxSizing: 'border-box',
+          maxWidth: 1400, margin: '0 auto',
+          padding: '0 36px', boxSizing: 'border-box',
         }}>
 
           {/* Heading */}
@@ -359,20 +312,29 @@ export default function ServicesPage() {
         .lab-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          column-gap: 32px;
-          row-gap: 28px;
+          column-gap: 40px;
+          row-gap: 40px;
         }
 
         /* Tablet — single column */
         @media (max-width: 900px) {
           .lab-grid {
             grid-template-columns: 1fr;
+            column-gap: 0;
+            row-gap: 18px;
           }
           .lab-section-title {
             font-size: 36px !important;
           }
           .lab-section-sub {
             font-size: 16px !important;
+          }
+          .lab-card {
+            height: 110px !important;
+            padding-left: 28px !important;
+          }
+          .lab-title {
+            font-size: 22px !important;
           }
         }
 
@@ -385,31 +347,11 @@ export default function ServicesPage() {
             font-size: 15px !important;
           }
           .lab-card {
-            padding: 18px !important;
-            min-height: unset !important;
-          }
-          .lab-icon-box {
-            width: 72px !important;
-            height: 72px !important;
-          }
-          .lab-icon-box svg {
-            width: 40px !important;
-            height: 40px !important;
-          }
-          .lab-text {
-            margin-left: 16px !important;
+            height: 100px !important;
+            padding-left: 24px !important;
           }
           .lab-title {
-            font-size: 18px !important;
-            line-height: 1.3 !important;
-          }
-          .lab-desc {
-            font-size: 14px !important;
-            margin-top: 8px !important;
-            max-width: none !important;
-          }
-          .lab-chevron {
-            padding-left: 10px !important;
+            font-size: 20px !important;
           }
         }
       `}</style>
