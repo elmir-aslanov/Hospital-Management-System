@@ -87,6 +87,7 @@ export default function AdminPriceList() {
   const handleSave = async () => {
     if (!form.name.trim())    { setFormErr('Xidmət adı tələb olunur'); return }
     if (!form.price && form.price !== 0) { setFormErr('Qiymət tələb olunur'); return }
+    if (form.category === 'lab' && !form.serviceSlug.trim()) { setFormErr('Laboratoriya testləri üçün istiqamət seçilməlidir'); return }
     setSaving(true); setFormErr('')
     try {
       const url    = editPrice ? `${BASE}/api/v1/pricelist/${editPrice._id}` : `${BASE}/api/v1/pricelist`
@@ -261,7 +262,7 @@ export default function AdminPriceList() {
 
               {form.category === 'lab' && (
                 <div style={{ gridColumn: '1/-1' }}>
-                  <label style={lbl}>Laboratoriya istiqaməti</label>
+                  <label style={lbl}>Laboratoriya istiqaməti <span style={{ color: '#ef4444' }}>*</span></label>
                   <select style={{ ...inp, height: 38 }} value={form.serviceSlug} onChange={e => setF('serviceSlug', e.target.value)}>
                     <option value="">— Seçilməyib —</option>
                     {labDirs.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}

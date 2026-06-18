@@ -478,7 +478,11 @@
     "testCode": "Testin kodu",
     "empty": "Bu istiqamət üzrə hazırda aktiv test yoxdur.",
     "loadError": "Testlər yüklənmədi.",
-    "retry": "Yenidən cəhd et"
+    "retry": "Yenidən cəhd et",
+    "services": "Xidmətlər",
+    "testsSuffix": "testləri",
+    "notFound": "Bu istiqamət tapılmadı.",
+    "backToServices": "Xidmətlərə qayıt"
   },
   "visitorInfo": {
     "eyebrow": "FAYDALI MƏLUMATLAR",

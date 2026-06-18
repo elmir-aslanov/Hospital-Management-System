@@ -475,7 +475,11 @@
     "testCode": "Test code",
     "empty": "There are currently no active tests in this category.",
     "loadError": "Tests could not be loaded.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "services": "Services",
+    "testsSuffix": "tests",
+    "notFound": "This service direction was not found.",
+    "backToServices": "Back to services"
   },
   "partners": {
     "title": "OUR PARTNERS & INSURANCE COMPANIES"

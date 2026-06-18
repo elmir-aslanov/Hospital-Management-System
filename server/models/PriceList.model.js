@@ -14,6 +14,7 @@ const priceListSchema = new mongoose.Schema(
     price:    { type: Number, required: true, min: 0 },
     currency: { type: String, default: 'AZN' },
     serviceSlug: { type: String, trim: true, lowercase: true, default: '' },
+    serviceId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
@@ -21,6 +22,7 @@ const priceListSchema = new mongoose.Schema(
 
 priceListSchema.index({ serviceCode: 1 }, { unique: true, sparse: true });
 priceListSchema.index({ serviceSlug: 1, isActive: 1 });
+priceListSchema.index({ serviceId: 1,   isActive: 1 });
 
 const PriceList = mongoose.model('PriceList', priceListSchema);
 export default PriceList;
