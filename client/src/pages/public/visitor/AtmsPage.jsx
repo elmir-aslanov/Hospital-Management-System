@@ -15,6 +15,8 @@ export default function AtmsPage() {
       image="/atm.png"
       imageAlt="Aslan Medical Center bankomat xidməti"
       imageLayout="side"
+      imageWidth="47%"
+      imageFit="contain"
     >
       <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.75, margin: '0 0 28px', fontFamily: FONT }}>
         Aslan Medical Center-in əsas binasında pasiyentlər və ziyarətçilər üçün əlçatan bankomat xidməti mövcuddur. Nağd pul ehtiyaclarınızı tez həll etmək üçün aşağıdakı yerlərdən istifadə edə bilərsiniz.

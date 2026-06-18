@@ -11,7 +11,12 @@
     "appointment": "Book Appointment",
     "eResult": "E-Results",
     "profile": "My Profile",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "foodAmenities": "Food and amenities",
+    "atms": "ATMs",
+    "cafeteria": "Cafeteria",
+    "restaurant": "Restaurant and lounge area",
+    "wifi": "Wi-Fi"
   },
   "topbar": {
     "address": "Baku, Azerbaijan — Aslan Medical Clinic",

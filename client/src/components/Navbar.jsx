@@ -96,12 +96,13 @@ export default function Navbar() {
   const { t, i18n } = useTranslation();
 
   const NAV_LINKS = [
-    { label: t('nav.home'),        href: '/' },
-    { label: t('nav.doctors'),     href: '/hekimler' },
-    { label: t('nav.departments'), href: '/departments' },
-    { label: 'Xidmətlər',          href: '/services' },
-    { label: t('nav.blog'),        href: '/blog' },
-    { label: t('nav.contact'),     href: '/contact' },
+    { label: t('nav.home'),           href: '/' },
+    { label: t('nav.doctors'),        href: '/hekimler' },
+    { label: t('nav.departments'),    href: '/departments' },
+    { label: 'Xidmətlər',             href: '/services' },
+    { label: t('nav.foodAmenities'),  href: null, isMega: true },
+    { label: t('nav.blog'),           href: '/blog' },
+    { label: t('nav.contact'),        href: '/contact' },
   ];
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [hoveredNav, setHoveredNav]         = useState(null);
@@ -111,6 +112,8 @@ export default function Navbar() {
     (localStorage.getItem('aslanmedic_lang') || 'az').toUpperCase()
   );
   const [langOpen, setLangOpen]             = useState(false);
+  const [megaOpen, setMegaOpen]             = useState(false);
+  const [mobileAmenitiesOpen, setMobileAmenitiesOpen] = useState(false);
 
   const [socialLinks, setSocialLinks] = useState({
     social_twitter:   'https://twitter.com',
@@ -140,10 +143,11 @@ export default function Navbar() {
     }
   }, []);
   const closeTimer = useRef(null);
+  const megaTimer  = useRef(null);
   const location   = useLocation();
   const navigate   = useNavigate();
 
-  useEffect(() => { setMobileOpen(false); }, [location]);
+  useEffect(() => { setMobileOpen(false); setMegaOpen(false); }, [location]);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 80);
@@ -152,7 +156,7 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') setLangOpen(false); };
+    const handler = (e) => { if (e.key === 'Escape') { setLangOpen(false); setMegaOpen(false); } };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
@@ -164,7 +168,16 @@ export default function Navbar() {
 
   const onEnter = (label) => { clearTimeout(closeTimer.current); setActiveDropdown(label); };
   const onLeave = () => { closeTimer.current = setTimeout(() => setActiveDropdown(null), 120); };
+  const onMegaEnter = () => { clearTimeout(megaTimer.current); setMegaOpen(true); };
+  const onMegaLeave = () => { megaTimer.current = setTimeout(() => setMegaOpen(false), 150); };
   const isActive = (href) => location.pathname === href;
+
+  const AMENITY_LINKS = [
+    { label: t('nav.atms'),       href: '/visitor-info/atms' },
+    { label: t('nav.cafeteria'),  href: '/visitor-info/cafeteria' },
+    { label: t('nav.restaurant'), href: '/visitor-info/restaurant' },
+    { label: t('nav.wifi'),       href: '/visitor-info/wifi' },
+  ];
 
   const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
@@ -532,6 +545,40 @@ export default function Navbar() {
               const active    = isActive(link.href);
               const hovered   = hoveredNav === link.label;
               const highlight = active || open || hovered;
+
+              if (link.isMega) {
+                const megaHighlight = megaOpen || hovered;
+                return (
+                  <div key={link.label}
+                    style={{
+                      position: 'relative', display: 'flex', alignItems: 'stretch',
+                      background: megaHighlight ? 'rgba(0,132,142,0.04)' : 'transparent',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={() => { setHoveredNav(link.label); onMegaEnter(); }}
+                    onMouseLeave={() => { setHoveredNav(null); onMegaLeave(); }}
+                  >
+                    <button style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                      padding: '0 18px',
+                      fontSize: '14.5px',
+                      fontWeight: megaHighlight ? 700 : 500,
+                      fontFamily: FONT,
+                      color: megaHighlight ? TEAL : '#1a2b4a',
+                      background: 'none', border: 'none', cursor: 'default',
+                      whiteSpace: 'nowrap',
+                      transition: 'color 0.2s, font-weight 0.1s',
+                      borderBottom: megaHighlight ? `3px solid ${TEAL}` : '3px solid transparent',
+                      marginBottom: '-3px',
+                      height: '100%',
+                    }}>
+                      {link.label}
+                      <span style={{ fontSize: '11px', lineHeight: 1, opacity: 0.7 }}>∨</span>
+                    </button>
+                  </div>
+                );
+              }
+
               return (
                 <div key={link.label}
                   style={{
@@ -722,6 +769,105 @@ export default function Navbar() {
           </div>
           </div>
         </nav>
+
+        {/* ══ Mega-menu: Food & Amenities ══════════════════ */}
+        <AnimatePresence>
+          {megaOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              onMouseEnter={onMegaEnter}
+              onMouseLeave={onMegaLeave}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0, right: 0,
+                background: '#ffffff',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.11)',
+                borderTop: `3px solid ${TEAL}`,
+                zIndex: 2001,
+              }}
+            >
+              <div style={{
+                maxWidth: 1280, margin: '0 auto',
+                padding: '28px 32px',
+                display: 'flex', gap: 40, alignItems: 'stretch',
+                boxSizing: 'border-box',
+              }}>
+                {/* Left — link list */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontSize: 11, fontWeight: 700, color: TEAL,
+                    letterSpacing: '2.5px', textTransform: 'uppercase',
+                    margin: '0 0 16px', fontFamily: FONT,
+                  }}>
+                    {t('nav.foodAmenities')}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {AMENITY_LINKS.map(al => (
+                      <Link
+                        key={al.href}
+                        to={al.href}
+                        onClick={() => setMegaOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '10px 14px',
+                          borderRadius: 8,
+                          fontSize: 14.5, fontWeight: 500, fontFamily: FONT,
+                          color: '#1a2b4a',
+                          textDecoration: 'none',
+                          transition: 'color 0.15s, background 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = TEAL; e.currentTarget.style.background = 'rgba(0,132,142,0.06)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#1a2b4a'; e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <span style={{
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: TEAL, flexShrink: 0, opacity: 0.7,
+                        }} />
+                        {al.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right — decorative panel */}
+                <div style={{
+                  width: 200, flexShrink: 0,
+                  background: 'linear-gradient(145deg, rgba(0,132,142,0.07) 0%, rgba(0,132,142,0.13) 100%)',
+                  borderRadius: 12,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  gap: 10, padding: '20px 16px',
+                }}>
+                  <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                    stroke={TEAL} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 2v7c0 1.1.9 2 2 2 1.1 0 2-.9 2-2V2"/>
+                    <line x1="5" y1="12" x2="5" y2="22"/>
+                    <line x1="3" y1="7" x2="7" y2="7"/>
+                    <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h1v7"/>
+                  </svg>
+                  <p style={{
+                    fontSize: 12, color: TEAL, fontWeight: 700,
+                    fontFamily: FONT, textAlign: 'center', margin: 0,
+                    letterSpacing: '0.5px',
+                  }}>
+                    Aslan Medical Center
+                  </p>
+                  <p style={{
+                    fontSize: 12, color: '#62718A',
+                    fontFamily: FONT, textAlign: 'center', margin: 0,
+                    lineHeight: 1.5,
+                  }}>
+                    Pasiyentlər üçün<br/>rahatlıq xidmətləri
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* ══ Mobile Menu ═══════════════════════════════════ */}
@@ -745,21 +891,77 @@ export default function Navbar() {
               overflowY: 'auto',
             }}
           >
-            {NAV_LINKS.map((link, i) => (
-              <motion.div key={link.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.045 }}
-              >
-                <Link to={link.href} style={{
-                  display: 'block', padding: '14px 0',
-                  fontSize: '17px', fontWeight: 600,
-                  color: isActive(link.href) ? TEAL : '#1a2b4a',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid #f0f0f0',
-                }}>{link.label}</Link>
-              </motion.div>
-            ))}
+            {NAV_LINKS.map((link, i) => {
+              if (link.isMega) {
+                return (
+                  <motion.div key={link.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.045 }}
+                  >
+                    <div
+                      onClick={() => setMobileAmenitiesOpen(o => !o)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '14px 0', fontSize: '17px', fontWeight: 600, cursor: 'pointer',
+                        color: mobileAmenitiesOpen ? TEAL : '#1a2b4a',
+                        borderBottom: mobileAmenitiesOpen ? 'none' : '1px solid #f0f0f0',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <span>{link.label}</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ transform: mobileAmenitiesOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', flexShrink: 0 }}>
+                        <path d="M6 9l6 6 6-6"/>
+                      </svg>
+                    </div>
+                    <AnimatePresence>
+                      {mobileAmenitiesOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ overflow: 'hidden', borderBottom: '1px solid #f0f0f0' }}
+                        >
+                          {AMENITY_LINKS.map(al => (
+                            <Link key={al.href} to={al.href}
+                              onClick={() => setMobileOpen(false)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '11px 0 11px 18px',
+                                fontSize: '15px', fontWeight: 500,
+                                color: isActive(al.href) ? TEAL : '#1a2b4a',
+                                textDecoration: 'none',
+                              }}
+                            >
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: TEAL, flexShrink: 0, opacity: 0.7 }} />
+                              {al.label}
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              }
+              return (
+                <motion.div key={link.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.045 }}
+                >
+                  <Link to={link.href} style={{
+                    display: 'block', padding: '14px 0',
+                    fontSize: '17px', fontWeight: 600,
+                    color: isActive(link.href) ? TEAL : '#1a2b4a',
+                    textDecoration: 'none',
+                    borderBottom: '1px solid #f0f0f0',
+                  }}>{link.label}</Link>
+                </motion.div>
+              );
+            })}
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.38 }}
               style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}

@@ -11,6 +11,8 @@ export default function VisitorInfoDetail({
   image,
   imageAlt,
   imageLayout = null,
+  imageWidth = '42%',
+  imageFit = 'cover',
   children,
 }) {
   return (
@@ -22,10 +24,10 @@ export default function VisitorInfoDetail({
           align-items: flex-start;
         }
         .vi-detail-side-content { flex: 1; min-width: 0; }
-        .vi-detail-side-img { width: 42%; flex-shrink: 0; }
+        .vi-detail-side-img { flex-shrink: 0; }
         @media (max-width: 860px) {
           .vi-detail-side { flex-direction: column; gap: 32px; }
-          .vi-detail-side-img { width: 100%; }
+          .vi-detail-side-img { width: 100% !important; }
         }
       `}</style>
 
@@ -71,11 +73,17 @@ export default function VisitorInfoDetail({
         {imageLayout === 'side' && image && (
           <div className="vi-detail-side">
             <div className="vi-detail-side-content">{children}</div>
-            <div className="vi-detail-side-img">
+            <div className="vi-detail-side-img" style={{ width: imageWidth }}>
               <img
                 src={image}
                 alt={imageAlt || title}
-                style={{ width: '100%', borderRadius: 12, display: 'block', objectFit: 'cover' }}
+                style={{
+                  width: '100%',
+                  borderRadius: 12,
+                  display: 'block',
+                  objectFit: imageFit,
+                  objectPosition: 'top center',
+                }}
               />
             </div>
           </div>

@@ -11,7 +11,12 @@
     "appointment": "Randevu Al",
     "eResult": "E-Nəticə",
     "profile": "Profilim",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "foodAmenities": "Qida və imkanlar",
+    "atms": "Bankomatlar",
+    "cafeteria": "Kafeterya",
+    "restaurant": "Restoran və rahatlıq zonası",
+    "wifi": "Wi-Fi bağlantısı"
   },
   "topbar": {
     "address": "Bakı, Azərbaycan — Aslan Medical Clinic",

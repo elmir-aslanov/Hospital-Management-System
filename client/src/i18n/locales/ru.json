@@ -11,7 +11,12 @@
     "appointment": "Записаться",
     "eResult": "Е-Результат",
     "profile": "Мой профиль",
-    "adminPanel": "Панель администратора"
+    "adminPanel": "Панель администратора",
+    "foodAmenities": "Питание и удобства",
+    "atms": "Банкоматы",
+    "cafeteria": "Кафетерий",
+    "restaurant": "Ресторан и зона отдыха",
+    "wifi": "Wi-Fi"
   },
   "topbar": {
     "address": "Баку, Азербайджан — Aslan Medical Clinic",
