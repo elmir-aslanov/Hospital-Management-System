@@ -347,9 +347,10 @@
   "doctorLayout": {
     "panel": "Doctor Panel",
     "fallbackDoctor": "Doctor",
+    "roleLabel": "Doctor",
     "logout": "Sign out",
     "nav": {
-      "dashboard": "Dashboard",
+      "dashboard": "Overview",
       "patients": "My patients",
       "prescriptions": "Prescriptions",
       "analyses": "Analyses",

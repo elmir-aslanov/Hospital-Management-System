@@ -347,9 +347,10 @@
   "doctorLayout": {
     "panel": "Панель врача",
     "fallbackDoctor": "Врач",
+    "roleLabel": "Həkim",
     "logout": "Выйти",
     "nav": {
-      "dashboard": "Dashboard",
+      "dashboard": "Обзор",
       "patients": "Мои пациенты",
       "prescriptions": "Рецепты",
       "analyses": "Анализы",

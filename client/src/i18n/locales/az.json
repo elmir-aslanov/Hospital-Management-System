@@ -347,9 +347,10 @@
   "doctorLayout": {
     "panel": "Həkim Paneli",
     "fallbackDoctor": "Həkim",
+    "roleLabel": "Həkim",
     "logout": "Çıxış",
     "nav": {
-      "dashboard": "Dashboard",
+      "dashboard": "Ümumi baxış",
       "patients": "Xəstələrim",
       "prescriptions": "Reseptlər",
       "analyses": "Analizlər",
