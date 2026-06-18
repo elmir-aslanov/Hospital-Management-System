@@ -3,104 +3,13 @@ import { motion } from 'framer-motion';
 import api from '../../api/axios';
 import { fadeUp } from '../../utils/animations';
 
-const FONT   = "'Source Sans 3', 'Raleway', sans-serif";
-const TEAL   = '#148F99';
-const NAVY   = '#071B3B';
-const MUTED  = '#62718A';
-const ICON_BG   = '#EDF7F7';
-const CARD_BG   = '#FFFFFF';
-const CARD_BDR  = '#D8E2E8';
-const SECT_BG   = '#F7FAFC';
+const FONT  = "'Source Sans 3', 'Raleway', sans-serif";
+const TEAL  = '#00848e';
+const NAVY  = '#071B3B';
+const MUTED = '#62718A';
 
-/* ── Compact inline SVG icons for lab-specific iconKeys ─────────────────── */
-const LAB_DIR_ICONS = {
-  molecule: (sz, c) => (
-    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="4.5" r="1.7"/>
-      <circle cx="19.8" cy="9" r="1.7"/>
-      <circle cx="19.8" cy="15" r="1.7"/>
-      <circle cx="12" cy="19.5" r="1.7"/>
-      <circle cx="4.2" cy="15" r="1.7"/>
-      <circle cx="4.2" cy="9" r="1.7"/>
-      <circle cx="12" cy="12" r="2.3"/>
-      <line x1="13.5" y1="5.5" x2="18.4" y2="8.1"/>
-      <line x1="19.8" y1="10.7" x2="19.8" y2="13.3"/>
-      <line x1="18.4" y1="15.9" x2="13.5" y2="18.5"/>
-      <line x1="10.5" y1="18.5" x2="5.6" y2="15.9"/>
-      <line x1="4.2" y1="13.3" x2="4.2" y2="10.7"/>
-      <line x1="5.6" y1="8.1" x2="10.5" y2="5.5"/>
-    </svg>
-  ),
-  flask: (sz, c) => (
-    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 2h7"/>
-      <path d="M10 2v7.5L5.5 16.5A2 2 0 0 0 7.3 19h9.4a2 2 0 0 0 1.8-2.5L14 9.5V2"/>
-      <line x1="6" y1="14" x2="18" y2="14"/>
-      <circle cx="9.5" cy="16.5" r=".75" fill={c} stroke="none"/>
-      <circle cx="13.5" cy="17.3" r=".75" fill={c} stroke="none"/>
-    </svg>
-  ),
-  microscope: (sz, c) => (
-    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 21h12"/>
-      <path d="M9 21v-3.5"/>
-      <path d="M15 21v-3.5"/>
-      <ellipse cx="12" cy="14.5" rx="4.5" ry="3"/>
-      <rect x="10" y="6" width="4" height="7" rx="1"/>
-      <line x1="9" y1="3.5" x2="15" y2="3.5"/>
-      <line x1="12" y1="3.5" x2="12" y2="6"/>
-    </svg>
-  ),
-  pill: (sz, c) => (
-    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4.5 14.5 9.5 9.5a5 5 0 1 1 7 7l-5 5a5 5 0 0 1-7-7Z"/>
-      <line x1="8" y1="11" x2="14" y2="17"/>
-    </svg>
-  ),
-  cells: (sz, c) => (
-    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="12" cy="12" r="9"/>
-      <circle cx="9" cy="10" r="2.2"/>
-      <circle cx="14.8" cy="9.5" r="1.7"/>
-      <circle cx="15.5" cy="14.8" r="2.2"/>
-      <circle cx="9.5" cy="15.5" r="1.7"/>
-    </svg>
-  ),
-  'blood-tube': (sz, c) => (
-    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3h8a1 1 0 0 1 1 1v11a5 5 0 0 1-10 0V4a1 1 0 0 1 1-1Z"/>
-      <line x1="7" y1="8" x2="17" y2="8"/>
-      <path d="M12 12c-1.5 1.5-2.5 2.8-2.5 4a2.5 2.5 0 0 0 5 0c0-1.2-1-2.5-2.5-4Z"
-        fill={c} stroke="none" opacity=".65"/>
-    </svg>
-  ),
-};
-
-function LabIcon({ iconKey, size = 64, color = TEAL }) {
-  const fn = LAB_DIR_ICONS[iconKey];
-  if (fn) return fn(size, color);
-  // Fallback: render a simple flask
-  return LAB_DIR_ICONS.flask(size, color);
-}
-
-/* ── Chevron SVG ────────────────────────────────────────────────────────── */
-function Chevron({ size = 26, color = TEAL }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6"/>
-    </svg>
-  );
-}
-
-/* ── Lab direction card ─────────────────────────────────────────────────── */
-function LabCard({ service, index }) {
+/* ── Service row ─────────────────────────────────────────────────────────── */
+function ServiceRow({ service, index }) {
   const [hovered, setHovered] = useState(false);
   return (
     <motion.div
@@ -108,36 +17,43 @@ function LabCard({ service, index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      transition={{ duration: 0.28, delay: index * 0.06 }}
+      transition={{ duration: 0.24, delay: index * 0.05 }}
     >
       <div
-        className="lab-card"
+        className="svc-row"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
+        tabIndex={0}
+        role="button"
+        aria-label={service.name}
         style={{
           display: 'flex',
           alignItems: 'center',
-          background: CARD_BG,
-          border: `1px solid ${hovered ? TEAL : '#DCDCDC'}`,
-          borderRadius: 5,
-          paddingLeft: 50,
-          paddingRight: 24,
-          boxSizing: 'border-box',
-          height: 138,
-          boxShadow: hovered ? '0 2px 12px rgba(20,143,153,0.08)' : 'none',
-          transition: 'border-color 0.16s, box-shadow 0.16s',
+          background: hovered ? 'rgba(0,132,142,0.045)' : '#FFFFFF',
+          border: `1px solid ${hovered ? 'rgba(0,132,142,0.48)' : '#DCE5E9'}`,
+          borderRadius: 10,
+          boxShadow: hovered ? 'inset 3px 0 0 #00848e' : 'none',
+          transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
+          transition: 'background-color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease',
           cursor: 'pointer',
+          boxSizing: 'border-box',
+          minHeight: 92,
+          padding: '0 28px',
+          outline: 'none',
         }}
       >
         <h3
-          className="lab-title"
+          className="svc-name"
           style={{
-            fontSize: 27, fontWeight: 600,
+            fontSize: 17,
+            fontWeight: 600,
             color: hovered ? TEAL : NAVY,
-            margin: 0, fontFamily: FONT,
-            lineHeight: 1.25,
-            letterSpacing: 'normal',
-            transition: 'color 0.16s',
+            margin: 0,
+            fontFamily: FONT,
+            lineHeight: 1.35,
+            transition: 'color 180ms ease',
           }}
         >
           {service.name}
@@ -147,28 +63,28 @@ function LabCard({ service, index }) {
   );
 }
 
-/* ── Skeleton card ───────────────────────────────────────────────────────── */
-function SkeletonCard() {
+/* ── Skeleton row ────────────────────────────────────────────────────────── */
+function SkeletonRow() {
   return (
     <div
-      className="lab-card"
+      className="svc-row"
       style={{
         display: 'flex', alignItems: 'center',
-        background: CARD_BG, border: '1px solid #DCDCDC',
-        borderRadius: 5, paddingLeft: 50, paddingRight: 24,
-        height: 138, boxSizing: 'border-box',
+        background: '#FFFFFF', border: '1px solid #DCE5E9',
+        borderRadius: 10, minHeight: 92,
+        padding: '0 28px', boxSizing: 'border-box',
       }}
     >
       <motion.div
-        animate={{ opacity: [0.5, 0.85, 0.5] }}
+        animate={{ opacity: [0.45, 0.8, 0.45] }}
         transition={{ duration: 1.4, repeat: Infinity }}
-        style={{ height: 22, width: '40%', borderRadius: 4, background: '#e8edf2' }}
+        style={{ height: 18, width: '38%', borderRadius: 4, background: '#e2e8ed' }}
       />
     </div>
   );
 }
 
-/* ── Page ─────────────────────────────────────────────────────────────────── */
+/* ── Page ────────────────────────────────────────────────────────────────── */
 export default function ServicesPage() {
   const [services, setServices] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -191,35 +107,40 @@ export default function ServicesPage() {
   return (
     <main style={{ fontFamily: FONT }}>
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{
-        backgroundImage: "linear-gradient(to right, rgba(10,22,40,0.62) 0%, rgba(0,132,142,0.35) 100%), url('/xidmetler.png')",
-        backgroundSize: '100% auto',
-        backgroundPosition: 'center center',
-        backgroundRepeat: 'no-repeat',
-        minHeight: 390,
-        padding: '88px 0 96px',
-        textAlign: 'center',
-        width: '100%',
-      }}>
-        <div className="page-container">
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <section
+        className="svc-hero"
+        style={{
+          backgroundImage: "linear-gradient(rgba(7,27,59,0.58),rgba(7,27,59,0.58)),url('/xidmetler.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          width: '100%',
+        }}
+      >
+        <div className="svc-hero-inner" style={{ maxWidth: 1180, width: '100%', boxSizing: 'border-box' }}>
           <motion.div variants={fadeUp} initial="hidden" animate="visible">
             <p style={{
-              fontSize: 11, fontWeight: 700, color: 'rgba(77,208,225,0.85)',
-              letterSpacing: '0.14em', textTransform: 'uppercase',
-              marginBottom: 14, fontFamily: FONT,
+              fontSize: 12, fontWeight: 700, color: '#55C3CB',
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              margin: '0 0 18px', fontFamily: FONT,
             }}>
-              Aslan Medical Center
+              ASLAN MEDICAL CENTER
             </p>
-            <h1 style={{
-              fontSize: 42, fontWeight: 800, color: '#ffffff',
-              margin: '0 0 16px', fontFamily: "'Raleway', sans-serif", lineHeight: 1.15,
+            <h1 className="svc-hero-title" style={{
+              fontWeight: 700, color: '#ffffff',
+              margin: 0, fontFamily: "'Raleway', sans-serif", lineHeight: 1.15,
             }}>
               Xidmətlər &amp; Müalicələr
             </h1>
-            <p style={{
-              fontSize: 16, color: 'rgba(255,255,255,0.7)',
-              maxWidth: 520, margin: '0 auto', fontFamily: FONT, lineHeight: 1.75,
+            <p className="svc-hero-sub" style={{
+              fontWeight: 400, lineHeight: 1.6,
+              color: 'rgba(255,255,255,0.82)',
+              marginTop: 18, marginBottom: 0,
+              fontFamily: FONT,
             }}>
               Geniş xidmət çeşidi ilə sağlamlığınızın hər aspektinə diqqət yetiririk.
             </p>
@@ -227,34 +148,32 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* ── Laboratory directions section ──────────────────────────────────── */}
-      <section style={{ background: SECT_BG, padding: '72px 0 80px' }}>
-        <div style={{
-          maxWidth: 1400, margin: '0 auto',
-          padding: '0 36px', boxSizing: 'border-box',
-        }}>
+      {/* ── Lab section ───────────────────────────────────────────────── */}
+      <section className="svc-lab-section" style={{ background: '#F5F8FA' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', boxSizing: 'border-box' }}>
 
-          {/* Heading */}
+          {/* Heading block */}
           <motion.div
             variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            style={{ textAlign: 'center', marginBottom: 52 }}
+            className="svc-heading-mb"
+            style={{ textAlign: 'center' }}
           >
             <p style={{
-              fontSize: 13, fontWeight: 700, color: TEAL,
-              letterSpacing: '3px', lineHeight: 1.4, textTransform: 'uppercase',
-              marginBottom: 16, fontFamily: FONT,
+              fontSize: 12, fontWeight: 700, color: TEAL,
+              letterSpacing: '0.24em', textTransform: 'uppercase',
+              margin: '0 0 18px', fontFamily: FONT,
             }}>
               LABORATOR TESTLƏRİ
             </p>
-            <h2 className="lab-section-title" style={{
-              fontSize: 42, fontWeight: 700, color: NAVY,
-              margin: '0 0 18px', fontFamily: "'Raleway', sans-serif", lineHeight: 1.15,
+            <h2 className="svc-lab-title" style={{
+              fontWeight: 700, color: NAVY,
+              margin: 0, fontFamily: "'Raleway', sans-serif", lineHeight: 1.2,
             }}>
               Laboratoriya istiqamətləri
             </h2>
-            <p className="lab-section-sub" style={{
-              fontSize: 17, fontWeight: 400, color: MUTED,
-              margin: 0, fontFamily: FONT, lineHeight: 1.6,
+            <p className="svc-lab-sub" style={{
+              lineHeight: 1.6, color: MUTED,
+              margin: '14px 0 0', fontFamily: FONT,
             }}>
               Ehtiyacınıza uyğun laboratoriya istiqamətini seçin.
             </p>
@@ -282,8 +201,8 @@ export default function ServicesPage() {
 
           {/* Skeleton */}
           {loading && (
-            <div className="lab-grid">
-              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            <div className="svc-grid">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
             </div>
           )}
 
@@ -296,11 +215,11 @@ export default function ServicesPage() {
             </div>
           )}
 
-          {/* Cards */}
+          {/* Service rows */}
           {!loading && !error && services.length > 0 && (
-            <div className="lab-grid">
+            <div className="svc-grid">
               {services.map((svc, i) => (
-                <LabCard key={svc._id ?? i} service={svc} index={i} />
+                <ServiceRow key={svc._id ?? i} service={svc} index={i} />
               ))}
             </div>
           )}
@@ -309,50 +228,57 @@ export default function ServicesPage() {
       </section>
 
       <style>{`
-        .lab-grid {
+        /* ── Hero ─────────────────────────────────────────────────────── */
+        .svc-hero            { height: 300px; }
+        .svc-hero-inner      { padding: 0 32px; }
+        .svc-hero-title      { font-size: 40px; }
+        .svc-hero-sub        { font-size: 16px; }
+
+        /* ── Lab section ──────────────────────────────────────────────── */
+        .svc-lab-section     { padding: 72px 32px 88px; }
+        .svc-heading-mb      { margin-bottom: 44px; }
+        .svc-lab-title       { font-size: 34px; }
+        .svc-lab-sub         { font-size: 15px; }
+
+        /* ── Grid ─────────────────────────────────────────────────────── */
+        .svc-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          column-gap: 40px;
-          row-gap: 40px;
+          column-gap: 20px;
+          row-gap: 16px;
         }
 
-        /* Tablet — single column */
+        /* ── Focus ring ───────────────────────────────────────────────── */
+        .svc-row:focus-visible {
+          outline: 2px solid #00848e;
+          outline-offset: 2px;
+        }
+
+        /* ── Tablet (≤900px) ──────────────────────────────────────────── */
         @media (max-width: 900px) {
-          .lab-grid {
-            grid-template-columns: 1fr;
-            column-gap: 0;
-            row-gap: 18px;
-          }
-          .lab-section-title {
-            font-size: 36px !important;
-          }
-          .lab-section-sub {
-            font-size: 16px !important;
-          }
-          .lab-card {
-            height: 110px !important;
-            padding-left: 28px !important;
-          }
-          .lab-title {
-            font-size: 22px !important;
-          }
+          .svc-hero          { height: 260px; }
+          .svc-lab-section   { padding: 60px 24px 72px; }
+          .svc-hero-title    { font-size: 36px !important; }
+          .svc-lab-title     { font-size: 31px !important; }
         }
 
-        /* Mobile */
+        /* ── Single-column grid (≤680px) ──────────────────────────────── */
+        @media (max-width: 680px) {
+          .svc-grid          { grid-template-columns: 1fr; }
+        }
+
+        /* ── Mobile (≤600px) ──────────────────────────────────────────── */
         @media (max-width: 600px) {
-          .lab-section-title {
-            font-size: 30px !important;
-          }
-          .lab-section-sub {
-            font-size: 15px !important;
-          }
-          .lab-card {
-            height: 100px !important;
-            padding-left: 24px !important;
-          }
-          .lab-title {
-            font-size: 20px !important;
-          }
+          .svc-hero          { height: 230px; }
+          .svc-hero-inner    { padding: 0 20px !important; }
+          .svc-lab-section   { padding: 48px 20px 56px; }
+          .svc-heading-mb    { margin-bottom: 32px !important; }
+          .svc-hero-title    { font-size: 30px !important; }
+          .svc-hero-sub      { font-size: 14px !important; }
+          .svc-lab-title     { font-size: 27px !important; }
+          .svc-lab-sub       { font-size: 14px !important; }
+          .svc-row           { min-height: 76px !important; padding: 0 20px !important; }
+          .svc-name          { font-size: 15.5px !important; }
         }
       `}</style>
     </main>
