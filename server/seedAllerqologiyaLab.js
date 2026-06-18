@@ -1,10 +1,10 @@
 /**
- * Idempotent seed — Allerqologiya Service + 4 PriceList records.
+ * Idempotent seed — Allerqologiya Service record.
  *
  * Run from the server/ directory:
  *   cd server && node ../server/seedAllerqologiyaLab.js
  *
- * Safe to re-run: upserts approved records and deactivates obsolete ones.
+ * Safe to re-run: preserves the direction without creating laboratory tests.
  */
 import dns      from 'dns';
 import mongoose from 'mongoose';
@@ -13,8 +13,7 @@ dotenv.config();
 
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
-import Service   from './models/Service.model.js';
-import PriceList from './models/PriceList.model.js';
+import Service from './models/Service.model.js';
 
 /* ── 1. Allerqologiya Service record ─────────────────────────────────────── */
 const SERVICE = {
@@ -25,34 +24,6 @@ const SERVICE = {
   order:       10,
   isActive:    true,
 };
-
-/* ── 2. PriceList records ────────────────────────────────────────────────── */
-const TESTS = [
-  {
-    name:        'H1 Ev tozu',
-    serviceCode: 'LAB-14-016',
-    price:       26,
-    description: 'Dermatophagoides pteronyssinus (ev tozu gənəsi) allergeni spesifik IgE.',
-  },
-  {
-    name:        'Fox Qida Həssaslığı Testi',
-    serviceCode: 'LAB-14-008',
-    price:       442,
-    description: 'ALEX2 panelinə əsaslanan genişləndirilmiş qida həssaslığı testi.',
-  },
-  {
-    name:        'Food Intolerance (Qida həssaslığı)',
-    serviceCode: 'LAB-14-005',
-    price:       320,
-    description: 'IgG əsaslı qida dözümsüzlüyü paneli.',
-  },
-  {
-    name:        'F9 Düyü',
-    serviceCode: 'LAB-14-025',
-    price:       26,
-    description: 'Düyü allergeni (Oryza sativa) spesifik IgE.',
-  },
-];
 
 const run = async () => {
   const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
@@ -69,56 +40,7 @@ const run = async () => {
   );
   console.log(`  🗂  Service: "${svc.name}"  (id=${svc._id})\n`);
 
-  /* ── Upsert PriceList records ─────────────────────────────────────────── */
-  let created = 0, updated = 0;
-
-  for (const t of TESTS) {
-    const payload = {
-      ...t,
-      category:    'lab',
-      currency:    'AZN',
-      serviceSlug: SERVICE.slug,
-      serviceId:   svc._id,
-      isActive:    true,
-    };
-
-    const existing = await PriceList.findOne({ serviceCode: t.serviceCode });
-
-    if (existing) {
-      await PriceList.updateOne({ _id: existing._id }, { $set: payload });
-      console.log(`  ✏️   Updated: ${t.name}  (${t.serviceCode})`);
-      updated++;
-    } else {
-      await PriceList.create(payload);
-      console.log(`  ➕  Created: ${t.name}  (${t.serviceCode})`);
-      created++;
-    }
-  }
-
-  const approvedCodes = TESTS.map(test => test.serviceCode);
-  const deactivated = await PriceList.updateMany(
-    {
-      serviceSlug: SERVICE.slug,
-      serviceCode: { $nin: approvedCodes },
-      isActive: true,
-    },
-    { $set: { isActive: false } },
-  );
-
-  const activeRecords = await PriceList.find({
-    serviceSlug: SERVICE.slug,
-    isActive: true,
-  })
-    .select('name serviceCode price')
-    .sort({ serviceCode: 1 })
-    .lean();
-
-  if (activeRecords.length !== TESTS.length) {
-    throw new Error(`Expected ${TESTS.length} active records, found ${activeRecords.length}`);
-  }
-
-  console.log(`\n  Deactivated: ${deactivated.modifiedCount} obsolete record(s).`);
-  console.log(`✅  Done — ${created} created, ${updated} updated, ${activeRecords.length} active.`);
+  console.log('✅  Done — direction preserved; tests are managed through the admin panel.');
   await mongoose.disconnect();
 };
 
