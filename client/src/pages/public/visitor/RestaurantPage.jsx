@@ -14,7 +14,10 @@ export default function RestaurantPage() {
       breadcrumb="Restoran"
       image="/restoran.png"
       imageAlt="Aslan Medical Center restoran"
-      imageLayout="side"
+      imageLayout="top"
+      imageFit="contain"
+      imageMaxHeight={null}
+      contentMaxWidth="none"
     >
       <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.75, margin: '0 0 28px', fontFamily: FONT }}>
         Rəstoranımız həm pasiyentlər, həm də onların ailə üzvləri üçün rahat yemək və istirahət mühiti yaradır. Geniş menyumuz sayəsində günlük qida ehtiyaclarınızı qarşılaya bilərsiniz.

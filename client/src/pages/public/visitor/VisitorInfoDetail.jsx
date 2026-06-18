@@ -13,6 +13,8 @@ export default function VisitorInfoDetail({
   imageLayout = null,
   imageWidth = '42%',
   imageFit = 'cover',
+  imageMaxHeight = 420,
+  contentMaxWidth = 800,
   children,
 }) {
   return (
@@ -95,11 +97,16 @@ export default function VisitorInfoDetail({
               src={image}
               alt={imageAlt || title}
               style={{
-                width: '100%', maxHeight: 420, objectFit: 'cover',
-                borderRadius: 12, display: 'block', marginBottom: 44,
+                width: '100%',
+                height: 'auto',
+                ...(imageMaxHeight != null && { maxHeight: imageMaxHeight }),
+                objectFit: imageFit,
+                borderRadius: 12,
+                display: 'block',
+                marginBottom: 44,
               }}
             />
-            <div style={{ maxWidth: 800 }}>{children}</div>
+            <div style={{ maxWidth: contentMaxWidth }}>{children}</div>
           </>
         )}
 
