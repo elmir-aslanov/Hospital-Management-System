@@ -8,8 +8,9 @@ const router = Router();
 
 // ── Public ────────────────────────────────────────────────────────────────────
 router.post('/',                    authLimiter, ctrl.submit);
-router.get('/verify-email',                      ctrl.verifyEmail);      // browser redirect
+router.get('/verify-email',                      ctrl.verifyEmail);         // browser redirect
 router.post('/resend-verification', authLimiter, ctrl.resendVerification);
+router.patch('/:id/email',          authLimiter, ctrl.changeEmail);         // email change with management token
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 router.use(authenticate);

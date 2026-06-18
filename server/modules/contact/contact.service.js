@@ -15,6 +15,9 @@ const generateToken = () => {
   return { raw, hash };
 };
 
+const hashToken = (raw) =>
+  crypto.createHash('sha256').update(String(raw)).digest('hex');
+
 const withTimeout = (promise, ms) =>
   Promise.race([
     promise,
@@ -42,6 +45,8 @@ const he = (str) =>
     .replace(/"/g, '&quot;');
 
 const year = () => new Date().getFullYear();
+
+// ── Email templates ───────────────────────────────────────────────────────────
 
 const verificationHtml = ({ fullName, token, serverUrl }) => {
   const link = `${serverUrl}/api/v1/contact/verify-email?token=${token}`;
@@ -149,10 +154,16 @@ export const submit = async ({ fullName, email, message, consentAccepted }) => {
     throw new ApiError(429, 'Bu e-poçtdan həddindən artıq müraciət gəldi. Bir az sonra cəhd edin.');
   }
 
-  const { raw, hash } = generateToken();
-  const expiresAt     = new Date(Date.now() + 30 * 60 * 1000);
-  const displayName   = fullName.trim();
+  const { raw: verRaw, hash: verHash }   = generateToken();
+  const { raw: mgtRaw, hash: mgtHash }   = generateToken();
+  const verExpiresAt = new Date(Date.now() + 30 * 60 * 1000);  // 30 min
+  const mgtExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+  const displayName  = fullName.trim();
 
+  const serverUrl = process.env.SERVER_PUBLIC_URL || 'http://localhost:5000';
+
+  // SMTP first — don't persist record if email cannot be sent
+  let deliveryStatus = 'pending';
   const contactMsg = await ContactMessage.create({
     fullName:                        displayName,
     name:                            displayName,
@@ -161,36 +172,47 @@ export const submit = async ({ fullName, email, message, consentAccepted }) => {
     consentAccepted:                 !!consentAccepted,
     consentAcceptedAt:               consentAccepted ? new Date() : undefined,
     emailVerified:                   false,
-    emailVerificationTokenHash:      hash,
-    emailVerificationExpiresAt:      expiresAt,
-    verificationEmailSentAt:         new Date(),
+    emailVerificationTokenHash:      verHash,
+    emailVerificationExpiresAt:      verExpiresAt,
     verificationEmailDeliveryStatus: 'pending',
+    managementTokenHash:             mgtHash,
+    managementTokenExpiresAt:        mgtExpiresAt,
   });
 
-  const serverUrl = process.env.SERVER_PUBLIC_URL || 'http://localhost:5000';
+  const sentAt = new Date();
   try {
     await sendEmail({
       to:      normalizedEmail,
       subject: 'Aslan Medical Center — E-poçt Təsdiqləmə',
-      html:    verificationHtml({ fullName: displayName, token: raw, serverUrl }),
+      html:    verificationHtml({ fullName: displayName, token: verRaw, serverUrl }),
     });
-    await ContactMessage.updateOne({ _id: contactMsg._id }, { verificationEmailDeliveryStatus: 'sent' });
+    deliveryStatus = 'sent';
   } catch {
-    await ContactMessage.updateOne({ _id: contactMsg._id }, { verificationEmailDeliveryStatus: 'failed' });
+    deliveryStatus = 'failed';
   }
 
-  return { id: contactMsg._id };
+  await ContactMessage.updateOne({ _id: contactMsg._id }, {
+    verificationEmailSentAt:         sentAt,
+    verificationEmailDeliveryStatus: deliveryStatus,
+  });
+
+  return {
+    id:              contactMsg._id,
+    sentAt:          sentAt.toISOString(),
+    managementToken: mgtRaw,
+    email:           normalizedEmail,
+  };
 };
 
 export const verifyEmail = async (rawToken) => {
   if (!rawToken) throw new ApiError(400, 'Token tələb olunur.');
 
-  const hash = crypto.createHash('sha256').update(String(rawToken)).digest('hex');
+  const hash = hashToken(rawToken);
   const msg  = await ContactMessage.findOne({ emailVerificationTokenHash: hash });
 
-  if (!msg)            throw new ApiError(400, 'Token etibarsızdır.');
-  if (msg.emailVerified) throw new ApiError(400, 'Bu token artıq istifadə edilib.');
-  if (msg.emailVerificationExpiresAt < new Date()) throw new ApiError(400, 'Token müddəti bitib.');
+  if (!msg)             throw new ApiError(400, 'Token etibarsızdır.');
+  if (msg.emailVerified) throw new ApiError(400, 'already-used');
+  if (msg.emailVerificationExpiresAt < new Date()) throw new ApiError(400, 'expired');
 
   await ContactMessage.updateOne({ _id: msg._id }, {
     $set: {
@@ -198,6 +220,8 @@ export const verifyEmail = async (rawToken) => {
       emailVerifiedAt:             new Date(),
       status:                      'new',
       emailVerificationTokenHash:  '',
+      managementTokenHash:         '', // invalidate management token after verification
+      managementTokenExpiresAt:    null,
     },
   });
 
@@ -234,34 +258,131 @@ export const resendVerification = async (email) => {
 
   const msg = await ContactMessage.findOne({ email: normalizedEmail, emailVerified: false }).sort({ createdAt: -1 });
 
-  // Generic response — don't reveal whether email exists
-  if (!msg) return;
+  // Generic — don't reveal whether email exists
+  if (!msg) return { sentAt: new Date().toISOString() };
 
-  if (msg.verificationEmailSentAt && Date.now() - msg.verificationEmailSentAt.getTime() < 2 * 60 * 1000) {
-    throw new ApiError(429, 'Yenidən göndərməzdən əvvəl bir az gözləyin.');
+  const now = Date.now();
+  const lastSentMs = msg.verificationEmailSentAt?.getTime() || 0;
+
+  // 60-second cooldown
+  if (lastSentMs && now - lastSentMs < 60_000) {
+    const retryAfter = Math.ceil((60_000 - (now - lastSentMs)) / 1000);
+    const err = new ApiError(429, 'Yenidən göndərməzdən əvvəl bir az gözləyin.');
+    err.retryAfter = retryAfter;
+    throw err;
   }
 
+  const windowStartMs = msg.resendWindowStart?.getTime() || 0;
+
+  // 3 per 30-minute window
+  if (windowStartMs && now - windowStartMs < 30 * 60_000 && msg.resendCount >= 3) {
+    const retryAfter = Math.ceil((30 * 60_000 - (now - windowStartMs)) / 1000);
+    const err = new ApiError(429, 'Qısa müddətdə həddindən artıq cəhd. Daha sonra yenidən cəhd edin.');
+    err.retryAfter = retryAfter;
+    throw err;
+  }
+
+  // 5 total per 24 hours (cumulative, lifetime of this record)
+  if (msg.resendCount >= 5) {
+    const err = new ApiError(429, 'Günlük yenidən göndərmə limiti dolub. Sabah yenidən cəhd edin.');
+    err.retryAfter = 86400;
+    throw err;
+  }
+
+  // Generate new token (replaces old — old link becomes invalid)
   const { raw, hash } = generateToken();
   const expiresAt     = new Date(Date.now() + 30 * 60 * 1000);
-
-  await ContactMessage.updateOne({ _id: msg._id }, {
-    emailVerificationTokenHash:      hash,
-    emailVerificationExpiresAt:      expiresAt,
-    verificationEmailSentAt:         new Date(),
-    verificationEmailDeliveryStatus: 'pending',
-  });
+  const sentAt        = new Date();
 
   const serverUrl = process.env.SERVER_PUBLIC_URL || 'http://localhost:5000';
+  const displayName = msg.fullName || msg.name || '';
+
+  // SMTP first — only update DB if email succeeds (preserves old token on failure)
   try {
     await sendEmail({
       to:      normalizedEmail,
       subject: 'Aslan Medical Center — E-poçt Təsdiqləmə (Yenidən)',
-      html:    verificationHtml({ fullName: msg.fullName || msg.name, token: raw, serverUrl }),
+      html:    verificationHtml({ fullName: displayName, token: raw, serverUrl }),
     });
-    await ContactMessage.updateOne({ _id: msg._id }, { verificationEmailDeliveryStatus: 'sent' });
   } catch {
-    await ContactMessage.updateOne({ _id: msg._id }, { verificationEmailDeliveryStatus: 'failed' });
+    // Don't update anything — old token stays valid
+    throw new ApiError(502, 'E-poçt göndərilmədi. Bir az sonra yenidən cəhd edin.');
   }
+
+  const isNewWindow = !windowStartMs || (now - windowStartMs >= 30 * 60_000);
+  await ContactMessage.updateOne({ _id: msg._id }, {
+    $set: {
+      emailVerificationTokenHash:      hash,
+      emailVerificationExpiresAt:      expiresAt,
+      verificationEmailSentAt:         sentAt,
+      verificationEmailDeliveryStatus: 'sent',
+      resendCount:       isNewWindow ? 1 : msg.resendCount + 1,
+      resendWindowStart: isNewWindow ? sentAt : msg.resendWindowStart,
+    },
+  });
+
+  return { sentAt: sentAt.toISOString() };
+};
+
+export const changeEmail = async ({ id, email, managementToken }) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID.');
+  if (!email?.trim())          throw new ApiError(400, 'E-poçt tələb olunur.');
+  if (!managementToken?.trim()) throw new ApiError(400, 'İdarəetmə tokeni tələb olunur.');
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRx.test(normalizedEmail)) throw new ApiError(400, 'E-poçt formatı düzgün deyil.');
+
+  const mgtHash = hashToken(managementToken);
+  const msg = await ContactMessage.findById(id);
+
+  if (!msg) throw new ApiError(404, 'Müraciət tapılmadı.');
+  if (msg.emailVerified) throw new ApiError(400, 'E-poçt artıq doğrulanıb. Dəyişiklik mümkün deyil.');
+  if (!msg.managementTokenHash || msg.managementTokenHash !== mgtHash) {
+    throw new ApiError(403, 'Token etibarsızdır.');
+  }
+  if (!msg.managementTokenExpiresAt || msg.managementTokenExpiresAt < new Date()) {
+    throw new ApiError(403, 'Token müddəti bitib.');
+  }
+  if (normalizedEmail === msg.email) {
+    throw new ApiError(400, 'Yeni e-poçt mövcud e-poçt ünvanı ilə eynidir.');
+  }
+
+  // MX check on new email
+  const hasMx = await checkMxRecord(normalizedEmail);
+  if (!hasMx) throw new ApiError(400, 'E-poçt ünvanı etibarlı görünmür.');
+
+  // Generate new verification token for the new email
+  const { raw, hash } = generateToken();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  const sentAt    = new Date();
+  const serverUrl = process.env.SERVER_PUBLIC_URL || 'http://localhost:5000';
+  const displayName = msg.fullName || msg.name || '';
+
+  // SMTP first — don't update email in DB until we know mail was sent
+  try {
+    await sendEmail({
+      to:      normalizedEmail,
+      subject: 'Aslan Medical Center — E-poçt Təsdiqləmə',
+      html:    verificationHtml({ fullName: displayName, token: raw, serverUrl }),
+    });
+  } catch {
+    throw new ApiError(502, 'E-poçt göndərilmədi. Bir az sonra yenidən cəhd edin.');
+  }
+
+  await ContactMessage.updateOne({ _id: msg._id }, {
+    $set: {
+      email:                           normalizedEmail,
+      emailVerificationTokenHash:      hash,
+      emailVerificationExpiresAt:      expiresAt,
+      verificationEmailSentAt:         sentAt,
+      verificationEmailDeliveryStatus: 'sent',
+      resendCount:                     0,
+      resendWindowStart:               null,
+    },
+  });
+
+  return { sentAt: sentAt.toISOString(), email: normalizedEmail };
 };
 
 export const getAll = ({ status } = {}) => {
@@ -269,7 +390,7 @@ export const getAll = ({ status } = {}) => {
   if (status) filter.status = status;
   return ContactMessage
     .find(filter)
-    .select('-emailVerificationTokenHash')
+    .select('-emailVerificationTokenHash -managementTokenHash')
     .populate('replies.repliedBy', 'fullName email')
     .sort({ createdAt: -1 })
     .lean();
@@ -277,14 +398,16 @@ export const getAll = ({ status } = {}) => {
 
 export const markRead = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID');
-  const doc = await ContactMessage.findByIdAndUpdate(id, { status: 'read' }, { new: true }).select('-emailVerificationTokenHash');
+  const doc = await ContactMessage.findByIdAndUpdate(id, { status: 'read' }, { new: true })
+    .select('-emailVerificationTokenHash -managementTokenHash');
   if (!doc) throw new ApiError(404, 'Message not found');
   return doc;
 };
 
 export const markReplied = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID');
-  const doc = await ContactMessage.findByIdAndUpdate(id, { status: 'replied' }, { new: true }).select('-emailVerificationTokenHash');
+  const doc = await ContactMessage.findByIdAndUpdate(id, { status: 'replied' }, { new: true })
+    .select('-emailVerificationTokenHash -managementTokenHash');
   if (!doc) throw new ApiError(404, 'Message not found');
   return doc;
 };
@@ -294,7 +417,8 @@ export const sendReply = async (id, { subject, message, adminUser }) => {
   if (!message?.trim())              throw new ApiError(400, 'Mesaj boş ola bilməz.');
   if (message.trim().length > 5000)  throw new ApiError(400, 'Mesaj çox uzundur (maks. 5000 simvol).');
 
-  const contact = await ContactMessage.findById(id).select('-emailVerificationTokenHash');
+  const contact = await ContactMessage.findById(id)
+    .select('-emailVerificationTokenHash -managementTokenHash');
   if (!contact)              throw new ApiError(404, 'Müraciət tapılmadı.');
   if (!contact.emailVerified) throw new ApiError(400, 'Bu müraciətin e-poçtu doğrulanmayıb.');
 

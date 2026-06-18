@@ -24,10 +24,19 @@ const contactMessageSchema = new mongoose.Schema({
   emailVerified:   { type: Boolean, default: false },
   emailVerifiedAt: { type: Date },
 
-  emailVerificationTokenHash:        { type: String, default: '' },
-  emailVerificationExpiresAt:        { type: Date },
-  verificationEmailSentAt:           { type: Date },
-  verificationEmailDeliveryStatus:   { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' },
+  // Verification token (only hash stored, never plaintext)
+  emailVerificationTokenHash:      { type: String, default: '' },
+  emailVerificationExpiresAt:      { type: Date },
+  verificationEmailSentAt:         { type: Date },
+  verificationEmailDeliveryStatus: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' },
+
+  // Resend rate-limit tracking
+  resendCount:       { type: Number, default: 0 },   // resends in current 30-min window
+  resendWindowStart: { type: Date },                 // when the 30-min window opened
+
+  // Short-lived management token for email-change (only hash stored)
+  managementTokenHash:      { type: String, default: '' },
+  managementTokenExpiresAt: { type: Date },
 
   status:  { type: String, enum: ['new', 'read', 'replied'], default: 'new' },
 
@@ -36,6 +45,7 @@ const contactMessageSchema = new mongoose.Schema({
 
 contactMessageSchema.index({ status: 1, createdAt: -1 });
 contactMessageSchema.index({ emailVerificationTokenHash: 1 }, { sparse: true });
+contactMessageSchema.index({ managementTokenHash: 1 },        { sparse: true });
 contactMessageSchema.index({ email: 1, emailVerified: 1 });
 
 export default mongoose.model('ContactMessage', contactMessageSchema);
