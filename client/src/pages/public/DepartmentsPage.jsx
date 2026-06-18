@@ -71,25 +71,6 @@ export default function DepartmentsPage() {
     if (activeLetter && !grouped.has(activeLetter)) setActiveLetter(null);
   }, [grouped, activeLetter]);
 
-  useEffect(() => {
-    if (grouped.size === 0) return;
-    const letters = ALPHABET.filter(letter => grouped.has(letter));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setActiveLetter(entry.target.id.replace('letter-', ''));
-          }
-        });
-      },
-      { rootMargin: '-20% 0px -70% 0px', threshold: 0 }
-    );
-    letters.forEach(letter => {
-      const el = document.getElementById(`letter-${letter}`);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
-  }, [grouped]);
 
   return (
     <main className="bg-white" style={{ fontFamily: FONT }}>
