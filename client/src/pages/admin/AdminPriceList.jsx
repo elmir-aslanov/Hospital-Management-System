@@ -26,7 +26,7 @@ const CATEGORY_COLOR = {
   other:        { bg: '#f8fafc', color: '#64748b' },
 }
 
-const EMPTY_FORM = { name: '', serviceCode: '', category: 'consultation', price: 0, currency: 'AZN', description: '', isActive: true }
+const EMPTY_FORM = { name: '', serviceCode: '', category: 'consultation', price: 0, currency: 'AZN', description: '', serviceSlug: '', isActive: true }
 
 const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
@@ -43,6 +43,7 @@ export default function AdminPriceList() {
   const [saving,    setSaving]    = useState(false)
   const [formErr,   setFormErr]   = useState('')
   const [form,      setForm]      = useState(EMPTY_FORM)
+  const [labDirs,   setLabDirs]   = useState([])
 
   /* ── fetch ────────────────────────────────────────────────── */
   const fetchPrices = () => {
@@ -63,11 +64,21 @@ export default function AdminPriceList() {
     return () => clearTimeout(t)
   }, [search, filterCategory])
 
+  /* ── load lab directions when modal opens with category=lab ── */
+  useEffect(() => {
+    if (!showModal || form.category !== 'lab') return
+    if (labDirs.length > 0) return
+    fetch(`${BASE}/api/v1/services`)
+      .then(r => r.json())
+      .then(d => setLabDirs(Array.isArray(d.data) ? d.data : []))
+      .catch(() => {})
+  }, [showModal, form.category])
+
   /* ── modal helpers ────────────────────────────────────────── */
   const openAdd = () => { setEditPrice(null); setForm(EMPTY_FORM); setFormErr(''); setShowModal(true) }
   const openEdit = (p) => {
     setEditPrice(p)
-    setForm({ name: p.name, serviceCode: p.serviceCode || '', category: p.category, price: p.price, currency: p.currency || 'AZN', description: p.description || '', isActive: p.isActive !== false })
+    setForm({ name: p.name, serviceCode: p.serviceCode || '', category: p.category, price: p.price, currency: p.currency || 'AZN', description: p.description || '', serviceSlug: p.serviceSlug || '', isActive: p.isActive !== false })
     setFormErr(''); setShowModal(true)
   }
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -243,10 +254,20 @@ export default function AdminPriceList() {
 
               <div>
                 <label style={lbl}>Kateqoriya</label>
-                <select style={{ ...inp, height: 38 }} value={form.category} onChange={e => setF('category', e.target.value)}>
+                <select style={{ ...inp, height: 38 }} value={form.category} onChange={e => { setF('category', e.target.value); if (e.target.value !== 'lab') setF('serviceSlug', '') }}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_AZ[c]}</option>)}
                 </select>
               </div>
+
+              {form.category === 'lab' && (
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label style={lbl}>Laboratoriya istiqaməti</label>
+                  <select style={{ ...inp, height: 38 }} value={form.serviceSlug} onChange={e => setF('serviceSlug', e.target.value)}>
+                    <option value="">— Seçilməyib —</option>
+                    {labDirs.map(s => <option key={s._id} value={s.slug}>{s.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label style={lbl}>Qiymət (AZN) *</label>

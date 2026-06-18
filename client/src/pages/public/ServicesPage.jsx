@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
 import { fadeUp } from '../../utils/animations';
@@ -11,6 +12,11 @@ const MUTED = '#62718A';
 /* ── Service row ─────────────────────────────────────────────────────────── */
 function ServiceRow({ service, index }) {
   const [hovered, setHovered] = useState(false);
+  const navigate = useNavigate();
+
+  const go = () => navigate(`/services/${service.slug}`);
+  const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
+
   return (
     <motion.div
       variants={fadeUp}
@@ -21,6 +27,8 @@ function ServiceRow({ service, index }) {
     >
       <div
         className="svc-row"
+        onClick={go}
+        onKeyDown={onKey}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onFocus={() => setHovered(true)}
@@ -111,9 +119,11 @@ export default function ServicesPage() {
       <section
         className="svc-hero"
         style={{
-          backgroundImage: "linear-gradient(rgba(7,27,59,0.10),rgba(7,27,59,0.10)),url('/xidmetlaborot.png')",
-          backgroundSize: 'cover',
+          backgroundImage: "url('/xidmetlaborot.png')",
+          backgroundSize: 'contain',
           backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: '#071424',
           width: '100%',
         }}
       />
@@ -199,7 +209,9 @@ export default function ServicesPage() {
 
       <style>{`
         /* ── Hero ─────────────────────────────────────────────────────── */
-        .svc-hero            { height: 300px; }
+        /* Image is 2072×759 (≈2.73:1). With contain, hero height drives scale.
+           At ~980px container width: 980/2.73 ≈ 359px — fits the 320-360px target. */
+        .svc-hero            { height: 340px; }
 
         /* ── Lab section ──────────────────────────────────────────────── */
         .svc-lab-section     { padding: 72px 32px 88px; }
@@ -223,7 +235,8 @@ export default function ServicesPage() {
 
         /* ── Tablet (≤900px) ──────────────────────────────────────────── */
         @media (max-width: 900px) {
-          .svc-hero          { height: 260px; }
+          /* At 768px width: 768/2.73 ≈ 281px — reduce slightly */
+          .svc-hero          { height: 280px; }
           .svc-lab-section   { padding: 60px 24px 72px; }
           .svc-lab-title     { font-size: 31px !important; }
         }
@@ -235,7 +248,15 @@ export default function ServicesPage() {
 
         /* ── Mobile (≤600px) ──────────────────────────────────────────── */
         @media (max-width: 600px) {
-          .svc-hero          { height: 230px; }
+          /* Switch to 100% width so image fills screen edge-to-edge,
+             height auto-fits the 2.73:1 ratio (~143px at 390px width).
+             Use padding-bottom trick for aspect-ratio-driven height. */
+          .svc-hero {
+            height: 0;
+            padding-bottom: 36.6%; /* 1/2.73 * 100 */
+            background-size: 100% auto;
+            background-position: center top;
+          }
           .svc-lab-section   { padding: 48px 20px 56px; }
           .svc-heading-mb    { margin-bottom: 32px !important; }
           .svc-lab-title     { font-size: 27px !important; }

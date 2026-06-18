@@ -153,7 +153,19 @@
     "callUs": "CALL US",
     "location": "LOCATION",
     "hours": "HOURS",
-    "emailCantChange": "Email address cannot be changed"
+    "emailCantChange": "Email address cannot be changed",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "Enter your first and last name",
+    "fullNameError": "Full name must be between 2 and 100 characters.",
+    "fullNamePartsError": "Please enter both your first and last name.",
+    "emailError": "Invalid email format.",
+    "consentError": "You must accept the terms before submitting.",
+    "verificationSentTitle": "Verification link sent",
+    "verificationSent": "Click the link sent to your email address to confirm your message. The link is valid for 30 minutes.",
+    "resendLink": "Resend link",
+    "emailVerifiedSuccess": "Your email has been verified! Your message was successfully received.",
+    "verifyExpired": "The verification link has expired. Please submit a new message.",
+    "verifyInvalid": "The verification link is invalid."
   },
   "appointment": {
     "title": "Book Appointment",
@@ -458,6 +470,12 @@
     "message": "The page you're looking for doesn't exist or has been moved.",
     "goHome": "Home",
     "goBack": "Back"
+  },
+  "serviceTests": {
+    "testCode": "Test code",
+    "empty": "There are currently no active tests in this category.",
+    "loadError": "Tests could not be loaded.",
+    "retry": "Try again"
   },
   "partners": {
     "title": "OUR PARTNERS & INSURANCE COMPANIES"

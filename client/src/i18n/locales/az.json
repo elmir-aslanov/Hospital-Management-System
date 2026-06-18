@@ -153,7 +153,19 @@
     "callUs": "ZƏNG EDİN",
     "location": "ÜNVAN",
     "hours": "İŞ SAATLARİ",
-    "emailCantChange": "E-poçt ünvanı dəyişdirilə bilməz"
+    "emailCantChange": "E-poçt ünvanı dəyişdirilə bilməz",
+    "fullNameLabel": "Ad Soyad",
+    "fullNamePlaceholder": "Adınızı və soyadınızı daxil edin",
+    "fullNameError": "Ad Soyad 2-100 simvol arasında olmalıdır.",
+    "fullNamePartsError": "Zəhmət olmasa ad və soyadınızı daxil edin.",
+    "emailError": "E-poçt formatı düzgün deyil.",
+    "consentError": "Şərtləri qəbul etmədən müraciət göndərə bilməzsiniz.",
+    "verificationSentTitle": "Doğrulama linki göndərildi",
+    "verificationSent": "E-poçt ünvanınızı doğrulamaq üçün göndərilən linkə klikləyin. Link 30 dəqiqə ərzində etibarlıdır.",
+    "resendLink": "Linki yenidən göndər",
+    "emailVerifiedSuccess": "E-poçtunuz təsdiqləndi! Müraciətiniz uğurla qəbul edildi.",
+    "verifyExpired": "Doğrulama linkinin müddəti bitib. Yeni müraciət göndərin.",
+    "verifyInvalid": "Doğrulama linki etibarsızdır."
   },
   "appointment": {
     "title": "Randevu Sifariş Et",
@@ -461,6 +473,12 @@
   },
   "partners": {
     "title": "TƏRƏFDAŞLARIMİZ VƏ SIĞORTA ŞİRKƏTLƏRİ"
+  },
+  "serviceTests": {
+    "testCode": "Testin kodu",
+    "empty": "Bu istiqamət üzrə hazırda aktiv test yoxdur.",
+    "loadError": "Testlər yüklənmədi.",
+    "retry": "Yenidən cəhd et"
   },
   "visitorInfo": {
     "eyebrow": "FAYDALI MƏLUMATLAR",

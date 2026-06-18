@@ -1,16 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import api from '../../api/axios'
 
-import { BASE } from '../../api/config.js'
-
-const STATUS_MAP = {
+const MURACIET_STATUS_MAP = {
   yeni:            { label: 'Yeni',       bg: '#fef9c3', color: '#854d0e' },
   baxildi:         { label: 'Baxıldı',    bg: '#dcfce7', color: '#166534' },
   cavablandirildi: { label: 'Cavablandı', bg: '#e0f2fe', color: '#0369a1' },
 }
 
-function StatusBadge({ status }) {
-  const s = STATUS_MAP[status] || STATUS_MAP.yeni
+const CONTACT_STATUS_MAP = {
+  new:     { label: 'Yeni',       bg: '#fef9c3', color: '#854d0e' },
+  read:    { label: 'Baxıldı',    bg: '#dcfce7', color: '#166534' },
+  replied: { label: 'Cavablandı', bg: '#e0f2fe', color: '#0369a1' },
+}
+
+function StatusBadge({ item }) {
+  const map  = item._type === 'contact' ? CONTACT_STATUS_MAP : MURACIET_STATUS_MAP
+  const key  = item._type === 'contact' ? (item.status || 'new') : (item.status || 'yeni')
+  const s    = map[key] || Object.values(map)[0]
   return (
     <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: s.bg, color: s.color }}>
       {s.label}
@@ -27,31 +34,98 @@ function DRow({ label, value }) {
   )
 }
 
-export default function AdminMuraciet() {
-  const [items, setItems]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [selected, setSelected]   = useState(null)
-  const [typeFilter, setType]     = useState('all')
-  const [search, setSearch]       = useState('')
-  const [dateFilter, setDateFilter] = useState('all')
+function ReplyModal({ contact, onClose, onSent }) {
+  const [subject, setSubject]   = useState(`Müraciətinizə cavab — Aslan Medical Center`)
+  const [message, setMessage]   = useState('')
+  const [sending, setSending]   = useState(false)
+  const [error, setError]       = useState('')
+  const textareaRef = useRef(null)
 
-  const token   = localStorage.getItem('token') || localStorage.getItem('adminToken')
-  const headers = { Authorization: `Bearer ${token}` }
+  useEffect(() => { textareaRef.current?.focus() }, [])
+
+  const handleSend = async () => {
+    if (!message.trim()) { setError('Mesaj boş ola bilməz.'); return }
+    setSending(true)
+    setError('')
+    try {
+      const r = await api.post(`/contact/${contact._id}/reply`, { subject: subject.trim(), message: message.trim() })
+      onSent(r.data?.data)
+    } catch (e) {
+      setError(e.response?.data?.message || 'E-poçt göndərilmədi.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'white', borderRadius: 14, width: '100%', maxWidth: 540, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#0f1b2d' }}>Cavab yaz</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20, lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 14 }}>
+          Alıcı: <strong style={{ color: '#334155' }}>{contact.fullName || contact.name}</strong> &lt;{contact.email}&gt;
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 5 }}>Mövzu</label>
+          <input value={subject} onChange={e => setSubject(e.target.value)}
+            style={{ width: '100%', height: 36, border: '1px solid #e2e8f0', borderRadius: 8, padding: '0 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box', color: '#334155' }} />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 5 }}>Mesaj</label>
+          <textarea ref={textareaRef} value={message} onChange={e => setMessage(e.target.value)}
+            rows={6} placeholder="Cavab mətnini daxil edin..."
+            style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', color: '#334155', lineHeight: 1.6 }} />
+        </div>
+
+        {error && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', fontSize: 12.5, color: '#b91c1c', marginBottom: 12 }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            Ləğv et
+          </button>
+          <button onClick={handleSend} disabled={sending}
+            style={{ padding: '8px 22px', borderRadius: 8, border: 'none', background: sending ? '#94a3b8' : '#00848e', color: 'white', fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer' }}>
+            {sending ? 'Göndərilir...' : '✉ Göndər'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminMuraciet() {
+  const [items, setItems]           = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [selected, setSelected]     = useState(null)
+  const [typeFilter, setType]       = useState('all')
+  const [search, setSearch]         = useState('')
+  const [dateFilter, setDateFilter] = useState('all')
+  const [replyTarget, setReplyTarget] = useState(null)
 
   useEffect(() => {
     setLoading(true)
-    const muracietReq = fetch(`${BASE}/api/v1/muraciet`, { headers })
-      .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d.data) ? d.data : d.data?.muracietler || d.muracietler || d.data || []
+
+    const muracietReq = api.get('/muraciet')
+      .then(r => {
+        const list = Array.isArray(r.data?.data) ? r.data.data
+          : r.data?.data?.muracietler || r.data?.muracietler || r.data?.data || []
         return (Array.isArray(list) ? list : []).map(m => ({ ...m, _type: 'muraciet' }))
       })
       .catch(() => [])
 
-    const contactReq = fetch(`${BASE}/api/v1/contact`, { headers })
-      .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : d.result || []
+    const contactReq = api.get('/contact')
+      .then(r => {
+        const list = Array.isArray(r.data?.data) ? r.data.data : Array.isArray(r.data) ? r.data : r.data?.result || []
         return list.map(c => ({ ...c, _type: 'contact' }))
       })
       .catch(() => [])
@@ -66,7 +140,7 @@ export default function AdminMuraciet() {
   const getFullName = (item) => {
     if (item.ad && item.soyad) return `${item.ad} ${item.soyad}`
     if (item.ad) return item.ad
-    return item.name || item.fullName || '—'
+    return item.fullName || item.name || '—'
   }
   const getContact = (item) => item.epoct || item.email || item.telefon || item.phone || '—'
   const getText    = (item) => item.metn || item.message || item.text || ''
@@ -76,7 +150,7 @@ export default function AdminMuraciet() {
   const isUnread = (item) => item._type === 'muraciet' && !item.isRead
 
   /* ── date boundaries ── */
-  const now      = new Date()
+  const now        = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekStart  = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7)
   const monthStart = new Date(todayStart); monthStart.setMonth(monthStart.getMonth() - 1)
@@ -85,8 +159,8 @@ export default function AdminMuraciet() {
   const filtered = items.filter(item => {
     if (typeFilter !== 'all' && item._type !== typeFilter) return false
     if (search) {
-      const q = search.toLowerCase()
-      const hay = [item.ad, item.soyad, item.epoct, item.email, item.metn, item.message, item.telefon, item.phone]
+      const q   = search.toLowerCase()
+      const hay = [item.ad, item.soyad, item.epoct, item.email, item.metn, item.message, item.telefon, item.phone, item.fullName, item.name]
         .filter(Boolean).join(' ').toLowerCase()
       if (!hay.includes(q)) return false
     }
@@ -107,29 +181,39 @@ export default function AdminMuraciet() {
     setSelected(s => s?._id === id ? { ...s, ...patch } : s)
   }
 
-  const handleMarkRead = async (item) => {
-    updateItem(item._id, { isRead: true, status: 'baxildi' })
-    fetch(`${BASE}/api/v1/muraciet/${item._id}/read`, { method: 'PATCH', headers }).catch(() => {})
+  const handleSelect = (item) => {
+    setSelected(item)
+    if (item._type === 'muraciet' && !item.isRead) {
+      updateItem(item._id, { isRead: true, status: 'baxildi' })
+      api.patch(`/muraciet/${item._id}/read`).catch(() => {})
+    }
+    if (item._type === 'contact' && item.status === 'new') {
+      updateItem(item._id, { status: 'read' })
+      api.patch(`/contact/${item._id}/read`).catch(() => {})
+    }
   }
 
   const handleStatusChange = async (item, status) => {
     updateItem(item._id, { status })
-    fetch(`${BASE}/api/v1/muraciet/${item._id}/status`, {
-      method: 'PATCH',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    }).catch(() => {})
+    api.patch(`/muraciet/${item._id}/status`, { status }).catch(() => {})
   }
 
   const handleDelete = async (item) => {
     if (!window.confirm('Bu müraciəti silmək istəyirsiniz?')) return
+    const endpoint = item._type === 'contact' ? `/contact/${item._id}` : `/muraciet/${item._id}`
     try {
-      const r = await fetch(`${BASE}/api/v1/muraciet/${item._id}`, { method: 'DELETE', headers })
-      if (!r.ok) throw new Error()
+      await api.delete(endpoint)
       setItems(prev => prev.filter(i => i._id !== item._id))
       setSelected(null)
     } catch {
       alert('Silinmədi, yenidən cəhd edin')
+    }
+  }
+
+  const handleReplySent = (updatedDoc) => {
+    setReplyTarget(null)
+    if (updatedDoc) {
+      updateItem(updatedDoc._id, { ...updatedDoc, _type: 'contact' })
     }
   }
 
@@ -194,7 +278,7 @@ export default function AdminMuraciet() {
                 const text       = getText(item)
                 const unread     = isUnread(item)
                 return (
-                  <div key={item._id} onClick={() => setSelected(item)}
+                  <div key={item._id} onClick={() => handleSelect(item)}
                     style={{ padding: '14px 20px', borderBottom: '1px solid #f8fafc', cursor: 'pointer', background: isSelected ? '#f0fafb' : 'white', transition: 'background 0.1s' }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#f8fafc' }}
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'white' }}
@@ -215,7 +299,7 @@ export default function AdminMuraciet() {
                       <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                         <div style={{ fontSize: 10, color: '#94a3b8' }}>{getDate(item)}</div>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          {item._type === 'muraciet' && <StatusBadge status={item.status || 'yeni'} />}
+                          <StatusBadge item={item} />
                           <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: item._type === 'muraciet' ? '#e0f2fe' : '#f3e8ff', color: item._type === 'muraciet' ? '#0369a1' : '#7c3aed' }}>
                             {item._type === 'muraciet' ? 'Müraciət' : 'Əlaqə'}
                           </span>
@@ -266,6 +350,22 @@ export default function AdminMuraciet() {
                 </div>
               )}
 
+              {/* Reply history — contact only */}
+              {selected._type === 'contact' && selected.replies?.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Cavablar</div>
+                  {selected.replies.map((r, i) => (
+                    <div key={r._id || i} style={{ background: '#f0fdf4', borderLeft: '3px solid #00848e', borderRadius: '0 8px 8px 0', padding: '10px 14px', marginBottom: 8, fontSize: 12.5, color: '#334155', lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>
+                        {r.repliedBy?.fullName || 'Admin'} · {new Date(r.repliedAt).toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {r.deliveryStatus === 'failed' && <span style={{ color: '#ef4444', marginLeft: 6 }}>✗ Göndərilmədi</span>}
+                      </div>
+                      {r.message}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Status dropdown — muraciet only */}
               {selected._type === 'muraciet' && (
                 <div style={{ marginTop: 20 }}>
@@ -284,40 +384,45 @@ export default function AdminMuraciet() {
 
               {/* Action buttons */}
               <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {/* Cavab yaz — email client */}
-                {(selected.epoct || selected.email) && (
-                  <a
-                    href={`mailto:${selected.epoct || selected.email}?subject=Müraciətinizə cavab&body=Hörmətli ${selected.ad || selected.name || ''}`}
-                    style={{ display: 'block', textAlign: 'center', padding: '8px 16px', borderRadius: 8, background: '#e0f2fe', color: '#0369a1', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                {/* Reply modal — contact only */}
+                {selected._type === 'contact' && selected.email && (
+                  <button
+                    onClick={() => setReplyTarget(selected)}
+                    style={{ display: 'block', textAlign: 'center', padding: '8px 16px', borderRadius: 8, background: '#e0f2fe', color: '#0369a1', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
                   >
                     ✉ Cavab yaz
-                  </a>
+                  </button>
                 )}
 
-                {/* Oxundu işarələ — only for unread muraciet */}
+                {/* Mark read — muraciet unread */}
                 {selected._type === 'muraciet' && !selected.isRead && (
                   <button
-                    onClick={() => handleMarkRead(selected)}
+                    onClick={() => {
+                      updateItem(selected._id, { isRead: true, status: 'baxildi' })
+                      api.patch(`/muraciet/${selected._id}/read`).catch(() => {})
+                    }}
                     style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#dcfce7', color: '#166534', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   >
                     ✓ Oxundu işarələ
                   </button>
                 )}
 
-                {/* Sil */}
-                {selected._type === 'muraciet' && (
-                  <button
-                    onClick={() => handleDelete(selected)}
-                    style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#fee2e2', color: '#991b1b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    Sil
-                  </button>
-                )}
+                {/* Delete */}
+                <button
+                  onClick={() => handleDelete(selected)}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#fee2e2', color: '#991b1b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Sil
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {replyTarget && (
+        <ReplyModal contact={replyTarget} onClose={() => setReplyTarget(null)} onSent={handleReplySent} />
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </AdminLayout>

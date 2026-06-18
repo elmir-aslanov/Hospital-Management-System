@@ -1,9 +1,10 @@
 import PriceList from '../../models/PriceList.model.js';
 import ApiError  from '../../utils/ApiError.js';
 
-export const getPrices = async ({ category, search, page = 1, limit = 50 } = {}) => {
+export const getPrices = async ({ category, serviceSlug, search, page = 1, limit = 50 } = {}) => {
   const filter = { isActive: true };
-  if (category) filter.category = category;
+  if (category)    filter.category    = category;
+  if (serviceSlug) filter.serviceSlug = serviceSlug;
   if (search)   filter.$or = [
     { name:        { $regex: search, $options: 'i' } },
     { serviceName: { $regex: search, $options: 'i' } },
