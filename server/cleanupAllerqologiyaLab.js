@@ -1,13 +1,16 @@
 /**
- * One-shot cleanup — keeps ONLY the 4 specified Allerqologiya PriceList records.
- * All other records with serviceSlug "allerqologiya" are permanently deleted.
+ * One-shot cleanup — keeps ONLY the 4 specified Allerqologiya records active.
+ * Other records are retained for audit history and marked inactive.
  *
  * Run once from the project root:
  *   cd server && node ../server/cleanupAllerqologiyaLab.js
  */
+import dns      from 'dns';
 import mongoose from 'mongoose';
 import dotenv   from 'dotenv';
 dotenv.config();
+
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 import PriceList from './models/PriceList.model.js';
 
@@ -20,20 +23,24 @@ const run = async () => {
   await mongoose.connect(uri);
   console.log('✅  MongoDB connected\n');
 
-  // Delete every allerqologiya record whose serviceCode is NOT in the keep list
-  const result = await PriceList.deleteMany({
+  const result = await PriceList.updateMany({
     serviceSlug: 'allerqologiya',
     serviceCode: { $nin: KEEP_CODES },
+    isActive: true,
+  }, {
+    $set: { isActive: false },
   });
 
-  console.log(`🗑️   Removed ${result.deletedCount} unwanted record(s).\n`);
+  console.log(`Deactivated ${result.modifiedCount} unwanted record(s).\n`);
 
-  // Verify what remains
-  const remaining = await PriceList.find({ serviceSlug: 'allerqologiya' })
+  const remaining = await PriceList.find({
+    serviceSlug: 'allerqologiya',
+    isActive: true,
+  })
     .select('name serviceCode price isActive')
     .lean();
 
-  console.log(`📋  Remaining allerqologiya records (${remaining.length}):`);
+  console.log(`Active allerqologiya records (${remaining.length}):`);
   remaining.forEach(r =>
     console.log(`   ${r.isActive ? '✅' : '⚠️ '} ${r.name}  (${r.serviceCode})  ${r.price} AZN`),
   );

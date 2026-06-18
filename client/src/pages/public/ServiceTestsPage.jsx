@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useParams, Link }     from 'react-router-dom';
 import { motion }              from 'framer-motion';
 import { useTranslation }      from 'react-i18next';
@@ -131,29 +131,59 @@ export default function ServiceTestsPage() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const load = async () => {
-    setLoading(true); setError(false); setNotFound(false);
-    try {
-      const svcRes = await api.get(`/services/${slug}`);
-      const svc    = svcRes.data?.data ?? svcRes.data;
-      if (!svc) { setNotFound(true); setLoading(false); return; }
-      setService(svc);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [slug]);
 
-      const plRes = await api.get('/pricelist', {
-        params: { serviceSlug: slug, category: 'lab', limit: 200 },
-      });
-      const list = plRes.data?.data?.prices ?? plRes.data?.data ?? plRes.data ?? [];
-      setTests(Array.isArray(list) ? list : []);
-    } catch (err) {
-      if (err?.response?.status === 404) setNotFound(true);
-      else setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    let isCurrent = true;
 
-  useEffect(() => { load(); }, [slug]);
+    const load = async () => {
+      setLoading(true);
+      setError(false);
+      setNotFound(false);
+      setService(null);
+      setTests([]);
+
+      try {
+        const svcRes = await api.get(`/services/${slug}`, {
+          signal: controller.signal,
+        });
+        const svc = svcRes.data?.data ?? svcRes.data;
+
+        if (!svc) {
+          if (isCurrent) setNotFound(true);
+          return;
+        }
+
+        const plRes = await api.get('/pricelist', {
+          params: { serviceSlug: slug, category: 'lab', limit: 200 },
+          signal: controller.signal,
+        });
+        const list = plRes.data?.data?.prices ?? plRes.data?.data ?? plRes.data ?? [];
+
+        if (!isCurrent) return;
+        setService(svc);
+        setTests(Array.isArray(list) ? list : []);
+      } catch (err) {
+        if (!isCurrent || err?.code === 'ERR_CANCELED') return;
+        if (err?.response?.status === 404) setNotFound(true);
+        else setError(true);
+      } finally {
+        if (isCurrent) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isCurrent = false;
+      controller.abort();
+    };
+  }, [slug, reloadKey]);
 
   /* ── 404 ── */
   if (!loading && notFound) {
@@ -231,7 +261,7 @@ export default function ServiceTestsPage() {
             <p style={{ color: '#ef4444', fontSize: 14, fontFamily: FONT, marginBottom: 16 }}>
               {t('serviceTests.loadError')}
             </p>
-            <button onClick={load} style={{
+            <button onClick={() => setReloadKey(key => key + 1)} style={{
               padding: '9px 24px', borderRadius: 8, border: `1px solid ${TEAL}`,
               background: 'transparent', color: TEAL, fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: FONT,
@@ -269,11 +299,11 @@ export default function ServiceTestsPage() {
 
       <style>{`
         .stc-wrap {
+          width: 100%;
           max-width: 1370px;
           margin: 0 auto;
           padding: 52px 40px 0;
           box-sizing: border-box;
-          overflow-x: hidden;
         }
         .stc-header { margin-bottom: 44px; }
         .stc-title  { font-size: 34px; }
@@ -285,6 +315,7 @@ export default function ServiceTestsPage() {
           row-gap: 40px;
           align-items: stretch;
         }
+        .stc-grid > * { min-width: 0; }
 
         .stc:focus-visible { outline: 2px solid #00848e; outline-offset: 2px; }
 

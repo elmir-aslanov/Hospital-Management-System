@@ -4,11 +4,14 @@
  * Run from the server/ directory:
  *   cd server && node ../server/seedAllerqologiyaLab.js
  *
- * Safe to re-run: upserts by slug / serviceCode, never hard-deletes.
+ * Safe to re-run: upserts approved records and deactivates obsolete ones.
  */
+import dns      from 'dns';
 import mongoose from 'mongoose';
 import dotenv   from 'dotenv';
 dotenv.config();
+
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 import Service   from './models/Service.model.js';
 import PriceList from './models/PriceList.model.js';
@@ -92,7 +95,30 @@ const run = async () => {
     }
   }
 
-  console.log(`\n✅  Done — ${created} created, ${updated} updated.`);
+  const approvedCodes = TESTS.map(test => test.serviceCode);
+  const deactivated = await PriceList.updateMany(
+    {
+      serviceSlug: SERVICE.slug,
+      serviceCode: { $nin: approvedCodes },
+      isActive: true,
+    },
+    { $set: { isActive: false } },
+  );
+
+  const activeRecords = await PriceList.find({
+    serviceSlug: SERVICE.slug,
+    isActive: true,
+  })
+    .select('name serviceCode price')
+    .sort({ serviceCode: 1 })
+    .lean();
+
+  if (activeRecords.length !== TESTS.length) {
+    throw new Error(`Expected ${TESTS.length} active records, found ${activeRecords.length}`);
+  }
+
+  console.log(`\n  Deactivated: ${deactivated.modifiedCount} obsolete record(s).`);
+  console.log(`✅  Done — ${created} created, ${updated} updated, ${activeRecords.length} active.`);
   await mongoose.disconnect();
 };
 

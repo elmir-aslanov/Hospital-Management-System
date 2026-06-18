@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
+const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
 const ACTION_PILLS = ['Randevu Al', 'Pasiyent Portalı'];
 
@@ -42,13 +43,6 @@ const IconFB = () => (
     <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
   </svg>
 );
-const IconSearch = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
 /* ── Dropdown ─────────────────────────────────────────── */
 function Dropdown({ items, open }) {
   return (
@@ -137,17 +131,23 @@ export default function Navbar() {
 
   useEffect(() => {
     const saved = localStorage.getItem('aslanmedic_lang');
-    if (saved) {
-      i18n.changeLanguage(saved);
-      setActiveLang(saved.toUpperCase());
-    }
-  }, []);
+    if (saved) i18n.changeLanguage(saved);
+  }, [i18n]);
   const closeTimer = useRef(null);
   const megaTimer  = useRef(null);
   const location   = useLocation();
   const navigate   = useNavigate();
 
-  useEffect(() => { setMobileOpen(false); setMegaOpen(false); }, [location]);
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        setMobileOpen(false);
+        setMegaOpen(false);
+      }
+    });
+    return () => { active = false; };
+  }, [location.pathname]);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 80);
@@ -179,21 +179,35 @@ export default function Navbar() {
     { label: t('nav.wifi'),       href: '/visitor-info/wifi' },
   ];
 
-  const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
-
   useEffect(() => {
+    const controller = new AbortController();
+
     if (!searchQuery.trim() || searchQuery.length < 2) {
-      setSearchResults([]);
-      setSearchOpen(false);
-      return;
+      queueMicrotask(() => {
+        if (!controller.signal.aborted) {
+          setSearchResults([]);
+          setSearchOpen(false);
+        }
+      });
+      return () => controller.abort();
     }
+
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const [doctors, depts] = await Promise.all([
-          fetch(`${BASE_URL}/api/v1/doctors/public/all`).then(r => r.json()),
-          fetch(`${BASE_URL}/api/v1/departments`).then(r => r.json()),
+        const [doctorsResponse, deptsResponse] = await Promise.all([
+          fetch(`${BASE_URL}/api/v1/doctors/public/all`, { signal: controller.signal }),
+          fetch(`${BASE_URL}/api/v1/departments`, { signal: controller.signal }),
         ]);
+        if (!doctorsResponse.ok || !deptsResponse.ok) {
+          throw new Error(`Search request failed (${doctorsResponse.status}/${deptsResponse.status})`);
+        }
+        const [doctors, depts] = await Promise.all([
+          doctorsResponse.json(),
+          deptsResponse.json(),
+        ]);
+        if (controller.signal.aborted) return;
+
         const q = searchQuery.toLowerCase();
         const doctorList = (doctors.data || [])
           .filter(d => (d.userId?.fullName || '').toLowerCase().includes(q) || (d.specialization || '').toLowerCase().includes(q))
@@ -205,10 +219,21 @@ export default function Navbar() {
           .map(d => ({ type: 'dept', label: d.name, sub: 'Şöbə', id: d._id, slug: d.slug }));
         setSearchResults([...doctorList, ...deptList]);
         setSearchOpen(true);
-      } catch { setSearchResults([]); }
-      finally { setSearchLoading(false); }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Navbar search failed:', err);
+          setSearchResults([]);
+          setSearchOpen(false);
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearchLoading(false);
+      }
     }, 350);
-    return () => clearTimeout(timer);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [searchQuery]);
 
   useEffect(() => {
@@ -218,16 +243,28 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/v1/settings?group=social`)
-      .then(r => r.json())
-      .then(d => { if (d.data) setSocialLinks(prev => ({ ...prev, ...d.data })) })
-      .catch(() => {})
+    const controller = new AbortController();
+
+    fetch(`${BASE_URL}/api/v1/settings?group=social`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Social settings request failed (${response.status})`);
+        return response.json();
+      })
+      .then((data) => {
+        if (data.data) setSocialLinks(prev => ({ ...prev, ...data.data }));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.error('Navbar social settings failed:', err);
+      });
+
+    return () => controller.abort();
   }, []);
 
   return (
     <>
-      <header style={{
+      <header className="site-header" style={{
         position: 'sticky', top: 36, zIndex: 1000, width: '100%',
+        marginTop: 36,
         background: 'white',
         boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.1)' : '0 1px 0 rgba(0,0,0,0.06)',
         fontFamily: FONT,
@@ -626,7 +663,7 @@ export default function Navbar() {
           </div>
 
           {/* ── Search ──────────────────────────────────── */}
-          <div ref={searchRef} style={{ position: 'relative', marginRight: 8 }} onClick={e => e.stopPropagation()}>
+          <div className="nav-search" ref={searchRef} style={{ position: 'relative', marginRight: 8 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '6px 12px', minWidth: 200 }}>
               {searchLoading ? (
                 <div style={{ width: 14, height: 14, border: '2px solid #e2e8f0', borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
@@ -1003,6 +1040,7 @@ export default function Navbar() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
+          .site-header { top: 0 !important; margin-top: 0 !important; }
           .top-bar     { display: none !important; padding: 0 !important; }
           .mid-social  { display: none !important; }
           .mid-actions { display: none !important; }
@@ -1014,9 +1052,11 @@ export default function Navbar() {
           .navbar-logo { height: 48px !important; max-width: 150px !important; width: auto !important; object-fit: contain !important; }
         }
         @media (min-width: 768px) and (max-width: 1024px) {
+          .site-header { top: 0 !important; margin-top: 0 !important; }
           .top-bar     { display: none !important; }
           .mid-social  { display: none !important; }
           .mid-actions .pill-btn:nth-child(1) { display: none !important; }
+          .nav-search  { display: none !important; }
         }
         @media (min-width: 1025px) and (max-width: 1280px) {
           .mid-location       { display: none !important; }
