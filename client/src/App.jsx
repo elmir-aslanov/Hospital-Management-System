@@ -45,6 +45,7 @@ import AdminPriceList       from './pages/admin/AdminPriceList';
 import AdminSettings        from './pages/admin/AdminSettings';
 import AdminDischarge       from './pages/admin/AdminDischarge';
 import AdminEHR             from './pages/admin/AdminEHR';
+import AdminServices        from './pages/admin/AdminServices';
 import NurseDashboard       from './pages/nurse/NurseDashboard';
 import ReceptionistDashboard from './pages/receptionist/ReceptionistDashboard';
 import AdminLab             from './pages/admin/AdminLab';
@@ -167,6 +168,7 @@ function Layout() {
           <Route path="/admin/settings"     element={<AdminSettings />} />
           <Route path="/admin/discharge"    element={<AdminDischarge />} />
           <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
+          <Route path="/admin/services"     element={<AdminServices />} />
         </Route>
         <Route element={<ProtectedRoute allowedRoles={NURSE_ROLES} loginPath="/admin" />}>
           <Route path="/nurse"              element={<NurseDashboard />} />

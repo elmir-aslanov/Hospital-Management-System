@@ -1,12 +1,19 @@
 import Service   from '../../models/Service.model.js';
 import ApiError  from '../../utils/ApiError.js';
 
-export const getPublic = ({ limit = 20, department } = {}) => {
+export const getPublic = ({ limit = 50, department, category, search } = {}) => {
   const filter = { isActive: true };
   if (department) filter.department = department;
+  if (category)   filter.category   = category;
+  if (search) {
+    filter.$or = [
+      { name:        { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+    ];
+  }
   return Service.find(filter)
-    .sort({ order: 1, createdAt: 1 })
-    .limit(Math.min(100, parseInt(limit) || 20))
+    .sort({ order: 1, name: 1 })
+    .limit(Math.min(100, parseInt(limit) || 50))
     .lean();
 };
 
