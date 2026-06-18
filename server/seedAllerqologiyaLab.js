@@ -29,29 +29,66 @@ const SERVICE = {
 
 /* ── 2. The only two tests that should be active for this direction ──────── */
 const TESTS = [
-  { name: 'H1 Ev tozu',                  serviceCode: 'LAB-14-016', price: 26 },
+  { name: 'H1 Ev tozu', serviceCode: 'LAB-14-016', price: 26, slug: 'h1-ev-tozu' },
   {
-    name: 'Fox Qida Həssaslığı Testi',   serviceCode: 'LAB-14-008', price: 442,
+    name: 'Fox Qida Həssaslığı Testi', serviceCode: 'LAB-14-008', price: 442,
+    slug: 'fox-qida-hessasligi-testi',
     detail: {
-      about:
-        'Fox Qida Həssaslığı Testi qida antigenlərinə qarşı IgG cavabını qiymətləndirir. ' +
-        'Nəticə tək başına diaqnoz qoymur — klinik simptomlarla və həkimin qiymətləndirməsi ilə birlikdə şərh edilməlidir.',
+      shortDescription:
+        'Qida antigenlərinə qarşı IgG cavabını qiymətləndirən laborator immunoanaliz müayinəsi.',
+
+      aboutIntro:
+        'Fox Qida Həssaslığı Testi müxtəlif qida antigenlərinə qarşı yaranan spesifik IgG ' +
+        'anticisimlərinin səviyyəsini laborator şəraitdə qiymətləndirən immunoanaliz müayinəsidir. ' +
+        'Müayinə pasiyentin şikayətləri və qidalanma tarixçəsi ilə birlikdə həkimə əlavə məlumat təqdim edə bilər.',
+      aboutFeatures: [
+        'Müxtəlif qida qruplarına aid antigenlərə qarşı IgG cavabları qiymətləndirilir.',
+        'Reaksiya səviyyələri laborator hesabatda kateqoriyalar üzrə göstərilir.',
+        'Nəticələr həkim və ya dietoloq tərəfindən digər klinik məlumatlarla birlikdə şərh olunur.',
+      ],
+      benefits: [
+        'Çoxsaylı qida antigenlərinin bir müayinə daxilində qiymətləndirilməsi',
+        'Nəticələrin aydın və strukturlaşdırılmış hesabatda təqdim olunması',
+        'Fərdi qidalanma yanaşmasının planlaşdırılmasına əlavə məlumat verməsi',
+      ],
+      procedureSteps: [
+        'Venoz qandan serum nümunəsi götürülür.',
+        'Nümunə nano-bead əsaslı immunoanaliz üsulu ilə işlənir.',
+        'Nəticə 2 iş günü ərzində hazırlanır.',
+        'Xüsusi hazırlıq tələb olunmur.',
+      ],
+      medicalNotice:
+        'Bu test qida allergiyası və ya qida intoleransı üçün təkbaşına diaqnostik vasitə deyil. ' +
+        'Nəticələr simptomlar, tibbi tarixçə və həkim müayinəsi ilə birlikdə qiymətləndirilməlidir. ' +
+        'Nəfəs darlığı, dodaq və boğazda şişkinlik və ya kəskin allergik reaksiya zamanı təcili tibbi yardıma müraciət edin.',
+
       technicalDetails: {
-        department:       'Allerqologiya',
-        method:            'Nano-bead əsaslı immunoassay',
-        transport:         'Soyuq zəncir şəraitində, şaquli vəziyyətdə',
-        turnaround:        '2 iş günü',
-        sampleVolume:      '300 µL',
-        sampleType:        'Serum',
-        rejectionCriteria: 'Hemolizə olunmuş, lipemik və ya yararsız nümunələr',
-        synonyms:          'FOX test, Food Explorer',
-        preparation:       'Xüsusi hazırlıq tələb olunmur',
-        tube:              'Sarı qapaqlı serum borucuğu',
+        department:        'Allerqologiya',
+        method:             'Nano-bead əsaslı immunoanaliz',
+        transport:          'Soyuq zəncir qorunmaqla, şaquli vəziyyətdə',
+        turnaround:         '2 iş günü',
+        sampleVolume:       '300 mkl',
+        sampleType:         'Serum',
+        rejectionCriteria:  'Hemolizli, lipemik və uyğun olmayan nümunələr',
+        synonyms:           'FOX testi, Food Explorer',
+        preparation:        'Xüsusi hazırlıq tələb olunmur',
+        tube:               'Sarı qapaqlı serum tübü',
       },
-      referenceInfo:
-        'İstinad aralıqları hazırlanan rəsmi nəticə hesabatında göstərilir. ' +
-        'Nəticələr klinik simptomlarla birlikdə ixtisaslaşmış həkim tərəfindən şərh edilməlidir.',
+
+      referenceRange: {
+        mainText:
+          'Reaksiya səviyyələri laboratoriyanın istifadə etdiyi metod və hesablama sisteminə uyğun ' +
+          'olaraq nəticə sənədində göstərilir.',
+        categories: ['Normal', 'Aşağı', 'Orta', 'Yüksək'],
+        notice:
+          'Bu kateqoriyalar klinik diaqnoz hesab edilmir. Hər hansı qidanın rasiondan çıxarılması ' +
+          'yalnız həkim və ya dietoloq məsləhəti ilə aparılmalıdır.',
+      },
+
       homeServiceAvailable: true,
+      homeServiceDescription:
+        'Laborator müayinəsi üçün nümunənin ünvanınızda götürülməsini sifariş edə bilərsiniz. ' +
+        'Aslan Medical Center-in mobil tibbi xidmət komandası uyğun ünvan və vaxt üzrə sizinlə əlaqə saxlayacaq.',
     },
   },
 ];
@@ -85,12 +122,19 @@ const run = async () => {
       serviceSlug: SERVICE.slug,
       serviceId:   svc._id,
       isActive:    true,
+      slug:        test.slug,
     };
     if (test.detail) {
-      set.about                = test.detail.about;
-      set.technicalDetails     = test.detail.technicalDetails;
-      set.referenceInfo        = test.detail.referenceInfo;
-      set.homeServiceAvailable = test.detail.homeServiceAvailable;
+      set.shortDescription       = test.detail.shortDescription;
+      set.aboutIntro              = test.detail.aboutIntro;
+      set.aboutFeatures           = test.detail.aboutFeatures;
+      set.benefits                = test.detail.benefits;
+      set.procedureSteps          = test.detail.procedureSteps;
+      set.medicalNotice           = test.detail.medicalNotice;
+      set.technicalDetails        = test.detail.technicalDetails;
+      set.referenceRange          = test.detail.referenceRange;
+      set.homeServiceAvailable    = test.detail.homeServiceAvailable;
+      set.homeServiceDescription  = test.detail.homeServiceDescription;
     }
 
     const doc = await PriceList.findOneAndUpdate(
@@ -98,7 +142,7 @@ const run = async () => {
       { $set: set },
       { upsert: true, new: true, runValidators: true },
     );
-    console.log(`  🧪  Test: "${doc.name}"  (${doc.serviceCode})  ${doc.price} AZN`);
+    console.log(`  🧪  Test: "${doc.name}"  (${doc.serviceCode})  ${doc.price} AZN  slug=${doc.slug}`);
   }
 
   /* ── Deactivate any other Allerqologiya test (no leftovers, no duplicates) */

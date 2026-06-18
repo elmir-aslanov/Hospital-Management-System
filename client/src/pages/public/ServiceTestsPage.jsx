@@ -26,7 +26,7 @@ function TestCard({ test, directionName, slug }) {
       style={{ display: 'flex' }}
     >
       <Link
-        to={`/services/${slug}/tests/${test._id}`}
+        to={`/services/${slug}/${test.slug || test._id}`}
         className="stc"
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}

@@ -18,6 +18,18 @@ const fmtPrice = (price) =>
 const PHONE_RX = /^[+]?[\d\s()-]{7,20}$/;
 const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* ── Document icon (CTA card, left side) ─────────────────────────────────── */
+function DocIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="1.6" aria-hidden="true">
+      <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <line x1="9" y1="13" x2="15" y2="13" />
+      <line x1="9" y1="17" x2="15" y2="17" />
+    </svg>
+  );
+}
+
 /* ── HomeServiceModal ────────────────────────────────────────────────────── */
 function HomeServiceModal({ test, onClose, triggerRef }) {
   const { t } = useTranslation();
@@ -249,7 +261,7 @@ function Tabs({ tabs, active, onChange }) {
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
 export default function TestDetailPage() {
-  const { slug, testId } = useParams();
+  const { slug, testSlug } = useParams();
   const { t } = useTranslation();
 
   const [test, setTest] = useState(null);
@@ -263,7 +275,7 @@ export default function TestDetailPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, [testId]);
+  }, [testSlug]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -275,7 +287,7 @@ export default function TestDetailPage() {
       setNotFound(false);
 
       try {
-        const res = await api.get(`/pricelist/${testId}`, { signal: controller.signal });
+        const res = await api.get(`/pricelist/${testSlug}`, { signal: controller.signal });
         if (!isCurrent) return;
         const data = res.data?.data ?? res.data;
         if (!data) { setNotFound(true); return; }
@@ -292,12 +304,12 @@ export default function TestDetailPage() {
     load();
 
     return () => { isCurrent = false; controller.abort(); };
-  }, [testId, reloadKey]);
+  }, [testSlug, reloadKey]);
 
-  const canonicalUrl = test ? `${window.location.origin}/services/${slug}/tests/${test._id}` : undefined;
+  const canonicalUrl = test ? `${window.location.origin}/services/${slug}/${test.slug || test._id}` : undefined;
   useSeoMeta({
     title: test?.name,
-    description: test?.about || test?.description || 'Aslan Medical Center laboratoriya testi.',
+    description: test?.shortDescription || test?.aboutIntro || 'Aslan Medical Center laboratoriya testi.',
     canonical: canonicalUrl,
     type: 'article',
   });
@@ -365,6 +377,15 @@ export default function TestDetailPage() {
     [t('testDetail.techTube'),         tech.tube],
   ].filter(([, v]) => v);
 
+  const aboutFeatures   = Array.isArray(test.aboutFeatures)   ? test.aboutFeatures.filter(Boolean)   : [];
+  const benefits        = Array.isArray(test.benefits)        ? test.benefits.filter(Boolean)        : [];
+  const procedureSteps  = Array.isArray(test.procedureSteps)  ? test.procedureSteps.filter(Boolean)  : [];
+  const hasAboutContent = test.aboutIntro || aboutFeatures.length || benefits.length || procedureSteps.length || test.medicalNotice;
+
+  const refRange    = test.referenceRange || {};
+  const refCategories = Array.isArray(refRange.categories) ? refRange.categories.filter(Boolean) : [];
+  const hasRefContent = refRange.mainText || refCategories.length || refRange.notice;
+
   const tabs = [
     { key: 'about',      label: t('testDetail.aboutTab') },
     { key: 'technical',  label: t('testDetail.technicalTab') },
@@ -399,33 +420,28 @@ export default function TestDetailPage() {
           }}>
             {test.name}
           </h1>
-          {test.description && (
+          {test.shortDescription && (
             <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, margin: 0, maxWidth: 720 }}>
-              {test.description}
+              {test.shortDescription}
             </p>
           )}
         </div>
 
-        {/* CTA */}
-        <div className="td-cta" style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
-          background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '20px 28px', marginBottom: 28,
-        }}>
-          <div>
-            <div style={{ fontSize: 13, color: MUTED, marginBottom: 4 }}>{t('serviceTests.testCode')}: <strong style={{ color: '#263248' }}>{test.serviceCode || '—'}</strong></div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: NAVY, fontFamily: FONT }}>
-              {fmtPrice(test.price)}&nbsp;<span style={{ fontSize: 14, fontWeight: 400, color: MUTED }}>{test.currency || 'AZN'}</span>
-            </div>
+        {/* CTA card */}
+        <div className="td-cta">
+          <span className="td-cta-icon"><DocIcon /></span>
+          {test.homeServiceDescription && (
+            <p className="td-cta-text">{test.homeServiceDescription}</p>
+          )}
+          <div className="td-cta-price">
+            {fmtPrice(test.price)}&nbsp;<span className="td-cta-currency">{test.currency || 'AZN'}</span>
           </div>
           {test.homeServiceAvailable && (
             <button
               ref={ctaRef}
               type="button"
               onClick={() => setModalOpen(true)}
-              style={{
-                padding: '12px 26px', borderRadius: 9, border: 'none', background: TEAL, color: 'white',
-                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap',
-              }}
+              className="td-cta-btn"
             >
               {t('testDetail.homeServiceCta')}
             </button>
@@ -438,34 +454,83 @@ export default function TestDetailPage() {
         <div className="td-panel">
           {activeTab === 'about' && (
             <div role="tabpanel" id="panel-about" aria-labelledby="tab-about">
-              {test.about
-                ? <p style={{ fontSize: 15, color: '#334155', lineHeight: 1.75, margin: 0, whiteSpace: 'pre-wrap' }}>{test.about}</p>
-                : <p style={{ fontSize: 14, color: MUTED, margin: 0 }}>{t('testDetail.noAboutInfo')}</p>}
+              {hasAboutContent ? (
+                <>
+                  {test.aboutIntro && (
+                    <p className="td-paragraph">{test.aboutIntro}</p>
+                  )}
+
+                  {aboutFeatures.length > 0 && (
+                    <ul className="td-dash-list">
+                      {aboutFeatures.map((line, i) => <li key={i}>{line}</li>)}
+                    </ul>
+                  )}
+
+                  {benefits.length > 0 && (
+                    <>
+                      <h2 className="td-section-heading">{t('testDetail.benefitsHeading')}</h2>
+                      <ul className="td-dash-list">
+                        {benefits.map((line, i) => <li key={i}>{line}</li>)}
+                      </ul>
+                    </>
+                  )}
+
+                  {procedureSteps.length > 0 && (
+                    <>
+                      <h2 className="td-section-heading">{t('testDetail.procedureHeading')}</h2>
+                      <ol className="td-numbered-list">
+                        {procedureSteps.map((line, i) => <li key={i}>{line}</li>)}
+                      </ol>
+                    </>
+                  )}
+
+                  {test.medicalNotice && (
+                    <div className="td-notice">{test.medicalNotice}</div>
+                  )}
+                </>
+              ) : (
+                <p className="td-empty">{t('testDetail.noAboutInfo')}</p>
+              )}
             </div>
           )}
 
           {activeTab === 'technical' && (
             <div role="tabpanel" id="panel-technical" aria-labelledby="tab-technical">
+              <h2 className="td-section-heading td-section-heading-first">{t('testDetail.technicalTab')}</h2>
               {techRows.length > 0 ? (
                 <dl className="td-dl">
                   {techRows.map(([label, value]) => (
                     <div key={label} className="td-dl-row">
                       <dt>{label}</dt>
+                      <span className="td-dl-leader" aria-hidden="true" />
                       <dd>{value}</dd>
                     </div>
                   ))}
                 </dl>
               ) : (
-                <p style={{ fontSize: 14, color: MUTED, margin: 0 }}>{t('testDetail.noTechnicalInfo')}</p>
+                <p className="td-empty">{t('testDetail.noTechnicalInfo')}</p>
               )}
             </div>
           )}
 
           {activeTab === 'reference' && (
             <div role="tabpanel" id="panel-reference" aria-labelledby="tab-reference">
-              {test.referenceInfo
-                ? <p style={{ fontSize: 15, color: '#334155', lineHeight: 1.75, margin: 0, whiteSpace: 'pre-wrap' }}>{test.referenceInfo}</p>
-                : <p style={{ fontSize: 14, color: MUTED, margin: 0 }}>{t('testDetail.noReferenceInfo')}</p>}
+              <h2 className="td-section-heading td-section-heading-first">{t('testDetail.referenceTab')}</h2>
+              {hasRefContent ? (
+                <>
+                  {refRange.mainText && <p className="td-paragraph">{refRange.mainText}</p>}
+
+                  {refCategories.length > 0 && (
+                    <div className="td-chip-row">
+                      {refCategories.map((cat, i) => <span key={i} className="td-chip">{cat}</span>)}
+                    </div>
+                  )}
+
+                  {refRange.notice && <div className="td-notice">{refRange.notice}</div>}
+                </>
+              ) : (
+                <p className="td-empty">{t('testDetail.noReferenceInfo')}</p>
+              )}
             </div>
           )}
         </div>
@@ -493,27 +558,138 @@ export default function TestDetailPage() {
           box-sizing: border-box;
         }
 
+        /* ── CTA card ──────────────────────────────────────────────────── */
+        .td-cta {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          width: 100%;
+          background: #fff;
+          border: 1px solid ${BORDER};
+          border-radius: 10px;
+          padding: 18px 24px;
+          margin-bottom: 28px;
+          box-sizing: border-box;
+        }
+        .td-cta-icon {
+          flex-shrink: 0;
+          width: 40px; height: 40px;
+          border-radius: 50%;
+          border: 1.5px solid rgba(0,132,142,0.35);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .td-cta-text {
+          flex: 1 1 auto;
+          min-width: 0;
+          margin: 0;
+          font-size: 14px;
+          line-height: 1.6;
+          color: #334155;
+        }
+        .td-cta-price {
+          flex-shrink: 0;
+          font-size: 22px;
+          font-weight: 700;
+          color: ${NAVY};
+          white-space: nowrap;
+        }
+        .td-cta-currency { font-size: 13px; font-weight: 400; color: ${MUTED}; }
+        .td-cta-btn {
+          flex-shrink: 0;
+          padding: 11px 24px;
+          border-radius: 8px;
+          border: none;
+          background: ${TEAL};
+          color: white;
+          font-size: 14px;
+          font-weight: 700;
+          font-family: ${FONT};
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .td-cta-btn:hover { background: #006b74; }
+
+        /* ── Tabs ──────────────────────────────────────────────────────── */
         .td-tabs {
-          display: flex; gap: 4px; border-bottom: 1px solid ${BORDER}; margin-bottom: 24px;
+          display: flex;
+          gap: 8px;
+          margin-bottom: 0;
           overflow-x: auto;
         }
         .td-tab {
-          background: none; border: none; cursor: pointer; font-family: ${FONT};
-          font-size: 14px; font-weight: 600; color: ${MUTED};
-          padding: 12px 18px; border-bottom: 2px solid transparent; white-space: nowrap;
+          background: #fff;
+          border: 1px solid ${BORDER};
+          border-top: 3px solid ${BORDER};
+          border-radius: 8px 8px 0 0;
+          cursor: pointer;
+          font-family: ${FONT};
+          font-size: 14px;
+          font-weight: 600;
+          color: ${MUTED};
+          padding: 13px 22px;
+          white-space: nowrap;
         }
-        .td-tab-active { color: ${TEAL}; border-bottom-color: ${TEAL}; }
+        .td-tab-active { color: ${TEAL}; border-top-color: ${TEAL}; }
         .td-tab:focus-visible { outline: 2px solid ${TEAL}; outline-offset: 2px; }
 
         .td-panel {
-          background: #fff; border: 1px solid ${BORDER}; border-radius: 10px; padding: 28px 32px;
+          background: #fff;
+          border: 1px solid ${BORDER};
+          border-radius: 0 10px 10px 10px;
+          padding: 28px 32px;
+          margin-top: -1px;
         }
 
-        .td-dl { margin: 0; display: grid; gap: 14px; }
-        .td-dl-row { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px; }
-        .td-dl-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .td-dl dt { font-size: 13px; color: ${MUTED}; font-weight: 500; }
-        .td-dl dd { margin: 0; font-size: 14px; color: #263248; font-weight: 600; text-align: right; max-width: 60%; }
+        .td-paragraph { font-size: 15px; color: #334155; line-height: 1.75; margin: 0 0 18px; }
+        .td-paragraph:last-child { margin-bottom: 0; }
+        .td-empty { font-size: 14px; color: ${MUTED}; margin: 0; }
+
+        .td-section-heading {
+          font-size: 17px; font-weight: 700; color: ${NAVY};
+          font-family: 'Raleway', sans-serif; margin: 24px 0 12px;
+        }
+        .td-section-heading-first { margin-top: 0; }
+
+        .td-dash-list, .td-numbered-list {
+          margin: 0 0 18px; padding-left: 20px; color: #334155; font-size: 15px; line-height: 1.7;
+        }
+        .td-dash-list { list-style: none; padding-left: 0; }
+        .td-dash-list li { position: relative; padding-left: 20px; margin-bottom: 8px; }
+        .td-dash-list li::before { content: '–'; position: absolute; left: 0; color: ${TEAL}; font-weight: 700; }
+        .td-numbered-list li { margin-bottom: 8px; }
+
+        .td-notice {
+          margin-top: 8px;
+          background: #F8FAFC;
+          border-left: 3px solid ${TEAL};
+          border-radius: 0 8px 8px 0;
+          padding: 14px 18px;
+          font-size: 13.5px;
+          color: #475569;
+          line-height: 1.65;
+        }
+
+        /* ── Technical table ──────────────────────────────────────────── */
+        .td-dl { margin: 0; display: grid; gap: 0; }
+        .td-dl-row {
+          display: flex; align-items: baseline; gap: 8px;
+          padding: 12px 0; border-bottom: 1px solid #F1F5F9;
+        }
+        .td-dl-row:last-child { border-bottom: none; }
+        .td-dl dt { font-size: 14px; color: #334155; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+        .td-dl-leader {
+          flex: 1 1 auto; min-width: 16px; height: 0;
+          border-bottom: 1px dotted #CBD5E1;
+          transform: translateY(-3px);
+        }
+        .td-dl dd { margin: 0; font-size: 14px; color: #172033; font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: right; }
+
+        /* ── Reference chips ──────────────────────────────────────────── */
+        .td-chip-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+        .td-chip {
+          padding: 7px 16px; border-radius: 999px; border: 1px solid ${BORDER};
+          background: #F8FAFB; font-size: 13px; font-weight: 600; color: #334155;
+        }
 
         @media (max-width: 1100px) {
           .td-wrap { padding: 44px 24px 0; }
@@ -522,9 +698,15 @@ export default function TestDetailPage() {
         @media (max-width: 768px) {
           .td-wrap { padding: 32px 16px 0; }
           .td-panel { padding: 22px 20px; }
-          .td-cta { padding: 18px 20px; }
-          .td-dl-row { flex-direction: column; gap: 4px; }
-          .td-dl dd { text-align: left; max-width: 100%; }
+
+          .td-cta { flex-direction: column; align-items: flex-start; padding: 18px 20px; }
+          .td-cta-text { order: 2; }
+          .td-cta-price { order: 3; }
+          .td-cta-btn { order: 4; width: 100%; text-align: center; }
+
+          .td-dl-row { flex-direction: column; align-items: flex-start; gap: 2px; }
+          .td-dl-leader { display: none; }
+          .td-dl dd { text-align: left; white-space: normal; }
         }
       `}</style>
     </main>

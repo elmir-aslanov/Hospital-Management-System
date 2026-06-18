@@ -143,7 +143,7 @@ function Layout() {
         <Route path="/departments/:slug" element={<DepartmentDetailPage />} />
         <Route path="/services"         element={<ServicesPage />} />
         <Route path="/services/:slug"   element={<ServiceTestsPage />} />
-        <Route path="/services/:slug/tests/:testId" element={<TestDetailPage />} />
+        <Route path="/services/:slug/:testSlug" element={<TestDetailPage />} />
         <Route path="/patients"    element={<ComingSoon title="Pasiyent Mərkəzi" />} />
         <Route path="/blog"        element={<BlogPage />} />
         <Route path="/blog/:slug"  element={<BlogDetailPage />} />

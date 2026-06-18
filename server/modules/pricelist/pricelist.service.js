@@ -20,9 +20,28 @@ export const getPrices = async ({ category, serviceSlug, search, page = 1, limit
   return { prices, total, page: pg, limit: lim };
 };
 
-export const getPriceById = async (id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız ID');
-  const doc = await PriceList.findOne({ _id: id, isActive: true });
+// Explicit allowlist — keeps the public detail response limited to fields the
+// test-detail page actually renders, regardless of any other data on the document.
+const DETAIL_FIELDS = [
+  'name', 'slug', 'serviceCode', 'price', 'currency', 'category',
+  'serviceName', 'serviceSlug', 'description', 'shortDescription',
+  'aboutIntro', 'aboutFeatures', 'benefits', 'procedureSteps', 'medicalNotice',
+  'technicalDetails', 'referenceRange',
+  'homeServiceAvailable', 'homeServiceDescription',
+  'isActive', 'createdAt', 'updatedAt',
+].join(' ');
+
+// Public test-detail lookup — accepts either a slug or a Mongo _id, normalized
+// and scoped to active records only so unknown/inactive/other-test data never leaks.
+export const getByIdentifier = async (rawIdentifier) => {
+  const identifier = String(rawIdentifier || '').trim().toLowerCase();
+  if (!identifier) throw new ApiError(404, 'Test tapılmadı');
+
+  const filter = mongoose.Types.ObjectId.isValid(identifier)
+    ? { _id: identifier, isActive: true }
+    : { slug: identifier, isActive: true };
+
+  const doc = await PriceList.findOne(filter).select(DETAIL_FIELDS);
   if (!doc) throw new ApiError(404, 'Test tapılmadı');
   return doc;
 };

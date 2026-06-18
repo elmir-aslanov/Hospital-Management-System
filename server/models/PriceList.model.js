@@ -17,8 +17,18 @@ const priceListSchema = new mongoose.Schema(
     serviceId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
     isActive: { type: Boolean, default: true },
 
-    /* ── Optional dynamic detail-page content (admin-editable, public detail page) ── */
-    about: { type: String, trim: true, default: '' },
+    /* ── Dynamic detail-page content (admin-editable, public test detail page) ──── */
+    slug:             { type: String, trim: true, lowercase: true, default: '' },
+    shortDescription: { type: String, trim: true, default: '' },
+
+    // "Test haqqında" tab
+    aboutIntro:    { type: String, trim: true, default: '' },
+    aboutFeatures: { type: [String], default: [] },
+    benefits:      { type: [String], default: [] },
+    procedureSteps: { type: [String], default: [] },
+    medicalNotice: { type: String, trim: true, default: '' },
+
+    // "Texniki göstəricilər" tab
     technicalDetails: {
       department:        { type: String, trim: true, default: '' },
       method:             { type: String, trim: true, default: '' },
@@ -31,14 +41,23 @@ const priceListSchema = new mongoose.Schema(
       preparation:        { type: String, trim: true, default: '' },
       tube:               { type: String, trim: true, default: '' },
     },
-    // Free-text reference/interpretation guidance — never auto-generated numeric limits.
-    referenceInfo:        { type: String, trim: true, default: '' },
-    homeServiceAvailable: { type: Boolean, default: false },
+
+    // "Referans aralığı" tab — never auto-generated/invented numeric limits.
+    referenceRange: {
+      mainText:   { type: String, trim: true, default: '' },
+      categories: { type: [String], default: [] },
+      notice:     { type: String, trim: true, default: '' },
+    },
+
+    // Home-service CTA
+    homeServiceAvailable:   { type: Boolean, default: false },
+    homeServiceDescription: { type: String, trim: true, default: '' },
   },
   { timestamps: true }
 );
 
 priceListSchema.index({ serviceCode: 1 }, { unique: true, sparse: true });
+priceListSchema.index({ slug: 1 }, { unique: true, sparse: true });
 priceListSchema.index({ serviceSlug: 1, isActive: 1 });
 priceListSchema.index({ serviceId: 1,   isActive: 1 });
 

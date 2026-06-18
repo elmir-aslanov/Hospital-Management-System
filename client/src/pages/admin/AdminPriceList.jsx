@@ -26,23 +26,29 @@ const CATEGORY_COLOR = {
   other:        { bg: '#f8fafc', color: '#64748b' },
 }
 
+const EMPTY_FORM = { name: '', serviceCode: '', category: 'consultation', price: 0, currency: 'AZN', description: '', serviceSlug: '', isActive: true }
+
 const EMPTY_TECH = { department: '', method: '', transport: '', turnaround: '', sampleVolume: '', sampleType: '', rejectionCriteria: '', synonyms: '', preparation: '', tube: '' }
-const EMPTY_FORM = {
-  name: '', serviceCode: '', category: 'consultation', price: 0, currency: 'AZN', description: '', serviceSlug: '', isActive: true,
-  about: '', referenceInfo: '', homeServiceAvailable: false, technicalDetails: EMPTY_TECH,
-}
 const TECH_FIELDS = [
-  ['department',        'Şöbə'],
-  ['method',             'Metod'],
-  ['transport',          'Daşınma şərtləri'],
-  ['turnaround',         'Nəticə müddəti'],
-  ['sampleVolume',       'Nümunə həcmi'],
+  ['department',        'Bölmə'],
+  ['method',             'İş üsulu'],
+  ['transport',          'Daşınma şəraiti'],
+  ['turnaround',         'Nəticənin hazırlanması'],
+  ['sampleVolume',       'Nümunə miqdarı'],
   ['sampleType',         'Nümunə növü'],
-  ['rejectionCriteria',  'Rədd kriteriyaları'],
-  ['synonyms',           'Sinonimlər'],
-  ['preparation',        'Hazırlıq'],
-  ['tube',               'Borucuq növü'],
+  ['rejectionCriteria',  'Rəddetmə meyarları'],
+  ['synonyms',           'Sinonim'],
+  ['preparation',        'Testə hazırlıq/xüsusi şərtlər'],
+  ['tube',               'Tüb (qab)'],
 ]
+const EMPTY_DETAIL_FORM = {
+  slug: '', shortDescription: '',
+  aboutIntro: '', aboutFeatures: '', benefits: '', procedureSteps: '', medicalNotice: '',
+  technicalDetails: EMPTY_TECH,
+  referenceMainText: '', referenceCategories: '', referenceNotice: '',
+  homeServiceAvailable: false, homeServiceDescription: '',
+}
+const splitLines = (str) => String(str || '').split('\n').map(s => s.trim()).filter(Boolean)
 
 const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
@@ -60,6 +66,12 @@ export default function AdminPriceList() {
   const [formErr,   setFormErr]   = useState('')
   const [form,      setForm]      = useState(EMPTY_FORM)
   const [labDirs,   setLabDirs]   = useState([])
+
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false)
+  const [detailTarget,     setDetailTarget]     = useState(null)
+  const [detailForm,       setDetailForm]       = useState(EMPTY_DETAIL_FORM)
+  const [detailSaving,     setDetailSaving]     = useState(false)
+  const [detailErr,        setDetailErr]        = useState('')
 
   /* ── fetch ────────────────────────────────────────────────── */
   const fetchPrices = () => {
@@ -97,13 +109,62 @@ export default function AdminPriceList() {
     setForm({
       name: p.name, serviceCode: p.serviceCode || '', category: p.category, price: p.price, currency: p.currency || 'AZN',
       description: p.description || '', serviceSlug: p.serviceSlug || '', isActive: p.isActive !== false,
-      about: p.about || '', referenceInfo: p.referenceInfo || '', homeServiceAvailable: !!p.homeServiceAvailable,
-      technicalDetails: { ...EMPTY_TECH, ...(p.technicalDetails || {}) },
     })
     setFormErr(''); setShowModal(true)
   }
-  const setF    = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const setTech = (k, v) => setForm(f => ({ ...f, technicalDetails: { ...f.technicalDetails, [k]: v } }))
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  /* ── detail drawer helpers ────────────────────────────────── */
+  const openDetail = (p) => {
+    setDetailTarget(p)
+    setDetailForm({
+      slug:               p.slug || '',
+      shortDescription:   p.shortDescription || '',
+      aboutIntro:          p.aboutIntro || '',
+      aboutFeatures:       (p.aboutFeatures || []).join('\n'),
+      benefits:            (p.benefits || []).join('\n'),
+      procedureSteps:      (p.procedureSteps || []).join('\n'),
+      medicalNotice:       p.medicalNotice || '',
+      technicalDetails:    { ...EMPTY_TECH, ...(p.technicalDetails || {}) },
+      referenceMainText:   p.referenceRange?.mainText || '',
+      referenceCategories: (p.referenceRange?.categories || []).join('\n'),
+      referenceNotice:     p.referenceRange?.notice || '',
+      homeServiceAvailable:   !!p.homeServiceAvailable,
+      homeServiceDescription: p.homeServiceDescription || '',
+    })
+    setDetailErr(''); setDetailDrawerOpen(true)
+  }
+  const setD    = (k, v) => setDetailForm(f => ({ ...f, [k]: v }))
+  const setTech = (k, v) => setDetailForm(f => ({ ...f, technicalDetails: { ...f.technicalDetails, [k]: v } }))
+
+  const handleDetailSave = async () => {
+    setDetailSaving(true); setDetailErr('')
+    try {
+      const body = {
+        slug:                  detailForm.slug.trim().toLowerCase(),
+        shortDescription:      detailForm.shortDescription,
+        aboutIntro:             detailForm.aboutIntro,
+        aboutFeatures:          splitLines(detailForm.aboutFeatures),
+        benefits:               splitLines(detailForm.benefits),
+        procedureSteps:         splitLines(detailForm.procedureSteps),
+        medicalNotice:          detailForm.medicalNotice,
+        technicalDetails:       detailForm.technicalDetails,
+        referenceRange: {
+          mainText:   detailForm.referenceMainText,
+          categories: splitLines(detailForm.referenceCategories),
+          notice:     detailForm.referenceNotice,
+        },
+        homeServiceAvailable:   detailForm.homeServiceAvailable,
+        homeServiceDescription: detailForm.homeServiceDescription,
+      }
+      const r    = await fetch(`${BASE}/api/v1/pricelist/${detailTarget._id}`, { method: 'PUT', headers: { ...hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.message || 'Xəta')
+      setDetailDrawerOpen(false)
+      fetchPrices()
+    } catch (e) { setDetailErr(e.message) }
+    finally { setDetailSaving(false) }
+  }
 
   /* ── save ─────────────────────────────────────────────────── */
   const handleSave = async () => {
@@ -232,6 +293,12 @@ export default function AdminPriceList() {
                           style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 7, background: 'white', color: '#475569', cursor: 'pointer' }}>
                           Redaktə
                         </button>
+                        {p.category === 'lab' && (
+                          <button onClick={() => openDetail(p)}
+                            style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, border: '1px solid #cffafe', borderRadius: 7, background: '#ecfeff', color: '#00848e', cursor: 'pointer' }}>
+                            Detal səhifəsi
+                          </button>
+                        )}
                         <button onClick={() => handleDelete(p)}
                           style={{ padding: '5px 10px', fontSize: 12, fontWeight: 600, border: '1px solid #fee2e2', borderRadius: 7, background: '#fff5f5', color: '#ef4444', cursor: 'pointer' }}>
                           Sil
@@ -308,43 +375,6 @@ export default function AdminPriceList() {
                   value={form.description} onChange={e => setF('description', e.target.value)} />
               </div>
 
-              {form.category === 'lab' && (
-                <>
-                  <div style={{ gridColumn: '1/-1', borderTop: '1px solid #f1f5f9', paddingTop: 14, marginTop: 4 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Detal səhifəsi (ictimai test detal səhifəsi üçün)
-                    </span>
-                  </div>
-
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <label style={lbl}>Haqqında (About)</label>
-                    <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
-                      value={form.about} onChange={e => setF('about', e.target.value)}
-                      placeholder="Testin nə qiymətləndirdiyi və klinik kontekstdə necə şərh edilməli olduğu" />
-                  </div>
-
-                  {TECH_FIELDS.map(([key, label]) => (
-                    <div key={key}>
-                      <label style={lbl}>{label}</label>
-                      <input style={inp} value={form.technicalDetails[key]} onChange={e => setTech(key, e.target.value)} />
-                    </div>
-                  ))}
-
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <label style={lbl}>İstinad məlumatı (Reference Range)</label>
-                    <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
-                      value={form.referenceInfo} onChange={e => setF('referenceInfo', e.target.value)}
-                      placeholder="Rəsmi nəticə hesabatına istinad edən izahlı mətn (ədədi hədlər uydurulmamalıdır)" />
-                  </div>
-
-                  <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="checkbox" id="homeServiceAvailable" checked={form.homeServiceAvailable} onChange={e => setF('homeServiceAvailable', e.target.checked)}
-                      style={{ width: 15, height: 15, accentColor: '#00848e' }} />
-                    <label htmlFor="homeServiceAvailable" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>Ev xidməti mövcuddur</label>
-                  </div>
-                </>
-              )}
-
               <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setF('isActive', e.target.checked)}
                   style={{ width: 15, height: 15, accentColor: '#00848e' }} />
@@ -360,6 +390,137 @@ export default function AdminPriceList() {
               <button onClick={handleSave} disabled={saving}
                 style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Saxlanır...' : editPrice ? 'Yadda saxla' : 'Əlavə et'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ DETAIL DRAWER (public test-detail page content) ══════════ */}
+      {detailDrawerOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 220, display: 'flex', justifyContent: 'flex-end' }}
+          onClick={e => { if (e.target === e.currentTarget) setDetailDrawerOpen(false) }}>
+          <div style={{ background: 'white', width: 560, maxWidth: '95vw', height: '100%', overflow: 'auto', padding: 28, boxSizing: 'border-box' }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>Detal səhifəsi</h2>
+              <button onClick={() => setDetailDrawerOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 22, lineHeight: 1 }}>×</button>
+            </div>
+            <p style={{ margin: '2px 0 20px', fontSize: 12.5, color: '#94a3b8' }}>{detailTarget?.name}</p>
+
+            {detailErr && (
+              <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>{detailErr}</div>
+            )}
+
+            <div style={{ display: 'grid', gap: 14 }}>
+
+              <div>
+                <label style={lbl}>Slug (URL hissəsi)</label>
+                <input style={inp} value={detailForm.slug} onChange={e => setD('slug', e.target.value)} placeholder="məs. fox-qida-hessasligi-testi" />
+              </div>
+
+              <div>
+                <label style={lbl}>Qısa təsvir (başlığın altında)</label>
+                <textarea rows={2} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.shortDescription} onChange={e => setD('shortDescription', e.target.value)} />
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Test haqqında</span>
+              </div>
+
+              <div>
+                <label style={lbl}>Giriş paraqrafı</label>
+                <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.aboutIntro} onChange={e => setD('aboutIntro', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={lbl}>Əsas xüsusiyyətlər (hər sətir bir bənd)</label>
+                <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.aboutFeatures} onChange={e => setD('aboutFeatures', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={lbl}>Üstünlükləri (hər sətir bir bənd)</label>
+                <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.benefits} onChange={e => setD('benefits', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={lbl}>Testin gedişi (hər sətir bir addım)</label>
+                <textarea rows={4} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.procedureSteps} onChange={e => setD('procedureSteps', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={lbl}>Tibbi qeyd</label>
+                <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.medicalNotice} onChange={e => setD('medicalNotice', e.target.value)} />
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Texniki göstəricilər</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                {TECH_FIELDS.map(([key, label]) => (
+                  <div key={key}>
+                    <label style={lbl}>{label}</label>
+                    <input style={inp} value={detailForm.technicalDetails[key]} onChange={e => setTech(key, e.target.value)} />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Referans aralığı</span>
+              </div>
+
+              <div>
+                <label style={lbl}>Əsas mətn</label>
+                <textarea rows={2} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.referenceMainText} onChange={e => setD('referenceMainText', e.target.value)} />
+              </div>
+
+              <div>
+                <label style={lbl}>Kateqoriyalar (hər sətir bir kateqoriya, məs. Normal)</label>
+                <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.referenceCategories} onChange={e => setD('referenceCategories', e.target.value)}
+                  placeholder={'Normal\nAşağı\nOrta\nYüksək'} />
+              </div>
+
+              <div>
+                <label style={lbl}>Tibbi qeyd</label>
+                <textarea rows={2} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.referenceNotice} onChange={e => setD('referenceNotice', e.target.value)} />
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Ev xidməti CTA</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" id="homeServiceAvailable" checked={detailForm.homeServiceAvailable} onChange={e => setD('homeServiceAvailable', e.target.checked)}
+                  style={{ width: 15, height: 15, accentColor: '#00848e' }} />
+                <label htmlFor="homeServiceAvailable" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>Ev xidməti mövcuddur (CTA düyməsi göstərilsin)</label>
+              </div>
+
+              <div>
+                <label style={lbl}>CTA mətni</label>
+                <textarea rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
+                  value={detailForm.homeServiceDescription} onChange={e => setD('homeServiceDescription', e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
+              <button onClick={() => setDetailDrawerOpen(false)}
+                style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>
+                Ləğv et
+              </button>
+              <button onClick={handleDetailSave} disabled={detailSaving}
+                style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: detailSaving ? 'not-allowed' : 'pointer', opacity: detailSaving ? 0.7 : 1 }}>
+                {detailSaving ? 'Saxlanır...' : 'Yadda saxla'}
               </button>
             </div>
           </div>
