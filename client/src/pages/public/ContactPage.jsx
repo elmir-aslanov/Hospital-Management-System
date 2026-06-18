@@ -1,7 +1,6 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
-import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import api from '../../api/axios'
@@ -12,57 +11,15 @@ const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#00848e'
 const NAVY = '#0a1628'
 
-const PENDING_KEY = 'amc_contact_pending'
-
-const maskEmail = (email) => {
-  if (!email) return ''
-  const [local, domain] = email.split('@')
-  if (!domain) return email
-  const parts = domain.split('.')
-  const domainName = parts[0]
-  const tld = parts.slice(1).join('.')
-  const maskedLocal   = local.length <= 2  ? local[0] + '***'       : local.slice(0, 2) + '***'
-  const maskedDomain  = domainName.length <= 2 ? domainName[0] + '***' : domainName.slice(0, 2) + '***'
-  return `${maskedLocal}@${maskedDomain}.${tld}`
-}
-
-const readPending = () => {
-  try { return JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null') } catch { return null }
-}
-
 export default function ContactPage() {
   usePageTitle('Əlaqə', 'Aslan Medical Center ilə əlaqə saxlayın. Bakı, Azərbaycan.')
   const { t } = useTranslation()
   const { isMobile, isTablet } = useBreakpoint()
-  const [searchParams] = useSearchParams()
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [form, setForm]       = useState({ fullName: '', email: '', message: '', agreed: false })
   const [loading, setLoading] = useState(false)
-
-  // ── Pending (verification email sent) state — sessionStorage-backed ─────────
-  const [pending, setPendingState] = useState(readPending)
-
-  const setPending = (p) => {
-    if (p) {
-      sessionStorage.setItem(PENDING_KEY, JSON.stringify(p))
-    } else {
-      sessionStorage.removeItem(PENDING_KEY)
-    }
-    setPendingState(p)
-  }
-
-  // ── Success (verified) state ─────────────────────────────────────────────────
-  const [verified, setVerified] = useState(false)
-
-  // ── Resend countdown ─────────────────────────────────────────────────────────
-  const [secondsLeft, setSecondsLeft]   = useState(0)
-  const [resending, setResending]       = useState(false)
-
-  // ── Edit-email sub-panel ──────────────────────────────────────────────────────
-  const [editMode, setEditMode]         = useState(false)
-  const [newEmail, setNewEmail]         = useState('')
-  const [emailChanging, setEmailChanging] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   // ── Clinic settings ──────────────────────────────────────────────────────────
   const [settings, setSettings] = useState({
@@ -71,28 +28,6 @@ export default function ContactPage() {
     work_hours:     'B.E – Cümə, 09:00 – 19:00',
   })
 
-  // ── URL params: ?emailVerified=1 ──────────────────────────────────────────────
-  const emailVerified = searchParams.get('emailVerified')
-  const verifyReason  = searchParams.get('reason')
-
-  // Remove query params after showing success / error banners (idempotent display)
-  const cleanedParams = useRef(false)
-  useEffect(() => {
-    if (emailVerified && !cleanedParams.current) {
-      cleanedParams.current = true
-      if (emailVerified === '1') {
-        setVerified(true)
-        setPending(null)          // clear sessionStorage on successful verify
-      }
-      // Clean URL without re-render cycle
-      const url = new URL(window.location.href)
-      url.searchParams.delete('emailVerified')
-      url.searchParams.delete('reason')
-      window.history.replaceState({}, '', url.pathname + (url.search || ''))
-    }
-  }, [emailVerified])
-
-  // ── Fetch clinic settings ─────────────────────────────────────────────────────
   useEffect(() => {
     api.get('/settings?group=clinic').then(r => {
       const d = r.data?.data
@@ -106,132 +41,32 @@ export default function ContactPage() {
     }).catch(() => {})
   }, [])
 
-  // ── 60-second countdown ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!pending?.sentAt) { setSecondsLeft(0); return }
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - new Date(pending.sentAt).getTime()) / 1000)
-      setSecondsLeft(Math.max(0, 60 - elapsed))
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [pending?.sentAt])
-
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // ── Submit new contact ────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     const name = form.fullName.trim()
-    if (!name)                             { toast.warning(t('contact.fullNameError'));   return }
+    if (!name)                             { toast.warning(t('contact.fullNameError'));       return }
     if (name.split(/\s+/).length < 2)      { toast.warning(t('contact.fullNamePartsError')); return }
-    if (!form.email.trim())                { toast.warning(t('contact.emailError'));      return }
-    if (!form.message.trim())              { toast.warning('Mesaj daxil edin.');          return }
-    if (!form.agreed)                      { toast.warning(t('contact.consentError'));    return }
+    if (!form.email.trim())                { toast.warning(t('contact.emailError'));          return }
+    if (!form.message.trim())              { toast.warning('Mesaj daxil edin.');              return }
+    if (!form.agreed)                      { toast.warning(t('contact.consentError'));        return }
 
     setLoading(true)
     try {
-      const resp = await api.post('/contact', {
+      await api.post('/contact', {
         fullName:        name,
         email:           form.email.trim(),
         message:         form.message.trim(),
         consentAccepted: true,
       })
-      const d = resp.data?.data || {}
-      setPending({
-        contactId:       d.id,
-        sentEmail:       d.email || form.email.trim(),
-        sentAt:          d.sentAt || new Date().toISOString(),
-        managementToken: d.managementToken || '',
-        fullName:        name,
-        message:         form.message.trim(),
-      })
+      setSubmitted(true)
       setForm({ fullName: '', email: '', message: '', agreed: false })
     } catch (e) {
       toast.error(e.response?.data?.message || 'Xəta baş verdi.')
     } finally {
       setLoading(false)
     }
-  }
-
-  // ── Resend ────────────────────────────────────────────────────────────────────
-  const handleResend = async () => {
-    if (!pending?.sentEmail || secondsLeft > 0 || resending) return
-    setResending(true)
-    try {
-      const resp = await api.post('/contact/resend-verification', { email: pending.sentEmail })
-      const newSentAt = resp.data?.data?.sentAt || new Date().toISOString()
-      setPending({ ...pending, sentAt: newSentAt })
-      toast.success(t('contact.resendSent'))
-    } catch (e) {
-      const status   = e.response?.status
-      const retryAfter = e.response?.data?.data?.retryAfter
-      if (status === 429) {
-        if (retryAfter) {
-          setPending({ ...pending, sentAt: new Date(Date.now() - (60 - retryAfter) * 1000).toISOString() })
-        }
-        toast.warning(e.response?.data?.message || t('contact.resendLimitError'))
-      } else {
-        toast.error(e.response?.data?.message || 'Xəta baş verdi.')
-      }
-    } finally {
-      setResending(false)
-    }
-  }
-
-  // ── Edit email ────────────────────────────────────────────────────────────────
-  const handleEditEmailOpen = () => {
-    setNewEmail(pending?.sentEmail || '')
-    setEditMode(true)
-  }
-
-  const handleEditEmailSubmit = async () => {
-    if (!newEmail.trim())                     { toast.warning(t('contact.emailError'));        return }
-    if (newEmail.trim() === pending?.sentEmail) { toast.warning(t('contact.editEmailSameError')); return }
-    if (!pending?.contactId || !pending?.managementToken) {
-      toast.error(t('contact.tokenExpiredError'))
-      return
-    }
-
-    setEmailChanging(true)
-    try {
-      const resp = await api.patch(`/contact/${pending.contactId}/email`, {
-        email:           newEmail.trim(),
-        managementToken: pending.managementToken,
-      })
-      const d = resp.data?.data || {}
-      const updatedPending = {
-        ...pending,
-        sentEmail: d.email || newEmail.trim(),
-        sentAt:    d.sentAt || new Date().toISOString(),
-      }
-      setPending(updatedPending)
-      setEditMode(false)
-      toast.success(t('contact.editEmailSuccess'))
-    } catch (e) {
-      const status = e.response?.status
-      if (status === 403) {
-        toast.error(t('contact.tokenExpiredError'))
-        setPending(null)
-      } else {
-        toast.error(e.response?.data?.message || 'Xəta baş verdi.')
-      }
-    } finally {
-      setEmailChanging(false)
-    }
-  }
-
-  // ── Back to form (discard pending) ────────────────────────────────────────────
-  const handleBackToForm = () => {
-    if (pending) {
-      setForm(f => ({
-        ...f,
-        fullName: pending.fullName || '',
-        message:  pending.message  || '',
-      }))
-    }
-    setPending(null)
-    setEditMode(false)
   }
 
   // ── Styles ────────────────────────────────────────────────────────────────────
@@ -249,133 +84,6 @@ export default function ContactPage() {
   }
 
   const hoursLines = (settings.work_hours || '').split(/[,;]/).map(s => s.trim()).filter(Boolean)
-
-  // ── Render pending panel ──────────────────────────────────────────────────────
-  const renderPendingPanel = () => {
-    if (editMode) {
-      return (
-        <div style={{ background: '#f0f9ff', border: '1px solid #7dd3fc', borderRadius: 12, padding: '22px 22px', fontFamily: FONT }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 14 }}>{t('contact.editEmailTitle')}</div>
-          <label style={{ ...labelStyle, marginBottom: 6 }}>{t('contact.editEmailLabel')}</label>
-          <div style={{ position: 'relative', marginBottom: 14 }}>
-            <input
-              type="email"
-              value={newEmail}
-              onChange={e => setNewEmail(e.target.value)}
-              placeholder={t('contact.editEmailPlaceholder')}
-              style={{ ...inputStyle, borderColor: '#7dd3fc' }}
-              onFocus={e => e.target.style.borderColor = TEAL}
-              onBlur={e => e.target.style.borderColor = '#7dd3fc'}
-              onKeyDown={e => { if (e.key === 'Enter') handleEditEmailSubmit() }}
-              autoFocus
-            />
-            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }}>
-              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={handleEditEmailSubmit}
-              disabled={emailChanging}
-              style={{ flex: 1, height: 38, background: emailChanging ? '#9ca3af' : TEAL, color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: emailChanging ? 'not-allowed' : 'pointer' }}
-            >
-              {emailChanging ? '...' : t('contact.editEmailSubmit')}
-            </button>
-            <button
-              onClick={() => setEditMode(false)}
-              disabled={emailChanging}
-              style={{ flex: 1, height: 38, background: 'white', color: '#374151', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' }}
-            >
-              {t('contact.editEmailCancel')}
-            </button>
-          </div>
-        </div>
-      )
-    }
-
-    return (
-      <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: '22px 22px', fontFamily: FONT, lineHeight: 1.7 }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-            <svg width="17" height="17" fill="none" stroke="#16a34a" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#15803d' }}>{t('contact.verificationSentTitle')}</div>
-            <div style={{ fontSize: 12.5, color: '#166534', marginTop: 2 }}>{t('contact.verificationSent')}</div>
-          </div>
-        </div>
-
-        {/* Masked email */}
-        {pending?.sentEmail && (
-          <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: 13 }}>
-            <span style={{ color: '#6b7280' }}>{t('contact.pendingMasked')}{' '}</span>
-            <span style={{ fontWeight: 700, color: NAVY, fontFamily: 'monospace' }}>{maskEmail(pending.sentEmail)}</span>
-          </div>
-        )}
-
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {/* Resend with countdown */}
-          <button
-            onClick={handleResend}
-            disabled={secondsLeft > 0 || resending}
-            style={{
-              fontSize: 12.5, fontWeight: 600,
-              color: secondsLeft > 0 ? '#9ca3af' : TEAL,
-              background: 'white',
-              border: `1px solid ${secondsLeft > 0 ? '#e5e7eb' : TEAL}`,
-              borderRadius: 8, padding: '7px 16px',
-              cursor: secondsLeft > 0 ? 'not-allowed' : 'pointer',
-              fontFamily: FONT, minWidth: 140,
-              transition: 'all 0.2s',
-            }}
-          >
-            {resending
-              ? '...'
-              : secondsLeft > 0
-                ? t('contact.resendCooldown', { seconds: secondsLeft })
-                : t('contact.resendReady')}
-          </button>
-
-          {/* Edit email */}
-          {pending?.managementToken && (
-            <button
-              onClick={handleEditEmailOpen}
-              style={{
-                fontSize: 12.5, fontWeight: 600,
-                color: '#6b7280', background: 'white',
-                border: '1px solid #e5e7eb', borderRadius: 8,
-                padding: '7px 16px', cursor: 'pointer', fontFamily: FONT,
-              }}
-            >
-              ✏ {t('contact.editEmail')}
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Render success panel ──────────────────────────────────────────────────────
-  const renderSuccessPanel = () => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
-      style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 14, padding: '28px 28px', fontFamily: FONT }}
-    >
-      <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-        <svg width="26" height="26" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-      </div>
-      <div style={{ fontSize: 19, fontWeight: 800, color: '#15803d', marginBottom: 10, fontFamily: "'Raleway', sans-serif" }}>
-        {t('contact.verifiedTitle')}
-      </div>
-      <p style={{ fontSize: 14, color: '#166534', lineHeight: 1.7, margin: 0 }}>
-        {t('contact.verifiedMessage')}
-      </p>
-    </motion.div>
-  )
 
   return (
     <main style={{ background: '#eef2f7', fontFamily: FONT, paddingTop: 110 }}>
@@ -413,7 +121,7 @@ export default function ContactPage() {
           </div>
         </motion.div>
 
-        {/* RIGHT — form / pending / success */}
+        {/* RIGHT — form or success */}
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
           style={{ paddingTop: 8 }}
@@ -422,23 +130,23 @@ export default function ContactPage() {
             {t('contact.title')}
           </h1>
 
-          {/* Verify error banners (shown before URL params cleaned) */}
-          {emailVerified === '0' && !cleanedParams.current && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, padding: '10px 14px', marginBottom: 14, color: '#b91c1c', fontSize: 13, fontFamily: FONT }}>
-              {verifyReason === 'expired' ? t('contact.verifyExpired') :
-               verifyReason === 'used'    ? t('contact.verifyUsed')    :
-               t('contact.verifyInvalid')}
-            </div>
-          )}
-
           {/* SUCCESS panel */}
-          {verified ? renderSuccessPanel() :
-
-          /* PENDING panel */
-          pending ? renderPendingPanel() :
-
-          /* FORM */
-          (
+          {submitted ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 14, padding: '28px 28px', fontFamily: FONT }}
+            >
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <svg width="26" height="26" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#15803d', margin: '0', fontFamily: "'Raleway', sans-serif" }}>
+                Müraciətiniz uğurla göndərildi.
+              </p>
+            </motion.div>
+          ) : (
+            /* FORM */
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
               {/* Full Name */}

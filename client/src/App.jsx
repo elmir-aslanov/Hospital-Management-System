@@ -146,7 +146,7 @@ function Layout() {
         <Route path="/blog"        element={<BlogPage />} />
         <Route path="/blog/:slug"  element={<BlogDetailPage />} />
         <Route path="/contact"     element={<ContactPage />} />
-        <Route path="/elaqe"      element={<ContactPage />} />
+        <Route path="/elaqe"      element={<ContactPage />} /> {/* legacy alias */}
         <Route path="/pasiyent-hekayeleri" element={<PatientStoriesPage />} />
         <Route path="/hekimler"            element={<HekimlerPage />} />
         <Route path="/hekimler/:id"        element={<HekimProfilPage />} />
