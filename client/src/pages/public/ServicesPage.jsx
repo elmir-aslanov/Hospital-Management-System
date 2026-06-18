@@ -111,42 +111,12 @@ export default function ServicesPage() {
       <section
         className="svc-hero"
         style={{
-          backgroundImage: "linear-gradient(rgba(7,27,59,0.58),rgba(7,27,59,0.58)),url('/xidmetler.png')",
+          backgroundImage: "linear-gradient(rgba(7,27,59,0.10),rgba(7,27,59,0.10)),url('/xidmetlaborot.png')",
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
+          backgroundPosition: 'center center',
           width: '100%',
         }}
-      >
-        <div className="svc-hero-inner" style={{ maxWidth: 1180, width: '100%', boxSizing: 'border-box' }}>
-          <motion.div variants={fadeUp} initial="hidden" animate="visible">
-            <p style={{
-              fontSize: 12, fontWeight: 700, color: '#55C3CB',
-              letterSpacing: '0.22em', textTransform: 'uppercase',
-              margin: '0 0 18px', fontFamily: FONT,
-            }}>
-              ASLAN MEDICAL CENTER
-            </p>
-            <h1 className="svc-hero-title" style={{
-              fontWeight: 700, color: '#ffffff',
-              margin: 0, fontFamily: "'Raleway', sans-serif", lineHeight: 1.15,
-            }}>
-              Xidmətlər &amp; Müalicələr
-            </h1>
-            <p className="svc-hero-sub" style={{
-              fontWeight: 400, lineHeight: 1.6,
-              color: 'rgba(255,255,255,0.82)',
-              marginTop: 18, marginBottom: 0,
-              fontFamily: FONT,
-            }}>
-              Geniş xidmət çeşidi ilə sağlamlığınızın hər aspektinə diqqət yetiririk.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      />
 
       {/* ── Lab section ───────────────────────────────────────────────── */}
       <section className="svc-lab-section" style={{ background: '#F5F8FA' }}>
@@ -230,9 +200,6 @@ export default function ServicesPage() {
       <style>{`
         /* ── Hero ─────────────────────────────────────────────────────── */
         .svc-hero            { height: 300px; }
-        .svc-hero-inner      { padding: 0 32px; }
-        .svc-hero-title      { font-size: 40px; }
-        .svc-hero-sub        { font-size: 16px; }
 
         /* ── Lab section ──────────────────────────────────────────────── */
         .svc-lab-section     { padding: 72px 32px 88px; }
@@ -258,7 +225,6 @@ export default function ServicesPage() {
         @media (max-width: 900px) {
           .svc-hero          { height: 260px; }
           .svc-lab-section   { padding: 60px 24px 72px; }
-          .svc-hero-title    { font-size: 36px !important; }
           .svc-lab-title     { font-size: 31px !important; }
         }
 
@@ -270,11 +236,8 @@ export default function ServicesPage() {
         /* ── Mobile (≤600px) ──────────────────────────────────────────── */
         @media (max-width: 600px) {
           .svc-hero          { height: 230px; }
-          .svc-hero-inner    { padding: 0 20px !important; }
           .svc-lab-section   { padding: 48px 20px 56px; }
           .svc-heading-mb    { margin-bottom: 32px !important; }
-          .svc-hero-title    { font-size: 30px !important; }
-          .svc-hero-sub      { font-size: 14px !important; }
           .svc-lab-title     { font-size: 27px !important; }
           .svc-lab-sub       { font-size: 14px !important; }
           .svc-row           { min-height: 76px !important; padding: 0 20px !important; }
