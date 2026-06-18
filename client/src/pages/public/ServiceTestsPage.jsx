@@ -32,31 +32,31 @@ function TestCard({ test, directionName }) {
         style={{
           display:       'flex',
           flexDirection: 'column',
+          justifyContent: 'flex-start',
           width:         '100%',
           background:    '#FFFFFF',
           border:        `1px solid ${hov ? 'rgba(0,132,142,0.40)' : '#DDE4E8'}`,
-          borderRadius:  6,
-          boxShadow:     hov ? '0 2px 10px rgba(7,27,59,0.06)' : 'none',
-          transform:     hov ? 'translateY(-1px)' : 'translateY(0)',
-          transition:    'border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease',
-          padding:       '48px',
-          minHeight:     290,
+          borderRadius:  8,
+          boxShadow:     'none',
+          transition:    'border-color 180ms ease',
+          padding:       '32px 36px',
+          minHeight:     220,
           boxSizing:     'border-box',
           cursor:        'default',
         }}
       >
         {/* Direction / category label */}
         <p style={{
-          fontSize: 16, fontWeight: 400, color: '#8A96A6',
-          margin: '0 0 16px', fontFamily: FONT, lineHeight: 1.4,
+          fontSize: 14, fontWeight: 400, color: '#8A96A6',
+          margin: '0 0 10px', fontFamily: FONT, lineHeight: 1.4,
         }}>
           {directionName}
         </p>
 
         {/* Test name */}
         <h3 style={{
-          fontSize: 28, fontWeight: 700, lineHeight: 1.25,
-          color: '#172033', margin: '0 0 22px',
+          fontSize: 24, fontWeight: 700, lineHeight: 1.25,
+          color: '#172033', margin: '0 0 14px',
           fontFamily: "'Raleway', sans-serif",
           wordBreak: 'break-word',
         }}
@@ -69,8 +69,8 @@ function TestCard({ test, directionName }) {
         {test.serviceCode && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            fontSize: 17, color: '#263248', fontFamily: FONT,
-            marginBottom: 16,
+            fontSize: 15, color: '#263248', fontFamily: FONT,
+            marginBottom: 14,
           }}>
             <span style={{
               width: 5, height: 5, borderRadius: '50%',
@@ -82,14 +82,13 @@ function TestCard({ test, directionName }) {
           </div>
         )}
 
-        {/* Price — pushed to bottom */}
+        {/* Price */}
         <p style={{
           fontSize: 22, fontWeight: 700, color: '#172033',
-          margin: 'auto 0 0', fontFamily: FONT,
-          paddingTop: 18,
+          margin: '6px 0 0', fontFamily: FONT,
         }}>
           {fmtPrice(test.price)}&nbsp;
-          <span style={{ fontSize: 14, fontWeight: 400, color: '#8A96A6' }}>
+          <span style={{ fontSize: 13, fontWeight: 400, color: '#8A96A6' }}>
             {test.currency || 'AZN'}
           </span>
         </p>
@@ -106,17 +105,17 @@ function SkeletonCard() {
     <div className="stc" style={{
       display: 'flex', flexDirection: 'column',
       background: '#FFFFFF', border: '1px solid #DDE4E8',
-      borderRadius: 6, padding: '48px',
-      minHeight: 290, boxSizing: 'border-box',
+      borderRadius: 8, padding: '32px 36px',
+      minHeight: 220, boxSizing: 'border-box',
     }}>
       <motion.div animate={pulse} transition={tr}
-        style={{ height: 15, width: '32%', borderRadius: 4, background: '#e8edf2', marginBottom: 20 }} />
+        style={{ height: 13, width: '32%', borderRadius: 4, background: '#e8edf2', marginBottom: 14 }} />
       <motion.div animate={pulse} transition={{ ...tr, delay: 0.1 }}
-        style={{ height: 26, width: '68%', borderRadius: 4, background: '#e8edf2', marginBottom: 28 }} />
+        style={{ height: 22, width: '68%', borderRadius: 4, background: '#e8edf2', marginBottom: 18 }} />
       <motion.div animate={pulse} transition={{ ...tr, delay: 0.2 }}
-        style={{ height: 15, width: '40%', borderRadius: 4, background: '#e8edf2', marginBottom: 'auto' }} />
+        style={{ height: 13, width: '40%', borderRadius: 4, background: '#e8edf2', marginBottom: 14 }} />
       <motion.div animate={pulse} transition={{ ...tr, delay: 0.3 }}
-        style={{ height: 22, width: '22%', borderRadius: 4, background: '#e8edf2', marginTop: 24 }} />
+        style={{ height: 20, width: '22%', borderRadius: 4, background: '#e8edf2', marginTop: 6 }} />
     </div>
   );
 }
@@ -212,7 +211,7 @@ export default function ServiceTestsPage() {
   const description = service?.description ?? '';
 
   return (
-    <main style={{ fontFamily: FONT, background: '#F8FAFB', minHeight: '70vh', paddingBottom: 80 }}>
+    <main className="stc-main" style={{ fontFamily: FONT, background: '#F8FAFB', minHeight: '70vh' }}>
       <div className="stc-wrap">
 
         {/* ── Header ──────────────────────────────────────────────────── */}
@@ -298,21 +297,23 @@ export default function ServiceTestsPage() {
       </div>
 
       <style>{`
+        .stc-main { padding-bottom: 96px; box-sizing: border-box; overflow-x: hidden; }
+
         .stc-wrap {
           width: 100%;
-          max-width: 1370px;
+          max-width: 1280px;
           margin: 0 auto;
-          padding: 52px 40px 0;
+          padding: 52px 32px 0;
           box-sizing: border-box;
         }
         .stc-header { margin-bottom: 44px; }
-        .stc-title  { font-size: 34px; }
+        .stc-title  { font-size: 36px; }
 
         .stc-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          column-gap: 40px;
-          row-gap: 40px;
+          column-gap: 28px;
+          row-gap: 24px;
           align-items: stretch;
         }
         .stc-grid > * { min-width: 0; }
@@ -320,23 +321,20 @@ export default function ServiceTestsPage() {
         .stc:focus-visible { outline: 2px solid #00848e; outline-offset: 2px; }
 
         @media (max-width: 1100px) {
-          .stc-wrap { padding: 44px 28px 0; }
+          .stc-wrap { padding: 44px 24px 0; }
         }
 
-        @media (max-width: 860px) {
+        @media (max-width: 768px) {
+          .stc-main   { padding-bottom: 140px; }
+          .stc-wrap   { padding: 32px 16px 0; }
+          .stc-header { margin-bottom: 32px; }
+          .stc-title  { font-size: 28px !important; }
           .stc-grid {
             grid-template-columns: 1fr;
             column-gap: 0;
-            row-gap: 24px;
+            row-gap: 20px;
           }
-          .stc { padding: 36px !important; min-height: 240px !important; }
-        }
-
-        @media (max-width: 600px) {
-          .stc-wrap   { padding: 32px 16px 0; }
-          .stc-header { margin-bottom: 32px; }
-          .stc-title  { font-size: 26px !important; }
-          .stc        { padding: 28px 24px !important; }
+          .stc        { padding: 24px !important; min-height: 190px !important; }
           .stc-name   { font-size: 21px !important; }
         }
       `}</style>
