@@ -14,6 +14,11 @@ export default function WifiPage() {
     <VisitorInfoDetail
       title="Wi-Fi bağlantısı"
       breadcrumb="Wi-Fi bağlantısı"
+      image="/wifi.jpeg"
+      imageAlt="Aslan Medical Center Wi-Fi şəbəkəsi məlumatı"
+      imageLayout="side"
+      imageWidth="34%"
+      imageFit="contain"
     >
       <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.75, margin: '0 0 32px', fontFamily: FONT }}>
         Aslan Medical Center-də pasiyentlər və ziyarətçilər üçün binanın bütün mərtəbələrini əhatə edən pulsuz simsiz internet xidməti mövcuddur.

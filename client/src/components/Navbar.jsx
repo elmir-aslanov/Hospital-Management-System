@@ -559,9 +559,9 @@ export default function Navbar() {
                     onMouseLeave={() => { setHoveredNav(null); onMegaLeave(); }}
                   >
                     <button style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '4px',
-                      padding: '0 18px',
-                      fontSize: '14.5px',
+                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                      padding: '0 22px',
+                      fontSize: '14px',
                       fontWeight: megaHighlight ? 700 : 500,
                       fontFamily: FONT,
                       color: megaHighlight ? TEAL : '#1a2b4a',
@@ -573,7 +573,19 @@ export default function Navbar() {
                       height: '100%',
                     }}>
                       {link.label}
-                      <span style={{ fontSize: '11px', lineHeight: 1, opacity: 0.7 }}>∨</span>
+                      <svg
+                        width="12" height="12" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        style={{
+                          flexShrink: 0,
+                          transform: megaOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 190ms ease',
+                          opacity: megaHighlight ? 1 : 0.65,
+                        }}
+                      >
+                        <path d="M6 9l6 6 6-6"/>
+                      </svg>
                     </button>
                   </div>
                 );
