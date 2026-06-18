@@ -456,5 +456,26 @@
   },
   "partners": {
     "title": "TƏRƏFDAŞLARIMİZ VƏ SIĞORTA ŞİRKƏTLƏRİ"
+  },
+  "visitorInfo": {
+    "eyebrow": "FAYDALI MƏLUMATLAR",
+    "title": "Pasiyent və ziyarətçilər üçün",
+    "subtitle": "Aslan Medical Center-də səfərinizi daha rahat planlaşdırmaq üçün faydalı məlumatlarla tanış olun.",
+    "atms": {
+      "title": "Bankomatlar",
+      "desc": "Mərkəzdə bankomat xidmətinin mövcudluğu və yerləşməsi."
+    },
+    "cafeteria": {
+      "title": "Kafeterya",
+      "desc": "Pasiyent və ziyarətçilər üçün qida və içki imkanları."
+    },
+    "restaurant": {
+      "title": "Restoran və rahatlıq zonası",
+      "desc": "Yemək, istirahət və gündəlik ehtiyaclar üçün məlumat."
+    },
+    "wifi": {
+      "title": "Wi-Fi bağlantısı",
+      "desc": "Mərkəz daxilində pulsuz internetə qoşulma qaydaları."
+    }
   }
 }

@@ -456,5 +456,26 @@
   },
   "partners": {
     "title": "OUR PARTNERS & INSURANCE COMPANIES"
+  },
+  "visitorInfo": {
+    "eyebrow": "USEFUL INFORMATION",
+    "title": "For Patients & Visitors",
+    "subtitle": "Explore useful information to plan your visit to Aslan Medical Center more comfortably.",
+    "atms": {
+      "title": "ATMs",
+      "desc": "ATM availability and location within the center."
+    },
+    "cafeteria": {
+      "title": "Cafeteria",
+      "desc": "Food and beverage options for patients and visitors."
+    },
+    "restaurant": {
+      "title": "Restaurant & Relaxation Zone",
+      "desc": "Information about dining, relaxation and daily needs."
+    },
+    "wifi": {
+      "title": "Wi-Fi Connection",
+      "desc": "How to connect to free internet within the center."
+    }
   }
 }

@@ -28,6 +28,10 @@ import BlogDetailPage        from './pages/public/BlogDetailPage';
 import ContactPage           from './pages/public/ContactPage';
 import ENeticePage           from './pages/public/ENeticePage';
 import ElektronMuraciet     from './pages/public/ElektronMuraciet';
+import AtmsPage             from './pages/public/visitor/AtmsPage';
+import CafeteriaPage        from './pages/public/visitor/CafeteriaPage';
+import RestaurantPage       from './pages/public/visitor/RestaurantPage';
+import WifiPage             from './pages/public/visitor/WifiPage';
 import AdminLoginPage       from './pages/AdminLoginPage';
 import AdminDashboard       from './pages/admin/AdminDashboard';
 import AdminDoctors         from './pages/admin/AdminDoctors';
@@ -147,6 +151,10 @@ function Layout() {
         <Route path="/e-netice"            element={<ENeticePage />} />
         <Route path="/elektron-muraciet"   element={<ElektronMuraciet />} />
         <Route path="/profile"             element={<UserProfilePage />} />
+        <Route path="/visitor-info/atms"       element={<AtmsPage />} />
+        <Route path="/visitor-info/cafeteria"  element={<CafeteriaPage />} />
+        <Route path="/visitor-info/restaurant" element={<RestaurantPage />} />
+        <Route path="/visitor-info/wifi"       element={<WifiPage />} />
 
         {/* ── Admin ── */}
         <Route path="/admin"              element={<AdminEntryRoute />} />
