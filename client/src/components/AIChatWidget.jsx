@@ -3,16 +3,14 @@ import { Sparkles, X, Send } from 'lucide-react'
 import api from '../api/axios'
 import { useBreakpoint } from '../hooks/useBreakpoint'
 
-const TEAL  = '#00848e'
-const NAVY  = '#0a1628'
+const PURPLE = '#7C3AED'
+const NAVY   = '#0a1628'
 const BORDER = '#E2E8F0'
-const MUTED  = '#64748B'
-const FONT  = "'Source Sans 3', sans-serif"
+const FONT   = "'Source Sans 3', sans-serif"
 
 const GREETING =
-  'Salam! Aslan Medical Center-ə xoş gəlmisiniz. Həkimlər, şöbələr, ' +
-  'randevu və digər məsələlərdə sizə kömək edə bilərəm. Nə öyrənmək ' +
-  'istəyirsiniz?'
+  'Salam! 👋 Aslan Medical Center-ə xoş gəlmisiniz. Həkimlər, şöbələr, ' +
+  'randevu və digər məsələlərdə sizə kömək edə bilərəm.'
 
 const FALLBACK_ERROR =
   'Hal-hazırda cavab vermək mümkün olmadı. Zəhmət olmasa bir az sonra ' +
@@ -22,12 +20,13 @@ function TypingIndicator() {
   return (
     <div style={{
       alignSelf: 'flex-start', display: 'flex', gap: 4,
-      background: 'white', border: `1px solid ${BORDER}`, borderRadius: 14,
-      padding: '11px 14px',
+      background: 'white', border: `1px solid ${BORDER}`,
+      borderRadius: '4px 16px 16px 16px',
+      padding: '12px 14px',
     }}>
       {[0, 1, 2].map((i) => (
         <span key={i} className="ai-chat-dot" style={{
-          width: 6, height: 6, borderRadius: '50%', background: MUTED,
+          width: 6, height: 6, borderRadius: '50%', background: '#94a3b8',
           animationDelay: `${i * 0.15}s`,
         }} />
       ))}
@@ -68,7 +67,7 @@ export default function AIChatWidget() {
   }
 
   const onKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter') {
       e.preventDefault()
       send()
     }
@@ -81,15 +80,15 @@ export default function AIChatWidget() {
         <div
           style={{
             position: 'fixed',
-            right: isMobile ? '16px' : '24px',
+            right: isMobile ? 0 : '24px',
+            left: isMobile ? 0 : 'auto',
             bottom: isMobile ? '196px' : '166px',
-            left: isMobile ? '16px' : 'auto',
-            width: isMobile ? 'auto' : '380px',
-            height: isMobile ? '60vh' : '500px',
+            width: isMobile ? '100%' : '370px',
+            height: isMobile ? '60vh' : '520px',
             zIndex: 9996,
             background: 'white',
             borderRadius: '16px',
-            boxShadow: '0 20px 50px rgba(10,22,40,0.25)',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -101,11 +100,14 @@ export default function AIChatWidget() {
         >
           {/* Header */}
           <div style={{
-            background: TEAL, color: 'white', padding: '14px 16px',
+            background: PURPLE, color: 'white', padding: '14px 16px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexShrink: 0,
           }}>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>Aslan Medical AI</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Sparkles size={18} />
+              <span style={{ fontWeight: 700, fontSize: 15 }}>Aslan Medical AI</span>
+            </div>
             <button
               onClick={() => setOpen(false)}
               aria-label="Bağla"
@@ -120,17 +122,17 @@ export default function AIChatWidget() {
 
           {/* Messages */}
           <div ref={listRef} style={{
-            flex: 1, overflowY: 'auto', padding: '14px', background: '#f8fafc',
-            display: 'flex', flexDirection: 'column', gap: 10,
+            flex: 1, overflowY: 'auto', padding: '16px',
+            display: 'flex', flexDirection: 'column', gap: 12,
           }}>
             {messages.map((m, i) => (
               <div key={i} style={{
                 alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
                 maxWidth: '85%',
-                background: m.role === 'user' ? TEAL : 'white',
+                background: m.role === 'user' ? PURPLE : 'white',
                 color: m.role === 'user' ? 'white' : NAVY,
                 border: m.role === 'user' ? 'none' : `1px solid ${BORDER}`,
-                borderRadius: 14,
+                borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
                 padding: '10px 14px',
                 fontSize: 13.5,
                 lineHeight: 1.5,
@@ -142,20 +144,21 @@ export default function AIChatWidget() {
             {sending && <TypingIndicator />}
           </div>
 
-          {/* Input */}
+          {/* Footer */}
           <div style={{
-            display: 'flex', gap: 8, padding: '10px', background: 'white',
+            display: 'flex', gap: 8, padding: '12px', background: 'white',
             borderTop: `1px solid ${BORDER}`, flexShrink: 0,
           }}>
             <input
               type="text"
+              className="ai-chat-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Sualınızı yazın..."
               style={{
-                flex: 1, border: `1px solid ${BORDER}`, borderRadius: 9,
-                padding: '10px 12px', fontSize: 13.5, outline: 'none',
+                flex: 1, border: `1px solid ${BORDER}`, borderRadius: '999px',
+                padding: '8px 16px', fontSize: 13.5, outline: 'none',
                 fontFamily: 'inherit', color: NAVY, boxSizing: 'border-box',
               }}
             />
@@ -165,13 +168,13 @@ export default function AIChatWidget() {
               aria-label="Göndər"
               style={{
                 border: 'none',
-                background: sending || !input.trim() ? '#94a3b8' : TEAL,
-                color: 'white', borderRadius: 9, width: 40, flexShrink: 0,
+                background: sending || !input.trim() ? '#c4b5fd' : PURPLE,
+                color: 'white', borderRadius: '999px', width: 38, height: 38, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
               }}
             >
-              <Send size={17} />
+              <Send size={16} />
             </button>
           </div>
         </div>
@@ -180,29 +183,31 @@ export default function AIChatWidget() {
       {/* Floating toggle button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label="AI ilə soruşun"
+        aria-label="Ask AI"
+        className="ai-ask-btn"
         style={{
           position: 'fixed',
           right: isMobile ? '16px' : '24px',
           bottom: isMobile ? '144px' : '106px',
           zIndex: 9995,
-          background: TEAL,
-          color: 'white',
-          border: 'none',
+          background: 'white',
+          color: PURPLE,
+          border: `1.5px solid ${PURPLE}`,
           borderRadius: '999px',
-          padding: isMobile ? '11px 16px' : '13px 20px',
+          padding: isMobile ? '9px 16px' : '10px 18px',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 7,
           fontFamily: FONT,
           fontSize: isMobile ? 13 : 14,
           fontWeight: 700,
           cursor: 'pointer',
-          boxShadow: '0 10px 25px rgba(0,132,142,0.35), 0 4px 10px rgba(0,0,0,0.12)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+          transition: 'all 0.2s ease',
         }}
       >
-        <Sparkles size={18} />
-        AI ilə soruşun
+        <Sparkles size={17} />
+        Ask AI
       </button>
 
       <style>{`
@@ -213,6 +218,13 @@ export default function AIChatWidget() {
         .ai-chat-dot {
           display: inline-block;
           animation: ai-chat-dot-pulse 1.2s ease-in-out infinite;
+        }
+        .ai-ask-btn:hover {
+          background: ${PURPLE} !important;
+          color: white !important;
+        }
+        .ai-chat-input:focus {
+          border-color: ${PURPLE} !important;
         }
       `}</style>
     </>
