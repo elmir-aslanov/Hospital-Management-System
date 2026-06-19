@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useId } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -45,6 +47,9 @@ function StepDots({ step, total }) {
 
 export default function LabRequestModal({ test, onClose, triggerRef }) {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const titleId = useId();
   const dialogRef = useRef(null);
 
@@ -59,8 +64,8 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
 
   // Step 2
   const [patientType, setPatientType] = useState('existing');
-  const [existing, setExisting] = useState({ patientStrId: '', birthDate: '' });
-  const [lookupStatus, setLookupStatus] = useState('idle'); // idle | checking | found | not_found | error
+  const [existingCardNumber, setExistingCardNumber] = useState('');
+  const [lookupStatus, setLookupStatus] = useState('idle'); // idle | checking | found | error
   const [maskedName, setMaskedName] = useState('');
   const [newPatient, setNewPatient] = useState({ firstName: '', lastName: '', fin: '', birthDate: '', phone: '', email: '' });
   const [step2Errors, setStep2Errors] = useState({});
@@ -85,38 +90,64 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
     };
   }, [onClose, triggerRef]);
 
-  // Live patient lookup (existing patient) — debounced
+  const redirectToLogin = () => {
+    onClose();
+    navigate('/login', {
+      state: { from: `${location.pathname}${location.search}` },
+    });
+  };
+
+  const selectExistingPatient = () => {
+    if (!isAuthenticated) {
+      redirectToLogin();
+      return;
+    }
+    setPatientType('existing');
+    setStep2Errors({});
+  };
+
+  // Existing patient profile — resolved from the authenticated session
   useEffect(() => {
     let isCurrent = true;
 
-    const checkPatient = async (id, bd) => {
+    const loadPatientProfile = async () => {
       setLookupStatus('checking');
       try {
-        const res = await api.post('/lab-results/requests/lookup-patient', { patientStrId: id, birthDate: bd });
+        const res = await api.get('/lab-results/requests/current-patient');
         if (!isCurrent) return;
         const data = res.data?.data;
-        if (data?.found) {
+        if (data?.cardNumber) {
           setLookupStatus('found');
+          setExistingCardNumber(data.cardNumber);
           setMaskedName(data.maskedName || '');
         } else {
-          setLookupStatus('not_found');
+          setLookupStatus('error');
+          setExistingCardNumber('');
           setMaskedName('');
         }
       } catch {
-        if (isCurrent) { setLookupStatus('not_found'); setMaskedName(''); }
+        if (isCurrent) {
+          setLookupStatus('error');
+          setExistingCardNumber('');
+          setMaskedName('');
+        }
       }
     };
 
-    const reset = () => { setLookupStatus('idle'); setMaskedName(''); };
+    const reset = () => {
+      setLookupStatus('idle');
+      setExistingCardNumber('');
+      setMaskedName('');
+    };
 
-    if (patientType !== 'existing') { reset(); return () => { isCurrent = false; }; }
-    const id = existing.patientStrId.trim();
-    const bd = existing.birthDate;
-    if (!id || !bd) { reset(); return () => { isCurrent = false; }; }
+    if (patientType !== 'existing' || !isAuthenticated) {
+      reset();
+      return () => { isCurrent = false; };
+    }
 
-    const timer = setTimeout(() => checkPatient(id, bd), 500);
-    return () => { isCurrent = false; clearTimeout(timer); };
-  }, [patientType, existing.patientStrId, existing.birthDate]);
+    loadPatientProfile();
+    return () => { isCurrent = false; };
+  }, [patientType, isAuthenticated]);
 
   // Slot availability — fetch when branch+date chosen
   useEffect(() => {
@@ -161,10 +192,14 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   const validateStep2 = () => {
     const errs = {};
     if (patientType === 'existing') {
-      if (!existing.patientStrId.trim()) errs.patientStrId = t('labRequest.cardNumberRequired');
-      if (!existing.birthDate) errs.birthDate = t('labRequest.birthDateRequired');
-      if (Object.keys(errs).length === 0 && lookupStatus !== 'found') {
-        errs.lookup = t('labRequest.patientNotFoundText');
+      if (!isAuthenticated) {
+        redirectToLogin();
+        return false;
+      }
+      if (lookupStatus !== 'found' || !existingCardNumber) {
+        errs.lookup = lookupStatus === 'checking'
+          ? t('labRequest.step2.checking')
+          : t('labRequest.step2.profileNotFoundText');
       }
     } else {
       if (!newPatient.firstName.trim()) errs.firstName = t('labRequest.firstNameRequired');
@@ -204,30 +239,33 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
       const payload = {
         testSlug: test.slug,
         patientType,
-        patient: patientType === 'new'
-          ? {
-              firstName: newPatient.firstName.trim(),
-              lastName:  newPatient.lastName.trim(),
-              fin:       newPatient.fin.trim().toUpperCase(),
-              birthDate: newPatient.birthDate,
-              phone:     newPatient.phone.trim(),
-              email:     newPatient.email.trim(),
-            }
-          : {
-              patientStrId: existing.patientStrId.trim().toUpperCase(),
-              birthDate:    existing.birthDate,
-            },
         branchName,
         date,
         time,
         note: note.trim(),
         agreedToTerms: agreed,
       };
+      if (patientType === 'new') {
+        payload.patient = {
+          firstName: newPatient.firstName.trim(),
+          lastName:  newPatient.lastName.trim(),
+          fin:       newPatient.fin.trim().toUpperCase(),
+          birthDate: newPatient.birthDate,
+          phone:     newPatient.phone.trim(),
+          email:     newPatient.email.trim(),
+        };
+      }
       const res = await api.post('/lab-results/requests', payload);
       setSuccessData(res.data?.data || null);
     } catch (err) {
-      setSubmitError(err.response?.data?.message || t('labRequest.genericError'));
-      toast.error(err.response?.data?.message || t('labRequest.genericError'));
+      const status = err.response?.status;
+      const message = patientType === 'existing' && status === 401
+        ? t('labRequest.step2.loginRequiredText')
+        : patientType === 'existing' && status === 404
+          ? t('labRequest.step2.profileNotFoundText')
+          : err.response?.data?.message || t('labRequest.genericError');
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -340,7 +378,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
                 <h3 style={{ fontSize: 14.5, fontWeight: 700, color: NAVY, margin: '0 0 10px' }}>{t('labRequest.step2.title')}</h3>
 
                 <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                  <button type="button" onClick={() => setPatientType('existing')}
+                  <button type="button" onClick={selectExistingPatient}
                     style={{
                       flex: 1, padding: '9px 12px', borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
                       border: patientType === 'existing' ? `1.5px solid ${TEAL}` : '1px solid #d1d5db',
@@ -363,30 +401,30 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
                 {patientType === 'existing' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div>
-                      <label style={labelStyle}>{t('labRequest.step2.cardNumberLabel')} *</label>
-                      <input type="text" value={existing.patientStrId}
-                        onChange={(e) => setExisting((f) => ({ ...f, patientStrId: e.target.value }))}
-                        placeholder={t('labRequest.step2.cardNumberPlaceholder')} style={inputStyle} />
-                      {step2Errors.patientStrId && <div style={errStyle}>{step2Errors.patientStrId}</div>}
-                    </div>
-                    <div>
-                      <label style={labelStyle}>{t('labRequest.step2.birthDateLabel')} *</label>
-                      <input type="date" value={existing.birthDate} max={todayStr()}
-                        onChange={(e) => setExisting((f) => ({ ...f, birthDate: e.target.value }))}
-                        style={inputStyle} />
-                      {step2Errors.birthDate && <div style={errStyle}>{step2Errors.birthDate}</div>}
+                      <label style={labelStyle}>{t('labRequest.step2.cardNumberLabel')}</label>
+                      <input
+                        type="text"
+                        value={existingCardNumber}
+                        readOnly
+                        aria-readonly="true"
+                        placeholder={t('labRequest.step2.cardNumberPlaceholder')}
+                        style={{ ...inputStyle, background: '#f1f5f9', color: '#475569', cursor: 'default' }}
+                      />
                     </div>
 
-                    {lookupStatus === 'checking' && (
+                    {!isAuthenticated && (
+                      <div style={errStyle}>{t('labRequest.step2.loginRequiredText')}</div>
+                    )}
+                    {isAuthenticated && lookupStatus === 'checking' && (
                       <div style={{ fontSize: 12.5, color: MUTED }}>{t('labRequest.step2.checking')}</div>
                     )}
-                    {lookupStatus === 'found' && (
+                    {isAuthenticated && lookupStatus === 'found' && (
                       <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 9, padding: '8px 12px', fontSize: 12.5, color: '#15803d' }}>
                         {t('labRequest.step2.patientFoundLabel')} <strong>{maskedName}</strong>
                       </div>
                     )}
-                    {lookupStatus === 'not_found' && (
-                      <div style={errStyle}>{t('labRequest.step2.patientNotFoundText')}</div>
+                    {isAuthenticated && lookupStatus === 'error' && (
+                      <div style={errStyle}>{t('labRequest.step2.profileNotFoundText')}</div>
                     )}
                     {step2Errors.lookup && <div style={errStyle}>{step2Errors.lookup}</div>}
                   </div>

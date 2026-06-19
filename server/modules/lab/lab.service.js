@@ -811,22 +811,20 @@ const assertLabRequestSlotIsBookable = async (date, time, branchName) => {
   if (!slot || !slot.available) throw new ApiError(409, 'Seçilmiş saat artıq tutulub və ya keçmişdədir. Zəhmət olmasa başqa saat seçin.');
 };
 
-export const lookupExistingPatientForRequest = async ({ patientStrId, birthDate } = {}) => {
-  const cleanId = trim(patientStrId).toUpperCase();
-  const cleanBirth = trim(birthDate);
-  if (!cleanId) throw new ApiError(400, 'Qəbul kartı nömrəsi tələb olunur');
-  if (!cleanBirth) throw new ApiError(400, 'Doğum tarixi tələb olunur');
+export const getCurrentPatientForRequest = async (userId) => {
+  if (!userId) throw new ApiError(401, 'Mövcud pasiyent kimi davam etmək üçün giriş tələb olunur');
 
-  const patient = await Patient.findOne({ patientId: cleanId }).populate('userId', 'fullName name surname birthDate');
+  const patient = await Patient.findOne({ userId }).populate('userId', 'fullName name surname');
   const user = patient?.userId;
-  const matches = Boolean(patient && user && sameCalendarDate(user.birthDate, cleanBirth));
+  if (!patient || !user) throw new ApiError(404, 'Hesabınıza bağlı pasiyent profili tapılmadı');
 
-  if (!matches) throw new ApiError(404, 'Bu məlumatlara uyğun pasiyent tapılmadı. Zəhmət olmasa yenidən cəhd edin.');
-
-  return { found: true, maskedName: maskName(user) };
+  return {
+    cardNumber: patient.patientId || '',
+    maskedName: maskName(user),
+  };
 };
 
-export const createPublicLabRequest = async (body = {}) => {
+export const createPublicLabRequest = async (body = {}, authUser = null) => {
   const {
     testSlug, patientType = 'existing', patient: patientBody = {},
     branchName, date, time, note, agreedToTerms,
@@ -877,13 +875,10 @@ export const createPublicLabRequest = async (body = {}) => {
     if (!patient) patient = await Patient.create({ userId: user._id });
     patientMongoId = patient._id;
   } else {
-    const { patientStrId, birthDate } = patientBody;
-    if (!patientStrId?.trim()) throw new ApiError(400, 'Qəbul kartı nömrəsi tələb olunur');
-    if (!birthDate) throw new ApiError(400, 'Doğum tarixi tələb olunur');
+    if (!authUser?.id) throw new ApiError(401, 'Mövcud pasiyent kimi davam etmək üçün giriş tələb olunur');
 
-    const patient = await Patient.findOne({ patientId: patientStrId.trim().toUpperCase() }).populate('userId', 'birthDate');
-    const matches = Boolean(patient && sameCalendarDate(patient.userId?.birthDate, trim(birthDate)));
-    if (!matches) throw new ApiError(404, 'Bu məlumatlara uyğun pasiyent tapılmadı. Zəhmət olmasa yenidən cəhd edin.');
+    const patient = await Patient.findOne({ userId: authUser.id }).select('_id');
+    if (!patient) throw new ApiError(404, 'Hesabınıza bağlı pasiyent profili tapılmadı');
     patientMongoId = patient._id;
   }
 
@@ -900,7 +895,7 @@ export const createPublicLabRequest = async (body = {}) => {
   });
 
   try {
-    logAction({ userId: null, action: 'LAB_REQUEST_CREATE_PUBLIC', resourceType: 'LabOrder', resourceId: order._id, description: `Public lab request ${order.requestNumber} created for ${priceList.name}` });
+    logAction({ userId: patientType === 'new' ? null : authUser?.id, action: 'LAB_REQUEST_CREATE_PUBLIC', resourceType: 'LabOrder', resourceId: order._id, description: `Public lab request ${order.requestNumber} created for ${priceList.name}` });
   } catch (_) {}
 
   return {

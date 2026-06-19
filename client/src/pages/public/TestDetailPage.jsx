@@ -365,7 +365,7 @@ export default function TestDetailPage() {
     );
   }
 
-  const isLabResultCheckTest = test.slug === 'fox-qida-hessasligi-testi';
+  const isLabTest = test.category === 'lab';
 
   const tech = test.technicalDetails || {};
   const techRows = [
@@ -386,9 +386,15 @@ export default function TestDetailPage() {
   const procedureSteps  = Array.isArray(test.procedureSteps)  ? test.procedureSteps.filter(Boolean)  : [];
   const hasAboutContent = test.aboutIntro || aboutFeatures.length || benefits.length || procedureSteps.length || test.medicalNotice;
 
+  const refRange       = test.referenceRange || {};
+  const refCategories   = Array.isArray(refRange.categories) ? refRange.categories.filter(Boolean) : [];
+  const referenceRanges = Array.isArray(test.referenceRanges) ? test.referenceRanges.filter(r => r?.parameterName) : [];
+  const hasRefContent   = refRange.mainText || refCategories.length || refRange.notice || referenceRanges.length > 0;
+
   const tabs = [
     { key: 'about',      label: t('testDetail.aboutTab') },
     { key: 'technical',  label: t('testDetail.technicalTab') },
+    { key: 'reference',  label: t('testDetail.referenceTab') },
   ];
 
   return (
@@ -435,7 +441,7 @@ export default function TestDetailPage() {
           <div className="td-cta-price">
             {fmtPrice(test.price)}&nbsp;<span className="td-cta-currency">{test.currency || 'AZN'}</span>
           </div>
-          {isLabResultCheckTest ? (
+          {isLabTest ? (
             <div className="td-cta-btn-group">
               <button
                 ref={ctaRef}
@@ -530,6 +536,56 @@ export default function TestDetailPage() {
             </div>
           )}
 
+          {activeTab === 'reference' && (
+            <div role="tabpanel" id="panel-reference" aria-labelledby="tab-reference">
+              <h2 className="td-section-heading td-section-heading-first">{t('testDetail.referenceTab')}</h2>
+              {hasRefContent ? (
+                <>
+                  {refRange.mainText && <p className="td-paragraph">{refRange.mainText}</p>}
+
+                  {refCategories.length > 0 && (
+                    <div className="td-chip-row">
+                      {refCategories.map((cat, i) => <span key={i} className="td-chip">{cat}</span>)}
+                    </div>
+                  )}
+
+                  {referenceRanges.length > 0 && (
+                    <div className="td-ref-table-wrap">
+                      <table className="td-ref-table">
+                        <thead>
+                          <tr>
+                            <th>{t('testDetail.refParameter')}</th>
+                            <th>{t('testDetail.refAgeGroup')}</th>
+                            <th>{t('testDetail.refGender')}</th>
+                            <th>{t('testDetail.refUnit')}</th>
+                            <th>{t('testDetail.refRangeCol')}</th>
+                            <th>{t('testDetail.refNote')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {referenceRanges.map((row, i) => (
+                            <tr key={i}>
+                              <td>{row.parameterName || '—'}</td>
+                              <td>{row.ageGroup || '—'}</td>
+                              <td>{row.gender && row.gender !== 'all' ? t(`testDetail.refGender_${row.gender}`) : t('testDetail.refGender_all')}</td>
+                              <td>{row.unit || '—'}</td>
+                              <td>{row.displayRange || (row.minValue || row.maxValue ? `${row.minValue || '0'}–${row.maxValue || ''}` : '—')}</td>
+                              <td>{row.note || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {refRange.notice && <div className="td-notice">{refRange.notice}</div>}
+                </>
+              ) : (
+                <p className="td-empty">{t('testDetail.noReferenceInfo')}</p>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* Back link */}
@@ -542,7 +598,7 @@ export default function TestDetailPage() {
 
       <AnimatePresence>
         {modalOpen && (
-          isLabResultCheckTest
+          isLabTest
             ? <LabRequestModal test={test} onClose={() => setModalOpen(false)} triggerRef={ctaRef} />
             : <HomeServiceModal test={test} onClose={() => setModalOpen(false)} triggerRef={ctaRef} />
         )}
@@ -700,6 +756,17 @@ export default function TestDetailPage() {
           padding: 7px 16px; border-radius: 999px; border: 1px solid ${BORDER};
           background: #F8FAFB; font-size: 13px; font-weight: 600; color: #334155;
         }
+
+        /* ── Structured reference-range table ─────────────────────────── */
+        .td-ref-table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid ${BORDER}; border-radius: 10px; }
+        .td-ref-table { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 13.5px; }
+        .td-ref-table th {
+          text-align: left; padding: 10px 14px; background: #F8FAFB; color: #62718A;
+          font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+          border-bottom: 1px solid ${BORDER}; white-space: nowrap;
+        }
+        .td-ref-table td { padding: 10px 14px; color: #334155; border-bottom: 1px solid #F1F4F6; }
+        .td-ref-table tr:last-child td { border-bottom: none; }
 
         @media (max-width: 1100px) {
           .td-wrap { padding: 44px 24px 0; }

@@ -26,8 +26,8 @@ const DETAIL_FIELDS = [
   'name', 'slug', 'serviceCode', 'price', 'currency', 'category',
   'serviceName', 'serviceSlug', 'description', 'shortDescription',
   'aboutIntro', 'aboutFeatures', 'benefits', 'procedureSteps', 'medicalNotice',
-  'technicalDetails', 'referenceRange',
-  'homeServiceAvailable', 'homeServiceDescription',
+  'technicalDetails', 'referenceRange', 'referenceRanges',
+  'homeServiceAvailable', 'homeServiceDescription', 'selfRequestEnabled',
   'isActive', 'createdAt', 'updatedAt',
 ].join(' ');
 

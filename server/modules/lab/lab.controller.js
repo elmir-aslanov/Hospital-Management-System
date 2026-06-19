@@ -46,13 +46,13 @@ export const getLabRequestSlots = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, d));
 });
 
-export const lookupExistingPatientForRequest = asyncHandler(async (req, res) => {
-  const d = await svc.lookupExistingPatientForRequest(req.body);
+export const getCurrentPatientForRequest = asyncHandler(async (req, res) => {
+  const d = await svc.getCurrentPatientForRequest(uid(req));
   res.json(new ApiResponse(200, d));
 });
 
 export const createPublicLabRequest = asyncHandler(async (req, res) => {
-  const d = await svc.createPublicLabRequest(req.body);
+  const d = await svc.createPublicLabRequest(req.body, req.user || null);
   res.status(201).json(new ApiResponse(201, d, 'Müraciət qəbul edildi'));
 });
 

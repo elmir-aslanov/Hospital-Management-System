@@ -100,6 +100,8 @@ const TESTS = [
         { parameterName: 'Soya',        unit: 'U/ml', referenceRange: '0–20' },
         { parameterName: 'Balıq',       unit: 'U/ml', referenceRange: '0–20' },
       ],
+
+      selfRequestEnabled: true,
     },
   },
 ];
@@ -147,6 +149,7 @@ const run = async () => {
       set.homeServiceAvailable    = test.detail.homeServiceAvailable;
       set.homeServiceDescription  = test.detail.homeServiceDescription;
       set.resultParameterTemplate = test.detail.resultParameterTemplate || [];
+      set.selfRequestEnabled      = !!test.detail.selfRequestEnabled;
     }
 
     const doc = await PriceList.findOneAndUpdate(

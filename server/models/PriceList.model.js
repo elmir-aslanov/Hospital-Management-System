@@ -49,6 +49,22 @@ const priceListSchema = new mongoose.Schema(
       notice:     { type: String, trim: true, default: '' },
     },
 
+    // Structured, parameter-level reference ranges (age/gender/method-specific),
+    // admin-entered only — never auto-generated/invented numeric limits.
+    referenceRanges: {
+      type: [{
+        parameterName: { type: String, trim: true },
+        ageGroup:       { type: String, trim: true, default: '' },
+        gender:         { type: String, enum: ['all', 'male', 'female'], default: 'all' },
+        unit:           { type: String, trim: true, default: '' },
+        minValue:       { type: String, trim: true, default: '' },
+        maxValue:       { type: String, trim: true, default: '' },
+        displayRange:   { type: String, trim: true, default: '' },
+        note:           { type: String, trim: true, default: '' },
+      }],
+      default: [],
+    },
+
     // Home-service CTA
     homeServiceAvailable:   { type: Boolean, default: false },
     homeServiceDescription: { type: String, trim: true, default: '' },
@@ -63,6 +79,11 @@ const priceListSchema = new mongoose.Schema(
       }],
       default: [],
     },
+
+    // Enables the self-service "request test" + "check result" flow on the
+    // public test-detail page (LabRequestModal + /e-netice redirect) in place
+    // of the generic home-service CTA. Admin-controlled per test.
+    selfRequestEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

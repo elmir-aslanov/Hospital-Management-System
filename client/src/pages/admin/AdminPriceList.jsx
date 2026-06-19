@@ -47,8 +47,19 @@ const EMPTY_DETAIL_FORM = {
   technicalDetails: EMPTY_TECH,
   referenceMainText: '', referenceCategories: '', referenceNotice: '',
   homeServiceAvailable: false, homeServiceDescription: '',
+  selfRequestEnabled: false,
+  resultParameterTemplate: [],
+  referenceRanges: [],
 }
 const splitLines = (str) => String(str || '').split('\n').map(s => s.trim()).filter(Boolean)
+
+const emptyTemplateRow = () => ({ parameterName: '', unit: '', referenceRange: '' })
+const emptyRangeRow = () => ({ parameterName: '', ageGroup: '', gender: 'all', unit: '', minValue: '', maxValue: '', displayRange: '', note: '' })
+const GENDER_OPTIONS = [
+  ['all', 'Hamısı'],
+  ['male', 'Kişi'],
+  ['female', 'Qadın'],
+]
 
 const lbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
 const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white', boxSizing: 'border-box' }
@@ -131,11 +142,22 @@ export default function AdminPriceList() {
       referenceNotice:     p.referenceRange?.notice || '',
       homeServiceAvailable:   !!p.homeServiceAvailable,
       homeServiceDescription: p.homeServiceDescription || '',
+      selfRequestEnabled:      !!p.selfRequestEnabled,
+      resultParameterTemplate: p.resultParameterTemplate?.length ? p.resultParameterTemplate.map(r => ({ ...emptyTemplateRow(), ...r })) : [],
+      referenceRanges:         p.referenceRanges?.length ? p.referenceRanges.map(r => ({ ...emptyRangeRow(), ...r })) : [],
     })
     setDetailErr(''); setDetailDrawerOpen(true)
   }
   const setD    = (k, v) => setDetailForm(f => ({ ...f, [k]: v }))
   const setTech = (k, v) => setDetailForm(f => ({ ...f, technicalDetails: { ...f.technicalDetails, [k]: v } }))
+
+  const setTemplateRow = (i, k, v) => setDetailForm(f => ({ ...f, resultParameterTemplate: f.resultParameterTemplate.map((r, idx) => idx === i ? { ...r, [k]: v } : r) }))
+  const addTemplateRow = () => setDetailForm(f => ({ ...f, resultParameterTemplate: [...f.resultParameterTemplate, emptyTemplateRow()] }))
+  const removeTemplateRow = (i) => setDetailForm(f => ({ ...f, resultParameterTemplate: f.resultParameterTemplate.filter((_, idx) => idx !== i) }))
+
+  const setRangeRow = (i, k, v) => setDetailForm(f => ({ ...f, referenceRanges: f.referenceRanges.map((r, idx) => idx === i ? { ...r, [k]: v } : r) }))
+  const addRangeRow = () => setDetailForm(f => ({ ...f, referenceRanges: [...f.referenceRanges, emptyRangeRow()] }))
+  const removeRangeRow = (i) => setDetailForm(f => ({ ...f, referenceRanges: f.referenceRanges.filter((_, idx) => idx !== i) }))
 
   const handleDetailSave = async () => {
     setDetailSaving(true); setDetailErr('')
@@ -156,6 +178,9 @@ export default function AdminPriceList() {
         },
         homeServiceAvailable:   detailForm.homeServiceAvailable,
         homeServiceDescription: detailForm.homeServiceDescription,
+        selfRequestEnabled:      detailForm.selfRequestEnabled,
+        resultParameterTemplate: detailForm.resultParameterTemplate.filter(r => r.parameterName.trim()),
+        referenceRanges:         detailForm.referenceRanges.filter(r => r.parameterName.trim()),
       }
       const r    = await fetch(`${BASE}/api/v1/pricelist/${detailTarget._id}`, { method: 'PUT', headers: { ...hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await r.json()
@@ -494,6 +519,73 @@ export default function AdminPriceList() {
                 <label style={lbl}>Tibbi qeyd</label>
                 <textarea rows={2} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }}
                   value={detailForm.referenceNotice} onChange={e => setD('referenceNotice', e.target.value)} />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ ...lbl, marginBottom: 0 }}>Parametr üzrə referans intervalları (yaş/cins/metod üzrə)</label>
+                  <button onClick={addRangeRow} style={{ border: '1px dashed #cbd5e1', background: 'white', color: '#00848e', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    + Sətir əlavə et
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {detailForm.referenceRanges.map((row, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.8fr 0.7fr 0.6fr 0.6fr 0.6fr 0.8fr 1fr 28px', gap: 5, alignItems: 'center' }}>
+                      <input placeholder="Parametr (məs. C26:0)" style={inp} value={row.parameterName} onChange={e => setRangeRow(i, 'parameterName', e.target.value)} />
+                      <input placeholder="Yaş qrupu" style={inp} value={row.ageGroup} onChange={e => setRangeRow(i, 'ageGroup', e.target.value)} />
+                      <select style={inp} value={row.gender} onChange={e => setRangeRow(i, 'gender', e.target.value)}>
+                        {GENDER_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                      <input placeholder="Vahid" style={inp} value={row.unit} onChange={e => setRangeRow(i, 'unit', e.target.value)} />
+                      <input placeholder="Min" style={inp} value={row.minValue} onChange={e => setRangeRow(i, 'minValue', e.target.value)} />
+                      <input placeholder="Maks" style={inp} value={row.maxValue} onChange={e => setRangeRow(i, 'maxValue', e.target.value)} />
+                      <input placeholder="Göstərilən aralıq" style={inp} value={row.displayRange} onChange={e => setRangeRow(i, 'displayRange', e.target.value)} />
+                      <input placeholder="Qeyd" style={inp} value={row.note} onChange={e => setRangeRow(i, 'note', e.target.value)} />
+                      <button onClick={() => removeRangeRow(i)} style={{ width: 28, height: 28, border: 'none', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 16 }}>×</button>
+                    </div>
+                  ))}
+                  {detailForm.referenceRanges.length === 0 && (
+                    <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Hələ heç bir referans intervalı əlavə edilməyib.</p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Nəticə parametr şablonu</span>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>Laboratoriya əməkdaşı nəticə daxil edəndə bu sətirlər avtomatik yüklənəcək.</p>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                  <button onClick={addTemplateRow} style={{ border: '1px dashed #cbd5e1', background: 'white', color: '#00848e', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    + Sətir əlavə et
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {detailForm.resultParameterTemplate.map((row, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 1fr 28px', gap: 6, alignItems: 'center' }}>
+                      <input placeholder="Parametr adı" style={inp} value={row.parameterName} onChange={e => setTemplateRow(i, 'parameterName', e.target.value)} />
+                      <input placeholder="Vahid" style={inp} value={row.unit} onChange={e => setTemplateRow(i, 'unit', e.target.value)} />
+                      <input placeholder="Referans aralığı" style={inp} value={row.referenceRange} onChange={e => setTemplateRow(i, 'referenceRange', e.target.value)} />
+                      <button onClick={() => removeTemplateRow(i)} style={{ width: 28, height: 28, border: 'none', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 16 }}>×</button>
+                    </div>
+                  ))}
+                  {detailForm.resultParameterTemplate.length === 0 && (
+                    <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Şablon yoxdur — laboratoriya əməkdaşı sətirləri özü əlavə edəcək.</p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Müraciət və nəticə yoxlama axını</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" id="selfRequestEnabled" checked={detailForm.selfRequestEnabled} onChange={e => setD('selfRequestEnabled', e.target.checked)}
+                  style={{ width: 15, height: 15, accentColor: '#00848e' }} />
+                <label htmlFor="selfRequestEnabled" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>
+                  "Analiz üçün müraciət et" + "Nəticəni yoxla" düymələrini aktivləşdir
+                </label>
               </div>
 
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
