@@ -691,7 +691,10 @@
     "priorityUrgent": "Urgent",
     "priorityStat": "STAT",
     "genericError": "An error occurred",
-    "pdfError": "PDF could not be downloaded"
+    "pdfError": "PDF could not be downloaded",
+    "labCommentPlaceholder": "Laboratory comment...",
+    "resultPdf": "Result PDF",
+    "viewExistingPdf": "View existing PDF"
   },
   "testDetail": {
     "loading": "Loading...",

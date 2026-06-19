@@ -1,6 +1,7 @@
 import usePageTitle from '../../hooks/usePageTitle'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import api from '../../api/axios'
 import { BASE } from '../../api/config.js'
 import { fadeUp } from '../../utils/animations'
@@ -88,6 +89,7 @@ function InfoModal({ type, onClose }) {
 }
 
 export default function ENeticePage() {
+  const { t } = useTranslation()
   usePageTitle('E-Nəticə', 'Laborator analiz nəticələrinizi onlayn yoxlayın.')
 
   const [searchMode, setSearchMode] = useState('fin')
@@ -1166,7 +1168,11 @@ export default function ENeticePage() {
                     <div className="enetice-mini-value">{result.protocolNo || '—'}</div>
                   </div>
                   <div className="enetice-mini-card">
-                    <div className="enetice-mini-label">Nəticə tarixi</div>
+                    <div className="enetice-mini-label">{t('labResult.sampleDate')}</div>
+                    <div className="enetice-mini-value">{formatDate(result.sampleDate)}</div>
+                  </div>
+                  <div className="enetice-mini-card">
+                    <div className="enetice-mini-label">{t('labResult.resultDate')}</div>
                     <div className="enetice-mini-value">{formatDate(result.resultDate)}</div>
                   </div>
                   <div className="enetice-mini-card">

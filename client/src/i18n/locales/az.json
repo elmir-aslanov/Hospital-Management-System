@@ -694,7 +694,10 @@
     "priorityUrgent": "Təcili",
     "priorityStat": "STAT",
     "genericError": "Xəta baş verdi",
-    "pdfError": "PDF yüklənmədi"
+    "pdfError": "PDF yüklənmədi",
+    "labCommentPlaceholder": "Laborant şərhi...",
+    "resultPdf": "Nəticə PDF-i",
+    "viewExistingPdf": "Mövcud PDF-ə bax"
   },
   "testDetail": {
     "loading": "Yüklənir...",

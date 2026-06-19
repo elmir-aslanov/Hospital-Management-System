@@ -691,7 +691,10 @@
     "priorityUrgent": "Срочный",
     "priorityStat": "STAT",
     "genericError": "Произошла ошибка",
-    "pdfError": "Не удалось скачать PDF"
+    "pdfError": "Не удалось скачать PDF",
+    "labCommentPlaceholder": "Комментарий лаборанта...",
+    "resultPdf": "PDF результата",
+    "viewExistingPdf": "Открыть существующий PDF"
   },
   "testDetail": {
     "loading": "Загрузка...",

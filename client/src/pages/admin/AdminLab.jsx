@@ -54,7 +54,7 @@ function ManualResultsTab({ onEdit }) {
       await api.patch(`/lab/results/manual/${id}/approve`, { isPublicVisible: true })
       fetchResults()
     } catch (err) {
-      alert(err.response?.data?.message || 'Xəta baş verdi')
+      alert(err.response?.data?.message || t('labAdmin.genericError'))
     }
   }
 
@@ -68,7 +68,7 @@ function ManualResultsTab({ onEdit }) {
       a.click()
       window.URL.revokeObjectURL(url)
     } catch {
-      alert('PDF yüklənmədi')
+      alert(t('labAdmin.pdfError'))
     }
   }
 
@@ -250,7 +250,13 @@ const CATEGORY_LABELS = {
   imaging:'Görüntüləmə', urine:'Sidik', other:'Digər',
 }
 
-const RESULT_STATUS = { normal:'Normal', low:'Aşağı', high:'Yüksək', critical:'Kritik' }
+const RESULT_STATUS = {
+  normal: 'flagNormal',
+  low: 'flagLow',
+  high: 'flagHigh',
+  critical: 'flagCritical',
+  pending: 'flagPending',
+}
 const RESULT_COLORS = { normal:'#16a34a', low:'#2563eb', high:'#ea580c', critical:'#dc2626' }
 
 const emptyTest   = () => ({ testName:'', testCode:'', category:'other', urgency:'routine', notes:'' })
@@ -886,7 +892,7 @@ export default function AdminLab() {
                                 <td style={{ padding:'7px 10px', fontSize:12, fontWeight:600, color:RESULT_COLORS[r.status]||'#334155' }}>{r.value}</td>
                                 <td style={{ padding:'7px 10px', fontSize:11, color:'#64748b' }}>{r.unit||'—'}</td>
                                 <td style={{ padding:'7px 10px', fontSize:11, color:'#94a3b8' }}>{r.referenceRange||'—'}</td>
-                                <td style={{ padding:'7px 10px', fontSize:10, fontWeight:700, color:RESULT_COLORS[r.status]||'#64748b' }}>{RESULT_STATUS[r.status]||r.status}</td>
+                                <td style={{ padding:'7px 10px', fontSize:10, fontWeight:700, color:RESULT_COLORS[r.status]||'#64748b' }}>{t(`labResult.${RESULT_STATUS[r.status] || 'flagPending'}`)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1060,7 +1066,9 @@ export default function AdminLab() {
                         </td>
                         <td style={{ padding:'6px 8px' }}>
                           <select style={{ ...inp, padding:'6px 10px' }} value={r.status} onChange={e => updateResultRow(i,'status',e.target.value)}>
-                            {Object.entries(RESULT_STATUS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                            {Object.entries(RESULT_STATUS).map(([value, labelKey]) => (
+                              <option key={value} value={value}>{t(`labResult.${labelKey}`)}</option>
+                            ))}
                           </select>
                         </td>
                         <td style={{ padding:'6px 8px', minWidth:130 }}>
@@ -1086,29 +1094,29 @@ export default function AdminLab() {
 
               {/* Summary */}
               <div>
-                <label style={lbl}>Ümumi nəticə / Şərh</label>
+                <label style={lbl}>{t('labResult.generalConclusion')}</label>
                 <textarea rows={3} style={{ ...inp, resize:'vertical', fontFamily:'inherit' }}
-                  placeholder="Laborant şərhi..."
+                  placeholder={t('labAdmin.labCommentPlaceholder')}
                   value={resultForm.summary}
                   onChange={e => setResultForm(f => ({ ...f, summary: e.target.value }))} />
               </div>
 
               {/* PDF upload */}
               <div style={{ marginTop:14 }}>
-                <label style={lbl}>Nəticə PDF-i</label>
+                <label style={lbl}>{t('labAdmin.resultPdf')}</label>
                 <input type="file" accept="application/pdf,image/jpeg,image/png" onChange={e => setPdfFile(e.target.files?.[0] || null)}
                   style={{ fontSize:12, color:'#475569' }} />
                 {resultOrder?.resultPdf && !pdfFile && (
                   <a href={resultOrder.resultPdf} target="_blank" rel="noreferrer"
                     style={{ marginLeft:10, fontSize:12, fontWeight:600, color:'#00848e' }}>
-                    Mövcud PDF-ə bax
+                    {t('labAdmin.viewExistingPdf')}
                   </a>
                 )}
               </div>
             </div>
 
             <div style={{ display:'flex', gap:10, marginTop:22, justifyContent:'flex-end' }}>
-              <button onClick={() => setShowResultModal(false)} style={{ padding:'10px 20px', border:'1px solid #e2e8f0', borderRadius:9, background:'white', fontSize:13, cursor:'pointer', color:'#475569' }}>Ləğv et</button>
+              <button onClick={() => setShowResultModal(false)} style={{ padding:'10px 20px', border:'1px solid #e2e8f0', borderRadius:9, background:'white', fontSize:13, cursor:'pointer', color:'#475569' }}>{t('common.cancel')}</button>
               <button onClick={saveResult} disabled={resultSaving}
                 style={{ padding:'10px 24px', border:'none', borderRadius:9, background:'#00848e', color:'white', fontSize:13, fontWeight:600, cursor: resultSaving?'not-allowed':'pointer', opacity: resultSaving?0.7:1 }}>
                 {resultSaving ? t('labOrderResult.saving') : (resultId ? t('labOrderResult.saveChangesButton') : t('labOrderResult.saveButton'))}

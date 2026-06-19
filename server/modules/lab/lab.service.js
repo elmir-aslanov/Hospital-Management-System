@@ -109,12 +109,14 @@ const publicResultPayload = (order, result) => {
 
   return {
     patientFullName: displayName(patientUser) || 'Pasiyent',
-    protocol: order.orderNumber,
+    protocol: result.protocolNo || order.protocolNo,
+    protocolNo: result.protocolNo || order.protocolNo,
+    sampleDate: result.sampleDate || order.sampleCollectedAt,
     resultDate,
     doctorName: displayName(doctorUser),
     labName: 'Aslan Medical Laboratoriya',
     analysisName,
-    status: result.isVerified ? 'Təsdiqlənib' : 'Hazırdır',
+    status: result.status,
     summary: result.summary || '',
     results: (result.results || []).map(item => ({
       name: item.testName,
@@ -123,7 +125,7 @@ const publicResultPayload = (order, result) => {
       unit: item.unit || '',
       referenceRange: item.referenceRange || '',
       status: item.status || 'normal',
-      notes: item.notes || '',
+      note: item.note || '',
     })),
     pdfUrl: result.attachmentUrl || '',
     fileUrl: result.attachmentUrl || '',
@@ -812,7 +814,7 @@ export const approveManualResult = async (id, userId, isPublicVisible) => {
   result.status = 'approved';
   result.approvedBy = userId;
   result.approvedAt = new Date();
-  result.isPublicVisible = !!isPublicVisible;
+  result.isPublicVisible = true;
   await result.save();
 
   if (result.labOrderId) {
