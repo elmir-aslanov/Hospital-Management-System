@@ -9,7 +9,7 @@ import Navbar           from './components/Navbar';
 import Footer           from './components/Footer';
 import PageLoader       from './components/ui/PageLoader';
 import WhatsAppButton  from './components/ui/WhatsAppButton';
-import AIChatWidget     from './components/ai/AIChatWidget';
+import AIChatWidget     from './components/AIChatWidget';
 import ProtectedRoute   from './components/ui/ProtectedRoute';
 import AccessibilityWidget from './components/accessibility/AccessibilityWidget';
 import { AccessibilityProvider } from './context/AccessibilityContext';
