@@ -1,269 +1,178 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
 
-const STORAGE_KEY = 'aslanMedicalAccessibility:v1'
+const STORAGE_KEY = 'aslanMedicalAccessibility:v2'
+const LEGACY_STORAGE_KEY = 'aslanMedicalAccessibility:v1'
 
-const DEFAULTS = {
-  modes: { epilepsy: false, visual: false, cognitive: false, attention: false },
-  visualMode: '',
-  readableFont: false,
-  dyslexiaFont: false,
-  highlightHeadings: false,
+const DEFAULT_SETTINGS = Object.freeze({
+  contrast: 0,
   highlightLinks: false,
-  magnifier: false,
-  textScale: 100,
-  lineHeight: 1.5,
-  letterSpacing: 0,
-  textAlign: '',
-  hideImages: false,
-  cursor: '',
-  readingMask: false,
-  readingGuide: false,
-  focusHighlight: false,
-  stopAnimations: false,
-  keyboardNavigation: false,
-  background: '',
+  textSize: 0,
+  textSpacing: 0,
+  animationsPaused: false,
+  imagesHidden: false,
+  dyslexia: false,
+  cursor: 0,
+  tooltips: false,
+  lineHeight: 0,
+  textAlign: 0,
+  saturation: 0,
+  oversized: false,
+  widgetPosition: 'right',
+  widgetVisible: true,
+})
+
+const NUMBER_LIMITS = {
+  contrast: 4,
+  textSize: 3,
+  textSpacing: 3,
+  cursor: 2,
+  lineHeight: 3,
+  textAlign: 4,
+  saturation: 3,
 }
 
-const MODE_PRESETS = {
-  epilepsy: { stopAnimations: true },
-  visual: {
-    visualMode: 'high-contrast',
-    textScale: 120,
-    highlightLinks: true,
-    focusHighlight: true,
-    cursor: 'dark',
-  },
-  cognitive: {
-    readableFont: true,
-    highlightHeadings: true,
-    highlightLinks: true,
-    lineHeight: 1.8,
-    letterSpacing: 0.05,
-    stopAnimations: true,
-  },
-  attention: {
-    readingMask: true,
-    focusHighlight: true,
-    stopAnimations: true,
-  },
-}
+const BOOLEAN_KEYS = [
+  'highlightLinks',
+  'animationsPaused',
+  'imagesHidden',
+  'dyslexia',
+  'tooltips',
+  'oversized',
+  'widgetVisible',
+]
 
 const AccessibilityContext = createContext(null)
 
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
-const hasActiveSettings = (settings) => (
-  Object.values(settings.modes).some(Boolean)
-  || settings.visualMode
-  || settings.readableFont
-  || settings.dyslexiaFont
-  || settings.highlightHeadings
-  || settings.highlightLinks
-  || settings.magnifier
-  || settings.textScale !== DEFAULTS.textScale
-  || settings.lineHeight !== DEFAULTS.lineHeight
-  || settings.letterSpacing !== DEFAULTS.letterSpacing
-  || settings.textAlign
-  || settings.hideImages
-  || settings.cursor
-  || settings.readingMask
-  || settings.readingGuide
-  || settings.focusHighlight
-  || settings.stopAnimations
-  || settings.keyboardNavigation
-  || settings.background
-)
+const sanitizeSettings = (candidate) => {
+  const safe = { ...DEFAULT_SETTINGS }
+  if (!candidate || typeof candidate !== 'object') return safe
+
+  Object.entries(NUMBER_LIMITS).forEach(([key, maximum]) => {
+    const value = Number(candidate[key])
+    safe[key] = Number.isInteger(value) && value >= 0 && value <= maximum ? value : 0
+  })
+  BOOLEAN_KEYS.forEach((key) => {
+    safe[key] = typeof candidate[key] === 'boolean' ? candidate[key] : DEFAULT_SETTINGS[key]
+  })
+  safe.widgetPosition = candidate.widgetPosition === 'left' ? 'left' : 'right'
+  return safe
+}
 
 const readStoredSettings = () => {
-  if (typeof window === 'undefined') return DEFAULTS
+  if (typeof window === 'undefined') return { ...DEFAULT_SETTINGS }
   try {
     const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null')
-    if (!parsed || parsed.version !== 1 || typeof parsed.settings !== 'object') return DEFAULTS
-    return {
-      ...DEFAULTS,
-      ...parsed.settings,
-      modes: { ...DEFAULTS.modes, ...(parsed.settings.modes || {}) },
-      textScale: clamp(Number(parsed.settings.textScale) || 100, 80, 160),
-      lineHeight: clamp(Number(parsed.settings.lineHeight) || 1.5, 1.2, 2.2),
-      letterSpacing: clamp(Number(parsed.settings.letterSpacing) || 0, 0, 0.15),
-    }
+    return parsed?.version === 2 ? sanitizeSettings(parsed.settings) : { ...DEFAULT_SETTINGS }
   } catch {
-    return DEFAULTS
+    return { ...DEFAULT_SETTINGS }
   }
 }
 
-const stopSpeech = () => {
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel()
-  }
+const removeLegacyArtifacts = () => {
+  const body = document.body
+  ;[...body.classList].forEach((className) => {
+    if (className.startsWith('am-a11y-')) body.classList.remove(className)
+  })
+  ;[...body.style].forEach((property) => {
+    if (property.startsWith('--am-a11y-')) body.style.removeProperty(property)
+  })
+  try { window.localStorage.removeItem(LEGACY_STORAGE_KEY) } catch { /* optional storage */ }
 }
 
 export function AccessibilityProvider({ children }) {
-  const location = useLocation()
   const [settings, setSettings] = useState(readStoredSettings)
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const skipNextPersistenceRef = useRef(false)
-  const [pointerY, setPointerY] = useState(() => (
-    typeof window === 'undefined' ? 0 : window.innerHeight / 2
-  ))
+  const skipPersistenceRef = useRef(false)
 
   useEffect(() => {
-    if (skipNextPersistenceRef.current) {
-      skipNextPersistenceRef.current = false
+    removeLegacyArtifacts()
+  }, [])
+
+  useEffect(() => {
+    if (skipPersistenceRef.current) {
+      skipPersistenceRef.current = false
       return
     }
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, settings }))
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, settings }))
     } catch {
-      // Accessibility preferences are optional; storage failures must not break the site.
+      // Preferences are optional and must never prevent the public site from rendering.
     }
   }, [settings])
 
   useEffect(() => {
     const body = document.body
     const classes = [
-      hasActiveSettings(settings) && 'am-a11y-active',
-      settings.stopAnimations && 'am-a11y-stop-motion',
-      settings.readableFont && 'am-a11y-readable-font',
-      settings.dyslexiaFont && 'am-a11y-dyslexia-font',
-      settings.highlightHeadings && 'am-a11y-headings',
-      settings.highlightLinks && 'am-a11y-links',
-      settings.magnifier && 'am-a11y-magnifier',
-      settings.hideImages && 'am-a11y-hide-images',
-      settings.focusHighlight && 'am-a11y-focus',
-      settings.keyboardNavigation && 'am-a11y-keyboard',
-      settings.cursor === 'dark' && 'am-a11y-cursor-dark',
-      settings.cursor === 'light' && 'am-a11y-cursor-light',
-      settings.visualMode && `am-a11y-visual-${settings.visualMode}`,
-      settings.textAlign && `am-a11y-align-${settings.textAlign}`,
-      settings.background && `am-a11y-bg-${settings.background}`,
+      settings.contrast > 0 && `aslan-a11y-contrast-${settings.contrast}`,
+      settings.highlightLinks && 'aslan-a11y-highlight-links',
+      settings.textSize > 0 && `aslan-a11y-text-size-${settings.textSize}`,
+      settings.textSpacing > 0 && `aslan-a11y-text-spacing-${settings.textSpacing}`,
+      settings.animationsPaused && 'aslan-a11y-pause-animations',
+      settings.imagesHidden && 'aslan-a11y-hide-images',
+      settings.dyslexia && 'aslan-a11y-dyslexia',
+      settings.cursor > 0 && `aslan-a11y-cursor-${settings.cursor}`,
+      settings.tooltips && 'aslan-a11y-tooltips',
+      settings.lineHeight > 0 && `aslan-a11y-line-height-${settings.lineHeight}`,
+      settings.textAlign > 0 && `aslan-a11y-text-align-${settings.textAlign}`,
+      settings.saturation > 0 && `aslan-a11y-saturation-${settings.saturation}`,
     ].filter(Boolean)
 
     body.classList.add(...classes)
-    body.style.setProperty('--am-a11y-text-scale', String(settings.textScale / 100))
-    body.style.setProperty('--am-a11y-line-height', String(settings.lineHeight))
-    body.style.setProperty('--am-a11y-letter-spacing', `${settings.letterSpacing}em`)
 
-    const media = document.querySelectorAll('video, audio')
-    if (settings.stopAnimations) {
+    const media = [...document.querySelectorAll('video, audio')]
+    if (settings.animationsPaused) {
       media.forEach((item) => {
         if (!item.paused) {
-          item.dataset.amA11yWasPlaying = 'true'
+          item.dataset.aslanA11yWasPlaying = 'true'
           item.pause()
+        }
+      })
+    } else {
+      media.forEach((item) => {
+        if (item.dataset.aslanA11yWasPlaying === 'true') {
+          delete item.dataset.aslanA11yWasPlaying
+          item.play().catch(() => {})
         }
       })
     }
 
-    return () => {
-      classes.forEach((className) => body.classList.remove(className))
-      body.style.removeProperty('--am-a11y-text-scale')
-      body.style.removeProperty('--am-a11y-line-height')
-      body.style.removeProperty('--am-a11y-letter-spacing')
-    }
+    return () => classes.forEach((className) => body.classList.remove(className))
   }, [settings])
 
-  useEffect(() => {
-    if (!settings.readingMask && !settings.readingGuide) return undefined
-    const updatePointer = (event) => setPointerY(event.clientY)
-    window.addEventListener('pointermove', updatePointer, { passive: true })
-    return () => window.removeEventListener('pointermove', updatePointer)
-  }, [settings.readingMask, settings.readingGuide])
-
-  useEffect(() => {
-    stopSpeech()
-    queueMicrotask(() => setIsSpeaking(false))
-  }, [location.pathname])
-
-  useEffect(() => () => stopSpeech(), [])
-
-  const patch = useCallback((next) => {
-    setSettings((current) => ({ ...current, ...next }))
-  }, [])
-
-  const toggle = useCallback((key) => {
-    setSettings((current) => ({ ...current, [key]: !current[key] }))
-  }, [])
-
-  const toggleMode = useCallback((mode) => {
-    setSettings((current) => {
-      const enabled = !current.modes[mode]
-      const preset = MODE_PRESETS[mode]
-      const disabledPreset = Object.fromEntries(
-        Object.keys(preset).map((key) => [key, DEFAULTS[key]])
-      )
-      return {
-        ...current,
-        ...(enabled ? preset : disabledPreset),
-        modes: { ...current.modes, [mode]: enabled },
-      }
+  useEffect(() => () => {
+    const body = document.body
+    ;[...body.classList].forEach((className) => {
+      if (className.startsWith('aslan-a11y-')) body.classList.remove(className)
     })
   }, [])
 
-  const setVisualMode = useCallback((visualMode) => {
-    setSettings((current) => ({
-      ...current,
-      visualMode: current.visualMode === visualMode ? '' : visualMode,
-    }))
+  const patch = useCallback((next) => {
+    setSettings((current) => sanitizeSettings({ ...current, ...next }))
   }, [])
 
-  const setCursor = useCallback((cursor) => {
-    setSettings((current) => ({ ...current, cursor: current.cursor === cursor ? '' : cursor }))
+  const toggle = useCallback((key) => {
+    setSettings((current) => sanitizeSettings({ ...current, [key]: !current[key] }))
   }, [])
 
-  const setBackground = useCallback((background) => {
-    setSettings((current) => ({
+  const cycle = useCallback((key, maximum) => {
+    setSettings((current) => sanitizeSettings({
       ...current,
-      background: current.background === background ? '' : background,
+      [key]: (current[key] + 1) % (maximum + 1),
     }))
   }, [])
 
   const reset = useCallback(() => {
-    stopSpeech()
-    setIsSpeaking(false)
-    skipNextPersistenceRef.current = true
-    setSettings(DEFAULTS)
-    try { window.localStorage.removeItem(STORAGE_KEY) } catch { /* noop */ }
-  }, [])
-
-  const speakText = useCallback((text, language, onUnsupported) => {
-    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
-      onUnsupported?.()
-      return false
-    }
-    const safeText = String(text || '').trim().slice(0, 12000)
-    if (!safeText) return false
-    stopSpeech()
-    const utterance = new SpeechSynthesisUtterance(safeText)
-    utterance.lang = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'az-AZ'
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
-    setIsSpeaking(true)
-    window.speechSynthesis.speak(utterance)
-    return true
-  }, [])
-
-  const stopReading = useCallback(() => {
-    stopSpeech()
-    setIsSpeaking(false)
+    skipPersistenceRef.current = true
+    setSettings({ ...DEFAULT_SETTINGS })
+    try { window.localStorage.removeItem(STORAGE_KEY) } catch { /* optional storage */ }
   }, [])
 
   const value = useMemo(() => ({
     settings,
     patch,
     toggle,
-    toggleMode,
-    setVisualMode,
-    setCursor,
-    setBackground,
+    cycle,
     reset,
-    speakText,
-    stopReading,
-    isSpeaking,
-    pointerY,
-  }), [
-    settings, patch, toggle, toggleMode, setVisualMode, setCursor,
-    setBackground, reset, speakText, stopReading, isSpeaking, pointerY,
-  ])
+  }), [settings, patch, toggle, cycle, reset])
 
   return (
     <AccessibilityContext.Provider value={value}>

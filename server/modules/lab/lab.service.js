@@ -22,6 +22,9 @@ const POP_PUBLIC_DOCTOR  = { path: 'doctorId', select: 'userId specialization', 
 const POP_MANUAL = [
   { path: 'labTechnicianId', select: 'fullName name surname' },
   { path: 'approvedBy',      select: 'fullName name surname' },
+  { path: 'performedBy',     select: 'fullName name surname' },
+  { path: 'labOrderId',      select: 'orderNumber requestNumber protocolNo sampleCollectedAt tests' },
+  { path: 'patientId',       select: 'patientId' },
 ];
 
 const trim = (value) => String(value || '').trim();
@@ -146,18 +149,78 @@ export const getOrders = async ({ status, patientId, doctorId, priority, page = 
     LabOrder.find(filter).populate([POP_PATIENT, POP_DOCTOR]).sort({ createdAt: -1 }).skip((pg - 1) * lim).limit(lim),
     LabOrder.countDocuments(filter),
   ]);
-  return { orders, total, page: pg, limit: lim };
+  const resultRows = await LabResult.find({ labOrderId: { $in: orders.map((order) => order._id) } })
+    .select('labOrderId protocolNo status isPublicVisible completedAt approvedAt results')
+    .lean();
+  const resultByOrder = new Map(resultRows.map((result) => [String(result.labOrderId), result]));
+  return {
+    orders: orders.map((order) => {
+      const result = resultByOrder.get(String(order._id));
+      return {
+        ...order.toObject(),
+        protocolNo: result?.protocolNo || order.protocolNo || null,
+        resultInfo: result ? {
+          _id: result._id,
+          status: result.status,
+          isPublicVisible: result.isPublicVisible,
+          completedAt: result.completedAt,
+          approvedAt: result.approvedAt,
+          hasValues: Array.isArray(result.results) && result.results.some((item) => trim(item.value)),
+        } : null,
+      };
+    }),
+    total,
+    page: pg,
+    limit: lim,
+  };
 };
 
 export const getOrderById = async (id) => {
   const order = await LabOrder.findById(id).populate([POP_PATIENT, POP_DOCTOR]);
   if (!order) throw new ApiError(404, 'Lab order not found');
-  return order;
+  const result = await LabResult.findOne({ labOrderId: order._id })
+    .select('protocolNo status isPublicVisible completedAt approvedAt results')
+    .lean();
+  return {
+    ...order.toObject(),
+    protocolNo: result?.protocolNo || order.protocolNo || null,
+    resultInfo: result ? {
+      _id: result._id,
+      status: result.status,
+      isPublicVisible: result.isPublicVisible,
+      completedAt: result.completedAt,
+      approvedAt: result.approvedAt,
+      hasValues: Array.isArray(result.results) && result.results.some((item) => trim(item.value)),
+    } : null,
+  };
 };
 
 export const updateOrderStatus = async (id, status, userId) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Invalid lab order id');
   const order = await LabOrder.findById(id);
   if (!order) throw new ApiError(404, 'Lab order not found');
+
+  const repeatedSampleCollection = status === 'sample_collected' && order.status === 'sample_collected';
+  if (repeatedSampleCollection) {
+    const existingResult = await LabResult.findOne({ labOrderId: order._id })
+      .select('protocolNo status isPublicVisible completedAt approvedAt results')
+      .lean();
+    if (existingResult?.protocolNo || order.protocolNo) {
+      const populated = await order.populate([POP_PATIENT, POP_DOCTOR]);
+      return {
+        ...populated.toObject(),
+        protocolNo: existingResult?.protocolNo || order.protocolNo,
+        resultInfo: existingResult ? {
+          _id: existingResult._id,
+          status: existingResult.status,
+          isPublicVisible: existingResult.isPublicVisible,
+          completedAt: existingResult.completedAt,
+          approvedAt: existingResult.approvedAt,
+          hasValues: Array.isArray(existingResult.results) && existingResult.results.some((item) => trim(item.value)),
+        } : null,
+      };
+    }
+  }
   const allowed = {
     pending:          ['confirmed', 'sample_collected', 'cancelled'],
     confirmed:        ['sample_collected', 'cancelled'],
@@ -167,45 +230,76 @@ export const updateOrderStatus = async (id, status, userId) => {
     approved:         [],
     cancelled:        [],
   };
-  if (!allowed[order.status]?.includes(status)) {
+  if (!repeatedSampleCollection && !allowed[order.status]?.includes(status)) {
     throw new ApiError(400, `Cannot transition from '${order.status}' to '${status}'`);
   }
   order.status = status;
   if (status === 'confirmed' && !order.confirmedAt) order.confirmedAt = new Date();
   if (status === 'completed' && !order.completedAt) order.completedAt = new Date();
 
-  if (status === 'sample_collected' && order.source === 'public_self_request' && !order.sampleCollectedAt) {
-    order.sampleCollectedAt = new Date();
+  if (status === 'sample_collected') {
+    if (!order.sampleCollectedAt) order.sampleCollectedAt = new Date();
+    if (!order.sampleCollectedBy) order.sampleCollectedBy = userId;
     const existingResult = await LabResult.findOne({ labOrderId: order._id });
     if (!existingResult) {
       const patient = await Patient.findById(order.patientId).populate('userId', 'fullName name surname sexiyyatId birthDate');
       const user = patient?.userId;
       const priceList = order.priceListId ? await PriceList.findById(order.priceListId) : null;
 
-      await createWithSequenceRetry(LabResult, async () => {
-        const year = new Date().getFullYear();
-        const seq = await nextSequence(`labResultProtocol-${year}`);
-        return {
-          labOrderId: order._id,
-          patientId: order.patientId,
-          protocolNo: `LAB-${year}-${String(seq).padStart(6, '0')}`,
-          patientFullName: displayUserName(user).slice(0, 150),
-          patientFin: trim(user?.sexiyyatId).toUpperCase().slice(0, 8),
-          patientBirthDate: user?.birthDate || null,
-          sampleDate: order.sampleCollectedAt,
-          testName: (priceList?.name || order.tests?.[0]?.testName || '').slice(0, 150),
-          testCode: (priceList?.serviceCode || order.tests?.[0]?.testCode || '').slice(0, 40),
-          labTechnicianId: userId,
-          performedBy: userId,
-          status: 'draft',
-          isPublicVisible: false,
-        };
-      });
+      let createdResult;
+      try {
+        createdResult = await createWithSequenceRetry(LabResult, async () => {
+          const year = new Date().getFullYear();
+          const seq = await nextSequence(`labResultProtocol-${year}`);
+          return {
+            labOrderId: order._id,
+            patientId: order.patientId,
+            protocolNo: `LAB-${year}-${String(seq).padStart(6, '0')}`,
+            patientFullName: displayUserName(user).slice(0, 150),
+            patientFin: trim(user?.sexiyyatId).toUpperCase().slice(0, 8),
+            patientBirthDate: user?.birthDate || null,
+            sampleDate: order.sampleCollectedAt,
+            testName: (priceList?.name || order.tests?.[0]?.testName || '').slice(0, 150),
+            testCode: (priceList?.serviceCode || order.tests?.[0]?.testCode || '').slice(0, 40),
+            labTechnicianId: userId,
+            performedBy: userId,
+            status: 'draft',
+            isPublicVisible: false,
+          };
+        });
+      } catch (error) {
+        if (error?.code !== 11000 || !duplicateKeyFields(error).includes('labOrderId')) throw error;
+        createdResult = await LabResult.findOne({ labOrderId: order._id });
+        if (!createdResult) throw error;
+      }
+      order.protocolNo = createdResult.protocolNo;
+    } else if (!existingResult.protocolNo) {
+      const year = new Date().getFullYear();
+      const seq = await nextSequence(`labResultProtocol-${year}`);
+      existingResult.protocolNo = `LAB-${year}-${String(seq).padStart(6, '0')}`;
+      existingResult.sampleDate = existingResult.sampleDate || order.sampleCollectedAt;
+      await existingResult.save();
+      order.protocolNo = existingResult.protocolNo;
+    } else {
+      order.protocolNo = existingResult.protocolNo;
     }
   }
 
   await order.save();
-  return order;
+  const populated = await order.populate([POP_PATIENT, POP_DOCTOR]);
+  const result = await LabResult.findOne({ labOrderId: order._id }).select('protocolNo status isPublicVisible completedAt approvedAt results').lean();
+  return {
+    ...populated.toObject(),
+    protocolNo: result?.protocolNo || order.protocolNo || null,
+    resultInfo: result ? {
+      _id: result._id,
+      status: result.status,
+      isPublicVisible: result.isPublicVisible,
+      completedAt: result.completedAt,
+      approvedAt: result.approvedAt,
+      hasValues: Array.isArray(result.results) && result.results.some((item) => trim(item.value)),
+    } : null,
+  };
 };
 
 export const deleteOrder = async (id) => {
@@ -220,21 +314,75 @@ export const deleteOrder = async (id) => {
 
 // ── Results ──────────────────────────────────────────────────
 export const createResult = async (data, userId) => {
+  if (!mongoose.Types.ObjectId.isValid(data.labOrderId)) throw new ApiError(400, 'Invalid lab order id');
   const order = await LabOrder.findById(data.labOrderId);
   if (!order) throw new ApiError(404, 'Lab order not found');
   if (order.status === 'cancelled') throw new ApiError(400, 'Cannot add result to cancelled order');
   const existing = await LabResult.findOne({ labOrderId: data.labOrderId });
-  if (existing) throw new ApiError(409, 'Result already exists for this order. Use update instead.');
-  const result = await LabResult.create({ ...data, patientId: order.patientId, performedBy: userId });
+  if (existing) {
+    const resultItems = buildManualResultItems(data.results);
+    if (!resultItems.length || resultItems.some((item) => !item.testName || !item.value)) {
+      throw new ApiError(400, 'Every result parameter requires a name and value');
+    }
+    existing.results = resultItems;
+    existing.summary = trim(data.summary).slice(0, 2000);
+    existing.generalConclusion = existing.summary;
+    existing.performedBy = userId;
+    existing.labTechnicianId = userId;
+    existing.resultDate = new Date();
+    existing.completedAt = new Date();
+    existing.status = 'completed';
+    existing.isPublicVisible = false;
+    existing.approvedBy = null;
+    existing.approvedAt = null;
+    await existing.save();
+    order.status = 'completed';
+    order.completedAt = new Date();
+    order.protocolNo = existing.protocolNo || order.protocolNo;
+    await order.save();
+    try {
+      logAction({ userId, action: 'UPDATE_LAB_RESULT', resourceType: 'LabResult', resourceId: existing._id, description: `Existing result completed for order ${data.labOrderId}` });
+    } catch (_) {}
+    return existing.populate(POP_MANUAL);
+  }
+  const patient = await Patient.findById(order.patientId).populate('userId', 'fullName name surname sexiyyatId birthDate');
+  const user = patient?.userId;
+  const year = new Date().getFullYear();
+  const seq = await nextSequence(`labResultProtocol-${year}`);
+  const protocolNo = `LAB-${year}-${String(seq).padStart(6, '0')}`;
+  const resultItems = buildManualResultItems(data.results);
+  if (!resultItems.length || resultItems.some((item) => !item.testName || !item.value)) {
+    throw new ApiError(400, 'Every result parameter requires a name and value');
+  }
+  const result = await LabResult.create({
+    ...data,
+    results: resultItems,
+    patientId: order.patientId,
+    performedBy: userId,
+    labTechnicianId: userId,
+    protocolNo,
+    patientFullName: displayUserName(user).slice(0, 150),
+    patientFin: trim(user?.sexiyyatId).toUpperCase().slice(0, 8),
+    patientBirthDate: user?.birthDate || null,
+    sampleDate: order.sampleCollectedAt || new Date(),
+    resultDate: new Date(),
+    testName: trim(order.tests?.[0]?.testName).slice(0, 150),
+    testCode: trim(order.tests?.[0]?.testCode).slice(0, 40),
+    generalConclusion: trim(data.summary).slice(0, 2000),
+    status: 'completed',
+    completedAt: new Date(),
+    isPublicVisible: false,
+  });
   order.status = 'completed';
+  order.protocolNo = protocolNo;
   if (!order.completedAt) order.completedAt = new Date();
   await order.save();
   try { logAction({ userId, action: 'CREATE_LAB_RESULT', resourceType: 'LabResult', resourceId: result._id, description: `Result entered for order ${data.labOrderId}` }); } catch (_) {}
-  return result.populate([POP_PERF]);
+  return result.populate(POP_MANUAL);
 };
 
 export const getResultByOrder = async (labOrderId) => {
-  const result = await LabResult.findOne({ labOrderId }).populate(POP_PERF);
+  const result = await LabResult.findOne({ labOrderId }).populate(POP_MANUAL);
   if (!result) throw new ApiError(404, 'No result found for this order');
   return result;
 };
@@ -263,6 +411,9 @@ export const searchPublicResult = async ({
   if (!cleanProtocol) {
     throw new ApiError(400, 'Protokol nömrəsi daxil edilməlidir');
   }
+  if (/^LAB-REQ-/i.test(cleanProtocol)) {
+    throw new ApiError(404, 'Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı');
+  }
   if (cleanSearchType === 'fin' && !cleanFin) {
     throw new ApiError(400, 'FİN kod daxil edilməlidir');
   }
@@ -277,7 +428,7 @@ export const searchPublicResult = async ({
   }
 
   const order = await LabOrder.findOne({
-    orderNumber: new RegExp(`^${escapeRegex(cleanProtocol)}$`, 'i'),
+    protocolNo: new RegExp(`^${escapeRegex(cleanProtocol)}$`, 'i'),
     status: { $ne: 'cancelled' },
   }).populate([POP_PUBLIC_PATIENT, POP_PUBLIC_DOCTOR]);
 
@@ -306,7 +457,7 @@ export const searchPublicResult = async ({
   }
 
   const result = await LabResult.findOne(resultFilter).sort({ createdAt: -1 });
-  if (!result) {
+  if (!result || result.status !== 'approved' || !result.isPublicVisible) {
     throw new ApiError(404, 'Daxil edilən məlumatlara uyğun analiz nəticəsi tapılmadı');
   }
 
@@ -343,6 +494,9 @@ export const lookupPublicResult = async ({ fin, birthDate, protocolNo, startDate
   if (!cleanProtocol) {
     throw new ApiError(400, 'Protokol nömrəsi daxil edilməlidir');
   }
+  if (/^LAB-REQ-/i.test(cleanProtocol)) {
+    throw new ApiError(404, GENERIC_NOT_FOUND);
+  }
   if (!cleanFin && !cleanBirthDate) {
     throw new ApiError(400, 'FİN kod və ya doğum tarixi daxil edilməlidir');
   }
@@ -369,11 +523,10 @@ export const lookupPublicResult = async ({ fin, birthDate, protocolNo, startDate
     throw new ApiError(404, GENERIC_NOT_FOUND);
   }
 
-  if (order.status !== 'completed') {
-    return { status: 'pending', message: 'Nəticə hələ hazır deyil' };
-  }
-
   const result = await LabResult.findOne({ labOrderId: order._id });
+  if (!result || result.status !== 'approved' || !result.isPublicVisible) {
+    throw new ApiError(404, GENERIC_NOT_FOUND);
+  }
   const doctorUser = order.doctorId?.userId;
 
   return {
@@ -397,13 +550,29 @@ export const lookupPublicResult = async ({ fin, birthDate, protocolNo, startDate
 
 // ── Result editing & attachments ────────────────────────────
 export const updateResult = async (id, data, userId) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Invalid result id');
   const result = await LabResult.findById(id);
   if (!result) throw new ApiError(404, 'Result not found');
 
   const wasApproved = result.status === 'approved';
 
-  if (Array.isArray(data.results)) result.results = data.results;
-  if (data.summary !== undefined) result.summary = data.summary;
+  if (Array.isArray(data.results)) {
+    const resultItems = buildManualResultItems(data.results);
+    if (!resultItems.length || resultItems.some((item) => !item.testName || !item.value)) {
+      throw new ApiError(400, 'Every result parameter requires a name and value');
+    }
+    result.results = resultItems;
+  }
+  if (data.summary !== undefined) {
+    result.summary = data.summary;
+    result.generalConclusion = data.summary;
+  }
+  result.labTechnicianId = userId;
+  result.performedBy = userId;
+  result.resultDate = new Date();
+  result.status = 'completed';
+  result.completedAt = new Date();
+  result.isPublicVisible = false;
 
   if (wasApproved) {
     // Editing a previously approved/published result revokes publication —
@@ -431,7 +600,7 @@ export const updateResult = async (id, data, userId) => {
       : `Result updated for order ${result.labOrderId}`;
     logAction({ userId, action, resourceType: 'LabResult', resourceId: result._id, description });
   } catch (_) {}
-  return result.populate([POP_PERF]);
+  return result.populate(POP_MANUAL);
 };
 
 // ── Manual / standalone certified results ───────────────────────
@@ -459,6 +628,7 @@ const sameCalendarDate = (left, rightStr) => {
 const buildManualResultItems = (items) =>
   (Array.isArray(items) ? items : []).map((item) => ({
     testName:       trim(item.parameterName ?? item.testName),
+    testCode:       trim(item.testCode).slice(0, 40),
     value:          trim(item.value),
     unit:           trim(item.unit),
     referenceRange: trim(item.referenceRange),
@@ -564,18 +734,33 @@ export const updateManualResult = async (id, data, userId) => {
   return result.populate(POP_MANUAL);
 };
 
-export const listManualResults = async ({ search, status, department, dateFrom, dateTo, page = 1, limit = 20 } = {}) => {
-  const filter = { protocolNo: { $ne: null } };
-  if (status) filter.status = status;
+export const listManualResults = async ({ search, status, department, critical, publicVisible, dateFrom, dateTo, page = 1, limit = 20 } = {}) => {
+  const filter = {
+    protocolNo: { $ne: null },
+    status: status || { $in: ['completed', 'approved'] },
+  };
   if (department) filter.departmentName = new RegExp(escapeRegex(department), 'i');
+  if (String(critical) === 'true') filter.results = { $elemMatch: { status: 'critical' } };
+  if (String(publicVisible) === 'true') filter.isPublicVisible = true;
   if (search) {
     const re = new RegExp(escapeRegex(search), 'i');
-    filter.$or = [{ patientFullName: re }, { patientFin: re }, { protocolNo: re }, { testName: re }];
+    const matchingPatients = await Patient.find({ patientId: re }).select('_id').lean();
+    filter.$or = [
+      { patientFullName: re },
+      { patientFin: re },
+      { protocolNo: re },
+      { testName: re },
+      { patientId: { $in: matchingPatients.map((patient) => patient._id) } },
+    ];
   }
   if (dateFrom || dateTo) {
     filter.resultDate = {};
     if (dateFrom) filter.resultDate.$gte = new Date(dateFrom);
-    if (dateTo)   filter.resultDate.$lte = new Date(dateTo);
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      filter.resultDate.$lte = endOfDay;
+    }
   }
 
   const pg  = Math.max(1, parseInt(page));
@@ -672,6 +857,7 @@ export const verifyPublicLabResult = async ({ method, fin, birthDate, protocolNo
 
   if (!['fin', 'birthDate'].includes(cleanMethod)) throw new ApiError(400, 'Axtarış metodu düzgün deyil');
   if (!cleanProtocol) throw new ApiError(400, 'Protokol nömrəsi tələb olunur');
+  if (/^LAB-REQ-/i.test(cleanProtocol)) throw new ApiError(404, VERIFY_GENERIC_NOT_FOUND);
 
   if (cleanMethod === 'fin') {
     if (!cleanFin || !NEW_FIN_REGEX.test(cleanFin)) throw new ApiError(400, 'FİN kod 5-8 simvol arası hərf və rəqəmdən ibarət olmalıdır');
@@ -713,6 +899,7 @@ export const verifyPublicLabResult = async ({ method, fin, birthDate, protocolNo
       patientFinMasked: maskFinForApi(result.patientFin),
       testName: result.testName,
       testCode: result.testCode,
+      sampleDate: result.sampleDate,
       resultDate: result.resultDate,
       status: result.status,
       generalConclusion: result.generalConclusion,

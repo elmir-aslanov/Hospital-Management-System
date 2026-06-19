@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../api/axios'
-
-import { BASE } from '../../api/config.js'
 
 const MANUAL_STATUS_CFG = {
   draft:     { label: 'statusDraft',     bg: '#f1f5f9', color: '#64748b' },
@@ -14,22 +12,28 @@ const MANUAL_STATUS_CFG = {
 
 const APPROVER_ROLES = ['SUPER_ADMIN', 'ADMIN', 'BAS_HEKIM']
 
-function ManualResultsTab() {
+function ManualResultsTab({ onEdit }) {
   const { t } = useTranslation()
   const [results, setResults]   = useState([])
   const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [selected, setSelected] = useState(null)
   const [currentUser] = useState(() => { try { return JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('user') || '{}') } catch { return {} } })
-  const canApprove = APPROVER_ROLES.includes(currentUser.role)
+  const canApprove = APPROVER_ROLES.includes(String(currentUser.role || '').toUpperCase())
 
   const fetchResults = async () => {
     setLoading(true)
     try {
       const params = { limit: 100 }
       if (search) params.search = search
-      if (filterStatus !== 'all') params.status = filterStatus
+      if (['completed', 'approved'].includes(filterStatus)) params.status = filterStatus
+      if (filterStatus === 'critical') params.critical = true
+      if (filterStatus === 'public') params.publicVisible = true
+      if (dateFrom) params.dateFrom = dateFrom
+      if (dateTo) params.dateTo = dateTo
       const res = await api.get('/lab/results/manual', { params })
       setResults(res.data?.data?.results || [])
     } catch {
@@ -43,22 +47,11 @@ function ManualResultsTab() {
     const timer = setTimeout(fetchResults, 300)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, filterStatus])
+  }, [search, filterStatus, dateFrom, dateTo])
 
   const approve = async (id) => {
-    const makePublic = window.confirm('Bu nəticə pasiyentə (E-Nəticə səhifəsində) açıq olsun?')
     try {
-      await api.patch(`/lab/results/manual/${id}/approve`, { isPublicVisible: makePublic })
-      fetchResults()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Xəta baş verdi')
-    }
-  }
-
-  const cancelResult = async (id) => {
-    if (!window.confirm('Bu nəticəni ləğv etmək istəyirsiniz?')) return
-    try {
-      await api.patch(`/lab/results/manual/${id}/cancel`)
+      await api.patch(`/lab/results/manual/${id}/approve`, { isPublicVisible: true })
       fetchResults()
     } catch (err) {
       alert(err.response?.data?.message || 'Xəta baş verdi')
@@ -84,12 +77,17 @@ function ManualResultsTab() {
   return (
     <div style={{ display: 'flex', gap: 18 }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('labResult.search')} style={{ ...inp, flex: 1 }} />
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inp, width: 170 }}>
             <option value="all">{t('labResult.allStatuses')}</option>
-            {Object.entries(MANUAL_STATUS_CFG).map(([k, cfg]) => <option key={k} value={k}>{t(`labResult.${cfg.label}`)}</option>)}
+            <option value="completed">{t('labResult.statusCompleted')}</option>
+            <option value="approved">{t('labResult.statusApproved')}</option>
+            <option value="critical">{t('labResult.flagCritical')}</option>
+            <option value="public">{t('labAdmin.publicVisible')}</option>
           </select>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} aria-label={t('labAdmin.dateFrom')} style={{ ...inp, width: 145 }} />
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} aria-label={t('labAdmin.dateTo')} style={{ ...inp, width: 145 }} />
         </div>
 
         <div style={{ background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', overflow: 'auto' }}>
@@ -103,7 +101,7 @@ function ManualResultsTab() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  {[t('labResult.protocolNo'), t('labResult.patient'), t('labResult.testName'), t('labResult.resultDate'), t('labResult.status'), 'Public', ''].map(h => (
+                  {[t('labResult.protocolNo'), t('labResult.patient'), t('labResult.testName'), t('labResult.resultDate'), t('labResult.status'), t('labAdmin.approvedBy'), t('labAdmin.actions')].map(h => (
                     <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -122,19 +120,23 @@ function ManualResultsTab() {
                       <td style={{ padding: '11px 14px' }}>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: sc.bg, color: sc.color }}>{t(`labResult.${sc.label}`)}</span>
                       </td>
-                      <td style={{ padding: '11px 14px', fontSize: 12, color: r.isPublicVisible ? '#16a34a' : '#94a3b8', fontWeight: 600 }}>{r.isPublicVisible ? '✓' : '—'}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: '#64748b', fontWeight: 600 }}>{r.approvedBy?.fullName || '—'}</td>
                       <td style={{ padding: '11px 14px' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                          <button onClick={() => setSelected(r._id)}
+                            style={{ padding: '4px 9px', border: '1px solid #00848e', borderRadius: 7, background: 'white', color: '#00848e', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                            {t('labAdmin.view')}
+                          </button>
+                          {r.status !== 'cancelled' && (
+                            <button onClick={() => onEdit(r)}
+                              style={{ padding: '4px 9px', border: '1px solid #cbd5e1', borderRadius: 7, background: 'white', color: '#475569', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                              {t('labAdmin.editResult')}
+                            </button>
+                          )}
                           {r.status === 'completed' && canApprove && (
                             <button onClick={() => approve(r._id)}
                               style={{ padding: '4px 9px', border: '1px solid #16a34a', borderRadius: 7, background: 'white', color: '#16a34a', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                               {t('labResult.approveAndPublish')}
-                            </button>
-                          )}
-                          {['draft', 'completed'].includes(r.status) && (
-                            <button onClick={() => cancelResult(r._id)}
-                              style={{ padding: '4px 9px', border: '1px solid #fee2e2', borderRadius: 7, background: 'white', color: '#ef4444', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                              {t('labResult.cancel')}
                             </button>
                           )}
                           <button onClick={() => downloadPdf(r._id)}
@@ -169,19 +171,33 @@ function ManualResultsTab() {
               <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: sc.bg, color: sc.color }}>{t(`labResult.${sc.label}`)}</span>
 
               <div style={{ marginTop: 14, fontSize: 13, color: '#334155' }}>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labAdmin.orderNo')}:</strong> {r.labOrderId?.requestNumber || r.labOrderId?.orderNumber || '—'}</p>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labAdmin.cardNumber')}:</strong> {r.patientId?.patientId || '—'}</p>
                 <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.testName')}:</strong> {r.testName || '—'}</p>
                 <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.departmentName')}:</strong> {r.departmentName || '—'}</p>
                 <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.doctorName')}:</strong> {r.doctorName || '—'}</p>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.sampleDate')}:</strong> {fmtDate(r.sampleDate || r.labOrderId?.sampleCollectedAt)}</p>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.resultDate')}:</strong> {fmtDate(r.resultDate)}</p>
               </div>
 
               {(r.results || []).length > 0 && (
-                <div style={{ marginTop: 14, background: '#f8fafc', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ marginTop: 14, background: '#f8fafc', borderRadius: 10, overflow: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {[t('labResult.parameterName'), t('labResult.value'), t('labResult.unit'), t('labResult.referenceRange'), t('labResult.status')].map(header => (
+                          <th key={header} style={{ padding:'7px 8px', textAlign:'left', fontSize:10, color:'#94a3b8', whiteSpace:'nowrap' }}>{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
                     <tbody>
                       {r.results.map((item, i) => (
                         <tr key={i} style={{ borderTop: i ? '1px solid #f1f5f9' : 'none' }}>
-                          <td style={{ padding: '7px 10px', fontSize: 12, color: '#334155' }}>{item.testName}</td>
-                          <td style={{ padding: '7px 10px', fontSize: 12, fontWeight: 600 }}>{item.value} {item.unit}</td>
+                          <td style={{ padding: '7px 8px', fontSize: 12, color: '#334155' }}>{item.testName}</td>
+                          <td style={{ padding: '7px 8px', fontSize: 12, fontWeight: 600 }}>{item.value}</td>
+                          <td style={{ padding: '7px 8px', fontSize: 11 }}>{item.unit || '—'}</td>
+                          <td style={{ padding: '7px 8px', fontSize: 11 }}>{item.referenceRange || '—'}</td>
+                          <td style={{ padding: '7px 8px', fontSize: 11 }}>{t(`labResult.flag${String(item.status || 'pending').charAt(0).toUpperCase()}${String(item.status || 'pending').slice(1)}`)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -192,6 +208,12 @@ function ManualResultsTab() {
               {r.generalConclusion && (
                 <p style={{ fontSize: 12, color: '#334155', marginTop: 10, padding: '8px 12px', background: '#f0fdf4', borderRadius: 8 }}>{r.generalConclusion}</p>
               )}
+
+              <div style={{ marginTop:10, fontSize:11, color:'#64748b', lineHeight:1.7 }}>
+                <div>{t('labResult.enteredBy')}: {r.labTechnicianId?.fullName || r.performedBy?.fullName || '—'}</div>
+                <div>{t('labAdmin.approvedBy')}: {r.approvedBy?.fullName || '—'}</div>
+                <div>{t('labAdmin.approvedAt')}: {fmtDate(r.approvedAt)}</div>
+              </div>
 
               {r.internalNote && (
                 <div style={{ marginTop: 10 }}>
@@ -208,17 +230,19 @@ function ManualResultsTab() {
 }
 
 const STATUS_CFG = {
-  pending:          { label: 'Gözləyir',      bg: '#f8fafc', color: '#64748b' },
-  sample_collected: { label: 'Nümunə alındı', bg: '#eff6ff', color: '#2563eb' },
-  processing:       { label: 'İşlənir',       bg: '#fefce8', color: '#ca8a04' },
-  completed:        { label: 'Tamamlandı',    bg: '#f0fdf4', color: '#16a34a' },
-  cancelled:        { label: 'Ləğv',          bg: '#fef2f2', color: '#dc2626' },
+  pending:          { labelKey: 'statusPending',         bg: '#f8fafc', color: '#64748b' },
+  confirmed:        { labelKey: 'statusConfirmed',       bg: '#f8fafc', color: '#475569' },
+  sample_collected: { labelKey: 'statusSampleCollected', bg: '#eff6ff', color: '#2563eb' },
+  processing:       { labelKey: 'statusProcessing',      bg: '#fefce8', color: '#ca8a04' },
+  completed:        { labelKey: 'statusCompleted',       bg: '#f0fdf4', color: '#16a34a' },
+  approved:         { labelKey: 'statusApproved',        bg: '#ecfdf5', color: '#047857' },
+  cancelled:        { labelKey: 'statusCancelled',       bg: '#fef2f2', color: '#dc2626' },
 }
 
 const PRIORITY_CFG = {
-  routine: { label: 'Adi',    color: '#64748b' },
-  urgent:  { label: 'Təcili', color: '#ea580c' },
-  stat:    { label: 'STAT',   color: '#dc2626' },
+  routine: { labelKey: 'priorityRoutine', color: '#64748b' },
+  urgent:  { labelKey: 'priorityUrgent',  color: '#ea580c' },
+  stat:    { labelKey: 'priorityStat',     color: '#dc2626' },
 }
 
 const CATEGORY_LABELS = {
@@ -229,15 +253,22 @@ const CATEGORY_LABELS = {
 const RESULT_STATUS = { normal:'Normal', low:'Aşağı', high:'Yüksək', critical:'Kritik' }
 const RESULT_COLORS = { normal:'#16a34a', low:'#2563eb', high:'#ea580c', critical:'#dc2626' }
 
-const NEXT_STATUS = {
-  pending:          ['sample_collected','cancelled'],
-  sample_collected: ['processing','cancelled'],
-  processing:       ['completed','cancelled'],
-}
-
 const emptyTest   = () => ({ testName:'', testCode:'', category:'other', urgency:'routine', notes:'' })
 const emptyOrder  = { patientId:'', doctorId:'', priority:'routine', notes:'', tests:[emptyTest()] }
 const emptyResult = { results:[], summary:'' }
+const emptyResultItem = () => ({ testName:'', testCode:'', value:'', unit:'', referenceRange:'', status:'pending', note:'' })
+
+const inferResultStatus = (value, referenceRange) => {
+  const numericValue = Number(String(value).replace(',', '.'))
+  if (!Number.isFinite(numericValue)) return value ? 'pending' : 'pending'
+  const match = String(referenceRange || '').replace(',', '.').match(/(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)/)
+  if (!match) return 'pending'
+  const minimum = Number(match[1])
+  const maximum = Number(match[2])
+  if (numericValue < minimum) return 'low'
+  if (numericValue > maximum) return 'high'
+  return 'normal'
+}
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('az-AZ') : '—'
 const patFull = (p) => p?.userId?.fullName || p?.fullName || '—'
@@ -247,8 +278,11 @@ const inp = { width:'100%', border:'1px solid #e2e8f0', borderRadius:9, padding:
 const lbl = { fontSize:12, fontWeight:600, color:'#475569', display:'block', marginBottom:6 }
 
 export default function AdminLab() {
-  const token   = localStorage.getItem('adminToken') || localStorage.getItem('token')
-  const headers = { Authorization: `Bearer ${token}` }
+  const { t } = useTranslation()
+  const [currentUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('user') || '{}') } catch { return {} }
+  })
+  const canApprove = APPROVER_ROLES.includes(String(currentUser.role || '').toUpperCase())
 
   const [activeMainTab, setActiveMainTab] = useState('orders')
   const [orders,       setOrders]       = useState([])
@@ -274,9 +308,7 @@ export default function AdminLab() {
   const [resultSaving,    setResultSaving]    = useState(false)
   const [resultErr,       setResultErr]       = useState('')
   const [pdfFile,         setPdfFile]         = useState(null)
-
-  /* inline status update */
-  const [statusEditId, setStatusEditId] = useState(null)
+  const [resultsRefreshKey, setResultsRefreshKey] = useState(0)
 
   /* detail panel */
   const [selected,   setSelected]   = useState(null)
@@ -285,19 +317,31 @@ export default function AdminLab() {
   const [detailLoad, setDetailLoad] = useState(false)
 
   /* ── load ───────────────────────────────────────────────────────── */
-  useEffect(() => {
-    Promise.all([
-      fetch(`${BASE}/api/v1/lab/summary`,              { headers }).then(r => r.json()),
-      fetch(`${BASE}/api/v1/lab/orders?limit=50`,      { headers }).then(r => r.json()),
-      fetch(`${BASE}/api/v1/patients?page=1&limit=200`,{ headers }).then(r => r.json()),
-      fetch(`${BASE}/api/v1/doctors?limit=100`,        { headers }).then(r => r.json()),
-    ]).then(([s, ord, pat, doc]) => {
-      setSummary(s.data || { byStatus:[], todayOrders:0 })
-      setOrders(ord.data?.orders || [])
-      setPatients(pat.data?.patients || [])
-      setDoctors(doc.data?.doctors || [])
-    }).finally(() => setLoading(false))
+  const loadLabData = useCallback(async ({ includeDirectories = false } = {}) => {
+    const requests = [
+      api.get('/lab/summary'),
+      api.get('/lab/orders', { params: { limit: 50 } }),
+    ]
+    if (includeDirectories) {
+      requests.push(
+        api.get('/patients', { params: { page: 1, limit: 200 } }),
+        api.get('/doctors', { params: { limit: 100 } }),
+      )
+    }
+    const [summaryRes, ordersRes, patientsRes, doctorsRes] = await Promise.all(requests)
+    setSummary(summaryRes.data?.data || { byStatus: [], todayOrders: 0 })
+    setOrders(ordersRes.data?.data?.orders || [])
+    if (patientsRes) setPatients(patientsRes.data?.data?.patients || [])
+    if (doctorsRes) setDoctors(doctorsRes.data?.data?.doctors || [])
   }, [])
+
+  useEffect(() => {
+    // Initial data hydration is intentionally delegated to the shared async loader.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadLabData({ includeDirectories: true })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [loadLabData])
 
   /* ── summary helpers ─────────────────────────────────────────────── */
   const byStatusCount = (key) => summary.byStatus?.find(b => b._id === key)?.count || 0
@@ -312,36 +356,50 @@ export default function AdminLab() {
   })
 
   /* ── detail open ─────────────────────────────────────────────────── */
-  const openDetail = (order) => {
+  const openDetail = async (order) => {
     setSelected(order._id); setDetail(order); setDetailResult(null); setDetailLoad(true)
-    fetch(`${BASE}/api/v1/lab/orders/${order._id}`, { headers })
-      .then(r => r.json()).then(d => setDetail(d.data || order)).catch(() => {})
-      .finally(() => setDetailLoad(false))
+    try {
+      const [orderRes, resultRes] = await Promise.all([
+        api.get(`/lab/orders/${order._id}`),
+        api.get(`/lab/results/order/${order._id}`).catch(error => {
+          if (error.response?.status === 404) return null
+          throw error
+        }),
+      ])
+      setDetail(orderRes.data?.data || order)
+      setDetailResult(resultRes?.data?.data || null)
+    } catch {
+      setDetail(order)
+    } finally {
+      setDetailLoad(false)
+    }
   }
 
-  const loadDetailResult = () => {
+  const loadDetailResult = async () => {
     if (!selected) return
-    fetch(`${BASE}/api/v1/lab/results/order/${selected}`, { headers })
-      .then(r => r.json()).then(d => { if (d.data) setDetailResult(d.data) }).catch(() => {})
+    try {
+      const res = await api.get(`/lab/results/order/${selected}`)
+      setDetailResult(res.data?.data || null)
+    } catch (error) {
+      if (error.response?.status === 404) setDetailResult(null)
+    }
   }
 
   /* ── status update ───────────────────────────────────────────────── */
   const handleStatusChange = async (orderId, newStatus) => {
-    setStatusEditId(null)
-    const r = await fetch(`${BASE}/api/v1/lab/orders/${orderId}/status`, {
-      method: 'PATCH', headers: { ...headers, 'Content-Type':'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    })
-    if (r.ok) setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o))
-  }
-
-  /* ── delete order ────────────────────────────────────────────────── */
-  const handleDelete = async (orderId) => {
-    if (!window.confirm('Bu lab sifarişini silmək istəyirsiniz?')) return
-    const r = await fetch(`${BASE}/api/v1/lab/orders/${orderId}`, { method:'DELETE', headers })
-    if (r.ok) {
-      setOrders(prev => prev.filter(o => o._id !== orderId))
-      if (selected === orderId) { setSelected(null); setDetail(null) }
+    try {
+      const res = await api.patch(`/lab/orders/${orderId}/status`, { status: newStatus })
+      const updated = res.data?.data
+      if (updated) {
+        setOrders(prev => prev.map(o => o._id === orderId ? updated : o))
+        if (selected === orderId) {
+          setDetail(updated)
+          await loadDetailResult()
+        }
+      }
+      await loadLabData()
+    } catch (error) {
+      alert(error.response?.data?.message || t('labAdmin.genericError'))
     }
   }
 
@@ -355,83 +413,193 @@ export default function AdminLab() {
     if (orderForm.tests.some(t => !t.testName.trim())) { setOrderErr('Test adı boş ola bilməz'); return }
     setOrderSaving(true); setOrderErr('')
     try {
-      const r    = await fetch(`${BASE}/api/v1/lab/orders`, {
-        method:'POST', headers:{ ...headers,'Content-Type':'application/json' },
-        body: JSON.stringify(orderForm),
-      })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
-      setOrders(prev => [data.data, ...prev])
+      const res = await api.post('/lab/orders', orderForm)
+      setOrders(prev => [res.data?.data, ...prev].filter(Boolean))
       setShowOrderModal(false); setOrderForm(emptyOrder)
-    } catch(e) { setOrderErr(e.message) }
+      await loadLabData()
+    } catch(e) { setOrderErr(e.response?.data?.message || e.message) }
     finally { setOrderSaving(false) }
   }
 
   /* ── result modal ────────────────────────────────────────────────── */
-  const openResultModal = (order) => {
+  const openResultModal = async (order) => {
     setResultOrderId(order._id); setResultOrder(order); setResultId(null); setPdfFile(null)
     setResultErr('')
-    if (order.status === 'completed') {
-      fetch(`${BASE}/api/v1/lab/results/order/${order._id}`, { headers })
-        .then(r => r.json())
-        .then(d => {
-          if (d.data) {
-            setResultId(d.data._id)
-            setResultForm({
-              results: (d.data.results||[]).map(r => ({ testName:r.testName, testCode:r.testCode||'', value:r.value||'', unit:r.unit||'', referenceRange:r.referenceRange||'', status:r.status||'normal', notes:r.notes||'' })),
-              summary: d.data.summary || '',
-            })
-          }
-        }).catch(() => {})
-    } else {
+    try {
+      const existingRes = await api.get(`/lab/results/order/${order._id}`)
+      const existing = existingRes.data?.data
+      setResultId(existing._id)
+      let existingRows = existing.results || []
+      if (!existingRows.length) {
+        const primaryTest = order.tests?.[0] || {}
+        const templateRes = await api.get('/lab/test-templates', {
+          params: { testName: primaryTest.testName, testCode: primaryTest.testCode },
+        }).catch(() => null)
+        const template = templateRes?.data?.data?.template || []
+        existingRows = template.length
+          ? template.map(item => ({
+              testName: item.parameterName || item.testName || '',
+              testCode: item.testCode || '',
+              value: '',
+              unit: item.unit || '',
+              referenceRange: item.referenceRange || '',
+              status: 'pending',
+              note: item.note || '',
+            }))
+          : (order.tests || []).map(test => ({ ...emptyResultItem(), testName: test.testName, testCode: test.testCode || '' }))
+      }
       setResultForm({
-        results: order.tests.map(t => ({ testName: t.testName, testCode: t.testCode||'', value:'', unit:'', referenceRange:'', status:'normal', notes:'' })),
-        summary: '',
+        results: existingRows.map(r => ({
+          testName: r.testName,
+          testCode: r.testCode || '',
+          value: r.value || '',
+          unit: r.unit || '',
+          referenceRange: r.referenceRange || '',
+          status: r.status || 'pending',
+          note: r.note || '',
+        })),
+        summary: existing.generalConclusion || existing.summary || '',
       })
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        setResultErr(error.response?.data?.message || t('labAdmin.genericError'))
+      }
+      const primaryTest = order.tests?.[0] || {}
+      const template = await (async () => {
+        try {
+        const templateRes = await api.get('/lab/test-templates', {
+          params: { testName: primaryTest.testName, testCode: primaryTest.testCode },
+        })
+          return templateRes.data?.data?.template || []
+        } catch {
+          return []
+        }
+      })()
+      const rows = template.length
+        ? template.map(item => ({
+            testName: item.parameterName || item.testName || '',
+            testCode: item.testCode || '',
+            value: '',
+            unit: item.unit || '',
+            referenceRange: item.referenceRange || '',
+            status: 'pending',
+            note: item.note || '',
+          }))
+        : (order.tests || []).map(test => ({ ...emptyResultItem(), testName: test.testName, testCode: test.testCode || '' }))
+      setResultForm({ results: rows.length ? rows : [emptyResultItem()], summary: '' })
     }
     setShowResultModal(true)
   }
 
-  const updateResultRow = (i, k, v) => setResultForm(f => ({ ...f, results: f.results.map((r,idx) => idx===i ? {...r,[k]:v} : r) }))
+  const updateResultRow = (i, k, v) => setResultForm(f => ({
+    ...f,
+    results: f.results.map((row, idx) => {
+      if (idx !== i) return row
+      const next = { ...row, [k]: v }
+      if (k === 'value' || k === 'referenceRange') {
+        next.status = inferResultStatus(next.value, next.referenceRange)
+      }
+      return next
+    }),
+  }))
+  const addResultRow = () => setResultForm(f => ({ ...f, results: [...f.results, emptyResultItem()] }))
+  const removeResultRow = (index) => setResultForm(f => ({ ...f, results: f.results.filter((_, i) => i !== index) }))
+
+  const openListedResultEdit = (result) => {
+    setResultOrderId(result.labOrderId?._id || result.labOrderId || null)
+    setResultOrder({
+      orderNumber: result.labOrderId?.orderNumber,
+      requestNumber: result.labOrderId?.requestNumber,
+      protocolNo: result.protocolNo,
+      patientId: { fullName: result.patientFullName },
+      tests: result.labOrderId?.tests || [{ testName: result.testName }],
+      sampleCollectedAt: result.sampleDate || result.labOrderId?.sampleCollectedAt,
+      resultPdf: result.attachmentUrl,
+    })
+    setResultId(result._id)
+    setPdfFile(null)
+    setResultErr('')
+    setResultForm({
+      results: (result.results || []).map(item => ({
+        testName: item.testName || '',
+        testCode: item.testCode || '',
+        value: item.value || '',
+        unit: item.unit || '',
+        referenceRange: item.referenceRange || '',
+        status: item.status || 'pending',
+        note: item.note || '',
+      })),
+      summary: result.generalConclusion || result.summary || '',
+    })
+    setShowResultModal(true)
+  }
 
   const saveResult = async () => {
     if (resultForm.results.some(r => !r.value.trim())) { setResultErr('Bütün testlər üçün dəyər daxil edin'); return }
     setResultSaving(true); setResultErr('')
     try {
       let savedResultId = resultId
+      let savedResult = null
       if (resultId) {
-        const r    = await fetch(`${BASE}/api/v1/lab/results/${resultId}`, {
-          method:'PATCH', headers:{ ...headers,'Content-Type':'application/json' },
-          body: JSON.stringify(resultForm),
-        })
-        const data = await r.json()
-        if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
+        const res = await api.patch(`/lab/results/${resultId}`, resultForm)
+        savedResult = res.data?.data
       } else {
-        const r    = await fetch(`${BASE}/api/v1/lab/results`, {
-          method:'POST', headers:{ ...headers,'Content-Type':'application/json' },
-          body: JSON.stringify({ labOrderId: resultOrderId, ...resultForm }),
-        })
-        const data = await r.json()
-        if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
-        savedResultId = data.data._id
+        const res = await api.post('/lab/results', { labOrderId: resultOrderId, ...resultForm })
+        savedResult = res.data?.data
+        savedResultId = savedResult?._id
       }
 
       if (pdfFile) {
         const fd = new FormData()
         fd.append('document', pdfFile)
-        const r2 = await fetch(`${BASE}/api/v1/lab/results/${savedResultId}/attachment`, { method:'POST', headers, body: fd })
-        const d2 = await r2.json()
-        if (!r2.ok) throw new Error(d2.message || 'PDF yüklənmədi')
+        const uploadRes = await api.post(`/lab/results/${savedResultId}/attachment`, fd)
+        savedResult = uploadRes.data?.data || savedResult
       }
 
-      setOrders(prev => prev.map(o => o._id === resultOrderId ? { ...o, status:'completed' } : o))
+      setDetailResult(savedResult)
+      await loadLabData()
+      setResultsRefreshKey(key => key + 1)
       if (selected === resultOrderId) {
-        setDetail(d => ({ ...d, status:'completed' }))
-        loadDetailResult()
+        const orderRes = await api.get(`/lab/orders/${resultOrderId}`)
+        setDetail(orderRes.data?.data)
+        await loadDetailResult()
       }
       setShowResultModal(false)
-    } catch(e) { setResultErr(e.message) }
+    } catch(e) {
+      const message = e.response?.data?.message
+      setResultErr(message?.includes('already exists') ? t('labOrderResult.duplicateError') : (message || t('labOrderResult.genericError')))
+    }
     finally { setResultSaving(false) }
+  }
+
+  const approveAndPublish = async (result) => {
+    if (!result?._id || !canApprove) return
+    try {
+      const res = await api.patch(`/lab/results/manual/${result._id}/approve`, { isPublicVisible: true })
+      setDetailResult(res.data?.data || result)
+      await loadLabData()
+      if (selected) {
+        const orderRes = await api.get(`/lab/orders/${selected}`)
+        setDetail(orderRes.data?.data)
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || t('labAdmin.genericError'))
+    }
+  }
+
+  const downloadResultPdf = async (result) => {
+    if (!result?._id) return
+    try {
+      const res = await api.get(`/lab-results/${result._id}/pdf`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `${result.protocolNo || 'lab-result'}.pdf`
+      anchor.click()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      alert(t('labAdmin.pdfError'))
+    }
   }
 
   /* ════════════════════════════════════════════════════════════════ */
@@ -468,16 +636,16 @@ export default function AdminLab() {
       </div>
 
       {activeMainTab === 'results' ? (
-        <ManualResultsTab />
+        <ManualResultsTab key={resultsRefreshKey} onEdit={openListedResultEdit} />
       ) : (
         <>
       {/* ── Summary cards ───────────────────────────────────────── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:24 }}>
         {[
-          { label:'Bu gün',     value: summary.todayOrders,       color:'#00848e', bg:'#f0fdfa' },
-          { label:'Gözləyir',   value: byStatusCount('pending'),   color:'#64748b', bg:'#f8fafc' },
-          { label:'İşlənir',    value: byStatusCount('processing'), color:'#ca8a04', bg:'#fefce8' },
-          { label:'Tamamlandı', value: byStatusCount('completed'),  color:'#16a34a', bg:'#f0fdf4' },
+          { label:t('labAdmin.today'), value: summary.todayOrders, color:'#00848e', bg:'#f0fdfa' },
+          { label:t('labAdmin.waiting'), value: byStatusCount('pending') + byStatusCount('confirmed'), color:'#64748b', bg:'#f8fafc' },
+          { label:t('labAdmin.processing'), value: byStatusCount('sample_collected') + byStatusCount('processing'), color:'#ca8a04', bg:'#fefce8' },
+          { label:t('labAdmin.completed'), value: byStatusCount('completed') + byStatusCount('approved'), color:'#16a34a', bg:'#f0fdf4' },
         ].map(c => (
           <div key={c.label} style={{ background:c.bg, border:`1px solid ${c.color}20`, borderRadius:14, padding:'16px 20px' }}>
             <p style={{ margin:0, fontSize:12, color:'#64748b', fontWeight:500 }}>{c.label}</p>
@@ -504,7 +672,7 @@ export default function AdminLab() {
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
               style={{ ...inp, width:160 }}>
               <option value="all">Bütün statuslar</option>
-              {Object.entries(STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
+              {Object.entries(STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{t(`labAdmin.${v.labelKey}`)}</option>)}
             </select>
           </div>
 
@@ -519,7 +687,7 @@ export default function AdminLab() {
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom:'1px solid #f1f5f9' }}>
-                    {['Sifariş №','Protokol №','Pasiyent','Həkim','Testlər','Prioritet','Status',''].map(h => (
+                    {[t('labAdmin.orderNo'),t('labAdmin.protocolNo'),t('labAdmin.patient'),t('labAdmin.doctor'),t('labAdmin.tests'),t('labAdmin.priority'),t('labAdmin.status'),t('labAdmin.actions')].map(h => (
                       <th key={h} style={{ padding:'12px 14px', textAlign:'left', fontSize:11, fontWeight:600, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -529,53 +697,88 @@ export default function AdminLab() {
                     const sc = STATUS_CFG[o.status]   || STATUS_CFG.pending
                     const pc = PRIORITY_CFG[o.priority] || PRIORITY_CFG.routine
                     const isSel = selected === o._id
-                    const nexts = NEXT_STATUS[o.status] || []
                     return (
                       <tr key={o._id} onClick={() => openDetail(o)}
                         style={{ borderBottom:'1px solid #f8fafc', cursor:'pointer', background: isSel ? '#f0fafb' : 'white', transition:'background 0.1s' }}
                         onMouseEnter={e => { if (!isSel) e.currentTarget.style.background='#f8fafc' }}
                         onMouseLeave={e => { if (!isSel) e.currentTarget.style.background='white' }}>
-                        <td style={{ padding:'11px 14px', fontSize:12, fontWeight:700, color:'#0f1b2d' }}>{o.orderNumber||'—'}</td>
+                        <td style={{ padding:'11px 14px', fontSize:12, fontWeight:700, color:'#0f1b2d' }}>{o.requestNumber||o.orderNumber||'—'}</td>
                         <td style={{ padding:'11px 14px', fontSize:12, fontWeight:600, color:'#00848e' }}>{o.protocolNo||'—'}</td>
                         <td style={{ padding:'11px 14px', fontSize:13, color:'#334155' }}>{patFull(o.patientId)}</td>
                         <td style={{ padding:'11px 14px', fontSize:12, color:'#64748b' }}>{docFull(o.doctorId)}</td>
-                        <td style={{ padding:'11px 14px', fontSize:12, color:'#334155', fontWeight:500 }}>{o.tests?.length||0} test</td>
+                        <td style={{ padding:'11px 14px', fontSize:12, color:'#334155', fontWeight:500 }}>{o.tests?.map(test => test.testName).join(', ')||'—'}</td>
                         <td style={{ padding:'11px 14px' }}>
-                          <span style={{ fontSize:11, fontWeight:700, color:pc.color }}>{pc.label}</span>
+                          <span style={{ fontSize:11, fontWeight:700, color:pc.color }}>{t(`labAdmin.${pc.labelKey}`)}</span>
                         </td>
                         <td style={{ padding:'11px 14px' }}>
-                          <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20, background:sc.bg, color:sc.color }}>{sc.label}</span>
+                          <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20, background:sc.bg, color:sc.color }}>{t(`labAdmin.${sc.labelKey}`)}</span>
                         </td>
                         <td style={{ padding:'11px 14px' }} onClick={e => e.stopPropagation()}>
                           <div style={{ display:'flex', gap:5, alignItems:'center' }}>
-                            {/* Nəticə button */}
-                            {['sample_collected','processing','completed'].includes(o.status) && (
-                              <button onClick={() => openResultModal(o)}
+                            {o.status === 'pending' && (
+                              <button onClick={() => handleStatusChange(o._id, 'confirmed')}
                                 style={{ padding:'4px 9px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                                {o.status === 'completed' ? 'Nəticəni redaktə et' : 'Nəticə'}
+                                {t('labAdmin.confirmAdmission')}
                               </button>
                             )}
-                            {/* Status dropdown */}
-                            {nexts.length > 0 && (
-                              statusEditId === o._id ? (
-                                <select autoFocus onBlur={() => setStatusEditId(null)}
-                                  onChange={e => handleStatusChange(o._id, e.target.value)}
-                                  style={{ padding:'3px 6px', border:'1px solid #e2e8f0', borderRadius:7, fontSize:11, color:'#334155', background:'white', cursor:'pointer' }}>
-                                  <option value="">Seç...</option>
-                                  {nexts.map(s => <option key={s} value={s}>{STATUS_CFG[s]?.label}</option>)}
-                                </select>
-                              ) : (
-                                <button onClick={() => setStatusEditId(o._id)}
-                                  style={{ padding:'4px 9px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                                  Status ↑
-                                </button>
-                              )
+                            {o.status === 'pending' && (
+                              <button onClick={() => handleStatusChange(o._id, 'cancelled')}
+                                style={{ padding:'4px 9px', border:'1px solid #fee2e2', borderRadius:7, background:'white', color:'#dc2626', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                                {t('labResult.cancel')}
+                              </button>
                             )}
-                            {/* Delete button */}
-                            {['pending','cancelled'].includes(o.status) && (
-                              <button onClick={() => handleDelete(o._id)}
-                                style={{ padding:'4px 9px', border:'1px solid #fee2e2', borderRadius:7, background:'white', color:'#ef4444', fontSize:11, fontWeight:600, cursor:'pointer' }}>
-                                Sil
+                            {o.status === 'confirmed' && (
+                              <button onClick={() => handleStatusChange(o._id, 'sample_collected')}
+                                style={{ padding:'4px 9px', border:'1px solid #2563eb', borderRadius:7, background:'white', color:'#2563eb', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labAdmin.receiveSample')}
+                              </button>
+                            )}
+                            {o.status === 'sample_collected' && (
+                              <button onClick={() => handleStatusChange(o._id, 'processing')}
+                                style={{ padding:'4px 9px', border:'1px solid #ca8a04', borderRadius:7, background:'white', color:'#a16207', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labAdmin.startProcessing')}
+                              </button>
+                            )}
+                            {['sample_collected','processing'].includes(o.status) && !o.resultInfo?.hasValues && (
+                              <button onClick={() => openResultModal(o)}
+                                style={{ padding:'4px 9px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labResult.fillIn')}
+                              </button>
+                            )}
+                            {o.resultInfo?.hasValues && (
+                              <button onClick={() => openDetail(o)}
+                                style={{ padding:'4px 9px', border:'1px solid #00848e', borderRadius:7, background:'white', color:'#00848e', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labAdmin.viewResult')}
+                              </button>
+                            )}
+                            {o.status === 'completed' && o.resultInfo?.hasValues && (
+                              <button onClick={() => openResultModal(o)}
+                                style={{ padding:'4px 9px', border:'1px solid #cbd5e1', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labAdmin.editResult')}
+                              </button>
+                            )}
+                            {o.status === 'completed' && o.resultInfo?.status === 'completed' && canApprove && (
+                              <button onClick={() => approveAndPublish(o.resultInfo)}
+                                style={{ padding:'4px 9px', border:'1px solid #16a34a', borderRadius:7, background:'white', color:'#16a34a', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labResult.approveAndPublish')}
+                              </button>
+                            )}
+                            {o.status === 'approved' && (
+                              <button onClick={() => downloadResultPdf(o.resultInfo)}
+                                style={{ padding:'4px 9px', border:'1px solid #cbd5e1', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labResult.downloadPdf')}
+                              </button>
+                            )}
+                            {o.status === 'approved' && canApprove && (
+                              <button onClick={() => openResultModal(o)}
+                                style={{ padding:'4px 9px', border:'1px solid #cbd5e1', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labAdmin.returnToEdit')}
+                              </button>
+                            )}
+                            {o.status === 'cancelled' && (
+                              <button onClick={() => openDetail(o)}
+                                style={{ padding:'4px 9px', border:'1px solid #cbd5e1', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                {t('labAdmin.details')}
                               </button>
                             )}
                           </div>
@@ -594,7 +797,7 @@ export default function AdminLab() {
           {selected && detail && (
             <div style={{ width:320, background:'white', borderRadius:14, border:'1px solid #f1f5f9', height:'100%', overflow:'auto', padding:20 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-                <span style={{ fontWeight:700, fontSize:14, color:'#0f1b2d' }}>Sifariş məlumatı</span>
+                <span style={{ fontWeight:700, fontSize:14, color:'#0f1b2d' }}>{t('labAdmin.orderDetails')}</span>
                 <button onClick={() => { setSelected(null); setDetail(null); setDetailResult(null) }}
                   style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:20 }}>×</button>
               </div>
@@ -605,28 +808,30 @@ export default function AdminLab() {
                 </div>
               ) : (
                 <>
-                  <p style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{detail.orderNumber||'—'}</p>
+                  <p style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{detail.requestNumber||detail.orderNumber||'—'}</p>
                   <p style={{ margin:'4px 0 12px', fontSize:12, color:'#64748b' }}>{fmtDate(detail.createdAt)}</p>
 
                   {detail.protocolNo && (
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, padding:'8px 12px', background:'#f0fdfa', border:'1px solid #ccfbf1', borderRadius:8 }}>
-                      <span style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em' }}>Protokol №</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em' }}>{t('labAdmin.protocolNo')}</span>
                       <span style={{ fontSize:14, fontWeight:700, color:'#00848e', flex:1 }}>{detail.protocolNo}</span>
                       <button onClick={() => navigator.clipboard?.writeText(detail.protocolNo)}
                         style={{ padding:'3px 8px', border:'1px solid #00848e', borderRadius:6, background:'white', color:'#00848e', fontSize:10, fontWeight:600, cursor:'pointer' }}>
-                        Kopyala
+                        {t('labAdmin.copy')}
                       </button>
                     </div>
                   )}
 
                   <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-                    {(() => { const sc=STATUS_CFG[detail.status]||STATUS_CFG.pending; return <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20, background:sc.bg, color:sc.color }}>{sc.label}</span> })()}
-                    {(() => { const pc=PRIORITY_CFG[detail.priority]||PRIORITY_CFG.routine; return <span style={{ fontSize:11, fontWeight:700, color:pc.color }}>{pc.label}</span> })()}
+                    {(() => { const sc=STATUS_CFG[detail.status]||STATUS_CFG.pending; return <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20, background:sc.bg, color:sc.color }}>{t(`labAdmin.${sc.labelKey}`)}</span> })()}
+                    {(() => { const pc=PRIORITY_CFG[detail.priority]||PRIORITY_CFG.routine; return <span style={{ fontSize:11, fontWeight:700, color:pc.color }}>{t(`labAdmin.${pc.labelKey}`)}</span> })()}
                   </div>
 
                   <div style={{ fontSize:13, fontWeight:600, color:'#334155', marginBottom:2 }}>{patFull(detail.patientId)}</div>
+                  <div style={{ fontSize:12, color:'#64748b', marginBottom:2 }}>{t('labAdmin.cardNumber')}: {detail.patientId?.patientId||'—'}</div>
                   <div style={{ fontSize:12, color:'#64748b', marginBottom:2 }}>{detail.patientId?.userId?.email||''}</div>
                   <div style={{ fontSize:12, color:'#64748b', marginBottom:14 }}>Dr. {docFull(detail.doctorId)}</div>
+                  <div style={{ fontSize:12, color:'#64748b', marginBottom:14 }}>{t('labAdmin.sampleDate')}: {fmtDate(detail.sampleCollectedAt)}</div>
 
                   {detail.notes && <p style={{ fontSize:12, color:'#64748b', background:'#f8fafc', borderRadius:8, padding:'8px 12px', marginBottom:14 }}>{detail.notes}</p>}
 
@@ -642,20 +847,34 @@ export default function AdminLab() {
 
                   {/* Result section */}
                   <div style={{ marginTop:14, display:'flex', gap:8, flexWrap:'wrap' }}>
-                    <button onClick={loadDetailResult}
+                    {!detailResult?.results?.some(item => item.value) && (
+                    <button onClick={() => openResultModal(detail)}
                       style={{ fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', cursor:'pointer' }}>
-                      Nəticəni Yoxla
+                      {t('labResult.fillIn')}
                     </button>
+                    )}
+                    {detailResult?.results?.some(item => item.value) && (
+                      <button onClick={() => openResultModal(detail)}
+                        style={{ fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', cursor:'pointer' }}>
+                        {t('labAdmin.editResult')}
+                      </button>
+                    )}
+                    {detailResult?.status === 'completed' && canApprove && (
+                      <button onClick={() => approveAndPublish(detailResult)}
+                        style={{ fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #16a34a', borderRadius:8, background:'white', color:'#16a34a', cursor:'pointer' }}>
+                        {t('labResult.approveAndPublish')}
+                      </button>
+                    )}
                   </div>
 
-                  {detailResult && (
+                  {detailResult?.results?.some(item => item.value) ? (
                     <div style={{ marginTop:14 }}>
-                      <p style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 8px' }}>Nəticələr</p>
+                      <p style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 8px' }}>{t('labAdmin.results')}</p>
                       <div style={{ background:'#f8fafc', borderRadius:10, overflow:'hidden' }}>
                         <table style={{ width:'100%', borderCollapse:'collapse' }}>
                           <thead>
                             <tr>
-                              {['Test','Dəyər','N. aralığı','Status'].map(h => (
+                              {[t('labResult.parameterName'),t('labResult.value'),t('labResult.unit'),t('labResult.referenceRange'),t('labResult.status')].map(h => (
                                 <th key={h} style={{ padding:'7px 10px', fontSize:10, fontWeight:600, color:'#94a3b8', textAlign:'left', textTransform:'uppercase' }}>{h}</th>
                               ))}
                             </tr>
@@ -664,7 +883,8 @@ export default function AdminLab() {
                             {(detailResult.results||[]).map((r,i) => (
                               <tr key={i} style={{ borderTop:'1px solid #f1f5f9' }}>
                                 <td style={{ padding:'7px 10px', fontSize:12, color:'#334155', fontWeight:500 }}>{r.testName}</td>
-                                <td style={{ padding:'7px 10px', fontSize:12, fontWeight:600, color:RESULT_COLORS[r.status]||'#334155' }}>{r.value}{r.unit ? ` ${r.unit}`:''}</td>
+                                <td style={{ padding:'7px 10px', fontSize:12, fontWeight:600, color:RESULT_COLORS[r.status]||'#334155' }}>{r.value}</td>
+                                <td style={{ padding:'7px 10px', fontSize:11, color:'#64748b' }}>{r.unit||'—'}</td>
                                 <td style={{ padding:'7px 10px', fontSize:11, color:'#94a3b8' }}>{r.referenceRange||'—'}</td>
                                 <td style={{ padding:'7px 10px', fontSize:10, fontWeight:700, color:RESULT_COLORS[r.status]||'#64748b' }}>{RESULT_STATUS[r.status]||r.status}</td>
                               </tr>
@@ -673,13 +893,21 @@ export default function AdminLab() {
                         </table>
                       </div>
                       {detailResult.summary && <p style={{ fontSize:12, color:'#334155', marginTop:10, padding:'8px 12px', background:'#f0fdf4', borderRadius:8 }}>{detailResult.summary}</p>}
-                      {detailResult.attachmentUrl && (
-                        <a href={detailResult.attachmentUrl} target="_blank" rel="noreferrer"
-                          style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', textDecoration:'none' }}>
-                          PDF yüklə
-                        </a>
-                      )}
+                      <div style={{ marginTop:10, fontSize:11, color:'#64748b', lineHeight:1.7 }}>
+                        <div>{t('labResult.enteredBy')}: {detailResult.labTechnicianId?.fullName || detailResult.performedBy?.fullName || '—'}</div>
+                        <div>{t('labResult.completedAt')}: {fmtDate(detailResult.completedAt || detailResult.updatedAt)}</div>
+                        <div>{t('labAdmin.approvedBy')}: {detailResult.approvedBy?.fullName || '—'}</div>
+                        <div>{t('labAdmin.approvedAt')}: {fmtDate(detailResult.approvedAt)}</div>
+                      </div>
+                      <button onClick={() => downloadResultPdf(detailResult)}
+                        style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', cursor:'pointer' }}>
+                        {t('labResult.downloadPdf')}
+                      </button>
                     </div>
+                  ) : (
+                    <p style={{ marginTop:14, padding:'10px 12px', borderRadius:8, background:'#f8fafc', color:'#64748b', fontSize:12 }}>
+                      {t('labAdmin.resultNotEntered')}
+                    </p>
                   )}
                 </>
               )}
@@ -787,12 +1015,16 @@ export default function AdminLab() {
 
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
               <div>
-                <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{resultId ? 'Nəticəni Redaktə Et' : 'Nəticə Daxil Et'}</h2>
+                <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{resultId ? t('labOrderResult.editTitle') : t('labOrderResult.enterTitle')}</h2>
                 {resultOrder && (
-                  <p style={{ margin:'3px 0 0', fontSize:12, color:'#64748b' }}>
-                    {resultOrder.orderNumber} — {patFull(resultOrder.patientId)}
-                    {resultOrder.protocolNo && <span style={{ marginLeft:8, fontWeight:700, color:'#00848e' }}>Protokol: {resultOrder.protocolNo}</span>}
-                  </p>
+                  <div style={{ marginTop:5, fontSize:12, color:'#64748b', lineHeight:1.6 }}>
+                    <div>{t('labAdmin.patient')}: {patFull(resultOrder.patientId)}</div>
+                    <div>{t('labAdmin.orderNo')}: {resultOrder.requestNumber || resultOrder.orderNumber || '—'}</div>
+                    <div>{t('labAdmin.protocolNo')}: <span style={{ fontWeight:700, color:'#00848e' }}>{resultOrder.protocolNo || '—'}</span></div>
+                    <div>{t('labAdmin.tests')}: {(resultOrder.tests || []).map(test => test.testName).join(', ') || resultOrder.testName || '—'}</div>
+                    <div>{t('labResult.sampleDate')}: {fmtDate(resultOrder.sampleCollectedAt || resultOrder.sampleDate)}</div>
+                    <div>{t('labResult.resultDate')}: {fmtDate(new Date())}</div>
+                  </div>
                 )}
               </div>
               <button onClick={() => setShowResultModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:22 }}>×</button>
@@ -802,11 +1034,11 @@ export default function AdminLab() {
 
             <div style={{ marginTop:16 }}>
               {/* Result rows */}
-              <div style={{ background:'#f8fafc', borderRadius:10, overflow:'hidden', marginBottom:14 }}>
+              <div style={{ background:'#f8fafc', borderRadius:10, overflow:'auto', marginBottom:14 }}>
                 <table style={{ width:'100%', borderCollapse:'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom:'1px solid #e2e8f0' }}>
-                      {['Test adı','Dəyər *','Vahid','Normal aralıq','Status'].map(h => (
+                      {[t('labResult.parameterName'),t('labResult.value'),t('labResult.unit'),t('labResult.referenceRange'),t('labResult.status'),t('labResult.note'),''].map(h => (
                         <th key={h} style={{ padding:'10px 12px', fontSize:11, fontWeight:600, color:'#94a3b8', textAlign:'left', textTransform:'uppercase' }}>{h}</th>
                       ))}
                     </tr>
@@ -814,7 +1046,9 @@ export default function AdminLab() {
                   <tbody>
                     {resultForm.results.map((r,i) => (
                       <tr key={i} style={{ borderBottom:'1px solid #f1f5f9' }}>
-                        <td style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#0f1b2d' }}>{r.testName}</td>
+                        <td style={{ padding:'6px 8px', minWidth:150 }}>
+                          <input style={{ ...inp, padding:'6px 10px' }} value={r.testName} onChange={e => updateResultRow(i,'testName',e.target.value)} />
+                        </td>
                         <td style={{ padding:'6px 8px' }}>
                           <input style={{ ...inp, padding:'6px 10px' }} placeholder="0.00" value={r.value} onChange={e => updateResultRow(i,'value',e.target.value)} />
                         </td>
@@ -829,11 +1063,26 @@ export default function AdminLab() {
                             {Object.entries(RESULT_STATUS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                           </select>
                         </td>
+                        <td style={{ padding:'6px 8px', minWidth:130 }}>
+                          <input style={{ ...inp, padding:'6px 10px' }} value={r.note || ''} onChange={e => updateResultRow(i,'note',e.target.value)} />
+                        </td>
+                        <td style={{ padding:'6px 8px' }}>
+                          {resultForm.results.length > 1 && (
+                            <button type="button" onClick={() => removeResultRow(i)}
+                              style={{ width:28, height:28, border:'1px solid #fee2e2', borderRadius:7, background:'white', color:'#dc2626', cursor:'pointer' }}>
+                              ×
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              <button type="button" onClick={addResultRow}
+                style={{ marginBottom:14, padding:'7px 12px', border:'1px dashed #94a3b8', borderRadius:8, background:'white', color:'#475569', fontSize:12, cursor:'pointer' }}>
+                + {t('labResult.addParameter')}
+              </button>
 
               {/* Summary */}
               <div>
@@ -862,7 +1111,7 @@ export default function AdminLab() {
               <button onClick={() => setShowResultModal(false)} style={{ padding:'10px 20px', border:'1px solid #e2e8f0', borderRadius:9, background:'white', fontSize:13, cursor:'pointer', color:'#475569' }}>Ləğv et</button>
               <button onClick={saveResult} disabled={resultSaving}
                 style={{ padding:'10px 24px', border:'none', borderRadius:9, background:'#00848e', color:'white', fontSize:13, fontWeight:600, cursor: resultSaving?'not-allowed':'pointer', opacity: resultSaving?0.7:1 }}>
-                {resultSaving ? 'Saxlanır...' : 'Nəticəni Saxla'}
+                {resultSaving ? t('labOrderResult.saving') : (resultId ? t('labOrderResult.saveChangesButton') : t('labOrderResult.saveButton'))}
               </button>
             </div>
           </div>

@@ -36,6 +36,7 @@ const labOrderSchema = new mongoose.Schema({
   patientNote:       { type: String, trim: true, default: '' },
   confirmedAt:        { type: Date, default: null },
   sampleCollectedAt:  { type: Date, default: null },
+  sampleCollectedBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
 labOrderSchema.pre('save', async function (next) {
@@ -51,7 +52,7 @@ labOrderSchema.pre('save', async function (next) {
   if (!this.orderNumber) {
     const year = new Date().getFullYear();
     const seq = await nextSequenceFrom(`labOrderNumber-${year}`, async () => {
-      const prefix = `LAB-${year}-`;
+      const prefix = `LAB-REQ-${year}-`;
       const docs = await mongoose.model('LabOrder')
         .find({ orderNumber: new RegExp(`^${prefix}`) })
         .select('orderNumber')
@@ -61,23 +62,7 @@ labOrderSchema.pre('save', async function (next) {
         return Number.isFinite(n) && n > max ? n : max;
       }, 0);
     });
-    this.orderNumber = `LAB-${year}-${String(seq).padStart(5, '0')}`;
-  }
-
-  if (!this.protocolNo) {
-    const year = new Date().getFullYear();
-    const seq = await nextSequenceFrom(`labOrderLegacyProtocol-${year}`, async () => {
-      const prefix = `${year}-`;
-      const docs = await mongoose.model('LabOrder')
-        .find({ protocolNo: new RegExp(`^${prefix}`) })
-        .select('protocolNo')
-        .lean();
-      return docs.reduce((max, d) => {
-        const n = parseInt(String(d.protocolNo).slice(prefix.length), 10);
-        return Number.isFinite(n) && n > max ? n : max;
-      }, 0);
-    });
-    this.protocolNo = `${year}-${String(seq).padStart(6, '0')}`;
+    this.orderNumber = `LAB-REQ-${year}-${String(seq).padStart(6, '0')}`;
   }
 
   next();
