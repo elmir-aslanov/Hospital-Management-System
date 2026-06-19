@@ -402,7 +402,7 @@ const buildManualResultItems = (items) =>
     unit:           trim(item.unit),
     referenceRange: trim(item.referenceRange),
     status:         ['normal', 'low', 'high', 'critical', 'pending'].includes(item.status) ? item.status : 'normal',
-    notes:          trim(item.note ?? item.notes),
+    note:           trim(item.note),
   }));
 
 const maskFinForApi = (fin) => {
@@ -432,9 +432,11 @@ export const createManualResult = async (data, userId) => {
     testCode:           trim(data.testCode).slice(0, 40),
     results:            buildManualResultItems(data.resultItems),
     generalConclusion:  trim(data.generalConclusion).slice(0, 2000),
+    internalNote:       trim(data.internalNote).slice(0, 2000),
     labTechnicianId:    userId,
     performedBy:        userId,
     status,
+    completedAt:        status === 'completed' ? new Date() : null,
     isPublicVisible:    false,
   });
 
@@ -449,9 +451,11 @@ export const updateManualResult = async (id, data, userId) => {
   requireObjectId(id);
   const result = await LabResult.findById(id);
   if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
-  if (['approved', 'cancelled'].includes(result.status)) {
-    throw new ApiError(400, `'${result.status}' statuslu nəticə redaktə edilə bilməz`);
+  if (result.status === 'cancelled') {
+    throw new ApiError(400, "'Ləğv edildi' statuslu nəticə redaktə edilə bilməz");
   }
+
+  const wasApproved = result.status === 'approved';
 
   if (data.patientFullName !== undefined)   result.patientFullName  = trim(data.patientFullName).slice(0, 150);
   if (data.patientFin !== undefined)        result.patientFin       = trim(data.patientFin).toUpperCase().slice(0, 8);
@@ -464,19 +468,37 @@ export const updateManualResult = async (id, data, userId) => {
   if (data.testCode !== undefined)          result.testCode         = trim(data.testCode).slice(0, 40);
   if (data.resultItems !== undefined)       result.results          = buildManualResultItems(data.resultItems);
   if (data.generalConclusion !== undefined) result.generalConclusion = trim(data.generalConclusion).slice(0, 2000);
-  if (['draft', 'completed'].includes(data.status)) result.status   = data.status;
+  if (data.internalNote !== undefined)      result.internalNote     = trim(data.internalNote).slice(0, 2000);
+
+  if (wasApproved) {
+    // Editing a published result revokes publication — it must be re-approved.
+    result.status = 'completed';
+    result.approvedBy = null;
+    result.approvedAt = null;
+    result.isPublicVisible = false;
+    result.completedAt = new Date();
+  } else if (['draft', 'completed'].includes(data.status)) {
+    result.status = data.status;
+    if (data.status === 'completed' && !result.completedAt) result.completedAt = new Date();
+  }
 
   await result.save();
 
-  if (result.status === 'completed' && result.labOrderId) {
-    await LabOrder.findOneAndUpdate(
-      { _id: result.labOrderId, status: { $in: ['sample_collected', 'processing'] } },
-      { status: 'completed', completedAt: new Date() },
-    );
+  if (result.labOrderId) {
+    if (result.status === 'completed') {
+      await LabOrder.findOneAndUpdate(
+        { _id: result.labOrderId, status: { $in: ['sample_collected', 'processing', 'approved'] } },
+        { status: 'completed', completedAt: new Date() },
+      );
+    }
   }
 
   try {
-    logAction({ userId, action: 'LAB_RESULT_UPDATE_MANUAL', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} updated` });
+    const action = wasApproved ? 'LAB_RESULT_REOPENED_AFTER_EDIT' : 'LAB_RESULT_UPDATE_MANUAL';
+    const description = wasApproved
+      ? `Approved lab result ${result.protocolNo} was edited — reverted to 'completed' and unpublished, pending re-approval`
+      : `Manual lab result ${result.protocolNo} updated`;
+    logAction({ userId, action, resourceType: 'LabResult', resourceId: result._id, description });
   } catch (_) {}
   return result.populate(POP_MANUAL);
 };
@@ -511,11 +533,35 @@ export const getManualResultById = async (id) => {
   return result;
 };
 
+// Looks up a predefined parameter template for a test (e.g. allergen panel rows),
+// so the result-entry form can pre-fill rows instead of starting from a blank table.
+export const getResultParameterTemplate = async ({ testName, testCode } = {}) => {
+  const cleanName = normalizeName(testName);
+  const cleanCode = normalize(testCode);
+  if (!cleanName && !cleanCode) return { template: [] };
+
+  const or = [];
+  if (cleanCode) or.push({ serviceCode: cleanCode });
+  if (cleanName) or.push({ name: new RegExp(`^${escapeRegex(cleanName)}$`, 'i') });
+
+  const priceList = await PriceList.findOne({ $or: or, isActive: true }).select('resultParameterTemplate');
+  return { template: priceList?.resultParameterTemplate || [] };
+};
+
 export const approveManualResult = async (id, userId, isPublicVisible) => {
   requireObjectId(id);
   const result = await LabResult.findById(id);
   if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
   if (result.status !== 'completed') throw new ApiError(400, "Yalnız 'Tamamlandı' statuslu nəticə təsdiqlənə bilər");
+
+  if (!trim(result.patientFullName)) throw new ApiError(400, 'Pasiyentin ad və soyadı tələb olunur');
+  if (!trim(result.testName)) throw new ApiError(400, 'Test adı tələb olunur');
+  if (!result.resultDate) throw new ApiError(400, 'Nəticə tarixi tələb olunur');
+  if (!Array.isArray(result.results) || result.results.length === 0) {
+    throw new ApiError(400, 'Ən azı bir parametr daxil edilməlidir');
+  }
+  const incompleteItem = result.results.find((item) => !trim(item.testName) || !trim(item.value));
+  if (incompleteItem) throw new ApiError(400, 'Bütün parametrlərdə ad və nəticə dəyəri doldurulmalıdır');
 
   result.status = 'approved';
   result.approvedBy = userId;

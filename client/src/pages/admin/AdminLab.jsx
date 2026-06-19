@@ -12,6 +12,8 @@ const MANUAL_STATUS_CFG = {
   cancelled: { label: 'statusCancelled', bg: '#fef2f2', color: '#ef4444' },
 }
 
+const APPROVER_ROLES = ['SUPER_ADMIN', 'ADMIN', 'BAS_HEKIM']
+
 function ManualResultsTab() {
   const { t } = useTranslation()
   const [results, setResults]   = useState([])
@@ -19,6 +21,8 @@ function ManualResultsTab() {
   const [search, setSearch]     = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [selected, setSelected] = useState(null)
+  const [currentUser] = useState(() => { try { return JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('user') || '{}') } catch { return {} } })
+  const canApprove = APPROVER_ROLES.includes(currentUser.role)
 
   const fetchResults = async () => {
     setLoading(true)
@@ -121,10 +125,10 @@ function ManualResultsTab() {
                       <td style={{ padding: '11px 14px', fontSize: 12, color: r.isPublicVisible ? '#16a34a' : '#94a3b8', fontWeight: 600 }}>{r.isPublicVisible ? '✓' : '—'}</td>
                       <td style={{ padding: '11px 14px' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                          {r.status === 'completed' && (
+                          {r.status === 'completed' && canApprove && (
                             <button onClick={() => approve(r._id)}
                               style={{ padding: '4px 9px', border: '1px solid #16a34a', borderRadius: 7, background: 'white', color: '#16a34a', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                              {t('labResult.approve')}
+                              {t('labResult.approveAndPublish')}
                             </button>
                           )}
                           {['draft', 'completed'].includes(r.status) && (
@@ -187,6 +191,13 @@ function ManualResultsTab() {
 
               {r.generalConclusion && (
                 <p style={{ fontSize: 12, color: '#334155', marginTop: 10, padding: '8px 12px', background: '#f0fdf4', borderRadius: 8 }}>{r.generalConclusion}</p>
+              )}
+
+              {r.internalNote && (
+                <div style={{ marginTop: 10 }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>{t('labResult.internalNote')}</p>
+                  <p style={{ fontSize: 12, color: '#92400e', margin: 0, padding: '8px 12px', background: '#fffbeb', borderRadius: 8 }}>{r.internalNote}</p>
+                </div>
               )}
             </div>
           )

@@ -25,13 +25,43 @@ const MANUAL_FLAG_CFG = {
   pending:  { label: 'flagPending',  color: '#64748b' },
 }
 
-const emptyManualItem = () => ({ parameterName: '', value: '', unit: '', referenceRange: '', status: 'normal', note: '' })
+const displayUserName = (u) => {
+  if (!u) return ''
+  const name = [u.name, u.surname].filter(Boolean).join(' ').trim()
+  return name || u.fullName || ''
+}
+
+// Parses reference-range strings like "0-20", "0–20", "<5", ">10", "≤20", "≥5".
+const parseReferenceRange = (range) => {
+  const r = String(range || '').trim()
+  if (!r) return null
+  const dash = r.match(/^(-?\d+(?:[.,]\d+)?)\s*[-–]\s*(-?\d+(?:[.,]\d+)?)$/)
+  if (dash) return { min: parseFloat(dash[1].replace(',', '.')), max: parseFloat(dash[2].replace(',', '.')) }
+  const lt = r.match(/^[<≤]\s*=?\s*(-?\d+(?:[.,]\d+)?)$/)
+  if (lt) return { max: parseFloat(lt[1].replace(',', '.')) }
+  const gt = r.match(/^[>≥]\s*=?\s*(-?\d+(?:[.,]\d+)?)$/)
+  if (gt) return { min: parseFloat(gt[1].replace(',', '.')) }
+  return null
+}
+
+const computeAutoStatus = (value, range) => {
+  const num = parseFloat(String(value || '').replace(',', '.'))
+  if (Number.isNaN(num)) return null
+  const bounds = parseReferenceRange(range)
+  if (!bounds) return null
+  if (bounds.min !== undefined && num < bounds.min) return 'low'
+  if (bounds.max !== undefined && num > bounds.max) return 'high'
+  return 'normal'
+}
+
+const emptyManualItem = () => ({ parameterName: '', value: '', unit: '', referenceRange: '', status: 'normal', note: '', statusTouched: false })
+const isBlankItem = (item) => !item.parameterName.trim() && !item.value.trim() && !item.unit.trim() && !item.referenceRange.trim()
 const emptyManualForm = () => ({
   patientFullName: '', patientFin: '', patientBirthDate: '',
   testName: '', testCode: '', sampleDate: '', resultDate: '',
   doctorName: '', departmentName: '',
   resultItems: [emptyManualItem()],
-  generalConclusion: '',
+  generalConclusion: '', internalNote: '',
 })
 
 const manualInputStyle = {
@@ -44,13 +74,29 @@ function ManualResultPanel() {
   const { t } = useTranslation()
   const [showForm, setShowForm]   = useState(false)
   const [form, setForm]           = useState(emptyManualForm())
+  const [editingId, setEditingId] = useState(null)
+  const [meta, setMeta]           = useState(null) // { protocolNo, enteredByName, completedAt }
   const [saving, setSaving]       = useState(false)
   const [formErr, setFormErr]     = useState('')
   const [results, setResults]     = useState([])
   const [loadingList, setLoadingList] = useState(true)
 
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const setItem = (i, k, v) => setForm(f => ({ ...f, resultItems: f.resultItems.map((it, idx) => idx === i ? { ...it, [k]: v } : it) }))
+
+  const setItem = (i, k, v) => setForm(f => ({
+    ...f,
+    resultItems: f.resultItems.map((it, idx) => {
+      if (idx !== i) return it
+      if (k === 'status') return { ...it, status: v, statusTouched: true }
+      const next = { ...it, [k]: v }
+      if ((k === 'value' || k === 'referenceRange') && !it.statusTouched) {
+        const auto = computeAutoStatus(k === 'value' ? v : it.value, k === 'referenceRange' ? v : it.referenceRange)
+        if (auto) next.status = auto
+      }
+      return next
+    }),
+  }))
+
   const addItem = () => setForm(f => ({ ...f, resultItems: [...f.resultItems, emptyManualItem()] }))
   const removeItem = (i) => setForm(f => ({ ...f, resultItems: f.resultItems.filter((_, idx) => idx !== i) }))
 
@@ -83,28 +129,88 @@ function ManualResultPanel() {
     return () => { isCurrent = false }
   }, [])
 
+  const toDateInput = (v) => v ? new Date(v).toISOString().slice(0, 10) : ''
+
+  const applyTemplateIfBlank = async (testName) => {
+    const name = testName.trim()
+    if (!name) return
+    try {
+      const res = await api.get('/lab/test-templates', { params: { testName: name } })
+      const template = res.data?.data?.template || []
+      if (!template.length) return
+      setForm(f => {
+        if (f.resultItems.length > 1 || !isBlankItem(f.resultItems[0])) return f
+        return {
+          ...f,
+          resultItems: template.map(row => ({
+            parameterName: row.parameterName || '', value: '', unit: row.unit || '',
+            referenceRange: row.referenceRange || '', status: 'normal', note: '', statusTouched: false,
+          })),
+        }
+      })
+    } catch {
+      // No template for this test — leave the form as-is.
+    }
+  }
+
+  const openNew = () => {
+    setEditingId(null)
+    setMeta(null)
+    setForm(emptyManualForm())
+    setFormErr('')
+    setShowForm(true)
+  }
+
+  const openEdit = async (id) => {
+    setFormErr('')
+    try {
+      const res = await api.get(`/lab/results/manual/${id}`)
+      const r = res.data?.data
+      if (!r) return
+      setEditingId(id)
+      setMeta({
+        protocolNo: r.protocolNo,
+        enteredByName: displayUserName(r.labTechnicianId),
+        completedAt: r.completedAt,
+      })
+      setForm({
+        patientFullName: r.patientFullName || '', patientFin: r.patientFin || '',
+        patientBirthDate: toDateInput(r.patientBirthDate),
+        testName: r.testName || '', testCode: r.testCode || '',
+        sampleDate: toDateInput(r.sampleDate), resultDate: toDateInput(r.resultDate),
+        doctorName: r.doctorName || '', departmentName: r.departmentName || '',
+        resultItems: r.results?.length ? r.results.map(item => ({
+          parameterName: item.testName || '', value: item.value || '', unit: item.unit || '',
+          referenceRange: item.referenceRange || '', status: item.status || 'normal',
+          note: item.note || '', statusTouched: true,
+        })) : [emptyManualItem()],
+        generalConclusion: r.generalConclusion || '', internalNote: r.internalNote || '',
+      })
+      setShowForm(true)
+    } catch (err) {
+      alert(err.response?.data?.message || 'Xəta baş verdi')
+    }
+  }
+
   const submit = async (status) => {
     if (!form.patientFullName.trim()) { setFormErr(t('labResult.validationFullName')); return }
     if (!form.testName.trim())        { setFormErr(t('labResult.validationTestName')); return }
     setSaving(true); setFormErr('')
     try {
-      await api.post('/lab/results/manual', { ...form, status })
+      if (editingId) {
+        await api.patch(`/lab/results/manual/${editingId}`, { ...form, status })
+      } else {
+        await api.post('/lab/results/manual', { ...form, status })
+      }
       setForm(emptyManualForm())
+      setEditingId(null)
+      setMeta(null)
       setShowForm(false)
       loadList()
     } catch (err) {
       setFormErr(err.response?.data?.message || 'Xəta baş verdi')
     } finally {
       setSaving(false)
-    }
-  }
-
-  const approve = async (id, isPublicVisible) => {
-    try {
-      await api.patch(`/lab/results/manual/${id}/approve`, { isPublicVisible })
-      loadList()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Xəta baş verdi')
     }
   }
 
@@ -136,7 +242,7 @@ function ManualResultPanel() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm ? 16 : 0 }}>
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: NAVY }}>{t('labResult.newResult')}</h3>
         <button
-          onClick={() => setShowForm(s => !s)}
+          onClick={() => { if (showForm) { setShowForm(false) } else { openNew() } }}
           style={{ border: `1px solid ${TEAL}`, background: showForm ? TEAL : 'white', color: showForm ? 'white' : TEAL, borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
         >
           {showForm ? '×' : t('labResult.newResult')}
@@ -146,6 +252,27 @@ function ManualResultPanel() {
       {showForm && (
         <div style={{ marginTop: 4 }}>
           {formErr && <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '9px 12px', fontSize: 13, marginBottom: 14 }}>{formErr}</div>}
+
+          {meta && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, background: '#f8fafc', borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{t('labResult.patientFullName')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{form.patientFullName || '—'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{t('labResult.protocolNo')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: TEAL }}>{meta.protocolNo || '—'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{t('labResult.testName')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{form.testName || '—'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10.5, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>{t('labResult.sampleDate')}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{form.sampleDate || '—'}</div>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
@@ -162,7 +289,7 @@ function ManualResultPanel() {
             </div>
             <div>
               <label style={manualLbl}>{t('labResult.testName')} *</label>
-              <input style={manualInputStyle} value={form.testName} onChange={e => setF('testName', e.target.value)} />
+              <input style={manualInputStyle} value={form.testName} onChange={e => setF('testName', e.target.value)} onBlur={e => applyTemplateIfBlank(e.target.value)} />
             </div>
             <div>
               <label style={manualLbl}>{t('labResult.testCode')}</label>
@@ -195,7 +322,7 @@ function ManualResultPanel() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {form.resultItems.map((item, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.8fr 0.6fr 0.9fr 0.8fr 28px', gap: 6, alignItems: 'center' }}>
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 0.55fr 0.8fr 0.7fr 1fr 28px', gap: 6, alignItems: 'center' }}>
                 <input placeholder={t('labResult.parameterName')} style={manualInputStyle} value={item.parameterName} onChange={e => setItem(i, 'parameterName', e.target.value)} />
                 <input placeholder={t('labResult.value')} style={manualInputStyle} value={item.value} onChange={e => setItem(i, 'value', e.target.value)} />
                 <input placeholder={t('labResult.unit')} style={manualInputStyle} value={item.unit} onChange={e => setItem(i, 'unit', e.target.value)} />
@@ -203,6 +330,7 @@ function ManualResultPanel() {
                 <select style={manualInputStyle} value={item.status} onChange={e => setItem(i, 'status', e.target.value)}>
                   {Object.entries(MANUAL_FLAG_CFG).map(([v, cfg]) => <option key={v} value={v}>{t(`labResult.${cfg.label}`)}</option>)}
                 </select>
+                <input placeholder={t('labResult.itemNote')} style={manualInputStyle} value={item.note} onChange={e => setItem(i, 'note', e.target.value)} />
                 {form.resultItems.length > 1 && (
                   <button onClick={() => removeItem(i)} style={{ width: 28, height: 28, border: 'none', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 16 }}>×</button>
                 )}
@@ -214,6 +342,19 @@ function ManualResultPanel() {
             <label style={manualLbl}>{t('labResult.generalConclusion')}</label>
             <textarea rows={3} style={{ ...manualInputStyle, resize: 'vertical' }} value={form.generalConclusion} onChange={e => setF('generalConclusion', e.target.value)} />
           </div>
+
+          <div style={{ marginTop: 14 }}>
+            <label style={manualLbl}>{t('labResult.internalNote')}</label>
+            <p style={{ margin: '0 0 6px', fontSize: 11, color: '#94a3b8' }}>{t('labResult.internalNoteHint')}</p>
+            <textarea rows={2} style={{ ...manualInputStyle, resize: 'vertical' }} value={form.internalNote} onChange={e => setF('internalNote', e.target.value)} />
+          </div>
+
+          {meta && (
+            <div style={{ marginTop: 12, fontSize: 11.5, color: '#94a3b8' }}>
+              {meta.enteredByName && <span>{t('labResult.enteredBy')}: <strong>{meta.enteredByName}</strong></span>}
+              {meta.completedAt && <span style={{ marginLeft: 14 }}>{t('labResult.completedAt')}: <strong>{new Date(meta.completedAt).toLocaleDateString('az-AZ')}</strong></span>}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
             <button onClick={() => submit('draft')} disabled={saving}
@@ -258,10 +399,10 @@ function ManualResultPanel() {
                       </td>
                       <td style={{ padding: '10px 12px' }}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {r.status === 'completed' && (
-                            <button onClick={() => approve(r._id, window.confirm('Bu nəticə pasiyentə (E-Nəticə səhifəsində) açıq olsun?'))}
-                              style={{ padding: '4px 9px', border: '1px solid #16a34a', borderRadius: 7, background: 'white', color: '#16a34a', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                              {t('labResult.approve')}
+                          {['draft', 'completed', 'approved'].includes(r.status) && (
+                            <button onClick={() => openEdit(r._id)}
+                              style={{ padding: '4px 9px', border: `1px solid ${TEAL}`, borderRadius: 7, background: 'white', color: TEAL, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                              {t('labResult.fillIn')}
                             </button>
                           )}
                           {['draft', 'completed'].includes(r.status) && (

@@ -52,6 +52,17 @@ const priceListSchema = new mongoose.Schema(
     // Home-service CTA
     homeServiceAvailable:   { type: Boolean, default: false },
     homeServiceDescription: { type: String, trim: true, default: '' },
+
+    // Expected lab-result parameters for this test (e.g. allergen panel rows) —
+    // used to pre-fill the result-entry form; optional, empty for most tests.
+    resultParameterTemplate: {
+      type: [{
+        parameterName:  { type: String, trim: true },
+        unit:            { type: String, trim: true },
+        referenceRange:  { type: String, trim: true },
+      }],
+      default: [],
+    },
   },
   { timestamps: true }
 );

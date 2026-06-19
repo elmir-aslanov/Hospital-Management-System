@@ -8,7 +8,7 @@ const resultItemSchema = new mongoose.Schema({
   unit:           { type: String, trim: true, maxlength: 40 },
   referenceRange: { type: String, trim: true, maxlength: 100 },
   status:         { type: String, enum: ['normal','low','high','critical','pending'], default: 'normal' },
-  notes:          { type: String, trim: true, maxlength: 500 },
+  note:           { type: String, trim: true, maxlength: 500 },
 }, { _id: true });
 
 const labResultSchema = new mongoose.Schema({
@@ -35,9 +35,11 @@ const labResultSchema = new mongoose.Schema({
   testName:          { type: String, trim: true, maxlength: 150, default: '' },
   testCode:          { type: String, trim: true, maxlength: 40,  default: '' },
   generalConclusion: { type: String, trim: true, maxlength: 2000, default: '' },
+  internalNote:      { type: String, trim: true, maxlength: 2000, default: '' },
   labTechnicianId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   approvedBy:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   approvedAt:        { type: Date, default: null },
+  completedAt:       { type: Date, default: null },
   status:            { type: String, enum: ['draft','completed','approved','cancelled'], default: 'completed' },
   isPublicVisible:   { type: Boolean, default: false },
 }, { timestamps: true });

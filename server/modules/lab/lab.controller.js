@@ -27,6 +27,7 @@ export const listManualResults  = asyncHandler(async (req, res) => { const d = a
 export const getManualResult    = asyncHandler(async (req, res) => { const d = await svc.getManualResultById(req.params.id); res.json(new ApiResponse(200, d)); });
 export const approveManualResult = asyncHandler(async (req, res) => { const d = await svc.approveManualResult(req.params.id, uid(req), req.body.isPublicVisible); res.json(new ApiResponse(200, d, 'Nəticə təsdiqləndi')); });
 export const cancelManualResult  = asyncHandler(async (req, res) => { const d = await svc.cancelManualResult(req.params.id, uid(req)); res.json(new ApiResponse(200, d, 'Nəticə ləğv edildi')); });
+export const getResultParameterTemplate = asyncHandler(async (req, res) => { const d = await svc.getResultParameterTemplate(req.query); res.json(new ApiResponse(200, d)); });
 
 // ── Public verify + secure PDF ───────────────────────────────────
 export const verifyPublicLabResult = asyncHandler(async (req, res) => {

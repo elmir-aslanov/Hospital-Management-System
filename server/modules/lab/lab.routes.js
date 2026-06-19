@@ -32,7 +32,8 @@ router.post('/results/manual',            authorize('ADMIN','SUPER_ADMIN','LAB_T
 router.get('/results/manual',             authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','DOCTOR','BAS_HEKIM'),    ctrl.listManualResults);
 router.get('/results/manual/:id',         authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','DOCTOR','BAS_HEKIM'),    ctrl.getManualResult);
 router.patch('/results/manual/:id',       authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN'),                        ctrl.updateManualResult);
-router.patch('/results/manual/:id/approve', authorize('ADMIN','SUPER_ADMIN','DOCTOR','BAS_HEKIM'),                  ctrl.approveManualResult);
+router.patch('/results/manual/:id/approve', authorize('ADMIN','SUPER_ADMIN','BAS_HEKIM'),                            ctrl.approveManualResult);
 router.patch('/results/manual/:id/cancel',  authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','DOCTOR','BAS_HEKIM'), ctrl.cancelManualResult);
+router.get('/test-templates',             authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','BAS_HEKIM'),             ctrl.getResultParameterTemplate);
 
 export default router;

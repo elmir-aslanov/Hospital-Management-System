@@ -89,6 +89,17 @@ const TESTS = [
       homeServiceDescription:
         'Laborator müayinəsi üçün nümunənin ünvanınızda götürülməsini sifariş edə bilərsiniz. ' +
         'Aslan Medical Center-in mobil tibbi xidmət komandası uyğun ünvan və vaxt üzrə sizinlə əlaqə saxlayacaq.',
+
+      // Pre-fills the lab-tech result-entry form — one row per food antigen.
+      resultParameterTemplate: [
+        { parameterName: 'İnək südü',  unit: 'U/ml', referenceRange: '0–20' },
+        { parameterName: 'Yumurta ağı', unit: 'U/ml', referenceRange: '0–20' },
+        { parameterName: 'Yumurta sarısı', unit: 'U/ml', referenceRange: '0–20' },
+        { parameterName: 'Buğda',       unit: 'U/ml', referenceRange: '0–20' },
+        { parameterName: 'Fındıq',      unit: 'U/ml', referenceRange: '0–20' },
+        { parameterName: 'Soya',        unit: 'U/ml', referenceRange: '0–20' },
+        { parameterName: 'Balıq',       unit: 'U/ml', referenceRange: '0–20' },
+      ],
     },
   },
 ];
@@ -135,6 +146,7 @@ const run = async () => {
       set.referenceRange          = test.detail.referenceRange;
       set.homeServiceAvailable    = test.detail.homeServiceAvailable;
       set.homeServiceDescription  = test.detail.homeServiceDescription;
+      set.resultParameterTemplate = test.detail.resultParameterTemplate || [];
     }
 
     const doc = await PriceList.findOneAndUpdate(
