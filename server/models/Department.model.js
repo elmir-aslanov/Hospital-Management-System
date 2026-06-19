@@ -23,6 +23,7 @@ const departmentSchema = new mongoose.Schema({
   room:        { type: String, default: '', trim: true },
   order:       { type: Number, default: 0, min: 0 },
   isActive:    { type: Boolean, default: true },
+  headDoctorId:{ type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', default: null },
 }, { timestamps: true });
 
 departmentSchema.pre('save', async function(next) {

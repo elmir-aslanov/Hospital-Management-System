@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +15,7 @@ function roleToRoute(role = '') {
     case 'DOCTOR':                               return '/dashboard';
     case 'NURSE': case 'RECEPTIONIST':
     case 'LAB_TECHNICIAN':                       return '/dashboard';
+    case 'BAS_HEKIM':                            return '/bas-hekim/dashboard';
     default:                                     return '/';
   }
 }
@@ -41,7 +41,7 @@ const TABS = [
     key:          'admin',
     labelKey:     'staffLogin.roles.admin',
     icon:         '🔐',
-    allowedRoles: ['ADMIN', 'SUPER_ADMIN'],
+    allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'BAS_HEKIM'],
     btnBg:        '#1a2b4a',
     accentColor:  '#3b5bdb',
   },

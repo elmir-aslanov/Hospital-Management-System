@@ -67,7 +67,11 @@ export default function Login() {
             navigate('/receptionist');
           } else if (role === 'LAB_TECHNICIAN') {
             navigate('/lab');
-          } else if (['STAFF', 'SOBE_MUDURU', 'BAS_HEKIM'].includes(role)) {
+          } else if (role === 'BAS_HEKIM') {
+            localStorage.setItem('adminToken', token);
+            localStorage.setItem('adminUser', JSON.stringify(user));
+            navigate('/bas-hekim/dashboard');
+          } else if (['STAFF', 'SOBE_MUDURU'].includes(role)) {
             localStorage.setItem('adminToken', token);
             localStorage.setItem('adminUser', JSON.stringify(user));
             navigate('/admin/dashboard');

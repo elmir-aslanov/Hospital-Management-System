@@ -43,6 +43,17 @@
     "send": "Send",
     "close": "Close"
   },
+  "chiefDoctor": {
+    "panel": "Chief doctor panel", "role": "Chief doctor", "logout": "Log out", "openMenu": "Open menu",
+    "search": "Search", "filter": "Filter", "create": "Create", "loading": "Loading...", "empty": "No data", "error": "The operation failed", "saved": "Changes saved",
+    "approve": "Approve and publish", "return": "Return", "resolve": "Mark reviewed", "complete": "Complete", "reassign": "Reassign doctor",
+    "confirmApprove": "Do you want to approve this item?", "confirmResolve": "Mark this incident as resolved?", "returnReason": "Enter the return reason", "finalDecision": "Enter the final decision",
+    "fields": { "patientId": "Patient Mongo ID", "doctorId": "New doctor ID", "title": "Title", "reason": "Clinical reason" },
+    "nav": { "dashboard": "Dashboard", "doctors": "Doctors", "departments": "Departments", "appointments": "Appointments", "laboratory": "Laboratory", "documents": "Medical documents", "councils": "Medical councils", "incidents": "Critical incidents", "reports": "Reports", "audit": "Audit history" },
+    "descriptions": { "dashboard": "Daily clinical overview", "doctors": "Clinical oversight of doctors", "departments": "Department-level indicators", "appointments": "Clinical appointment flow", "laboratory": "Results awaiting approval", "documents": "Medical document approvals", "councils": "Manage medical councils", "incidents": "Critical clinical incidents", "reports": "Clinical activity reports", "audit": "Read-only clinical audit" },
+    "stats": { "activeDoctors": "Active doctors", "todayAppointments": "Today's appointments", "waiting": "Waiting patients", "completed": "Completed visits", "pendingDocuments": "Document approvals", "pendingLabs": "Lab approvals", "criticalLabs": "Critical results", "activeCouncils": "Active councils" },
+    "todayFlow": "Today's appointment flow", "reportAppointments": "Appointment statuses", "reportClinical": "Clinical indicators", "labHours": "Average lab approval time (hours)", "approvedDocuments": "Approved documents"
+  },
   "hero": {
     "badge": "MEDICAL CENTER & DIAGNOSTICS",
     "title": "Azerbaijan's Most\nAdvanced Medical Center",

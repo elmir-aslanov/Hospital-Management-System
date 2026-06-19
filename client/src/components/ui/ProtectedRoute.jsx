@@ -8,6 +8,7 @@ const SAFE_ROUTE_BY_ROLE = {
   RECEPTIONIST: '/receptionist',
   LAB_TECHNICIAN: '/lab',
   PATIENT: '/patient',
+  BAS_HEKIM: '/bas-hekim/dashboard',
 };
 
 function getStoredJson(key) {

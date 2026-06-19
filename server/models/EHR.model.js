@@ -9,9 +9,15 @@ const ehrSchema = new mongoose.Schema({
   date:        { type: Date, default: Date.now },
   isActive:    { type: Boolean, default: true },
   attachments: [{ name: String, url: String }],
+  approvalStatus: { type: String, enum: ['draft','submitted','approved','returned'], default: 'draft' },
+  approvedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  approvedAt:     { type: Date, default: null },
+  returnReason:   { type: String, trim: true, maxlength: 1000, default: '' },
+  submittedAt:    { type: Date, default: null },
 }, { timestamps: true });
 
 ehrSchema.index({ patientId: 1, date: -1 });
 ehrSchema.index({ patientId: 1, type: 1 });
+ehrSchema.index({ approvalStatus: 1, createdAt: -1 });
 
 export default mongoose.model('EHR', ehrSchema);

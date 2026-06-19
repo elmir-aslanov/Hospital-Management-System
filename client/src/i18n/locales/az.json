@@ -43,6 +43,17 @@
     "send": "Göndər",
     "close": "Bağla"
   },
+  "chiefDoctor": {
+    "panel": "Baş həkim paneli", "role": "Baş həkim", "logout": "Çıxış", "openMenu": "Menyunu aç",
+    "search": "Axtarış", "filter": "Filtrlə", "create": "Yarat", "loading": "Yüklənir...", "empty": "Məlumat yoxdur", "error": "Əməliyyat mümkün olmadı", "saved": "Dəyişiklik yadda saxlanıldı",
+    "approve": "Təsdiqlə və yayımla", "return": "Geri qaytar", "resolve": "Nəzərdən keçirildi", "complete": "Yekunlaşdır", "reassign": "Başqa həkimə yönləndir",
+    "confirmApprove": "Təsdiqləmək istəyirsiniz?", "confirmResolve": "Hadisəni həll edilmiş kimi işarələyək?", "returnReason": "Geri qaytarma səbəbini daxil edin", "finalDecision": "Yekun qərarı daxil edin",
+    "fields": { "patientId": "Pasiyent Mongo ID", "doctorId": "Yeni həkim ID", "title": "Başlıq", "reason": "Klinik səbəb" },
+    "nav": { "dashboard": "İdarə paneli", "doctors": "Həkimlər", "departments": "Şöbələr", "appointments": "Randevular", "laboratory": "Laboratoriya", "documents": "Tibbi sənədlər", "councils": "Konsiliumlar", "incidents": "Kritik hallar", "reports": "Hesabatlar", "audit": "Audit tarixçəsi" },
+    "descriptions": { "dashboard": "Klinikanın gündəlik tibbi vəziyyəti", "doctors": "Həkim fəaliyyətinə klinik nəzarət", "departments": "Şöbələr üzrə ümumi göstəricilər", "appointments": "Klinik randevu axını", "laboratory": "Təsdiq gözləyən nəticələr", "documents": "Tibbi sənəd təsdiqləri", "councils": "Klinik konsiliumların idarəsi", "incidents": "Kritik klinik hadisələr", "reports": "Klinik fəaliyyət hesabatları", "audit": "Dəyişdirilə bilməyən klinik audit" },
+    "stats": { "activeDoctors": "Aktiv həkimlər", "todayAppointments": "Bugünkü randevular", "waiting": "Gözləyən pasiyentlər", "completed": "Tamamlanan qəbullar", "pendingDocuments": "Sənəd təsdiqləri", "pendingLabs": "Laboratoriya təsdiqləri", "criticalLabs": "Kritik nəticələr", "activeCouncils": "Aktiv konsiliumlar" },
+    "todayFlow": "Bu günün randevu axını", "reportAppointments": "Randevu statusları", "reportClinical": "Klinik göstəricilər", "labHours": "Orta laboratoriya təsdiq müddəti (saat)", "approvedDocuments": "Təsdiqlənmiş sənədlər"
+  },
   "hero": {
     "badge": "TİBBİ MƏRKƏZ & MÜAYİNƏ",
     "title": "Azərbaycanda Ən\nMüasir Tibbi Mərkəz",

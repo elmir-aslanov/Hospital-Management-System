@@ -65,6 +65,7 @@ import DoctorPatients       from './pages/doctor/DoctorPatients'
 import DoctorPrescriptions  from './pages/doctor/DoctorPrescriptions'
 import DoctorAnalyses       from './pages/doctor/DoctorAnalyses'
 import DoctorProfile        from './pages/doctor/DoctorProfile';
+import ChiefDoctorPage      from './pages/chief-doctor/ChiefDoctorPage';
 
 /* Auth */
 import Login            from './pages/auth/Login';
@@ -91,10 +92,15 @@ function RouteLoader() {
   const [key, setKey] = useState(0)
 
   useEffect(() => {
-    setLoading(true)
-    setKey(prev => prev + 1)
-    const timer = setTimeout(() => setLoading(false), 1000)
-    return () => clearTimeout(timer)
+    const startTimer = setTimeout(() => {
+      setLoading(true)
+      setKey(prev => prev + 1)
+    }, 0)
+    const finishTimer = setTimeout(() => setLoading(false), 1000)
+    return () => {
+      clearTimeout(startTimer)
+      clearTimeout(finishTimer)
+    }
   }, [location.pathname])
 
   return loading ? <PageLoader key={key} /> : null
@@ -102,7 +108,7 @@ function RouteLoader() {
 
 /* Pages that hide the public navbar/footer */
 const HIDE_CHROME_EXACT  = new Set(['/login', '/staff-login', '/register', '/forgot-password', '/randevu', '/e-netice', '/admin']);
-const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin', '/doctor'];
+const HIDE_CHROME_PREFIX = ['/dashboard', '/patient', '/admin', '/doctor', '/bas-hekim'];
 
 const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'];
 const DOCTOR_ROLES = ['DOCTOR'];
@@ -110,6 +116,7 @@ const NURSE_ROLES = ['NURSE'];
 const RECEPTIONIST_ROLES = ['RECEPTIONIST'];
 const LAB_ROLES = ['LAB_TECHNICIAN'];
 const PATIENT_ROLES = ['PATIENT'];
+const CHIEF_DOCTOR_ROLES = ['BAS_HEKIM'];
 const DASHBOARD_ROLES = ['ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'LAB_TECHNICIAN'];
 
 function getStoredUserRole() {
@@ -126,6 +133,7 @@ function AdminEntryRoute() {
 
   if (!token || !role) return <AdminLoginPage />;
   if (ADMIN_ROLES.includes(role)) return <Navigate to="/admin/dashboard" replace />;
+  if (CHIEF_DOCTOR_ROLES.includes(role)) return <Navigate to="/bas-hekim/dashboard" replace />;
   return <Navigate to="/" replace />;
 }
 
@@ -207,6 +215,19 @@ function Layout() {
           <Route path="/doctor/analyses"      element={<DoctorAnalyses />} />
           <Route path="/doctor/profile"       element={<DoctorProfile />} />
         </Route>
+        <Route element={<ProtectedRoute allowedRoles={CHIEF_DOCTOR_ROLES} loginPath="/admin" />}>
+          <Route path="/bas-hekim" element={<Navigate to="/bas-hekim/dashboard" replace />} />
+          <Route path="/bas-hekim/dashboard" element={<ChiefDoctorPage section="dashboard" />} />
+          <Route path="/bas-hekim/hekimler" element={<ChiefDoctorPage section="doctors" />} />
+          <Route path="/bas-hekim/sobeler" element={<ChiefDoctorPage section="departments" />} />
+          <Route path="/bas-hekim/randevular" element={<ChiefDoctorPage section="appointments" />} />
+          <Route path="/bas-hekim/laboratoriya" element={<ChiefDoctorPage section="laboratory" />} />
+          <Route path="/bas-hekim/tibbi-senedler" element={<ChiefDoctorPage section="documents" />} />
+          <Route path="/bas-hekim/konsiliumlar" element={<ChiefDoctorPage section="councils" />} />
+          <Route path="/bas-hekim/kritik-hallar" element={<ChiefDoctorPage section="incidents" />} />
+          <Route path="/bas-hekim/hesabatlar" element={<ChiefDoctorPage section="reports" />} />
+          <Route path="/bas-hekim/audit" element={<ChiefDoctorPage section="audit" />} />
+        </Route>
 
         {/* ── Auth ── */}
         <Route path="/login"           element={<Login />} />
@@ -275,7 +296,8 @@ function PublicFloatingTools() {
     pathname.startsWith('/nurse') ||
     pathname.startsWith('/receptionist') ||
     pathname.startsWith('/lab');
-  if (isPanel) return null;
+  const isChiefDoctor = pathname.startsWith('/bas-hekim');
+  if (isPanel || isChiefDoctor) return null;
   return (
     <AccessibilityProvider>
       <AccessibilityWidget />

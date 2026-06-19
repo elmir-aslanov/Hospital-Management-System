@@ -48,6 +48,7 @@ import labResultsRoutes     from './modules/lab-results/lab-results.routes.js';
 import priceListRoutes      from './modules/pricelist/pricelist.routes.js';
 import settingsRoutes       from './modules/settings/settings.routes.js';
 import messagesRoutes      from './modules/messages/messages.routes.js';
+import chiefDoctorRoutes   from './modules/chief-doctor/chief-doctor.routes.js';
 
 const app = express();
 
@@ -159,6 +160,7 @@ app.use(`${API}/lab-results`,   labResultsRoutes);
 app.use(`${API}/pricelist`,     priceListRoutes);
 app.use(`${API}/settings`,      settingsRoutes);
 app.use(`${API}/messages`,     messagesRoutes);
+app.use(`${API}/chief-doctor`, chiefDoctorRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

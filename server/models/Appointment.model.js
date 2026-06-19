@@ -15,6 +15,14 @@ const appointmentSchema = new mongoose.Schema(
     },
     reason:       { type: String, required: true, trim: true },
     notes:        { type: String, trim: true },
+    priority:     { type: String, enum: ['routine', 'urgent', 'critical'], default: 'routine' },
+    reassignmentHistory: { type: [{
+      fromDoctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+      toDoctorId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+      reason:       { type: String, required: true, trim: true, maxlength: 500 },
+      reassignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      reassignedAt: { type: Date, default: Date.now },
+    }], default: [], validate: v => v.length <= 100 },
     cancelledBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     cancelReason: { type: String, trim: true },
   },
@@ -24,6 +32,7 @@ const appointmentSchema = new mongoose.Schema(
 // Compound index — critical for conflict detection queries
 appointmentSchema.index({ doctorId: 1, date: 1, startTime: 1, endTime: 1 });
 appointmentSchema.index({ patientId: 1, date: 1 });
+appointmentSchema.index({ date: 1, status: 1, priority: 1 });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 export default Appointment;

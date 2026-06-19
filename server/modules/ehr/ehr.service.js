@@ -26,7 +26,18 @@ export const addEHRRecord = async (data) => {
 };
 
 export const updateEHRRecord = async (id, data) => {
-  const r = await EHR.findByIdAndUpdate(id, data, { new: true }).populate(POPULATE_DOCTOR);
+  const existing = await EHR.findById(id);
+  if (!existing) throw new ApiError(404, 'Qeyd tapılmadı');
+  const clinicalFields = ['title', 'description', 'type', 'date', 'attachments'];
+  const clinicalChanged = clinicalFields.some((key) => data[key] !== undefined);
+  const safe = { ...data };
+  if (clinicalChanged && ['approved', 'submitted'].includes(existing.approvalStatus)) {
+    safe.approvalStatus = 'draft';
+    safe.approvedBy = null;
+    safe.approvedAt = null;
+    safe.returnReason = '';
+  }
+  const r = await EHR.findByIdAndUpdate(id, safe, { new: true, runValidators: true }).populate(POPULATE_DOCTOR);
   if (!r) throw new ApiError(404, 'Qeyd tapılmadı');
   return r;
 };
