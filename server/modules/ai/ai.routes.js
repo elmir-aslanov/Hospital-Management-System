@@ -4,8 +4,45 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
 import ApiError     from '../../utils/ApiError.js';
 import { authLimiter } from '../../middleware/rateLimiter.middleware.js';
+import * as ctrl from './ai.controller.js';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/v1/ai/chat:
+ *   post:
+ *     summary: Chat with the Aslan Medical Center AI assistant
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - messages
+ *             properties:
+ *               messages:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     role:
+ *                       type: string
+ *                       enum: [user, assistant]
+ *                     content:
+ *                       type: string
+ *                 example:
+ *                   - role: user
+ *                     content: "Randevu necə ala bilərəm?"
+ *     responses:
+ *       200:
+ *         description: AI assistant response
+ *       400:
+ *         description: Invalid messages payload
+ */
+router.post('/chat', authLimiter, ctrl.chat);
 
 const FALLBACK = (name) =>
   `Salam, ${name || 'hörmətli pasiyent'}! Hal-hazırda AI xidmətimizdə texniki problem yaranıb. ` +
