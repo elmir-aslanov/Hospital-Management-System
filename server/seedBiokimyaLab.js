@@ -24,7 +24,7 @@ const TEST = {
   name: 'Yağ turşuları (çox uzun zəncirli)',
   serviceCode: 'LAB-04-122',
   price: 185,
-  slug: 'yag-turshulari-cox-uzun-zencirli',
+  slug: 'yag-tursulari-cox-uzun-zencirli',
 
   shortDescription:
     'Bu analiz qanda çox uzun zəncirli yağ turşularının səviyyəsinin qiymətləndirilməsi üçün istifadə olunur. ' +
