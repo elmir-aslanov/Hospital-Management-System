@@ -1,14 +1,17 @@
 import mongoose  from 'mongoose';
 import jwt       from 'jsonwebtoken';
+import crypto    from 'crypto';
 import LabOrder  from '../../models/LabOrder.model.js';
 import LabResult from '../../models/LabResult.model.js';
 import PriceList from '../../models/PriceList.model.js';
+import Patient   from '../../models/Patient.model.js';
 import User      from '../../models/User.model.js';
 import ApiError  from '../../utils/ApiError.js';
 import logAction from '../../utils/auditLogger.js';
 import logger     from '../../utils/logger.js';
 import { uploadBuffer } from '../../config/cloudinary.js';
 import { createLabResultPDF } from '../../utils/generateLabResultPdf.js';
+import { nextSequence } from '../../models/Counter.model.js';
 
 const POP_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POP_DOCTOR  = { path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } };
@@ -111,21 +114,53 @@ export const getOrderById = async (id) => {
   return order;
 };
 
-export const updateOrderStatus = async (id, status) => {
+export const updateOrderStatus = async (id, status, userId) => {
   const order = await LabOrder.findById(id);
   if (!order) throw new ApiError(404, 'Lab order not found');
   const allowed = {
-    pending:          ['sample_collected', 'cancelled'],
+    pending:          ['confirmed', 'sample_collected', 'cancelled'],
+    confirmed:        ['sample_collected', 'cancelled'],
     sample_collected: ['processing', 'cancelled'],
     processing:       ['completed', 'cancelled'],
-    completed:        [],
+    completed:        ['cancelled'],
+    approved:         [],
     cancelled:        [],
   };
   if (!allowed[order.status]?.includes(status)) {
     throw new ApiError(400, `Cannot transition from '${order.status}' to '${status}'`);
   }
   order.status = status;
+  if (status === 'confirmed' && !order.confirmedAt) order.confirmedAt = new Date();
   if (status === 'completed' && !order.completedAt) order.completedAt = new Date();
+
+  if (status === 'sample_collected' && order.source === 'public_self_request' && !order.sampleCollectedAt) {
+    order.sampleCollectedAt = new Date();
+    const existingResult = await LabResult.findOne({ labOrderId: order._id });
+    if (!existingResult) {
+      const patient = await Patient.findById(order.patientId).populate('userId', 'fullName name surname sexiyyatId birthDate');
+      const user = patient?.userId;
+      const priceList = order.priceListId ? await PriceList.findById(order.priceListId) : null;
+      const year = new Date().getFullYear();
+      const seq = await nextSequence(`labResultProtocol-${year}`);
+
+      await LabResult.create({
+        labOrderId: order._id,
+        patientId: order.patientId,
+        protocolNo: `LAB-${year}-${String(seq).padStart(6, '0')}`,
+        patientFullName: displayUserName(user).slice(0, 150),
+        patientFin: trim(user?.sexiyyatId).toUpperCase().slice(0, 8),
+        patientBirthDate: user?.birthDate || null,
+        sampleDate: order.sampleCollectedAt,
+        testName: (priceList?.name || order.tests?.[0]?.testName || '').slice(0, 150),
+        testCode: (priceList?.serviceCode || order.tests?.[0]?.testCode || '').slice(0, 40),
+        labTechnicianId: userId,
+        performedBy: userId,
+        status: 'draft',
+        isPublicVisible: false,
+      });
+    }
+  }
+
   await order.save();
   return order;
 };
@@ -432,6 +467,14 @@ export const updateManualResult = async (id, data, userId) => {
   if (['draft', 'completed'].includes(data.status)) result.status   = data.status;
 
   await result.save();
+
+  if (result.status === 'completed' && result.labOrderId) {
+    await LabOrder.findOneAndUpdate(
+      { _id: result.labOrderId, status: { $in: ['sample_collected', 'processing'] } },
+      { status: 'completed', completedAt: new Date() },
+    );
+  }
+
   try {
     logAction({ userId, action: 'LAB_RESULT_UPDATE_MANUAL', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} updated` });
   } catch (_) {}
@@ -480,6 +523,10 @@ export const approveManualResult = async (id, userId, isPublicVisible) => {
   result.isPublicVisible = !!isPublicVisible;
   await result.save();
 
+  if (result.labOrderId) {
+    await LabOrder.findOneAndUpdate({ _id: result.labOrderId, status: 'completed' }, { status: 'approved' });
+  }
+
   try {
     logAction({ userId, action: 'LAB_RESULT_APPROVE', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} approved` });
   } catch (_) {}
@@ -495,6 +542,13 @@ export const cancelManualResult = async (id, userId) => {
   result.status = 'cancelled';
   result.isPublicVisible = false;
   await result.save();
+
+  if (result.labOrderId) {
+    await LabOrder.findOneAndUpdate(
+      { _id: result.labOrderId, status: { $nin: ['approved', 'cancelled'] } },
+      { status: 'cancelled' },
+    );
+  }
 
   try {
     logAction({ userId, action: 'LAB_RESULT_CANCEL', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} cancelled` });
@@ -646,6 +700,173 @@ export const checkTestResultStatus = async ({ fin, protocolNo, testSlug } = {}) 
   } finally {
     logger.info(`Lab result status check — test=${cleanTestSlug} protocol=${cleanProtocol} outcome=${outcome}`);
   }
+};
+
+// ── Public lab test self-request (book a sample-collection visit) ──────────
+const LAB_REQUEST_DEFAULT_HOURS = {
+  1: { start: '09:00', end: '17:30' },
+  2: { start: '09:00', end: '17:30' },
+  3: { start: '09:00', end: '17:30' },
+  4: { start: '09:00', end: '17:30' },
+  5: { start: '09:00', end: '17:30' },
+  6: { start: '09:00', end: '13:30' },
+  0: null,
+};
+const LAB_REQUEST_SLOT_DURATION = 30;
+
+const timeToMins = (t) => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
+const minsToTime = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+
+export const getLabRequestSlots = async ({ date, branchName } = {}) => {
+  const cleanDate = trim(date);
+  const cleanBranch = trim(branchName);
+  if (!cleanDate) throw new ApiError(400, 'Tarix tələb olunur');
+  if (!cleanBranch) throw new ApiError(400, 'Filial tələb olunur');
+
+  const d = new Date(`${cleanDate}T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
+
+  const dayOfWeek = d.getUTCDay();
+  const hours = LAB_REQUEST_DEFAULT_HOURS[dayOfWeek];
+  if (!hours) return { date: cleanDate, branchName: cleanBranch, available: false, slots: [], reason: 'Bazar günü qəbul yoxdur' };
+
+  const dayStart = new Date(`${cleanDate}T00:00:00.000Z`);
+  const dayEnd   = new Date(`${cleanDate}T23:59:59.999Z`);
+
+  const booked = await LabOrder.find({
+    source: 'public_self_request',
+    branchName: cleanBranch,
+    preferredDate: { $gte: dayStart, $lte: dayEnd },
+    status: { $ne: 'cancelled' },
+  }).select('preferredTime');
+  const bookedSet = new Set(booked.map((o) => o.preferredTime));
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isToday = cleanDate === todayStr;
+  const nowMins = isToday ? (new Date().getHours() * 60 + new Date().getMinutes() + 30) : 0;
+
+  const slots = [];
+  let cur = timeToMins(hours.start);
+  const end = timeToMins(hours.end);
+  while (cur + LAB_REQUEST_SLOT_DURATION <= end) {
+    const time = minsToTime(cur);
+    const pastTime = isToday && cur < nowMins;
+    slots.push({ time, available: !bookedSet.has(time) && !pastTime });
+    cur += LAB_REQUEST_SLOT_DURATION;
+  }
+
+  return { date: cleanDate, branchName: cleanBranch, available: true, slots };
+};
+
+const assertLabRequestSlotIsBookable = async (date, time, branchName) => {
+  const { available, slots, reason } = await getLabRequestSlots({ date, branchName });
+  if (!available) throw new ApiError(400, reason || 'Seçilmiş tarix üçün qəbul yoxdur');
+  const slot = slots.find((s) => s.time === trim(time));
+  if (!slot || !slot.available) throw new ApiError(409, 'Seçilmiş saat artıq tutulub və ya keçmişdədir. Zəhmət olmasa başqa saat seçin.');
+};
+
+export const lookupExistingPatientForRequest = async ({ patientStrId, birthDate } = {}) => {
+  const cleanId = trim(patientStrId).toUpperCase();
+  const cleanBirth = trim(birthDate);
+  if (!cleanId) throw new ApiError(400, 'Qəbul kartı nömrəsi tələb olunur');
+  if (!cleanBirth) throw new ApiError(400, 'Doğum tarixi tələb olunur');
+
+  const patient = await Patient.findOne({ patientId: cleanId }).populate('userId', 'fullName name surname birthDate');
+  const user = patient?.userId;
+  const matches = Boolean(patient && user && sameCalendarDate(user.birthDate, cleanBirth));
+
+  if (!matches) throw new ApiError(404, 'Bu məlumatlara uyğun pasiyent tapılmadı. Zəhmət olmasa yenidən cəhd edin.');
+
+  return { found: true, maskedName: maskName(user) };
+};
+
+export const createPublicLabRequest = async (body = {}) => {
+  const {
+    testSlug, patientType = 'existing', patient: patientBody = {},
+    branchName, date, time, note, agreedToTerms,
+  } = body;
+
+  if (!agreedToTerms) throw new ApiError(400, 'Testin şərtləri ilə razılaşmalısınız');
+  if (!trim(testSlug)) throw new ApiError(400, 'Test seçilməlidir');
+  if (!trim(branchName)) throw new ApiError(400, 'Filial seçilməlidir');
+  if (!date) throw new ApiError(400, 'Tarix seçilməlidir');
+  if (!time) throw new ApiError(400, 'Saat seçilməlidir');
+
+  const priceList = await PriceList.findOne({ slug: trim(testSlug).toLowerCase(), isActive: true });
+  if (!priceList) throw new ApiError(404, 'Test tapılmadı');
+
+  await assertLabRequestSlotIsBookable(date, time, branchName);
+
+  let patientMongoId;
+
+  if (patientType === 'new') {
+    const { firstName, lastName, fin, birthDate, phone, email } = patientBody;
+    if (!firstName?.trim()) throw new ApiError(400, 'Ad daxil edilməlidir');
+    if (!lastName?.trim())  throw new ApiError(400, 'Soyad daxil edilməlidir');
+    if (!fin?.trim())       throw new ApiError(400, 'FİN daxil edilməlidir');
+    if (!birthDate)         throw new ApiError(400, 'Doğum tarixi daxil edilməlidir');
+    if (!phone?.trim())     throw new ApiError(400, 'Telefon daxil edilməlidir');
+
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+    const cleanPhone = phone.trim();
+
+    let user = await User.findOne({ phone: cleanPhone });
+    if (!user) {
+      const guestEmail = email?.trim()?.toLowerCase()
+        || `walkin.${cleanPhone.replace(/\D/g, '')}.${Date.now()}@aslanmedical.az`;
+
+      user = await User.create({
+        fullName,
+        email: guestEmail,
+        phone: cleanPhone,
+        role: 'PATIENT',
+        password: crypto.randomBytes(24).toString('hex'),
+        sexiyyatId: fin.trim().toUpperCase().slice(0, 8),
+        birthDate: new Date(birthDate),
+        isActive: true,
+      });
+    }
+
+    let patient = await Patient.findOne({ userId: user._id });
+    if (!patient) patient = await Patient.create({ userId: user._id });
+    patientMongoId = patient._id;
+  } else {
+    const { patientStrId, birthDate } = patientBody;
+    if (!patientStrId?.trim()) throw new ApiError(400, 'Qəbul kartı nömrəsi tələb olunur');
+    if (!birthDate) throw new ApiError(400, 'Doğum tarixi tələb olunur');
+
+    const patient = await Patient.findOne({ patientId: patientStrId.trim().toUpperCase() }).populate('userId', 'birthDate');
+    const matches = Boolean(patient && sameCalendarDate(patient.userId?.birthDate, trim(birthDate)));
+    if (!matches) throw new ApiError(404, 'Bu məlumatlara uyğun pasiyent tapılmadı. Zəhmət olmasa yenidən cəhd edin.');
+    patientMongoId = patient._id;
+  }
+
+  const order = await LabOrder.create({
+    patientId: patientMongoId,
+    source: 'public_self_request',
+    priceListId: priceList._id,
+    tests: [{ testName: priceList.name, testCode: priceList.serviceCode || '', category: 'other' }],
+    branchName: trim(branchName),
+    preferredDate: new Date(`${date}T00:00:00.000Z`),
+    preferredTime: trim(time),
+    patientNote: trim(note).slice(0, 1000),
+    status: 'pending',
+  });
+
+  try {
+    logAction({ userId: null, action: 'LAB_REQUEST_CREATE_PUBLIC', resourceType: 'LabOrder', resourceId: order._id, description: `Public lab request ${order.requestNumber} created for ${priceList.name}` });
+  } catch (_) {}
+
+  return {
+    requestNumber: order.requestNumber,
+    testName: priceList.name,
+    branchName: order.branchName,
+    date,
+    time: order.preferredTime,
+    price: priceList.price,
+    currency: priceList.currency || 'AZN',
+    preparation: priceList.technicalDetails?.preparation || '',
+  };
 };
 
 export const getResultPdfBuffer = async (id, { accessToken, authUser } = {}) => {

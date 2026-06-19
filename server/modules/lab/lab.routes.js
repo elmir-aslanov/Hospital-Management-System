@@ -16,7 +16,7 @@ router.get('/summary',                    authorize('ADMIN','SUPER_ADMIN','DOCTO
 router.get('/orders',                     authorize('ADMIN','SUPER_ADMIN','DOCTOR','LAB_TECHNICIAN','NURSE'),       ctrl.getOrders);
 router.post('/orders',                    authorize('ADMIN','SUPER_ADMIN','DOCTOR'),                                ctrl.createOrder);
 router.get('/orders/:id',                 authorize('ADMIN','SUPER_ADMIN','DOCTOR','LAB_TECHNICIAN'),               ctrl.getOrderById);
-router.patch('/orders/:id/status',        authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN'),                        ctrl.updateOrderStatus);
+router.patch('/orders/:id/status',        authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','RECEPTIONIST'),         ctrl.updateOrderStatus);
 router.delete('/orders/:id',              authorize('ADMIN','SUPER_ADMIN'),                                         ctrl.deleteOrder);
 
 // Results

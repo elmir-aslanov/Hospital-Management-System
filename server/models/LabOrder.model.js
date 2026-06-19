@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
+import { nextSequence } from './Counter.model.js';
 
 const labOrderSchema = new mongoose.Schema({
-  orderNumber:   { type: String, unique: true },
+  orderNumber:   { type: String, unique: true, sparse: true },
   protocolNo:    { type: String, trim: true },
   patientId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Patient',     required: true },
-  doctorId:      { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor',      required: true },
+  doctorId:      { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor',      default: null },
   visitId:       { type: mongoose.Schema.Types.ObjectId, ref: 'Visit',       default: null },
   appointmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment', default: null },
   tests: [{
@@ -16,7 +17,7 @@ const labOrderSchema = new mongoose.Schema({
   }],
   status: {
     type: String,
-    enum: ['pending','sample_collected','processing','completed','cancelled'],
+    enum: ['pending','confirmed','sample_collected','processing','completed','approved','cancelled'],
     default: 'pending',
   },
   priority:    { type: String, enum: ['routine','urgent','stat'], default: 'routine' },
@@ -24,9 +25,29 @@ const labOrderSchema = new mongoose.Schema({
   notes:       { type: String, trim: true },
   completedAt: { type: Date, default: null },
   resultPdf:   { type: String, default: null },
+
+  /* ── Public self-request flow (patient books their own sample collection) ── */
+  source:            { type: String, enum: ['doctor_referral', 'public_self_request'], default: 'doctor_referral' },
+  requestNumber:     { type: String, trim: true, default: null },
+  priceListId:       { type: mongoose.Schema.Types.ObjectId, ref: 'PriceList', default: null },
+  branchName:        { type: String, trim: true, default: '' },
+  preferredDate:     { type: Date, default: null },
+  preferredTime:     { type: String, trim: true, default: '' },
+  patientNote:       { type: String, trim: true, default: '' },
+  confirmedAt:        { type: Date, default: null },
+  sampleCollectedAt:  { type: Date, default: null },
 }, { timestamps: true });
 
 labOrderSchema.pre('save', async function (next) {
+  if (this.source === 'public_self_request') {
+    if (!this.requestNumber) {
+      const year = new Date().getFullYear();
+      const seq = await nextSequence(`labRequestNumber-${year}`);
+      this.requestNumber = `LAB-REQ-${year}-${String(seq).padStart(6, '0')}`;
+    }
+    return next();
+  }
+
   if (!this.orderNumber) {
     const count = await mongoose.model('LabOrder').countDocuments();
     this.orderNumber = `LAB-${new Date().getFullYear()}-${String(count + 1).padStart(5, '0')}`;
@@ -45,5 +66,7 @@ labOrderSchema.index({ patientId: 1, createdAt: -1 });
 labOrderSchema.index({ status: 1 });
 labOrderSchema.index({ doctorId: 1 });
 labOrderSchema.index({ protocolNo: 1 }, { unique: true, sparse: true });
+labOrderSchema.index({ requestNumber: 1 }, { unique: true, sparse: true });
+labOrderSchema.index({ source: 1, branchName: 1, preferredDate: 1 });
 
 export default mongoose.model('LabOrder', labOrderSchema);

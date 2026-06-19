@@ -8,7 +8,7 @@ const uid = (req) => req.user.id || req.user._id;
 export const createOrder       = asyncHandler(async (req, res) => { const d = await svc.createOrder(req.body, uid(req));       res.status(201).json(new ApiResponse(201, d, 'Order created')); });
 export const getOrders         = asyncHandler(async (req, res) => { const d = await svc.getOrders(req.query);                  res.json(new ApiResponse(200, d)); });
 export const getOrderById      = asyncHandler(async (req, res) => { const d = await svc.getOrderById(req.params.id);           res.json(new ApiResponse(200, d)); });
-export const updateOrderStatus = asyncHandler(async (req, res) => { const d = await svc.updateOrderStatus(req.params.id, req.body.status); res.json(new ApiResponse(200, d, 'Status updated')); });
+export const updateOrderStatus = asyncHandler(async (req, res) => { const d = await svc.updateOrderStatus(req.params.id, req.body.status, uid(req)); res.json(new ApiResponse(200, d, 'Status updated')); });
 export const deleteOrder       = asyncHandler(async (req, res) => { await svc.deleteOrder(req.params.id);                      res.json(new ApiResponse(200, null, 'Order deleted')); });
 export const createResult      = asyncHandler(async (req, res) => { const d = await svc.createResult(req.body, uid(req));      res.status(201).json(new ApiResponse(201, d, 'Result saved')); });
 export const getResultByOrder  = asyncHandler(async (req, res) => { const d = await svc.getResultByOrder(req.params.orderId);  res.json(new ApiResponse(200, d)); });
@@ -37,6 +37,22 @@ export const verifyPublicLabResult = asyncHandler(async (req, res) => {
 export const checkTestResultStatus = asyncHandler(async (req, res) => {
   const d = await svc.checkTestResultStatus(req.body);
   res.json(new ApiResponse(200, d));
+});
+
+// ── Public lab test self-request (booking a sample-collection visit) ───────
+export const getLabRequestSlots = asyncHandler(async (req, res) => {
+  const d = await svc.getLabRequestSlots(req.query);
+  res.json(new ApiResponse(200, d));
+});
+
+export const lookupExistingPatientForRequest = asyncHandler(async (req, res) => {
+  const d = await svc.lookupExistingPatientForRequest(req.body);
+  res.json(new ApiResponse(200, d));
+});
+
+export const createPublicLabRequest = asyncHandler(async (req, res) => {
+  const d = await svc.createPublicLabRequest(req.body);
+  res.status(201).json(new ApiResponse(201, d, 'Müraciət qəbul edildi'));
 });
 
 export const getResultPdf = asyncHandler(async (req, res) => {
