@@ -640,7 +640,8 @@
     "nextButton": "Next",
     "confirmButton": "Confirm request",
     "submitting": "Submitting...",
-    "genericError": "Something went wrong. Please try again.",
+    "genericError": "Couldn't create the request. Please try again.",
+    "alreadyExists": "That time slot is already taken. Please choose another time.",
     "summaryTestLabel": "Test name",
     "summaryPatientLabel": "Patient full name",
     "summaryBranchLabel": "Branch",
@@ -699,6 +700,7 @@
     "emailInvalid": "Email format is invalid.",
     "branchRequired": "Branch must be selected.",
     "dateRequired": "Date must be selected.",
+    "invalidDate": "Select a valid date.",
     "timeRequired": "Time must be selected.",
     "noSlots": "No available time slots for the selected date."
   },

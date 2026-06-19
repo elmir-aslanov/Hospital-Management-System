@@ -6,6 +6,7 @@ import LabResult from '../../models/LabResult.model.js';
 import PriceList from '../../models/PriceList.model.js';
 import Patient   from '../../models/Patient.model.js';
 import User      from '../../models/User.model.js';
+import Setting   from '../../models/Setting.model.js';
 import ApiError  from '../../utils/ApiError.js';
 import logAction from '../../utils/auditLogger.js';
 import logger     from '../../utils/logger.js';
@@ -27,6 +28,46 @@ const trim = (value) => String(value || '').trim();
 const escapeRegex = (value) => trim(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const normalize = (value) => trim(value).toUpperCase();
 const normalizeName = (value) => trim(value).toUpperCase().replace(/\s+/g, ' ');
+
+// Server-generated sequence fields. A duplicate key on one of these is always
+// a generator collision (safe to retry with a freshly-issued number) — never
+// a real business conflict.
+const GENERATOR_NUMBER_FIELDS = new Set(['orderNumber', 'requestNumber', 'protocolNo']);
+
+const duplicateKeyFields = (err) => Object.keys(err?.keyPattern || err?.keyValue || {});
+
+// Creates a document, retrying up to maxAttempts times when MongoDB reports a
+// duplicate key (E11000) on one of the atomically-generated sequence fields —
+// each retry runs the model's pre-save hook again, which issues a brand new
+// number. A duplicate key on any OTHER field (e.g. a real "this slot is
+// already booked" conflict) is never retried — it's surfaced immediately via
+// onBusinessConflict so the caller can return a distinct, stable error code.
+// `dataOrBuilder` may be a plain object (when the model's own pre-save hook
+// issues the sequence number, so a fresh attempt naturally gets a new one) or
+// an (async) function returning fresh data each call (when the caller computes
+// the sequence number itself before building the document).
+const createWithSequenceRetry = async (Model, dataOrBuilder, { maxAttempts = 3, onBusinessConflict } = {}) => {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const data = typeof dataOrBuilder === 'function' ? await dataOrBuilder() : dataOrBuilder;
+      return await Model.create(data);
+    } catch (err) {
+      if (err?.code !== 11000) throw err;
+      const fields = duplicateKeyFields(err);
+      const isGeneratorCollision = fields.some((f) => GENERATOR_NUMBER_FIELDS.has(f));
+      if (!isGeneratorCollision) {
+        logger.warn(`${Model.modelName} duplicate key on business field(s) [${fields.join(',')}] — not retrying`);
+        if (onBusinessConflict) throw onBusinessConflict(fields);
+        throw err;
+      }
+      lastErr = err;
+      logger.warn(`${Model.modelName} duplicate key on generator field(s) [${fields.join(',')}] — retry ${attempt}/${maxAttempts}`);
+    }
+  }
+  logger.error(`${Model.modelName} sequence generator retries exhausted: ${lastErr?.message}`);
+  throw new ApiError(503, 'Müraciəti yaratmaq mümkün olmadı. Yenidən cəhd edin.');
+};
 
 const displayName = (user) => {
   if (!user) return '';
@@ -88,7 +129,7 @@ const publicResultPayload = (order, result) => {
 
 // ── Orders ───────────────────────────────────────────────────
 export const createOrder = async (data, doctorId) => {
-  const order = await LabOrder.create({ ...data, doctorId });
+  const order = await createWithSequenceRetry(LabOrder, { ...data, doctorId });
   try { logAction({ userId: doctorId, action: 'CREATE_LAB_ORDER', resourceType: 'LabOrder', resourceId: order._id, description: `Lab order ${order.orderNumber} created` }); } catch (_) {}
   return order.populate([POP_PATIENT, POP_DOCTOR]);
 };
@@ -140,23 +181,25 @@ export const updateOrderStatus = async (id, status, userId) => {
       const patient = await Patient.findById(order.patientId).populate('userId', 'fullName name surname sexiyyatId birthDate');
       const user = patient?.userId;
       const priceList = order.priceListId ? await PriceList.findById(order.priceListId) : null;
-      const year = new Date().getFullYear();
-      const seq = await nextSequence(`labResultProtocol-${year}`);
 
-      await LabResult.create({
-        labOrderId: order._id,
-        patientId: order.patientId,
-        protocolNo: `LAB-${year}-${String(seq).padStart(6, '0')}`,
-        patientFullName: displayUserName(user).slice(0, 150),
-        patientFin: trim(user?.sexiyyatId).toUpperCase().slice(0, 8),
-        patientBirthDate: user?.birthDate || null,
-        sampleDate: order.sampleCollectedAt,
-        testName: (priceList?.name || order.tests?.[0]?.testName || '').slice(0, 150),
-        testCode: (priceList?.serviceCode || order.tests?.[0]?.testCode || '').slice(0, 40),
-        labTechnicianId: userId,
-        performedBy: userId,
-        status: 'draft',
-        isPublicVisible: false,
+      await createWithSequenceRetry(LabResult, async () => {
+        const year = new Date().getFullYear();
+        const seq = await nextSequence(`labResultProtocol-${year}`);
+        return {
+          labOrderId: order._id,
+          patientId: order.patientId,
+          protocolNo: `LAB-${year}-${String(seq).padStart(6, '0')}`,
+          patientFullName: displayUserName(user).slice(0, 150),
+          patientFin: trim(user?.sexiyyatId).toUpperCase().slice(0, 8),
+          patientBirthDate: user?.birthDate || null,
+          sampleDate: order.sampleCollectedAt,
+          testName: (priceList?.name || order.tests?.[0]?.testName || '').slice(0, 150),
+          testCode: (priceList?.serviceCode || order.tests?.[0]?.testCode || '').slice(0, 40),
+          labTechnicianId: userId,
+          performedBy: userId,
+          status: 'draft',
+          isPublicVisible: false,
+        };
       });
     }
   }
@@ -759,25 +802,139 @@ const LAB_REQUEST_DEFAULT_HOURS = {
   0: null,
 };
 const LAB_REQUEST_SLOT_DURATION = 30;
+const LAB_REQUEST_DEFAULT_MAX_ADVANCE_DAYS = 90;
+const LAB_REQUEST_DATE_RX = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const timeToMins = (t) => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
 const minsToTime = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
 
+const formatLocalDate = (value) => [
+  String(value.getFullYear()).padStart(4, '0'),
+  String(value.getMonth() + 1).padStart(2, '0'),
+  String(value.getDate()).padStart(2, '0'),
+].join('-');
+
+const formatUtcDate = (value) => [
+  String(value.getUTCFullYear()).padStart(4, '0'),
+  String(value.getUTCMonth() + 1).padStart(2, '0'),
+  String(value.getUTCDate()).padStart(2, '0'),
+].join('-');
+
+const daysInMonth = (year, month) => {
+  if (month === 2) {
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return leap ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+};
+
+const parseLabRequestDate = (value) => {
+  const match = LAB_REQUEST_DATE_RX.exec(trim(value));
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < 1000 || year > 9999 || month < 1 || month > 12) return null;
+  if (day < 1 || day > daysInMonth(year, month)) return null;
+
+  return {
+    value: `${match[1]}-${match[2]}-${match[3]}`,
+    year,
+    month,
+    day,
+  };
+};
+
+const addDaysToLabRequestDate = (value, days) => {
+  const parsed = parseLabRequestDate(value);
+  if (!parsed) return '';
+  return formatUtcDate(new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day) + days * DAY_MS));
+};
+
+const toUtcDate = (parsed, endOfDay = false) => new Date(Date.UTC(
+  parsed.year,
+  parsed.month - 1,
+  parsed.day,
+  endOfDay ? 23 : 0,
+  endOfDay ? 59 : 0,
+  endOfDay ? 59 : 0,
+  endOfDay ? 999 : 0
+));
+
+const resolveConfiguredAvailableDates = (value, branchName) => {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'object') return null;
+  if (branchName && Array.isArray(value[branchName])) return value[branchName];
+  if (Array.isArray(value.default)) return value.default;
+  if (Array.isArray(value.dates)) return value.dates;
+  return null;
+};
+
+export const getLabRequestDateOptions = async ({ branchName } = {}) => {
+  const settings = await Setting.find({
+    key: { $in: ['lab_request_max_advance_days', 'lab_request_available_dates'] },
+  }).lean();
+  const byKey = Object.fromEntries(settings.map((item) => [item.key, item.value]));
+
+  const configuredDays = Number(byKey.lab_request_max_advance_days);
+  const maxAdvanceDays = Number.isInteger(configuredDays) && configuredDays > 0
+    ? configuredDays
+    : LAB_REQUEST_DEFAULT_MAX_ADVANCE_DAYS;
+
+  const minDate = formatLocalDate(new Date());
+  const maxDate = addDaysToLabRequestDate(minDate, maxAdvanceDays);
+  const configuredDates = resolveConfiguredAvailableDates(
+    byKey.lab_request_available_dates,
+    trim(branchName)
+  );
+  const availableDates = Array.isArray(configuredDates)
+    ? [...new Set(configuredDates
+        .map((item) => parseLabRequestDate(item)?.value)
+        .filter((item) => item && item >= minDate && item <= maxDate))]
+    : null;
+
+  return { minDate, maxDate, availableDates };
+};
+
+const validateLabRequestDate = async (date, branchName) => {
+  const parsed = parseLabRequestDate(date);
+  if (!parsed) throw new ApiError(400, 'Düzgün tarix seçin.');
+
+  const options = await getLabRequestDateOptions({ branchName });
+  if (parsed.value < options.minDate || parsed.value > options.maxDate) {
+    throw new ApiError(400, 'Düzgün tarix seçin.');
+  }
+  if (Array.isArray(options.availableDates) && !options.availableDates.includes(parsed.value)) {
+    throw new ApiError(400, 'Düzgün tarix seçin.');
+  }
+
+  return { parsed, options };
+};
+
 export const getLabRequestSlots = async ({ date, branchName } = {}) => {
-  const cleanDate = trim(date);
   const cleanBranch = trim(branchName);
-  if (!cleanDate) throw new ApiError(400, 'Tarix tələb olunur');
   if (!cleanBranch) throw new ApiError(400, 'Filial tələb olunur');
 
-  const d = new Date(`${cleanDate}T12:00:00.000Z`);
-  if (Number.isNaN(d.getTime())) throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
+  const { parsed, options } = await validateLabRequestDate(date, cleanBranch);
+  const cleanDate = parsed.value;
 
-  const dayOfWeek = d.getUTCDay();
+  const dayOfWeek = toUtcDate(parsed).getUTCDay();
   const hours = LAB_REQUEST_DEFAULT_HOURS[dayOfWeek];
-  if (!hours) return { date: cleanDate, branchName: cleanBranch, available: false, slots: [], reason: 'Bazar günü qəbul yoxdur' };
+  if (!hours) {
+    return {
+      ...options,
+      date: cleanDate,
+      branchName: cleanBranch,
+      available: false,
+      slots: [],
+      reason: 'Bazar günü qəbul yoxdur',
+    };
+  }
 
-  const dayStart = new Date(`${cleanDate}T00:00:00.000Z`);
-  const dayEnd   = new Date(`${cleanDate}T23:59:59.999Z`);
+  const dayStart = toUtcDate(parsed);
+  const dayEnd = toUtcDate(parsed, true);
 
   const booked = await LabOrder.find({
     source: 'public_self_request',
@@ -787,8 +944,7 @@ export const getLabRequestSlots = async ({ date, branchName } = {}) => {
   }).select('preferredTime');
   const bookedSet = new Set(booked.map((o) => o.preferredTime));
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const isToday = cleanDate === todayStr;
+  const isToday = cleanDate === options.minDate;
   const nowMins = isToday ? (new Date().getHours() * 60 + new Date().getMinutes() + 30) : 0;
 
   const slots = [];
@@ -801,14 +957,16 @@ export const getLabRequestSlots = async ({ date, branchName } = {}) => {
     cur += LAB_REQUEST_SLOT_DURATION;
   }
 
-  return { date: cleanDate, branchName: cleanBranch, available: true, slots };
+  return { ...options, date: cleanDate, branchName: cleanBranch, available: true, slots };
 };
 
 const assertLabRequestSlotIsBookable = async (date, time, branchName) => {
-  const { available, slots, reason } = await getLabRequestSlots({ date, branchName });
+  const { available, slots, reason, date: validatedDate } = await getLabRequestSlots({ date, branchName });
   if (!available) throw new ApiError(400, reason || 'Seçilmiş tarix üçün qəbul yoxdur');
-  const slot = slots.find((s) => s.time === trim(time));
-  if (!slot || !slot.available) throw new ApiError(409, 'Seçilmiş saat artıq tutulub və ya keçmişdədir. Zəhmət olmasa başqa saat seçin.');
+  const cleanTime = trim(time);
+  const slot = slots.find((s) => s.time === cleanTime);
+  if (!slot || !slot.available) throw new ApiError(409, 'Seçilmiş saat artıq tutulub və ya keçmişdədir. Zəhmət olmasa başqa saat seçin.', [], '', 'LAB_REQUEST_ALREADY_EXISTS');
+  return { date: validatedDate, time: cleanTime };
 };
 
 export const getCurrentPatientForRequest = async (userId) => {
@@ -839,7 +997,7 @@ export const createPublicLabRequest = async (body = {}, authUser = null) => {
   const priceList = await PriceList.findOne({ slug: trim(testSlug).toLowerCase(), isActive: true });
   if (!priceList) throw new ApiError(404, 'Test tapılmadı');
 
-  await assertLabRequestSlotIsBookable(date, time, branchName);
+  const validatedSlot = await assertLabRequestSlotIsBookable(date, time, branchName);
 
   let patientMongoId;
 
@@ -882,16 +1040,22 @@ export const createPublicLabRequest = async (body = {}, authUser = null) => {
     patientMongoId = patient._id;
   }
 
-  const order = await LabOrder.create({
+  const order = await createWithSequenceRetry(LabOrder, {
     patientId: patientMongoId,
     source: 'public_self_request',
     priceListId: priceList._id,
     tests: [{ testName: priceList.name, testCode: priceList.serviceCode || '', category: 'other' }],
     branchName: trim(branchName),
-    preferredDate: new Date(`${date}T00:00:00.000Z`),
-    preferredTime: trim(time),
+    preferredDate: toUtcDate(parseLabRequestDate(validatedSlot.date)),
+    preferredTime: validatedSlot.time,
     patientNote: trim(note).slice(0, 1000),
     status: 'pending',
+  }, {
+    onBusinessConflict: () => new ApiError(
+      409,
+      'Seçilmiş saat artıq tutulub və ya keçmişdədir. Zəhmət olmasa başqa saat seçin.',
+      [], '', 'LAB_REQUEST_ALREADY_EXISTS',
+    ),
   });
 
   try {
@@ -902,7 +1066,7 @@ export const createPublicLabRequest = async (body = {}, authUser = null) => {
     requestNumber: order.requestNumber,
     testName: priceList.name,
     branchName: order.branchName,
-    date,
+    date: validatedSlot.date,
     time: order.preferredTime,
     price: priceList.price,
     currency: priceList.currency || 'AZN',

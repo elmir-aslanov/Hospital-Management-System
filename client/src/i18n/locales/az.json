@@ -643,7 +643,8 @@
     "nextButton": "Növbəti",
     "confirmButton": "Müraciəti təsdiqlə",
     "submitting": "Göndərilir...",
-    "genericError": "Xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
+    "genericError": "Müraciəti yaratmaq mümkün olmadı. Yenidən cəhd edin.",
+    "alreadyExists": "Seçilmiş saat artıq tutulub. Zəhmət olmasa başqa saat seçin.",
     "summaryTestLabel": "Testin adı",
     "summaryPatientLabel": "Pasiyentin adı və soyadı",
     "summaryBranchLabel": "Filial",
@@ -702,6 +703,7 @@
     "emailInvalid": "E-poçt formatı düzgün deyil.",
     "branchRequired": "Filial seçilməlidir.",
     "dateRequired": "Tarix seçilməlidir.",
+    "invalidDate": "Düzgün tarix seçin.",
     "timeRequired": "Saat seçilməlidir.",
     "noSlots": "Seçilmiş tarix üçün uyğun saat yoxdur."
   },

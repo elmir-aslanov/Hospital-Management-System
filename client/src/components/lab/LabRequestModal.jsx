@@ -19,8 +19,70 @@ const BRANCHES = [
 const FIN_RX = /^[A-Za-z0-9]{5,8}$/;
 const PHONE_RX = /^[+]?[\d\s()-]{7,20}$/;
 const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ISO_DATE_RX = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DEFAULT_MAX_ADVANCE_DAYS = 90;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const todayStr = () => new Date().toISOString().split('T')[0];
+
+const formatLocalDate = (value) => {
+  const year = String(value.getFullYear()).padStart(4, '0');
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const localTodayStr = () => formatLocalDate(new Date());
+
+const daysInMonth = (year, month) => {
+  if (month === 2) {
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return leap ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+};
+
+const parseIsoDate = (value) => {
+  const match = ISO_DATE_RX.exec(String(value || ''));
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < 1000 || year > 9999 || month < 1 || month > 12) return null;
+  if (day < 1 || day > daysInMonth(year, month)) return null;
+
+  return { value: `${match[1]}-${match[2]}-${match[3]}`, year, month, day };
+};
+
+const addDaysToIsoDate = (value, days) => {
+  const parsed = parseIsoDate(value);
+  if (!parsed) return '';
+  const result = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day) + days * DAY_MS);
+  return [
+    String(result.getUTCFullYear()).padStart(4, '0'),
+    String(result.getUTCMonth() + 1).padStart(2, '0'),
+    String(result.getUTCDate()).padStart(2, '0'),
+  ].join('-');
+};
+
+const getDefaultDateOptions = () => {
+  const minDate = localTodayStr();
+  return {
+    minDate,
+    maxDate: addDaysToIsoDate(minDate, DEFAULT_MAX_ADVANCE_DAYS),
+    availableDates: null,
+  };
+};
+
+const isAllowedReservationDate = (value, options) => {
+  const parsed = parseIsoDate(value);
+  if (!parsed) return false;
+  if (options.minDate && parsed.value < options.minDate) return false;
+  if (options.maxDate && parsed.value > options.maxDate) return false;
+  if (Array.isArray(options.availableDates) && !options.availableDates.includes(parsed.value)) return false;
+  return true;
+};
 
 const fmtPrice = (price) =>
   Number.isInteger(Number(price)) ? String(Math.round(price)) : Number(price).toFixed(2);
@@ -52,6 +114,12 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   const location = useLocation();
   const titleId = useId();
   const dialogRef = useRef(null);
+  const lastValidDateRef = useRef('');
+  const selectedDateRef = useRef('');
+  // Synchronous guard against double-submission — independent of React's
+  // batched state updates, so two rapid clicks/Enter-presses in the same tick
+  // can't both pass the "submitting" check before the first one flips it.
+  const submitLockRef = useRef(false);
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +147,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState('');
   const [step3Errors, setStep3Errors] = useState({});
+  const [dateOptions, setDateOptions] = useState(getDefaultDateOptions);
 
   useEffect(() => {
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -149,6 +218,43 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
     return () => { isCurrent = false; };
   }, [patientType, isAuthenticated]);
 
+  useEffect(() => {
+    let isCurrent = true;
+
+    const loadDateOptions = async () => {
+      try {
+        const res = await api.get('/lab-results/requests/date-options', {
+          params: branchName ? { branchName } : {},
+        });
+        if (!isCurrent) return;
+
+        const data = res.data?.data || {};
+        const minDate = parseIsoDate(data.minDate)?.value;
+        const maxDate = parseIsoDate(data.maxDate)?.value;
+        const availableDates = Array.isArray(data.availableDates)
+          ? data.availableDates.map((item) => parseIsoDate(item)?.value).filter(Boolean)
+          : null;
+
+        if (!minDate || !maxDate || maxDate < minDate) return;
+
+        const nextOptions = { minDate, maxDate, availableDates };
+        setDateOptions(nextOptions);
+        if (selectedDateRef.current && !isAllowedReservationDate(selectedDateRef.current, nextOptions)) {
+          setDate('');
+          setTime('');
+          selectedDateRef.current = '';
+          lastValidDateRef.current = '';
+          setStep3Errors((current) => ({ ...current, date: t('labRequest.invalidDate') }));
+        }
+      } catch {
+        // Keep the local 90-day fallback; the backend still validates authoritatively.
+      }
+    };
+
+    loadDateOptions();
+    return () => { isCurrent = false; };
+  }, [branchName, t]);
+
   // Slot availability — fetch when branch+date chosen
   useEffect(() => {
     let isCurrent = true;
@@ -167,19 +273,31 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
           setSlots(data.slots || []);
           if (time && !data.slots?.some((s) => s.time === time && s.available)) setTime('');
         }
-      } catch {
-        if (isCurrent) { setSlots([]); setSlotsError(t('labRequest.genericError')); }
+      } catch (error) {
+        if (isCurrent) {
+          setSlots([]);
+          setTime('');
+          if (error.response?.status === 400) {
+            setSlotsError('');
+            setStep3Errors((current) => ({ ...current, date: t('labRequest.invalidDate') }));
+          } else {
+            setSlotsError(t('labRequest.genericError'));
+          }
+        }
       } finally {
         if (isCurrent) setSlotsLoading(false);
       }
     };
 
     const clearSlots = () => setSlots([]);
-    if (!branchName || !date) { clearSlots(); return () => { isCurrent = false; }; }
+    if (!branchName || !isAllowedReservationDate(date, dateOptions)) {
+      clearSlots();
+      return () => { isCurrent = false; };
+    }
     loadSlots();
     return () => { isCurrent = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [branchName, date]);
+  }, [branchName, date, dateOptions]);
 
   const tech = test.technicalDetails || {};
 
@@ -216,11 +334,66 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   const validateStep3 = () => {
     const errs = {};
     if (!branchName) errs.branchName = t('labRequest.branchRequired');
-    if (!date) errs.date = t('labRequest.dateRequired');
-    else if (date < todayStr()) errs.date = t('labRequest.dateRequired');
-    if (!time) errs.time = t('labRequest.timeRequired');
+    if (!isAllowedReservationDate(date, dateOptions)) errs.date = t('labRequest.invalidDate');
+    const selectedSlot = slots.find((slot) => slot.time === time);
+    if (!time || !selectedSlot?.available) errs.time = t('labRequest.timeRequired');
     setStep3Errors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const rejectInvalidDate = () => {
+    setDate(lastValidDateRef.current);
+    selectedDateRef.current = lastValidDateRef.current;
+    setTime('');
+    setSlots([]);
+    setStep3Errors((current) => ({ ...current, date: t('labRequest.invalidDate') }));
+  };
+
+  const handleDateInput = (event) => {
+    const rawValue = event.currentTarget.value;
+    const parsed = parseIsoDate(rawValue);
+
+    if (!parsed || !isAllowedReservationDate(parsed.value, dateOptions)) {
+      if (rawValue) {
+        event.currentTarget.value = lastValidDateRef.current;
+        rejectInvalidDate();
+      } else {
+        setDate('');
+        selectedDateRef.current = '';
+        setTime('');
+        setSlots([]);
+      }
+      return;
+    }
+
+    lastValidDateRef.current = parsed.value;
+    selectedDateRef.current = parsed.value;
+    setDate(parsed.value);
+    setTime('');
+    setStep3Errors((current) => ({ ...current, date: undefined }));
+  };
+
+  const handleDateKeyDown = (event) => {
+    if (!/^\d$/.test(event.key)) return;
+
+    const year = String(event.currentTarget.value || '').split('-')[0];
+    const selectionStart = event.currentTarget.selectionStart;
+    const selectionEnd = event.currentTarget.selectionEnd;
+    const isCollapsedYearCursor = Number.isInteger(selectionStart)
+      && selectionStart === selectionEnd
+      && selectionStart <= 4;
+
+    if (year.length > 4 || (year.length === 4 && isCollapsedYearCursor)) {
+      event.preventDefault();
+      rejectInvalidDate();
+    }
+  };
+
+  const handleDateBlur = (event) => {
+    if (!isAllowedReservationDate(event.currentTarget.value, dateOptions)) {
+      event.currentTarget.value = lastValidDateRef.current;
+      rejectInvalidDate();
+    }
   };
 
   const goNext = () => {
@@ -231,8 +404,22 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   };
   const goBack = () => setStep((s) => Math.max(1, s - 1));
 
-  const handleConfirm = async () => {
-    if (submitting) return;
+  const handleConfirm = async (e) => {
+    e?.preventDefault?.();
+    if (submitLockRef.current || submitting) return;
+    if (!validateStep3()) {
+      setStep(3);
+      return;
+    }
+
+    const validatedDate = parseIsoDate(date)?.value;
+    if (!validatedDate || !isAllowedReservationDate(validatedDate, dateOptions)) {
+      setStep(3);
+      setStep3Errors((current) => ({ ...current, date: t('labRequest.invalidDate') }));
+      return;
+    }
+
+    submitLockRef.current = true;
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -240,7 +427,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
         testSlug: test.slug,
         patientType,
         branchName,
-        date,
+        date: validatedDate,
         time,
         note: note.trim(),
         agreedToTerms: agreed,
@@ -259,14 +446,19 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
       setSuccessData(res.data?.data || null);
     } catch (err) {
       const status = err.response?.status;
-      const message = patientType === 'existing' && status === 401
-        ? t('labRequest.step2.loginRequiredText')
-        : patientType === 'existing' && status === 404
-          ? t('labRequest.step2.profileNotFoundText')
-          : err.response?.data?.message || t('labRequest.genericError');
+      const code = err.response?.data?.code;
+      const backendMessage = err.response?.data?.message;
+      const message =
+        code === 'LAB_REQUEST_ALREADY_EXISTS' ? t('labRequest.alreadyExists')
+        : backendMessage === 'Düzgün tarix seçin.' ? t('labRequest.invalidDate')
+        : patientType === 'existing' && status === 401 ? t('labRequest.step2.loginRequiredText')
+        : patientType === 'existing' && status === 404 ? t('labRequest.step2.profileNotFoundText')
+        : status >= 500 ? t('labRequest.genericError')
+        : backendMessage || t('labRequest.genericError');
       setSubmitError(message);
       toast.error(message);
     } finally {
+      submitLockRef.current = false;
       setSubmitting(false);
     }
   };
@@ -328,7 +520,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: FONT }}>
+          <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: FONT }}>
 
             {step === 1 && (
               <div>
@@ -488,14 +680,26 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
 
                 <div>
                   <label style={labelStyle}>{t('labRequest.step3.dateLabel')} *</label>
-                  <input type="date" value={date} min={todayStr()}
-                    onChange={(e) => { setDate(e.target.value); setTime(''); }} style={inputStyle} />
+                  <input
+                    type="date"
+                    value={date}
+                    min={dateOptions.minDate}
+                    max={dateOptions.maxDate}
+                    maxLength={10}
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    inputMode="numeric"
+                    onInput={handleDateInput}
+                    onKeyDown={handleDateKeyDown}
+                    onBlur={handleDateBlur}
+                    style={inputStyle}
+                  />
                   {step3Errors.date && <div style={errStyle}>{step3Errors.date}</div>}
                 </div>
 
                 <div>
                   <label style={labelStyle}>{t('labRequest.step3.timeLabel')} *</label>
-                  <select value={time} onChange={(e) => setTime(e.target.value)} disabled={!branchName || !date || slotsLoading} style={inputStyle}>
+                  <select value={time} onChange={(e) => setTime(e.target.value)}
+                    disabled={!branchName || !isAllowedReservationDate(date, dateOptions) || slotsLoading} style={inputStyle}>
                     <option value="">{t('labRequest.step3.timePlaceholder')}</option>
                     {slots.map((s) => (
                       <option key={s.time} value={s.time} disabled={!s.available}>
@@ -556,7 +760,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
                   {t('labRequest.nextButton')}
                 </button>
               ) : (
-                <button type="button" onClick={handleConfirm} disabled={submitting}
+                <button type="submit" disabled={submitting}
                   style={{
                     padding: '9px 22px', borderRadius: 9, border: 'none',
                     background: submitting ? '#94a3b8' : TEAL, color: 'white', fontSize: 13, fontWeight: 700,
@@ -566,7 +770,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
                 </button>
               )}
             </div>
-          </div>
+          </form>
         )}
       </div>
 

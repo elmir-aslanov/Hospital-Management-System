@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   searchPublicResult, lookupPublicResult, verifyPublicLabResult, checkTestResultStatus, getResultPdf,
-  getLabRequestSlots, getCurrentPatientForRequest, createPublicLabRequest,
+  getLabRequestSlots, getLabRequestDateOptions, getCurrentPatientForRequest, createPublicLabRequest,
 } from '../lab/lab.controller.js';
 import { labLookupLimiter } from '../../middleware/rateLimiter.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
@@ -19,6 +19,7 @@ router.get('/:id/pdf', getResultPdf);
 
 // Public lab test self-request (book a sample-collection visit)
 router.get('/requests/slots',           getLabRequestSlots);
+router.get('/requests/date-options',    getLabRequestDateOptions);
 router.get('/requests/current-patient', authenticate, getCurrentPatientForRequest);
 router.post('/requests',                labLookupLimiter, authenticateExistingPatientRequest, createPublicLabRequest);
 

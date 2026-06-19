@@ -3,7 +3,7 @@ import PriceList from '../../models/PriceList.model.js';
 import ApiError  from '../../utils/ApiError.js';
 
 export const getPrices = async ({ category, serviceSlug, search, page = 1, limit = 50 } = {}) => {
-  const filter = { isActive: true };
+  const filter = { isActive: true, isPublic: { $ne: false } };
   if (category)    filter.category    = category;
   if (serviceSlug) filter.serviceSlug = serviceSlug;
   if (search)   filter.$or = [
@@ -28,7 +28,7 @@ const DETAIL_FIELDS = [
   'aboutIntro', 'aboutFeatures', 'benefits', 'procedureSteps', 'medicalNotice',
   'technicalDetails', 'referenceRange', 'referenceRanges',
   'homeServiceAvailable', 'homeServiceDescription', 'selfRequestEnabled',
-  'isActive', 'createdAt', 'updatedAt',
+  'isActive', 'isPublic', 'createdAt', 'updatedAt',
 ].join(' ');
 
 // Public test-detail lookup — accepts either a slug or a Mongo _id, normalized
@@ -38,8 +38,8 @@ export const getByIdentifier = async (rawIdentifier) => {
   if (!identifier) throw new ApiError(404, 'Test tapılmadı');
 
   const filter = mongoose.Types.ObjectId.isValid(identifier)
-    ? { _id: identifier, isActive: true }
-    : { slug: identifier, isActive: true };
+    ? { _id: identifier, isActive: true, isPublic: { $ne: false } }
+    : { slug: identifier, isActive: true, isPublic: { $ne: false } };
 
   const doc = await PriceList.findOne(filter).select(DETAIL_FIELDS);
   if (!doc) throw new ApiError(404, 'Test tapılmadı');
@@ -55,6 +55,6 @@ export const updatePrice = async (id, data) => {
 };
 
 export const deletePrice = async (id) => {
-  const p = await PriceList.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const p = await PriceList.findByIdAndUpdate(id, { isActive: false, isPublic: false }, { new: true });
   if (!p) throw new ApiError(404, 'Price not found');
 };

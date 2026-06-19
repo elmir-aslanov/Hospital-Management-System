@@ -1,11 +1,11 @@
 /**
- * Idempotent seed — Allerqologiya Service + its two active lab tests.
+ * Idempotent seed — Allerqologiya Service + its active public lab test.
  *
  * Run from the server/ directory:
  *   cd server && node ../server/seedAllerqologiyaLab.js
  *
  * Safe to re-run: upserts by serviceCode (no duplicates), and deactivates
- * any other Allerqologiya PriceList record so only the two below stay active.
+ * any other Allerqologiya PriceList record so only the test below stays public.
  */
 import dns      from 'dns';
 import mongoose from 'mongoose';
@@ -27,9 +27,8 @@ const SERVICE = {
   isActive:    true,
 };
 
-/* ── 2. The only two tests that should be active for this direction ──────── */
+/* ── 2. The only test that should be active for this direction ──────────── */
 const TESTS = [
-  { name: 'H1 Ev tozu', serviceCode: 'LAB-14-016', price: 26, slug: 'h1-ev-tozu' },
   {
     name: 'Fox Qida Həssaslığı Testi', serviceCode: 'LAB-14-008', price: 442,
     slug: 'fox-qida-hessasligi-testi',
@@ -135,6 +134,7 @@ const run = async () => {
       serviceSlug: SERVICE.slug,
       serviceId:   svc._id,
       isActive:    true,
+      isPublic:    true,
       slug:        test.slug,
     };
     if (test.detail) {
@@ -162,14 +162,18 @@ const run = async () => {
 
   /* ── Deactivate any other Allerqologiya test (no leftovers, no duplicates) */
   const deactivated = await PriceList.updateMany(
-    { serviceSlug: SERVICE.slug, serviceCode: { $nin: keepCodes }, isActive: true },
-    { $set: { isActive: false } },
+    {
+      serviceSlug: SERVICE.slug,
+      serviceCode: { $nin: keepCodes },
+      $or: [{ isActive: true }, { isPublic: { $ne: false } }],
+    },
+    { $set: { isActive: false, isPublic: false } },
   );
   if (deactivated.modifiedCount > 0) {
     console.log(`\n  🚫  Deactivated ${deactivated.modifiedCount} other Allerqologiya record(s).`);
   }
 
-  console.log('\n✅  Done — exactly 2 active Allerqologiya tests.');
+  console.log('\n✅  Done — exactly 1 active public Allerqologiya test.');
   await mongoose.disconnect();
 };
 

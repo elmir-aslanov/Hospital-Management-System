@@ -640,7 +640,8 @@
     "nextButton": "Далее",
     "confirmButton": "Подтвердить заявку",
     "submitting": "Отправка...",
-    "genericError": "Произошла ошибка. Попробуйте снова.",
+    "genericError": "Не удалось создать заявку. Попробуйте снова.",
+    "alreadyExists": "Это время уже занято. Пожалуйста, выберите другое время.",
     "summaryTestLabel": "Название анализа",
     "summaryPatientLabel": "ФИО пациента",
     "summaryBranchLabel": "Филиал",
@@ -699,6 +700,7 @@
     "emailInvalid": "Неверный формат email.",
     "branchRequired": "Необходимо выбрать филиал.",
     "dateRequired": "Необходимо выбрать дату.",
+    "invalidDate": "Выберите правильную дату.",
     "timeRequired": "Необходимо выбрать время.",
     "noSlots": "На выбранную дату нет доступного времени."
   },

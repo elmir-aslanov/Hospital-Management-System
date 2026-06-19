@@ -16,6 +16,7 @@ const priceListSchema = new mongoose.Schema(
     serviceSlug: { type: String, trim: true, lowercase: true, default: '' },
     serviceId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
     isActive: { type: Boolean, default: true },
+    isPublic: { type: Boolean, default: true },
 
     /* ── Dynamic detail-page content (admin-editable, public test detail page) ──── */
     slug:             { type: String, trim: true, lowercase: true, default: '' },
@@ -90,7 +91,7 @@ const priceListSchema = new mongoose.Schema(
 
 priceListSchema.index({ serviceCode: 1 }, { unique: true, sparse: true });
 priceListSchema.index({ slug: 1 }, { unique: true, sparse: true });
-priceListSchema.index({ serviceSlug: 1, isActive: 1 });
+priceListSchema.index({ serviceSlug: 1, isActive: 1, isPublic: 1 });
 priceListSchema.index({ serviceId: 1,   isActive: 1 });
 
 const PriceList = mongoose.model('PriceList', priceListSchema);

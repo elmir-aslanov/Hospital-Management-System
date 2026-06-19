@@ -46,6 +46,11 @@ export const getLabRequestSlots = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, d));
 });
 
+export const getLabRequestDateOptions = asyncHandler(async (req, res) => {
+  const d = await svc.getLabRequestDateOptions(req.query);
+  res.json(new ApiResponse(200, d));
+});
+
 export const getCurrentPatientForRequest = asyncHandler(async (req, res) => {
   const d = await svc.getCurrentPatientForRequest(uid(req));
   res.json(new ApiResponse(200, d));

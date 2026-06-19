@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { nextSequence } from './Counter.model.js';
+import { nextSequence, nextSequenceFrom } from './Counter.model.js';
 
 const labOrderSchema = new mongoose.Schema({
   orderNumber:   { type: String, unique: true, sparse: true },
@@ -49,14 +49,35 @@ labOrderSchema.pre('save', async function (next) {
   }
 
   if (!this.orderNumber) {
-    const count = await mongoose.model('LabOrder').countDocuments();
-    this.orderNumber = `LAB-${new Date().getFullYear()}-${String(count + 1).padStart(5, '0')}`;
+    const year = new Date().getFullYear();
+    const seq = await nextSequenceFrom(`labOrderNumber-${year}`, async () => {
+      const prefix = `LAB-${year}-`;
+      const docs = await mongoose.model('LabOrder')
+        .find({ orderNumber: new RegExp(`^${prefix}`) })
+        .select('orderNumber')
+        .lean();
+      return docs.reduce((max, d) => {
+        const n = parseInt(String(d.orderNumber).slice(prefix.length), 10);
+        return Number.isFinite(n) && n > max ? n : max;
+      }, 0);
+    });
+    this.orderNumber = `LAB-${year}-${String(seq).padStart(5, '0')}`;
   }
 
   if (!this.protocolNo) {
     const year = new Date().getFullYear();
-    const count = await mongoose.model('LabOrder').countDocuments({ protocolNo: new RegExp(`^${year}-`) });
-    this.protocolNo = `${year}-${String(count + 1).padStart(6, '0')}`;
+    const seq = await nextSequenceFrom(`labOrderLegacyProtocol-${year}`, async () => {
+      const prefix = `${year}-`;
+      const docs = await mongoose.model('LabOrder')
+        .find({ protocolNo: new RegExp(`^${prefix}`) })
+        .select('protocolNo')
+        .lean();
+      return docs.reduce((max, d) => {
+        const n = parseInt(String(d.protocolNo).slice(prefix.length), 10);
+        return Number.isFinite(n) && n > max ? n : max;
+      }, 0);
+    });
+    this.protocolNo = `${year}-${String(seq).padStart(6, '0')}`;
   }
 
   next();

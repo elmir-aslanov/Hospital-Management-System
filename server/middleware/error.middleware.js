@@ -13,6 +13,7 @@ export const errorHandler = (err, req, res, _next) => {
       statusCode: err.statusCode,
       message: err.message,
       errors: err.errors,
+      ...(err.code ? { code: err.code } : {}),
     });
   }
 
