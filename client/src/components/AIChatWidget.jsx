@@ -197,6 +197,7 @@ export default function AIChatWidget() {
         }
         .ai-chat-input:focus {
           border-color: var(--aslan-ai-blue-dark) !important;
+          background: var(--aslan-ai-blue-soft);
           box-shadow: 0 0 0 3px var(--aslan-ai-blue-ring);
         }
         .ai-chat-send:not(:disabled):hover,

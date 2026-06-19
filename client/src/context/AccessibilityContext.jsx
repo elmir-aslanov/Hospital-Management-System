@@ -16,6 +16,10 @@ const DEFAULT_SETTINGS = Object.freeze({
   lineHeight: 0,
   textAlign: 0,
   saturation: 0,
+  readingGuide: false,
+  focusHighlight: false,
+  simplifiedView: false,
+  highlightHeadings: false,
   oversized: false,
   widgetPosition: 'right',
   widgetVisible: true,
@@ -37,6 +41,10 @@ const BOOLEAN_KEYS = [
   'imagesHidden',
   'dyslexia',
   'tooltips',
+  'readingGuide',
+  'focusHighlight',
+  'simplifiedView',
+  'highlightHeadings',
   'oversized',
   'widgetVisible',
 ]
@@ -81,10 +89,19 @@ const removeLegacyArtifacts = () => {
 
 export function AccessibilityProvider({ children }) {
   const [settings, setSettings] = useState(readStoredSettings)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const skipPersistenceRef = useRef(false)
 
   useEffect(() => {
     removeLegacyArtifacts()
+  }, [])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const syncPreference = () => setPrefersReducedMotion(mediaQuery.matches)
+    syncPreference()
+    mediaQuery.addEventListener?.('change', syncPreference)
+    return () => mediaQuery.removeEventListener?.('change', syncPreference)
   }, [])
 
   useEffect(() => {
@@ -114,18 +131,33 @@ export function AccessibilityProvider({ children }) {
       settings.lineHeight > 0 && `aslan-a11y-line-height-${settings.lineHeight}`,
       settings.textAlign > 0 && `aslan-a11y-text-align-${settings.textAlign}`,
       settings.saturation > 0 && `aslan-a11y-saturation-${settings.saturation}`,
+      settings.readingGuide && 'aslan-a11y-reading-guide-enabled',
+      settings.focusHighlight && 'aslan-a11y-focus-highlight',
+      settings.simplifiedView && 'aslan-a11y-simplified-view',
+      settings.highlightHeadings && 'aslan-a11y-highlight-headings',
+      prefersReducedMotion && 'aslan-a11y-system-reduced-motion',
     ].filter(Boolean)
 
     body.classList.add(...classes)
 
     const media = [...document.querySelectorAll('video, audio')]
-    if (settings.animationsPaused) {
+    const motionPaused = settings.animationsPaused || prefersReducedMotion
+    const stopMedia = (event) => {
+      if (motionPaused && event.target instanceof HTMLMediaElement) event.target.pause()
+    }
+
+    document.dispatchEvent(new CustomEvent('aslan:a11y-motion-change', {
+      detail: { paused: motionPaused },
+    }))
+
+    if (motionPaused) {
       media.forEach((item) => {
         if (!item.paused) {
           item.dataset.aslanA11yWasPlaying = 'true'
           item.pause()
         }
       })
+      document.addEventListener('play', stopMedia, true)
     } else {
       media.forEach((item) => {
         if (item.dataset.aslanA11yWasPlaying === 'true') {
@@ -135,8 +167,30 @@ export function AccessibilityProvider({ children }) {
       })
     }
 
-    return () => classes.forEach((className) => body.classList.remove(className))
-  }, [settings])
+    return () => {
+      document.removeEventListener('play', stopMedia, true)
+      classes.forEach((className) => body.classList.remove(className))
+    }
+  }, [prefersReducedMotion, settings])
+
+  useEffect(() => {
+    if (!settings.readingGuide || !window.matchMedia('(pointer: fine)').matches) return undefined
+
+    const guide = document.createElement('div')
+    guide.className = 'aslan-a11y-reading-guide aslan-a11y-ui'
+    guide.setAttribute('aria-hidden', 'true')
+    document.body.appendChild(guide)
+
+    const moveGuide = (event) => {
+      guide.style.setProperty('--aslan-a11y-guide-y', `${event.clientY}px`)
+    }
+    document.addEventListener('pointermove', moveGuide, { passive: true })
+
+    return () => {
+      document.removeEventListener('pointermove', moveGuide)
+      guide.remove()
+    }
+  }, [settings.readingGuide])
 
   useEffect(() => () => {
     const body = document.body

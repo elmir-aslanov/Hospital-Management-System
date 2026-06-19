@@ -22,10 +22,10 @@ export default function AccessibilityWidget() {
       if (
         isTypingTarget(event.target)
         || !event.ctrlKey
-        || event.altKey
+        || !event.altKey
         || event.metaKey
         || event.shiftKey
-        || event.key.toLowerCase() !== 'u'
+        || event.key.toLowerCase() !== 'a'
       ) return
 
       event.preventDefault()

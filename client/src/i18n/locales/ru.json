@@ -97,6 +97,7 @@
     "title": "Меню доступности",
     "tooltip": "Меню доступности",
     "shortcut": "Быстрая клавиша",
+    "shortcutKeys": "CTRL+ALT+A",
     "close": "Закрыть",
     "standard": "Стандарт",
     "functions": "Функции доступности",
@@ -115,7 +116,11 @@
       "tooltips": "Подсказки",
       "lineHeight": "Высота строки",
       "textAlign": "Выравнивание текста",
-      "saturation": "Насыщенность цвета"
+      "saturation": "Насыщенность цвета",
+      "readingGuide": "Линия чтения",
+      "focusHighlight": "Выделение фокуса",
+      "simplifiedView": "Упрощённый вид",
+      "highlightHeadings": "Выделить заголовки"
     },
     "states": {
       "highContrast": "Высокий контраст",

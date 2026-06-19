@@ -28,7 +28,7 @@ const FOCUSABLE = [
 const Progress = ({ value }) => (
   <span className="aslan-a11y-progress" aria-hidden="true">
     {[0, 1, 2, 3].map((step) => (
-      <span key={step} className={step <= value ? 'is-filled' : ''} />
+      <span key={step} className={step < value ? 'is-filled' : ''} />
     ))}
   </span>
 )
@@ -141,8 +141,15 @@ export default function AccessibilityPanel({ id, open, onClose, triggerRef }) {
     const saturationLabels = [
       t('accessibility.features.saturation'),
       t('accessibility.states.lowSaturation'),
-      t('accessibility.states.highSaturation'),
       t('accessibility.states.grayscale'),
+      t('accessibility.states.highSaturation'),
+    ]
+    const alignmentLabels = [
+      t('accessibility.features.textAlign'),
+      t('accessibility.content.alignLeft'),
+      t('accessibility.content.alignCenter'),
+      t('accessibility.content.alignRight'),
+      t('accessibility.content.alignJustify'),
     ]
 
     return [
@@ -151,6 +158,7 @@ export default function AccessibilityPanel({ id, open, onClose, triggerRef }) {
         active: settings.contrast > 0,
         icon: <BgColorsOutlined />,
         label: contrastLabels[settings.contrast],
+        progress: settings.contrast,
         onClick: () => cycle('contrast', 4),
       },
       {
@@ -228,7 +236,8 @@ export default function AccessibilityPanel({ id, open, onClose, triggerRef }) {
         key: 'textAlign',
         active: settings.textAlign > 0,
         icon: <AlignLeftOutlined />,
-        label: t('accessibility.features.textAlign'),
+        label: alignmentLabels[settings.textAlign],
+        progress: settings.textAlign,
         onClick: () => cycle('textAlign', 4),
       },
       {
@@ -238,6 +247,34 @@ export default function AccessibilityPanel({ id, open, onClose, triggerRef }) {
         label: saturationLabels[settings.saturation],
         progress: settings.saturation,
         onClick: () => cycle('saturation', 3),
+      },
+      {
+        key: 'readingGuide',
+        active: settings.readingGuide,
+        icon: <MenuOutlined />,
+        label: t('accessibility.features.readingGuide'),
+        onClick: () => toggle('readingGuide'),
+      },
+      {
+        key: 'focusHighlight',
+        active: settings.focusHighlight,
+        icon: <CheckOutlined />,
+        label: t('accessibility.features.focusHighlight'),
+        onClick: () => toggle('focusHighlight'),
+      },
+      {
+        key: 'simplifiedView',
+        active: settings.simplifiedView,
+        icon: <EyeInvisibleOutlined />,
+        label: t('accessibility.features.simplifiedView'),
+        onClick: () => toggle('simplifiedView'),
+      },
+      {
+        key: 'highlightHeadings',
+        active: settings.highlightHeadings,
+        icon: <FontSizeOutlined />,
+        label: t('accessibility.features.highlightHeadings'),
+        onClick: () => toggle('highlightHeadings'),
       },
     ]
   }, [cycle, settings, t, toggle])
@@ -271,7 +308,7 @@ export default function AccessibilityPanel({ id, open, onClose, triggerRef }) {
       >
         <header className="aslan-a11y-panel-header">
           <h2 id={titleId} ref={titleRef} tabIndex="-1">
-            {t('accessibility.title')} <span>(CTRL+U)</span>
+            {t('accessibility.title')} <span>({t('accessibility.shortcutKeys')})</span>
           </h2>
           <button
             type="button"

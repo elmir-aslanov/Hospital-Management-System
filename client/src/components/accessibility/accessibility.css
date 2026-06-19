@@ -554,40 +554,65 @@
 }
 
 /* Public content effects. The accessibility UI and floating tools stay outside this scope. */
-body.aslan-a11y-highlight-links main a,
-body.aslan-a11y-highlight-links footer a {
+body.aslan-a11y-highlight-links :is(.site-header, main, footer) a[href] {
+  color: #073dbd !important;
   text-decoration: underline 3px solid #0b48db !important;
   text-underline-offset: 4px !important;
   outline: 2px solid rgba(20, 85, 255, .35) !important;
   outline-offset: 2px !important;
 }
 
-body.aslan-a11y-text-size-1 { --aslan-a11y-text-scale: 1.1; }
-body.aslan-a11y-text-size-2 { --aslan-a11y-text-scale: 1.25; }
-body.aslan-a11y-text-size-3 { --aslan-a11y-text-scale: 1.4; }
+body.aslan-a11y-text-size-1 :is(.site-header, main, footer)
+  :is(p, li, dd, dt, blockquote, label, button),
+body.aslan-a11y-text-size-1 :is(.site-header, main, footer)
+  a:not(:is(p, li, dd, dt, blockquote, label, button) a) {
+  font-size: 1.1em !important;
+  overflow-wrap: anywhere;
+}
 
-body[class*="aslan-a11y-text-size-"] main :is(p, li, dd, dt, blockquote, article span) {
-  font-size: calc(1em * var(--aslan-a11y-text-scale, 1)) !important;
+body.aslan-a11y-text-size-2 :is(.site-header, main, footer)
+  :is(p, li, dd, dt, blockquote, label, button),
+body.aslan-a11y-text-size-2 :is(.site-header, main, footer)
+  a:not(:is(p, li, dd, dt, blockquote, label, button) a) {
+  font-size: 1.25em !important;
+  overflow-wrap: anywhere;
+}
+
+body.aslan-a11y-text-size-3 :is(.site-header, main, footer)
+  :is(p, li, dd, dt, blockquote, label, button),
+body.aslan-a11y-text-size-3 :is(.site-header, main, footer)
+  a:not(:is(p, li, dd, dt, blockquote, label, button) a) {
+  font-size: 1.4em !important;
+  overflow-wrap: anywhere;
 }
 
 body.aslan-a11y-text-spacing-1 { --aslan-a11y-letter-space: .025em; --aslan-a11y-word-space: .06em; }
 body.aslan-a11y-text-spacing-2 { --aslan-a11y-letter-space: .05em; --aslan-a11y-word-space: .12em; }
 body.aslan-a11y-text-spacing-3 { --aslan-a11y-letter-space: .08em; --aslan-a11y-word-space: .2em; }
 
-body[class*="aslan-a11y-text-spacing-"] main :is(p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6) {
+body[class*="aslan-a11y-text-spacing-"] :is(.site-header, main, footer)
+  :is(p, li, dd, dt, blockquote, h1, h2, h3, h4, h5, h6, label, button),
+body[class*="aslan-a11y-text-spacing-"] :is(.site-header, main, footer)
+  a:not(:is(p, li, dd, dt, blockquote, label, button) a) {
   letter-spacing: var(--aslan-a11y-letter-space) !important;
   word-spacing: var(--aslan-a11y-word-space) !important;
+  overflow-wrap: anywhere;
 }
 
-body.aslan-a11y-pause-animations *:not(.aslan-a11y-ui):not(.aslan-a11y-ui *) {
+body:is(.aslan-a11y-pause-animations, .aslan-a11y-system-reduced-motion)
+  *:not(.aslan-a11y-ui):not(.aslan-a11y-ui *) {
   animation-duration: .001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: .001ms !important;
   scroll-behavior: auto !important;
 }
 
-body.aslan-a11y-hide-images main :is(img, picture, video):not([src*="logo"]):not([alt*="Aslan"]):not([alt*="aslan"]) {
-  visibility: hidden !important;
+body.aslan-a11y-hide-images main :is(img, picture, video):not([src*="logo"]):not([class*="logo"]) {
+  display: none !important;
+}
+
+body.aslan-a11y-hide-images main :is(figure, picture):has(img:not([src*="logo"]):not([class*="logo"])) {
+  display: none !important;
 }
 
 body.aslan-a11y-hide-images main,
@@ -595,11 +620,11 @@ body.aslan-a11y-hide-images main *:not([class*="logo"]) {
   background-image: none !important;
 }
 
-body.aslan-a11y-dyslexia main {
+body.aslan-a11y-dyslexia :is(.site-header, main, footer) {
   font-family: Arial, Verdana, Tahoma, sans-serif !important;
 }
 
-body.aslan-a11y-dyslexia main :is(p, li, dd, dt, blockquote) {
+body.aslan-a11y-dyslexia :is(.site-header, main, footer) :is(p, li, dd, dt, blockquote, label, button, a) {
   letter-spacing: .035em !important;
   word-spacing: .1em !important;
   line-height: 1.7 !important;
@@ -618,38 +643,44 @@ body.aslan-a11y-text-align-2 main :is(article, section) > :is(p, h1, h2, h3, h4,
 body.aslan-a11y-text-align-3 main :is(article, section) > :is(p, h1, h2, h3, h4, h5, h6) { text-align: right !important; }
 body.aslan-a11y-text-align-4 main :is(article, section) > p { text-align: justify !important; }
 
-body.aslan-a11y-contrast-1 :is(.site-header, main, footer) { filter: contrast(1.45) !important; }
-body.aslan-a11y-contrast-2 :is(.site-header, main, footer) { filter: invert(.9) hue-rotate(180deg) contrast(1.15) !important; }
-body.aslan-a11y-contrast-3 :is(.site-header, main, footer) { filter: brightness(1.12) contrast(.92) !important; }
-body.aslan-a11y-contrast-4 :is(.site-header, main, footer) { filter: grayscale(1) contrast(1.1) !important; }
-
-body.aslan-a11y-saturation-1 :is(.site-header, main, footer) { filter: saturate(.38) !important; }
-body.aslan-a11y-saturation-2 :is(.site-header, main, footer) { filter: saturate(1.8) !important; }
-body.aslan-a11y-saturation-3 :is(.site-header, main, footer) { filter: grayscale(1) !important; }
-
-body[class*="aslan-a11y-contrast-"][class*="aslan-a11y-saturation-"] :is(.site-header, main, footer) {
-  filter:
-    var(--aslan-a11y-contrast-filter, none)
-    var(--aslan-a11y-saturation-filter, none) !important;
+body.aslan-a11y-contrast-1 :is(.site-header, main, footer)
+  :is(h1, h2, h3, h4, h5, h6, p, li, label, a, button, input, textarea, select) {
+  color: #000 !important;
+  border-color: #111 !important;
 }
 
-body.aslan-a11y-contrast-1 { --aslan-a11y-contrast-filter: contrast(1.45); }
-body.aslan-a11y-contrast-2 { --aslan-a11y-contrast-filter: invert(.9) hue-rotate(180deg) contrast(1.15); }
-body.aslan-a11y-contrast-3 { --aslan-a11y-contrast-filter: brightness(1.12) contrast(.92); }
-body.aslan-a11y-contrast-4 { --aslan-a11y-contrast-filter: grayscale(1) contrast(1.1); }
-body.aslan-a11y-saturation-1 { --aslan-a11y-saturation-filter: saturate(.38); }
-body.aslan-a11y-saturation-2 { --aslan-a11y-saturation-filter: saturate(1.8); }
-body.aslan-a11y-saturation-3 { --aslan-a11y-saturation-filter: grayscale(1); }
+body.aslan-a11y-contrast-2 :is(.site-header, main, footer)
+  :is(h1, h2, h3, h4, h5, h6, p, li, label, a, button, input, textarea, select) {
+  color: #fff !important;
+  background-color: #07172f !important;
+  border-color: #fff !important;
+}
 
-body.aslan-a11y-tooltips button[aria-label]:not(.aslan-a11y-ui button),
-body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a) {
+body.aslan-a11y-contrast-3 :is(.site-header, main, footer)
+  :is(h1, h2, h3, h4, h5, h6, p, li, label, a, button, input, textarea, select) {
+  color: #10223f !important;
+  background-color: #fff !important;
+  border-color: #52627a !important;
+}
+
+body.aslan-a11y-contrast-4 :is(.site-header, main, footer)
+  :is(h1, h2, h3, h4, h5, h6, p, li, label, a, button, input, textarea, select) {
+  filter: grayscale(1) contrast(1.15) !important;
+}
+
+body.aslan-a11y-saturation-1 :is(.site-header, main, footer) { filter: saturate(.38) !important; }
+body.aslan-a11y-saturation-2 :is(.site-header, main, footer) { filter: grayscale(1) !important; }
+body.aslan-a11y-saturation-3 :is(.site-header, main, footer) { filter: saturate(1.8) !important; }
+
+body.aslan-a11y-tooltips button[aria-label]:has(svg):not(:has(span:not([aria-hidden="true"]))):not(.aslan-a11y-ui button),
+body.aslan-a11y-tooltips a[aria-label]:has(svg):not(:has(span:not([aria-hidden="true"]))):not(.aslan-a11y-ui a) {
   position: relative;
 }
 
-body.aslan-a11y-tooltips button[aria-label]:not(.aslan-a11y-ui button):hover::after,
-body.aslan-a11y-tooltips button[aria-label]:not(.aslan-a11y-ui button):focus-visible::after,
-body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a):hover::after,
-body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a):focus-visible::after {
+body.aslan-a11y-tooltips button[aria-label]:has(svg):not(:has(span:not([aria-hidden="true"]))):not(.aslan-a11y-ui button):hover::after,
+body.aslan-a11y-tooltips button[aria-label]:has(svg):not(:has(span:not([aria-hidden="true"]))):not(.aslan-a11y-ui button):focus-visible::after,
+body.aslan-a11y-tooltips a[aria-label]:has(svg):not(:has(span:not([aria-hidden="true"]))):not(.aslan-a11y-ui a):hover::after,
+body.aslan-a11y-tooltips a[aria-label]:has(svg):not(:has(span:not([aria-hidden="true"]))):not(.aslan-a11y-ui a):focus-visible::after {
   content: attr(aria-label);
   position: absolute;
   left: 50%;
@@ -665,6 +696,42 @@ body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a):focus-visible::afte
   white-space: normal;
   pointer-events: none;
   transform: translateX(-50%);
+}
+
+body.aslan-a11y-focus-highlight :is(.site-header, main, footer)
+  :is(a[href], button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 4px solid #ffbf00 !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 0 2px #07172f !important;
+}
+
+body.aslan-a11y-highlight-headings main :is(h1, h2, h3, h4, h5, h6) {
+  text-decoration: underline 4px solid #1455ff !important;
+  text-underline-offset: .18em !important;
+  text-decoration-skip-ink: auto;
+}
+
+body.aslan-a11y-simplified-view :is(.site-header, main, footer) * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+body.aslan-a11y-simplified-view main * {
+  background-image: none !important;
+}
+
+.aslan-a11y-reading-guide {
+  --aslan-a11y-guide-y: 50vh;
+  position: fixed;
+  top: calc(var(--aslan-a11y-guide-y) - 18px);
+  left: 0;
+  z-index: 10010;
+  width: 100vw;
+  height: 36px;
+  border-top: 2px solid rgba(20, 85, 255, .72);
+  border-bottom: 2px solid rgba(20, 85, 255, .72);
+  background: rgba(20, 85, 255, .08);
+  pointer-events: none;
 }
 
 @media (pointer: fine) {

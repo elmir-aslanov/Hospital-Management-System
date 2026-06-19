@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --aslan-ai-blue: #1455ff;
-  --aslan-ai-blue-dark: #0d43d6;
-  --aslan-ai-blue-soft: #eef4ff;
-  --aslan-ai-blue-disabled: #a9c2ff;
-  --aslan-ai-blue-ring: rgba(20, 85, 255, 0.24);
+  --aslan-ai-blue: #087F8C;
+  --aslan-ai-blue-dark: #066773;
+  --aslan-ai-blue-soft: #EAF7F8;
+  --aslan-ai-blue-disabled: #9CCDD2;
+  --aslan-ai-blue-ring: rgba(8, 127, 140, 0.24);
 }
 
 *, *::before, *::after {

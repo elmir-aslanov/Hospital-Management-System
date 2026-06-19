@@ -97,6 +97,7 @@
     "title": "Əlçatanlıq menyusu",
     "tooltip": "Əlçatanlıq menyusu",
     "shortcut": "Qısa yol",
+    "shortcutKeys": "CTRL+ALT+A",
     "close": "Bağla",
     "standard": "Standart",
     "functions": "Əlçatanlıq funksiyaları",
@@ -115,7 +116,11 @@
       "tooltips": "Məlumat ipucları",
       "lineHeight": "Sətir hündürlüyü",
       "textAlign": "Mətn hizalanması",
-      "saturation": "Rəng doyması"
+      "saturation": "Rəng doyması",
+      "readingGuide": "Oxu xətti",
+      "focusHighlight": "Fokus vurğusu",
+      "simplifiedView": "Sadə görünüş",
+      "highlightHeadings": "Başlıqları vurğula"
     },
     "states": {
       "highContrast": "Yüksək kontrast",

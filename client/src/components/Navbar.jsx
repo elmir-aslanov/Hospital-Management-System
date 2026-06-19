@@ -1079,6 +1079,9 @@ export default function Navbar() {
         .nav-ai-btn:focus-visible,
         .nav-ai-mobile-btn:focus-visible {
           outline: none;
+          background: var(--aslan-ai-blue-soft) !important;
+          border-color: var(--aslan-ai-blue-dark) !important;
+          color: var(--aslan-ai-blue-dark) !important;
           box-shadow: 0 0 0 3px var(--aslan-ai-blue-ring);
         }
         @media (max-width: 768px) {

@@ -97,6 +97,7 @@
     "title": "Accessibility menu",
     "tooltip": "Accessibility menu",
     "shortcut": "Shortcut",
+    "shortcutKeys": "CTRL+ALT+A",
     "close": "Close",
     "standard": "Standard",
     "functions": "Accessibility features",
@@ -115,7 +116,11 @@
       "tooltips": "Tooltips",
       "lineHeight": "Line height",
       "textAlign": "Text alignment",
-      "saturation": "Color saturation"
+      "saturation": "Color saturation",
+      "readingGuide": "Reading guide",
+      "focusHighlight": "Focus highlight",
+      "simplifiedView": "Simplified view",
+      "highlightHeadings": "Highlight headings"
     },
     "states": {
       "highContrast": "High contrast",

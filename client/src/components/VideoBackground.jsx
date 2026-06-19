@@ -10,6 +10,9 @@ export default function VideoBackground() {
   const { isMobile } = useBreakpoint();
   const [active, setActive]   = useState(0);
   const [loaded, setLoaded]   = useState([false, false, false]);
+  const [motionPaused, setMotionPaused] = useState(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const videoRefs = useRef([]);
   const timerRef  = useRef(null);
 
@@ -34,27 +37,38 @@ export default function VideoBackground() {
   useEffect(() => {
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
-      if (i === active) {
+      if (motionPaused) {
+        video.pause();
+      } else if (i === active) {
         video.currentTime = 0;
         video.play().catch(() => {});
       }
     });
-  }, [active]);
+  }, [active, motionPaused]);
+
+  useEffect(() => {
+    const onMotionChange = (event) => setMotionPaused(Boolean(event.detail?.paused));
+    document.addEventListener('aslan:a11y-motion-change', onMotionChange);
+    return () => document.removeEventListener('aslan:a11y-motion-change', onMotionChange);
+  }, []);
 
   /* ── Auto-advance ── */
   useEffect(() => {
+    if (motionPaused) return undefined;
     timerRef.current = setInterval(() => {
       setActive(prev => (prev + 1) % VIDEOS.length);
     }, INTERVAL);
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [motionPaused]);
 
   const goTo = (i) => {
     setActive(i);
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setActive(prev => (prev + 1) % VIDEOS.length);
-    }, INTERVAL);
+    if (!motionPaused) {
+      timerRef.current = setInterval(() => {
+        setActive(prev => (prev + 1) % VIDEOS.length);
+      }, INTERVAL);
+    }
   };
 
   /*
