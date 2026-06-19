@@ -400,8 +400,20 @@ export const updateResult = async (id, data, userId) => {
   const result = await LabResult.findById(id);
   if (!result) throw new ApiError(404, 'Result not found');
 
+  const wasApproved = result.status === 'approved';
+
   if (Array.isArray(data.results)) result.results = data.results;
   if (data.summary !== undefined) result.summary = data.summary;
+
+  if (wasApproved) {
+    // Editing a previously approved/published result revokes publication —
+    // it must go through approval again before it's visible to the patient.
+    result.status = 'completed';
+    result.approvedBy = null;
+    result.approvedAt = null;
+    result.isPublicVisible = false;
+    result.completedAt = new Date();
+  }
 
   await result.save();
 
@@ -412,7 +424,13 @@ export const updateResult = async (id, data, userId) => {
     await order.save();
   }
 
-  try { logAction({ userId, action: 'UPDATE_LAB_RESULT', resourceType: 'LabResult', resourceId: result._id, description: `Result updated for order ${result.labOrderId}` }); } catch (_) {}
+  try {
+    const action = wasApproved ? 'LAB_RESULT_REOPENED_AFTER_EDIT' : 'UPDATE_LAB_RESULT';
+    const description = wasApproved
+      ? `Approved result for order ${result.labOrderId} was edited — reverted to 'completed' and unpublished, pending re-approval`
+      : `Result updated for order ${result.labOrderId}`;
+    logAction({ userId, action, resourceType: 'LabResult', resourceId: result._id, description });
+  } catch (_) {}
   return result.populate([POP_PERF]);
 };
 

@@ -82,6 +82,82 @@
     "label": "Live Support",
     "message": "Hello! I would like to contact Aslan Medical Clinic."
   },
+  "accessibility": {
+    "title": "Accessibility menu",
+    "tooltip": "Accessibility options",
+    "shortcut": "Shortcut",
+    "close": "Close",
+    "standard": "Standard",
+    "sections": {
+      "modes": "Accessibility modes",
+      "visual": "Visual appearance",
+      "content": "Content and text",
+      "reading": "Reading and navigation",
+      "background": "Background color options"
+    },
+    "modes": {
+      "epilepsy": "Seizure-safe mode",
+      "visual": "Visual assistance mode",
+      "cognitive": "Cognitive assistance mode",
+      "attention": "ADHD-friendly mode"
+    },
+    "visual": {
+      "dark": "Dark contrast",
+      "light": "Light contrast",
+      "monochrome": "Monochrome",
+      "highContrast": "High contrast",
+      "lowSaturation": "Low saturation",
+      "highSaturation": "High saturation"
+    },
+    "content": {
+      "magnifier": "Text magnifier",
+      "readableFont": "Readable font",
+      "dyslexia": "Dyslexia-friendly view",
+      "headings": "Highlight headings",
+      "links": "Highlight links",
+      "textSize": "Text size",
+      "lineHeight": "Line height",
+      "letterSpacing": "Letter spacing",
+      "alignment": "Text alignment",
+      "alignLeft": "Align left",
+      "alignCenter": "Align center",
+      "alignJustify": "Justify",
+      "alignRight": "Align right"
+    },
+    "reading": {
+      "readSite": "Read website aloud",
+      "readSelection": "Read selected text",
+      "stop": "Stop reading",
+      "hideImages": "Hide images",
+      "darkCursor": "Large dark cursor",
+      "lightCursor": "Large light cursor",
+      "mask": "Reading mask",
+      "guide": "Reading guide",
+      "focus": "Highlight focus",
+      "stopAnimations": "Stop animations",
+      "keyboard": "Keyboard navigation"
+    },
+    "colors": {
+      "navy": "Dark blue",
+      "red": "Dark red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Dark green",
+      "purple": "Purple",
+      "teal": "Teal",
+      "mint": "Light green",
+      "black": "Black",
+      "blue": "Light blue"
+    },
+    "siteMap": "Site map",
+    "siteMapDescription": "Links to the main sections of the Aslan Medical public website.",
+    "reset": "Restore default settings",
+    "rights": "All rights reserved",
+    "messages": {
+      "speechUnsupported": "Your browser does not support text-to-speech",
+      "selectText": "Select some text before using the reading feature"
+    }
+  },
   "modal": {
     "leaving": "you are leaving our website.",
     "redirect": "We are redirecting you to",
@@ -631,6 +707,24 @@
     "resultReferenceRange": "Reference range",
     "downloadPdf": "Download PDF",
     "newCheckButton": "Check again"
+  },
+  "labOrderResult": {
+    "enterTitle": "Enter result",
+    "editTitle": "Edit result",
+    "saveButton": "Save result",
+    "saveChangesButton": "Save changes",
+    "saving": "Saving...",
+    "emptyState": "Select an order to enter or view its result.",
+    "testResultsLabel": "Test results",
+    "addParameter": "+ Add test",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Additional notes...",
+    "parameterNamePlaceholder": "Test name",
+    "valuePlaceholder": "Value",
+    "unitPlaceholder": "Unit",
+    "requiredFieldsError": "Test name and value fields cannot be empty.",
+    "duplicateError": "A result already exists for this order. Edit the existing result instead.",
+    "genericError": "The result could not be saved. Please try again."
   },
   "labRequest": {
     "title": "Test request",

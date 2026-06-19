@@ -9,7 +9,10 @@ import Navbar           from './components/Navbar';
 import Footer           from './components/Footer';
 import PageLoader       from './components/ui/PageLoader';
 import WhatsAppButton  from './components/ui/WhatsAppButton';
+import AIChatWidget     from './components/ai/AIChatWidget';
 import ProtectedRoute   from './components/ui/ProtectedRoute';
+import AccessibilityWidget from './components/accessibility/AccessibilityWidget';
+import { AccessibilityProvider } from './context/AccessibilityContext';
 
 /* Public */
 import HomePage         from './pages/public/HomePage';
@@ -34,6 +37,7 @@ import AtmsPage             from './pages/public/visitor/AtmsPage';
 import CafeteriaPage        from './pages/public/visitor/CafeteriaPage';
 import RestaurantPage       from './pages/public/visitor/RestaurantPage';
 import WifiPage             from './pages/public/visitor/WifiPage';
+import SiteMapPage          from './pages/public/SiteMapPage';
 import AdminLoginPage       from './pages/AdminLoginPage';
 import AdminDashboard       from './pages/admin/AdminDashboard';
 import AdminDoctors         from './pages/admin/AdminDoctors';
@@ -160,6 +164,7 @@ function Layout() {
         <Route path="/visitor-info/cafeteria"  element={<CafeteriaPage />} />
         <Route path="/visitor-info/restaurant" element={<RestaurantPage />} />
         <Route path="/visitor-info/wifi"       element={<WifiPage />} />
+        <Route path="/site-map"                element={<SiteMapPage />} />
 
         {/* ── Admin ── */}
         <Route path="/admin"              element={<AdminEntryRoute />} />
@@ -259,7 +264,7 @@ i18n.on('languageChanged', (lng) => {
 // Set on initial load
 document.documentElement.lang = i18n.language || 'az';
 
-function PublicWhatsApp() {
+function PublicFloatingTools() {
   const { pathname } = useLocation();
   const isPanel =
     pathname.startsWith('/admin') ||
@@ -270,7 +275,14 @@ function PublicWhatsApp() {
     pathname.startsWith('/nurse') ||
     pathname.startsWith('/receptionist') ||
     pathname.startsWith('/lab');
-  return isPanel ? null : <WhatsAppButton />;
+  if (isPanel) return null;
+  return (
+    <AccessibilityProvider>
+      <AccessibilityWidget />
+      <WhatsAppButton />
+      <AIChatWidget />
+    </AccessibilityProvider>
+  );
 }
 
 export default function App() {
@@ -280,7 +292,7 @@ export default function App() {
         <BrowserRouter>
           <RouteLoader />
           <Layout />
-          <PublicWhatsApp />
+          <PublicFloatingTools />
         </BrowserRouter>
       </I18nextProvider>
     </AuthProvider>

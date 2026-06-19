@@ -82,6 +82,82 @@
     "label": "Canlı Dəstək",
     "message": "Salam! Aslan Medical Clinic ilə əlaqə saxlamaq istəyirəm."
   },
+  "accessibility": {
+    "title": "Əlçatanlıq menyusu",
+    "tooltip": "Əlçatanlıq seçimləri",
+    "shortcut": "Qısa yol",
+    "close": "Bağla",
+    "standard": "Standart",
+    "sections": {
+      "modes": "Əlçatanlıq rejimləri",
+      "visual": "Vizual görünüş",
+      "content": "Məzmun və mətn",
+      "reading": "Oxu və istiqamətləndirmə",
+      "background": "Fon rəngi seçimləri"
+    },
+    "modes": {
+      "epilepsy": "Epilepsiya üçün təhlükəsiz rejim",
+      "visual": "Görmə dəstəyi rejimi",
+      "cognitive": "Koqnitiv dəstək rejimi",
+      "attention": "Diqqət çatışmazlığı üçün dəstək rejimi"
+    },
+    "visual": {
+      "dark": "Tünd kontrast",
+      "light": "Açıq kontrast",
+      "monochrome": "Tək rəngli görünüş",
+      "highContrast": "Yüksək kontrast",
+      "lowSaturation": "Aşağı rəng doyması",
+      "highSaturation": "Yüksək rəng doyması"
+    },
+    "content": {
+      "magnifier": "Mətn böyüdücü",
+      "readableFont": "Oxunaqlı yazı tipi",
+      "dyslexia": "Disleksiya üçün uyğun görünüş",
+      "headings": "Başlıqları vurğula",
+      "links": "Bağlantıları vurğula",
+      "textSize": "Mətn ölçüsü",
+      "lineHeight": "Sətir hündürlüyü",
+      "letterSpacing": "Hərf aralığı",
+      "alignment": "Mətn hizalaması",
+      "alignLeft": "Sola hizala",
+      "alignCenter": "Mərkəzə hizala",
+      "alignJustify": "İki tərəfə hizala",
+      "alignRight": "Sağa hizala"
+    },
+    "reading": {
+      "readSite": "Saytı səslə oxu",
+      "readSelection": "Seçilmiş mətni oxu",
+      "stop": "Oxumağı dayandır",
+      "hideImages": "Şəkilləri gizlət",
+      "darkCursor": "Böyük tünd kursor",
+      "lightCursor": "Böyük açıq kursor",
+      "mask": "Oxu maskası",
+      "guide": "Oxu bələdçisi",
+      "focus": "Fokusu vurğula",
+      "stopAnimations": "Animasiyaları dayandır",
+      "keyboard": "Klaviatura idarəetməsi"
+    },
+    "colors": {
+      "navy": "Tünd mavi",
+      "red": "Tünd qırmızı",
+      "orange": "Narıncı",
+      "yellow": "Sarı",
+      "green": "Tünd yaşıl",
+      "purple": "Bənövşəyi",
+      "teal": "Teal",
+      "mint": "Açıq yaşıl",
+      "black": "Qara",
+      "blue": "Açıq mavi"
+    },
+    "siteMap": "Sayt xəritəsi",
+    "siteMapDescription": "Aslan Medical public saytının əsas bölmələrinə keçidlər.",
+    "reset": "Standart parametrləri bərpa et",
+    "rights": "Bütün hüquqlar qorunur",
+    "messages": {
+      "speechUnsupported": "Brauzeriniz səslə oxuma funksiyasını dəstəkləmir",
+      "selectText": "Oxumaq üçün əvvəlcə mətn seçin"
+    }
+  },
   "modal": {
     "leaving": "saytından ayrılırsınız.",
     "redirect": "Sizi",
@@ -634,6 +710,24 @@
     "resultReferenceRange": "Referans aralığı",
     "downloadPdf": "PDF yüklə",
     "newCheckButton": "Yenidən yoxla"
+  },
+  "labOrderResult": {
+    "enterTitle": "Nəticə daxil et",
+    "editTitle": "Nəticəni redaktə et",
+    "saveButton": "Nəticəni saxla",
+    "saveChangesButton": "Dəyişiklikləri saxla",
+    "saving": "Saxlanır...",
+    "emptyState": "Nəticə daxil etmək və ya baxmaq üçün sifariş seçin.",
+    "testResultsLabel": "Test nəticələri",
+    "addParameter": "+ Test əlavə et",
+    "notesLabel": "Qeydlər",
+    "notesPlaceholder": "Əlavə qeydlər...",
+    "parameterNamePlaceholder": "Test adı",
+    "valuePlaceholder": "Dəyər",
+    "unitPlaceholder": "Vahid",
+    "requiredFieldsError": "Test adı və dəyər sahələri boş ola bilməz.",
+    "duplicateError": "Bu sifariş üçün nəticə artıq mövcuddur. Mövcud nəticəni redaktə edin.",
+    "genericError": "Nəticə saxlanılmadı. Yenidən cəhd edin."
   },
   "labRequest": {
     "title": "Analiz üçün müraciət",

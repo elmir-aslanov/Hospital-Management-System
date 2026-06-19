@@ -495,12 +495,16 @@ const buildResultFromOrder = (order) => ({
 
 export default function LabTechDashboard() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [orders,   setOrders]   = useState([])
   const [loading,  setLoading]  = useState(true)
   const [stats,    setStats]    = useState({ pending: 0, inProgress: 0, completed: 0 })
   const [selected, setSelected] = useState(null)
   const [result,   setResult]   = useState(emptyResult())
+  const [resultId, setResultId] = useState(null)
+  const [panelLoading, setPanelLoading] = useState(false)
+  const [resultErr, setResultErr] = useState('')
   const [saving,   setSaving]   = useState(false)
   const [user]                  = useState(() => JSON.parse(localStorage.getItem('user') || '{}'))
 
@@ -527,30 +531,58 @@ export default function LabTechDashboard() {
     navigate('/login')
   }
 
-  const openResultPanel = (order) => {
-    setSelected(order)
-    setResult(buildResultFromOrder(order))
+  // Pre-fills a brand-new result form. If the order's test matches a PriceList
+  // entry with a predefined parameter template (e.g. Fox's food-antigen panel),
+  // each template parameter becomes its own row instead of collapsing the whole
+  // test into a single "test name" row.
+  const buildCreateModeResult = async (order) => {
+    const fallback = buildResultFromOrder(order)
+    const firstTest = order.tests?.[0]
+    if (!firstTest?.testName && !firstTest?.testCode) return fallback
+    try {
+      const res = await api.get('/lab/test-templates', { params: { testName: firstTest.testName, testCode: firstTest.testCode } })
+      const template = res.data?.data?.template || []
+      if (!template.length) return fallback
+      return {
+        results: template.map(row => ({
+          testName: row.parameterName || '',
+          value: '',
+          unit: row.unit || '',
+          status: 'normal',
+        })),
+        notes: '',
+      }
+    } catch {
+      return fallback
+    }
   }
 
-  const viewResult = (order) => {
+  // Always checks for an existing result first — opens edit mode (pre-filled,
+  // PATCH on save) if one exists, otherwise create mode (template-prefilled
+  // where available, POST on save). Used by both "Nəticə daxil et" and "Bax".
+  const openResultPanel = async (order) => {
     setSelected(order)
-    setResult(buildResultFromOrder(order))
-
-    fetch(`${BASE}/api/v1/lab/results/order/${order._id}`, { headers: hdrs() })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (!d?.data) return
-        setResult({
-          results: d.data.results?.length ? d.data.results.map(item => ({
-            testName: item.testName || '',
-            value: item.value || '',
-            unit: item.unit || '',
-            status: item.status || 'normal',
-          })) : buildResultFromOrder(order).results,
-          notes: d.data.summary || d.data.notes || '',
-        })
-      })
-      .catch(() => {})
+    setResultErr('')
+    setPanelLoading(true)
+    try {
+      const res = await api.get(`/lab/results/order/${order._id}`)
+      const data = res.data?.data
+      setResultId(data?._id || null)
+      setResult(data ? {
+        results: data.results?.length ? data.results.map(item => ({
+          testName: item.testName || '',
+          value: item.value || '',
+          unit: item.unit || '',
+          status: item.status || 'normal',
+        })) : [emptyResultItem()],
+        notes: data.summary || data.notes || '',
+      } : await buildCreateModeResult(order))
+    } catch (err) {
+      setResultId(null)
+      setResult(err.response?.status === 404 ? await buildCreateModeResult(order) : buildResultFromOrder(order))
+    } finally {
+      setPanelLoading(false)
+    }
   }
 
   const addResultRow = () => {
@@ -571,42 +603,31 @@ export default function LabTechDashboard() {
   const saveResult = async () => {
     if (!selected) return
     if (result.results.length === 0 || result.results.some(item => !item.testName.trim() || !item.value.trim())) {
-      alert('Test adı və dəyər sahələri boş ola bilməz')
+      setResultErr(t('labOrderResult.requiredFieldsError'))
       return
     }
 
     setSaving(true)
+    setResultErr('')
     try {
-      const payload = { results: result.results, notes: result.notes }
-      let response = await fetch(`${BASE}/api/v1/lab/orders/${selected._id}/results`, {
-        method: 'POST',
-        headers: hdrs(),
-        body: JSON.stringify(payload),
-      })
-
-      if (response.status === 404) {
-        response = await fetch(`${BASE}/api/v1/lab/results`, {
-          method: 'POST',
-          headers: hdrs(),
-          body: JSON.stringify({
-            labOrderId: selected._id,
-            results: result.results,
-            summary: result.notes,
-            notes: result.notes,
-          }),
-        })
+      if (resultId) {
+        await api.patch(`/lab/results/${resultId}`, { results: result.results, summary: result.notes })
+      } else {
+        await api.post('/lab/results', { labOrderId: selected._id, results: result.results, summary: result.notes })
       }
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.message || 'Nəticə saxlanılmadı')
 
       const nextOrders = orders.map(o => o._id === selected._id ? { ...o, status: 'completed' } : o)
       setOrders(nextOrders)
       setStats(computeStats(nextOrders))
       setSelected(null)
       setResult(emptyResult())
+      setResultId(null)
     } catch (err) {
-      alert(err.message)
+      const backendMessage = err.response?.data?.message
+      const message = backendMessage === 'Result already exists for this order. Use update instead.'
+        ? t('labOrderResult.duplicateError')
+        : backendMessage || t('labOrderResult.genericError')
+      setResultErr(message)
     } finally {
       setSaving(false)
     }
@@ -707,7 +728,7 @@ export default function LabTechDashboard() {
                                 </button>
                               )}
                               <button
-                                onClick={() => viewResult(order)}
+                                onClick={() => openResultPanel(order)}
                                 style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
                               >
                                 Bax
@@ -727,22 +748,28 @@ export default function LabTechDashboard() {
           <div style={{ background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', padding: 20, minHeight: 430 }}>
             {!selected ? (
               <div style={{ minHeight: 390, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#94a3b8', fontSize: 13, lineHeight: 1.6 }}>
-                Nəticə daxil etmək və ya baxmaq üçün sifariş seçin.
+                {t('labOrderResult.emptyState')}
               </div>
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 18 }}>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: NAVY }}>Nəticə Daxil Et</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: NAVY }}>
+                      {resultId ? t('labOrderResult.editTitle') : t('labOrderResult.enterTitle')}
+                    </h3>
                     <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>{selected.orderNumber || '—'}</p>
                   </div>
                   <button
-                    onClick={() => { setSelected(null); setResult(emptyResult()) }}
+                    onClick={() => { setSelected(null); setResult(emptyResult()); setResultId(null); setResultErr('') }}
                     style={{ border: 'none', background: '#f8fafc', color: '#64748b', width: 30, height: 30, borderRadius: 8, cursor: 'pointer', fontSize: 18 }}
                   >
                     ×
                   </button>
                 </div>
+
+                {resultErr && (
+                  <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '9px 12px', fontSize: 13, marginBottom: 14 }}>{resultErr}</div>
+                )}
 
                 <div style={{ background: '#f8fafc', borderRadius: 12, padding: 14, marginBottom: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{getPatientName(selected)}</div>
@@ -750,34 +777,34 @@ export default function LabTechDashboard() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Test nəticələri</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>{t('labOrderResult.testResultsLabel')}</span>
                   <button
                     onClick={addResultRow}
                     style={{ border: '1px dashed #cbd5e1', background: 'white', color: TEAL, borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
                   >
-                    + Test əlavə et
+                    {t('labOrderResult.addParameter')}
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, opacity: panelLoading ? 0.5 : 1 }}>
                   {result.results.map((item, index) => (
                     <div key={index} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.75fr 1fr 28px', gap: 8, alignItems: 'center' }}>
                       <input
                         value={item.testName}
                         onChange={e => updateResultRow(index, 'testName', e.target.value)}
-                        placeholder="Test adı"
+                        placeholder={t('labOrderResult.parameterNamePlaceholder')}
                         style={inputStyle}
                       />
                       <input
                         value={item.value}
                         onChange={e => updateResultRow(index, 'value', e.target.value)}
-                        placeholder="Dəyər"
+                        placeholder={t('labOrderResult.valuePlaceholder')}
                         style={inputStyle}
                       />
                       <input
                         value={item.unit}
                         onChange={e => updateResultRow(index, 'unit', e.target.value)}
-                        placeholder="Vahid"
+                        placeholder={t('labOrderResult.unitPlaceholder')}
                         style={inputStyle}
                       />
                       <select
@@ -802,22 +829,24 @@ export default function LabTechDashboard() {
                 </div>
 
                 <div style={{ marginTop: 16 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Qeydlər</label>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>{t('labOrderResult.notesLabel')}</label>
                   <textarea
                     rows={4}
                     value={result.notes}
                     onChange={e => setResult(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Əlavə qeydlər..."
+                    placeholder={t('labOrderResult.notesPlaceholder')}
                     style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
                   />
                 </div>
 
                 <button
                   onClick={saveResult}
-                  disabled={saving}
+                  disabled={saving || panelLoading}
                   style={{ marginTop: 16, width: '100%', border: 'none', background: saving ? '#7ec8cc' : TEAL, color: 'white', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT }}
                 >
-                  {saving ? 'Saxlanır...' : 'Nəticəni saxla'}
+                  {saving
+                    ? t('labOrderResult.saving')
+                    : resultId ? t('labOrderResult.saveChangesButton') : t('labOrderResult.saveButton')}
                 </button>
               </>
             )}
