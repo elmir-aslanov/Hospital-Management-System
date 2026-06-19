@@ -1,3 +1,4 @@
+import jwt          from 'jsonwebtoken';
 import * as svc     from './lab.service.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
@@ -18,3 +19,45 @@ export const getLabSummary     = asyncHandler(async (req, res) => { const d = aw
 export const lookupPublicResult = asyncHandler(async (req, res) => { const d = await svc.lookupPublicResult(req.body);         res.json(new ApiResponse(200, d)); });
 export const updateResult      = asyncHandler(async (req, res) => { const d = await svc.updateResult(req.params.id, req.body, uid(req)); res.json(new ApiResponse(200, d, 'Result updated')); });
 export const uploadResultAttachment = asyncHandler(async (req, res) => { const d = await svc.uploadResultAttachment(req.params.id, req.file, uid(req)); res.json(new ApiResponse(200, d, 'Attachment uploaded')); });
+
+// ── Manual / standalone certified results ───────────────────────
+export const createManualResult = asyncHandler(async (req, res) => { const d = await svc.createManualResult(req.body, uid(req)); res.status(201).json(new ApiResponse(201, d, 'Nəticə yaradıldı')); });
+export const updateManualResult = asyncHandler(async (req, res) => { const d = await svc.updateManualResult(req.params.id, req.body, uid(req)); res.json(new ApiResponse(200, d, 'Nəticə yeniləndi')); });
+export const listManualResults  = asyncHandler(async (req, res) => { const d = await svc.listManualResults(req.query); res.json(new ApiResponse(200, d)); });
+export const getManualResult    = asyncHandler(async (req, res) => { const d = await svc.getManualResultById(req.params.id); res.json(new ApiResponse(200, d)); });
+export const approveManualResult = asyncHandler(async (req, res) => { const d = await svc.approveManualResult(req.params.id, uid(req), req.body.isPublicVisible); res.json(new ApiResponse(200, d, 'Nəticə təsdiqləndi')); });
+export const cancelManualResult  = asyncHandler(async (req, res) => { const d = await svc.cancelManualResult(req.params.id, uid(req)); res.json(new ApiResponse(200, d, 'Nəticə ləğv edildi')); });
+
+// ── Public verify + secure PDF ───────────────────────────────────
+export const verifyPublicLabResult = asyncHandler(async (req, res) => {
+  const d = await svc.verifyPublicLabResult(req.body);
+  res.json(new ApiResponse(200, d, 'Nəticə tapıldı'));
+});
+
+export const checkTestResultStatus = asyncHandler(async (req, res) => {
+  const d = await svc.checkTestResultStatus(req.body);
+  res.json(new ApiResponse(200, d));
+});
+
+export const getResultPdf = asyncHandler(async (req, res) => {
+  let authUser = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const payload = jwt.verify(authHeader.split(' ')[1], process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET);
+      authUser = { id: payload.userId, role: payload.role };
+    } catch (_) {
+      // Ignore — falls back to accessToken-based public verification below.
+    }
+  }
+
+  const accessToken = typeof req.query.accessToken === 'string' ? req.query.accessToken : '';
+  const buffer = await svc.getResultPdfBuffer(req.params.id, { accessToken, authUser });
+
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': 'attachment; filename="lab-result.pdf"',
+    'Content-Length': buffer.length,
+  });
+  res.send(buffer);
+});

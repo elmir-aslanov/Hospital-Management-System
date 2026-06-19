@@ -594,6 +594,8 @@ export default function Navbar() {
                     }}
                     onMouseEnter={() => { setHoveredNav(link.label); onMegaEnter(); }}
                     onMouseLeave={() => { setHoveredNav(null); onMegaLeave(); }}
+                    onFocus={onMegaEnter}
+                    onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) onMegaLeave(); }}
                   >
                     <button style={{
                       display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -610,19 +612,6 @@ export default function Navbar() {
                       height: '100%',
                     }}>
                       {link.label}
-                      <svg
-                        width="12" height="12" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                        style={{
-                          flexShrink: 0,
-                          transform: megaOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 190ms ease',
-                          opacity: megaHighlight ? 1 : 0.65,
-                        }}
-                      >
-                        <path d="M6 9l6 6 6-6"/>
-                      </svg>
                     </button>
                   </div>
                 );
@@ -829,6 +818,8 @@ export default function Navbar() {
               transition={{ duration: 0.18 }}
               onMouseEnter={onMegaEnter}
               onMouseLeave={onMegaLeave}
+              onFocus={onMegaEnter}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) onMegaLeave(); }}
               style={{
                 position: 'absolute',
                 top: '100%',

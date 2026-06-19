@@ -1,18 +1,29 @@
+import mongoose  from 'mongoose';
+import jwt       from 'jsonwebtoken';
 import LabOrder  from '../../models/LabOrder.model.js';
 import LabResult from '../../models/LabResult.model.js';
+import PriceList from '../../models/PriceList.model.js';
+import User      from '../../models/User.model.js';
 import ApiError  from '../../utils/ApiError.js';
 import logAction from '../../utils/auditLogger.js';
+import logger     from '../../utils/logger.js';
 import { uploadBuffer } from '../../config/cloudinary.js';
+import { createLabResultPDF } from '../../utils/generateLabResultPdf.js';
 
 const POP_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POP_DOCTOR  = { path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } };
 const POP_PERF    = { path: 'performedBy', select: 'fullName name surname' };
 const POP_PUBLIC_PATIENT = { path: 'patientId', select: 'userId', populate: { path: 'userId', select: 'fullName name surname sexiyyatId birthDate' } };
 const POP_PUBLIC_DOCTOR  = { path: 'doctorId', select: 'userId specialization', populate: { path: 'userId', select: 'fullName name surname' } };
+const POP_MANUAL = [
+  { path: 'labTechnicianId', select: 'fullName name surname' },
+  { path: 'approvedBy',      select: 'fullName name surname' },
+];
 
 const trim = (value) => String(value || '').trim();
 const escapeRegex = (value) => trim(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const normalize = (value) => trim(value).toUpperCase();
+const normalizeName = (value) => trim(value).toUpperCase().replace(/\s+/g, ' ');
 
 const displayName = (user) => {
   if (!user) return '';
@@ -325,6 +336,364 @@ export const updateResult = async (id, data, userId) => {
 
   try { logAction({ userId, action: 'UPDATE_LAB_RESULT', resourceType: 'LabResult', resourceId: result._id, description: `Result updated for order ${result.labOrderId}` }); } catch (_) {}
   return result.populate([POP_PERF]);
+};
+
+// ── Manual / standalone certified results ───────────────────────
+const PDF_TOKEN_PURPOSE = 'lab-result-pdf';
+const PDF_TOKEN_TTL = '12m';
+const NEW_FIN_REGEX = /^[A-Z0-9]{5,8}$/;
+const STAFF_ROLES = ['ADMIN', 'SUPER_ADMIN', 'LAB_TECHNICIAN', 'DOCTOR', 'BAS_HEKIM'];
+const VERIFY_GENERIC_NOT_FOUND = 'Nəticə tapılmadı. Məlumatları yoxlayıb yenidən cəhd edin.';
+
+const requireObjectId = (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(400, 'Etibarsız identifikator');
+};
+
+const displayUserName = (user) => {
+  if (!user) return '';
+  const name = [user.name, user.surname].filter(Boolean).join(' ').trim();
+  return name || user.fullName || '';
+};
+
+const sameCalendarDate = (left, rightStr) => {
+  if (!left || !rightStr) return false;
+  return new Date(left).toISOString().slice(0, 10) === rightStr;
+};
+
+const buildManualResultItems = (items) =>
+  (Array.isArray(items) ? items : []).map((item) => ({
+    testName:       trim(item.parameterName ?? item.testName),
+    value:          trim(item.value),
+    unit:           trim(item.unit),
+    referenceRange: trim(item.referenceRange),
+    status:         ['normal', 'low', 'high', 'critical', 'pending'].includes(item.status) ? item.status : 'normal',
+    notes:          trim(item.note ?? item.notes),
+  }));
+
+const maskFinForApi = (fin) => {
+  const clean = trim(fin);
+  if (!clean) return '';
+  if (clean.length <= 3) return `${clean[0]}***`;
+  return `${clean[0]}${'*'.repeat(clean.length - 3)}${clean.slice(-2)}`;
+};
+
+export const createManualResult = async (data, userId) => {
+  const fullName = trim(data.patientFullName);
+  const testName = trim(data.testName);
+  if (!fullName) throw new ApiError(400, 'Pasiyentin ad və soyadı tələb olunur');
+  if (!testName) throw new ApiError(400, 'Test adı tələb olunur');
+
+  const status = ['draft', 'completed'].includes(data.status) ? data.status : 'completed';
+
+  const result = await LabResult.create({
+    patientFullName:   fullName.slice(0, 150),
+    patientFin:         trim(data.patientFin).toUpperCase().slice(0, 8),
+    patientBirthDate:   data.patientBirthDate ? new Date(data.patientBirthDate) : null,
+    sampleDate:         data.sampleDate ? new Date(data.sampleDate) : null,
+    resultDate:         data.resultDate ? new Date(data.resultDate) : null,
+    doctorName:         trim(data.doctorName).slice(0, 150),
+    departmentName:     trim(data.departmentName).slice(0, 150),
+    testName:           testName.slice(0, 150),
+    testCode:           trim(data.testCode).slice(0, 40),
+    results:            buildManualResultItems(data.resultItems),
+    generalConclusion:  trim(data.generalConclusion).slice(0, 2000),
+    labTechnicianId:    userId,
+    performedBy:        userId,
+    status,
+    isPublicVisible:    false,
+  });
+
+  try {
+    logAction({ userId, action: 'LAB_RESULT_CREATE_MANUAL', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} created` });
+  } catch (_) {}
+
+  return result.populate(POP_MANUAL);
+};
+
+export const updateManualResult = async (id, data, userId) => {
+  requireObjectId(id);
+  const result = await LabResult.findById(id);
+  if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
+  if (['approved', 'cancelled'].includes(result.status)) {
+    throw new ApiError(400, `'${result.status}' statuslu nəticə redaktə edilə bilməz`);
+  }
+
+  if (data.patientFullName !== undefined)   result.patientFullName  = trim(data.patientFullName).slice(0, 150);
+  if (data.patientFin !== undefined)        result.patientFin       = trim(data.patientFin).toUpperCase().slice(0, 8);
+  if (data.patientBirthDate !== undefined)  result.patientBirthDate = data.patientBirthDate ? new Date(data.patientBirthDate) : null;
+  if (data.sampleDate !== undefined)        result.sampleDate       = data.sampleDate ? new Date(data.sampleDate) : null;
+  if (data.resultDate !== undefined)        result.resultDate       = data.resultDate ? new Date(data.resultDate) : null;
+  if (data.doctorName !== undefined)        result.doctorName       = trim(data.doctorName).slice(0, 150);
+  if (data.departmentName !== undefined)    result.departmentName   = trim(data.departmentName).slice(0, 150);
+  if (data.testName !== undefined)          result.testName         = trim(data.testName).slice(0, 150);
+  if (data.testCode !== undefined)          result.testCode         = trim(data.testCode).slice(0, 40);
+  if (data.resultItems !== undefined)       result.results          = buildManualResultItems(data.resultItems);
+  if (data.generalConclusion !== undefined) result.generalConclusion = trim(data.generalConclusion).slice(0, 2000);
+  if (['draft', 'completed'].includes(data.status)) result.status   = data.status;
+
+  await result.save();
+  try {
+    logAction({ userId, action: 'LAB_RESULT_UPDATE_MANUAL', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} updated` });
+  } catch (_) {}
+  return result.populate(POP_MANUAL);
+};
+
+export const listManualResults = async ({ search, status, department, dateFrom, dateTo, page = 1, limit = 20 } = {}) => {
+  const filter = { protocolNo: { $ne: null } };
+  if (status) filter.status = status;
+  if (department) filter.departmentName = new RegExp(escapeRegex(department), 'i');
+  if (search) {
+    const re = new RegExp(escapeRegex(search), 'i');
+    filter.$or = [{ patientFullName: re }, { patientFin: re }, { protocolNo: re }, { testName: re }];
+  }
+  if (dateFrom || dateTo) {
+    filter.resultDate = {};
+    if (dateFrom) filter.resultDate.$gte = new Date(dateFrom);
+    if (dateTo)   filter.resultDate.$lte = new Date(dateTo);
+  }
+
+  const pg  = Math.max(1, parseInt(page));
+  const lim = Math.min(100, parseInt(limit));
+  const [results, total] = await Promise.all([
+    LabResult.find(filter).populate(POP_MANUAL).sort({ createdAt: -1 }).skip((pg - 1) * lim).limit(lim),
+    LabResult.countDocuments(filter),
+  ]);
+  return { results, total, page: pg, limit: lim };
+};
+
+export const getManualResultById = async (id) => {
+  requireObjectId(id);
+  const result = await LabResult.findOne({ _id: id, protocolNo: { $ne: null } }).populate(POP_MANUAL);
+  if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
+  return result;
+};
+
+export const approveManualResult = async (id, userId, isPublicVisible) => {
+  requireObjectId(id);
+  const result = await LabResult.findById(id);
+  if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
+  if (result.status !== 'completed') throw new ApiError(400, "Yalnız 'Tamamlandı' statuslu nəticə təsdiqlənə bilər");
+
+  result.status = 'approved';
+  result.approvedBy = userId;
+  result.approvedAt = new Date();
+  result.isPublicVisible = !!isPublicVisible;
+  await result.save();
+
+  try {
+    logAction({ userId, action: 'LAB_RESULT_APPROVE', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} approved` });
+  } catch (_) {}
+  return result.populate(POP_MANUAL);
+};
+
+export const cancelManualResult = async (id, userId) => {
+  requireObjectId(id);
+  const result = await LabResult.findById(id);
+  if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
+  if (result.status === 'cancelled') return result;
+
+  result.status = 'cancelled';
+  result.isPublicVisible = false;
+  await result.save();
+
+  try {
+    logAction({ userId, action: 'LAB_RESULT_CANCEL', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} cancelled` });
+  } catch (_) {}
+  return result.populate(POP_MANUAL);
+};
+
+// ── Public verify (FIN/birthDate + protocolNo) ──────────────────
+export const verifyPublicLabResult = async ({ method, fin, birthDate, protocolNo } = {}) => {
+  const cleanMethod = trim(method);
+  const cleanProtocol = normalize(protocolNo);
+  const cleanFin = normalize(fin);
+  const cleanBirthDate = trim(birthDate);
+
+  if (!['fin', 'birthDate'].includes(cleanMethod)) throw new ApiError(400, 'Axtarış metodu düzgün deyil');
+  if (!cleanProtocol) throw new ApiError(400, 'Protokol nömrəsi tələb olunur');
+
+  if (cleanMethod === 'fin') {
+    if (!cleanFin || !NEW_FIN_REGEX.test(cleanFin)) throw new ApiError(400, 'FİN kod 5-8 simvol arası hərf və rəqəmdən ibarət olmalıdır');
+  } else {
+    if (!cleanBirthDate) throw new ApiError(400, 'Doğum tarixi tələb olunur');
+    const parsed = new Date(`${cleanBirthDate}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime())) throw new ApiError(400, 'Doğum tarixi düzgün formatda deyil');
+    if (parsed.getTime() > Date.now()) throw new ApiError(400, 'Doğum tarixi gələcəkdə ola bilməz');
+  }
+
+  let outcome = 'not_found';
+  try {
+    const result = await LabResult.findOne({
+      protocolNo: cleanProtocol,
+      status: 'approved',
+      isPublicVisible: true,
+    });
+
+    if (!result) throw new ApiError(404, VERIFY_GENERIC_NOT_FOUND);
+
+    const matches = cleanMethod === 'fin'
+      ? normalize(result.patientFin) === cleanFin
+      : sameCalendarDate(result.patientBirthDate, cleanBirthDate);
+
+    if (!matches) throw new ApiError(404, VERIFY_GENERIC_NOT_FOUND);
+
+    outcome = 'success';
+
+    const accessToken = jwt.sign(
+      { sub: result._id.toString(), purpose: PDF_TOKEN_PURPOSE },
+      process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+      { expiresIn: PDF_TOKEN_TTL },
+    );
+
+    return {
+      id: result._id,
+      protocolNo: result.protocolNo,
+      patientFullName: result.patientFullName,
+      patientFinMasked: maskFinForApi(result.patientFin),
+      testName: result.testName,
+      testCode: result.testCode,
+      resultDate: result.resultDate,
+      status: result.status,
+      generalConclusion: result.generalConclusion,
+      results: (result.results || []).map((item) => ({
+        parameterName: item.testName,
+        value: item.value,
+        unit: item.unit,
+        referenceRange: item.referenceRange,
+        status: item.status,
+      })),
+      accessToken,
+      accessTokenExpiresIn: PDF_TOKEN_TTL,
+    };
+  } finally {
+    // Safe audit trail — never logs FIN/birthDate, only the protocol + outcome.
+    logger.info(`Lab result verify attempt — method=${cleanMethod} protocol=${cleanProtocol} outcome=${outcome}`);
+  }
+};
+
+// ── Public test-specific result status check (e.g. service test cards) ──
+// Unlike verifyPublicLabResult (generic FIN/birthDate lookup used by the
+// e-netice page), this is scoped to one specific test (via PriceList slug)
+// and reveals whether a matching result exists but isn't approved yet, so
+// the UI can show "in progress" / "pending approval" instead of a flat
+// not-found. It never returns full result data unless status is approved
+// AND isPublicVisible — same security bar as verifyPublicLabResult.
+export const checkTestResultStatus = async ({ fin, protocolNo, testSlug } = {}) => {
+  const cleanProtocol = normalize(protocolNo);
+  const cleanFin = normalize(fin);
+  const cleanTestSlug = trim(testSlug).toLowerCase();
+
+  if (!cleanTestSlug) throw new ApiError(400, 'Test identifikatoru tələb olunur');
+  if (!cleanFin || !NEW_FIN_REGEX.test(cleanFin)) throw new ApiError(400, 'FİN kod 5-8 simvol arası hərf və rəqəmdən ibarət olmalıdır');
+  if (!cleanProtocol) throw new ApiError(400, 'Protokol nömrəsi tələb olunur');
+
+  const expectedTest = await PriceList.findOne({ slug: cleanTestSlug, isActive: true }).select('name serviceCode');
+  if (!expectedTest) throw new ApiError(404, 'Test tapılmadı');
+
+  let outcome = 'not_found';
+  try {
+    const result = await LabResult.findOne({ protocolNo: cleanProtocol });
+
+    const finMatches = result && normalize(result.patientFin) === cleanFin;
+    const testMatches = result && (
+      (expectedTest.serviceCode && normalize(result.testCode) === normalize(expectedTest.serviceCode)) ||
+      normalizeName(result.testName) === normalizeName(expectedTest.name)
+    );
+
+    if (!result || !finMatches || !testMatches || result.status === 'cancelled') {
+      return { state: 'not_found' };
+    }
+
+    if (result.status === 'draft') {
+      outcome = 'in_progress';
+      return { state: 'in_progress' };
+    }
+
+    if (result.status === 'completed' || (result.status === 'approved' && !result.isPublicVisible)) {
+      outcome = 'pending_approval';
+      return { state: 'pending_approval' };
+    }
+
+    outcome = 'success';
+    const accessToken = jwt.sign(
+      { sub: result._id.toString(), purpose: PDF_TOKEN_PURPOSE },
+      process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+      { expiresIn: PDF_TOKEN_TTL },
+    );
+
+    return {
+      state: 'ready',
+      id: result._id,
+      protocolNo: result.protocolNo,
+      patientFullName: result.patientFullName,
+      patientFinMasked: maskFinForApi(result.patientFin),
+      testName: result.testName,
+      testCode: result.testCode,
+      sampleDate: result.sampleDate,
+      resultDate: result.resultDate,
+      status: result.status,
+      generalConclusion: result.generalConclusion,
+      results: (result.results || []).map((item) => ({
+        parameterName: item.testName,
+        value: item.value,
+        unit: item.unit,
+        referenceRange: item.referenceRange,
+        status: item.status,
+      })),
+      accessToken,
+      accessTokenExpiresIn: PDF_TOKEN_TTL,
+    };
+  } finally {
+    logger.info(`Lab result status check — test=${cleanTestSlug} protocol=${cleanProtocol} outcome=${outcome}`);
+  }
+};
+
+export const getResultPdfBuffer = async (id, { accessToken, authUser } = {}) => {
+  requireObjectId(id);
+  const result = await LabResult.findById(id).populate(POP_MANUAL);
+  if (!result) throw new ApiError(404, 'Nəticə tapılmadı');
+
+  const isStaff = authUser && STAFF_ROLES.includes(authUser.role);
+
+  if (!isStaff) {
+    if (!accessToken) throw new ApiError(401, 'Giriş tokeni tələb olunur');
+    let payload;
+    try {
+      payload = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET);
+    } catch (err) {
+      throw new ApiError(401, err.name === 'TokenExpiredError' ? 'Token vaxtı bitib' : 'Etibarsız token');
+    }
+    if (payload.purpose !== PDF_TOKEN_PURPOSE || payload.sub !== String(id)) {
+      throw new ApiError(403, 'Bu nəticə üçün giriş icazəsi yoxdur');
+    }
+    if (result.status !== 'approved' || !result.isPublicVisible) {
+      throw new ApiError(404, 'Nəticə tapılmadı');
+    }
+  }
+
+  const buffer = await createLabResultPDF({
+    patientFullName: result.patientFullName,
+    patientFin: result.patientFin,
+    patientBirthDate: result.patientBirthDate,
+    protocolNo: result.protocolNo,
+    testName: result.testName,
+    testCode: result.testCode,
+    departmentName: result.departmentName,
+    sampleDate: result.sampleDate,
+    resultDate: result.resultDate,
+    doctorName: result.doctorName,
+    results: result.results,
+    generalConclusion: result.generalConclusion,
+    labTechnicianName: displayUserName(result.labTechnicianId),
+    approvedByName: displayUserName(result.approvedBy),
+    approvedAt: result.approvedAt,
+  });
+
+  try {
+    logAction({ userId: authUser?.id, action: 'LAB_RESULT_PDF_DOWNLOAD', resourceType: 'LabResult', resourceId: result._id, description: `PDF generated for ${result.protocolNo}` });
+  } catch (_) {}
+
+  return buffer;
 };
 
 export const uploadResultAttachment = async (id, file, userId) => {

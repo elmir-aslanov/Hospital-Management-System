@@ -27,4 +27,12 @@ router.patch('/results/:id/verify',       authorize('ADMIN','SUPER_ADMIN','DOCTO
 router.patch('/results/:id',              authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN'),                        ctrl.updateResult);
 router.post('/results/:id/attachment',    authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN'), uploadDocument,        ctrl.uploadResultAttachment);
 
+// Manual / standalone certified results (lab tech publishes a verifiable report)
+router.post('/results/manual',            authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN'),                        ctrl.createManualResult);
+router.get('/results/manual',             authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','DOCTOR','BAS_HEKIM'),    ctrl.listManualResults);
+router.get('/results/manual/:id',         authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','DOCTOR','BAS_HEKIM'),    ctrl.getManualResult);
+router.patch('/results/manual/:id',       authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN'),                        ctrl.updateManualResult);
+router.patch('/results/manual/:id/approve', authorize('ADMIN','SUPER_ADMIN','DOCTOR','BAS_HEKIM'),                  ctrl.approveManualResult);
+router.patch('/results/manual/:id/cancel',  authorize('ADMIN','SUPER_ADMIN','LAB_TECHNICIAN','DOCTOR','BAS_HEKIM'), ctrl.cancelManualResult);
+
 export default router;

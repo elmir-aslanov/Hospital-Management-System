@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate }         from 'react-router-dom'
+import { useTranslation }      from 'react-i18next'
 import api from '../../api/axios'
 import { clearAuthStorage } from '../../utils/authSession'
 
@@ -9,6 +10,283 @@ const hdrs  = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'appl
 const TEAL  = '#00848e'
 const NAVY  = '#0a1628'
 const FONT  = "'Source Sans 3', sans-serif"
+
+const MANUAL_STATUS_CFG = {
+  draft:     { label: 'statusDraft',     color: '#64748b', bg: '#f1f5f9' },
+  completed: { label: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
+  approved:  { label: 'statusApproved',  color: '#16a34a', bg: '#f0fdf4' },
+  cancelled: { label: 'statusCancelled', color: '#ef4444', bg: '#fef2f2' },
+}
+const MANUAL_FLAG_CFG = {
+  normal:   { label: 'flagNormal',   color: '#15803d' },
+  low:      { label: 'flagLow',      color: '#c2410c' },
+  high:     { label: 'flagHigh',     color: '#c2410c' },
+  critical: { label: 'flagCritical', color: '#b91c1c' },
+  pending:  { label: 'flagPending',  color: '#64748b' },
+}
+
+const emptyManualItem = () => ({ parameterName: '', value: '', unit: '', referenceRange: '', status: 'normal', note: '' })
+const emptyManualForm = () => ({
+  patientFullName: '', patientFin: '', patientBirthDate: '',
+  testName: '', testCode: '', sampleDate: '', resultDate: '',
+  doctorName: '', departmentName: '',
+  resultItems: [emptyManualItem()],
+  generalConclusion: '',
+})
+
+const manualInputStyle = {
+  width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 11px',
+  fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', background: 'white', fontFamily: FONT,
+}
+const manualLbl = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 5 }
+
+function ManualResultPanel() {
+  const { t } = useTranslation()
+  const [showForm, setShowForm]   = useState(false)
+  const [form, setForm]           = useState(emptyManualForm())
+  const [saving, setSaving]       = useState(false)
+  const [formErr, setFormErr]     = useState('')
+  const [results, setResults]     = useState([])
+  const [loadingList, setLoadingList] = useState(true)
+
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setItem = (i, k, v) => setForm(f => ({ ...f, resultItems: f.resultItems.map((it, idx) => idx === i ? { ...it, [k]: v } : it) }))
+  const addItem = () => setForm(f => ({ ...f, resultItems: [...f.resultItems, emptyManualItem()] }))
+  const removeItem = (i) => setForm(f => ({ ...f, resultItems: f.resultItems.filter((_, idx) => idx !== i) }))
+
+  const loadList = async () => {
+    setLoadingList(true)
+    try {
+      const res = await api.get('/lab/results/manual', { params: { limit: 20 } })
+      setResults(res.data?.data?.results || [])
+    } catch {
+      setResults([])
+    } finally {
+      setLoadingList(false)
+    }
+  }
+
+  useEffect(() => {
+    let isCurrent = true
+    const load = async () => {
+      setLoadingList(true)
+      try {
+        const res = await api.get('/lab/results/manual', { params: { limit: 20 } })
+        if (isCurrent) setResults(res.data?.data?.results || [])
+      } catch {
+        if (isCurrent) setResults([])
+      } finally {
+        if (isCurrent) setLoadingList(false)
+      }
+    }
+    load()
+    return () => { isCurrent = false }
+  }, [])
+
+  const submit = async (status) => {
+    if (!form.patientFullName.trim()) { setFormErr(t('labResult.validationFullName')); return }
+    if (!form.testName.trim())        { setFormErr(t('labResult.validationTestName')); return }
+    setSaving(true); setFormErr('')
+    try {
+      await api.post('/lab/results/manual', { ...form, status })
+      setForm(emptyManualForm())
+      setShowForm(false)
+      loadList()
+    } catch (err) {
+      setFormErr(err.response?.data?.message || 'Xəta baş verdi')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const approve = async (id, isPublicVisible) => {
+    try {
+      await api.patch(`/lab/results/manual/${id}/approve`, { isPublicVisible })
+      loadList()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Xəta baş verdi')
+    }
+  }
+
+  const cancelResult = async (id) => {
+    if (!window.confirm('Bu nəticəni ləğv etmək istəyirsiniz?')) return
+    try {
+      await api.patch(`/lab/results/manual/${id}/cancel`)
+      loadList()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Xəta baş verdi')
+    }
+  }
+
+  const downloadPdf = (id) => {
+    api.get(`/lab-results/${id}/pdf`, { responseType: 'blob' })
+      .then(res => {
+        const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'lab-result.pdf'
+        a.click()
+        window.URL.revokeObjectURL(url)
+      })
+      .catch(() => alert('PDF yüklənmədi'))
+  }
+
+  return (
+    <div style={{ background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', padding: 20, marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm ? 16 : 0 }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: NAVY }}>{t('labResult.newResult')}</h3>
+        <button
+          onClick={() => setShowForm(s => !s)}
+          style={{ border: `1px solid ${TEAL}`, background: showForm ? TEAL : 'white', color: showForm ? 'white' : TEAL, borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+        >
+          {showForm ? '×' : t('labResult.newResult')}
+        </button>
+      </div>
+
+      {showForm && (
+        <div style={{ marginTop: 4 }}>
+          {formErr && <div style={{ background: '#fef2f2', color: '#ef4444', borderRadius: 8, padding: '9px 12px', fontSize: 13, marginBottom: 14 }}>{formErr}</div>}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={manualLbl}>{t('labResult.patientFullName')} *</label>
+              <input style={manualInputStyle} value={form.patientFullName} onChange={e => setF('patientFullName', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.patientFin')}</label>
+              <input style={manualInputStyle} value={form.patientFin} onChange={e => setF('patientFin', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.patientBirthDate')}</label>
+              <input type="date" style={manualInputStyle} value={form.patientBirthDate} onChange={e => setF('patientBirthDate', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.testName')} *</label>
+              <input style={manualInputStyle} value={form.testName} onChange={e => setF('testName', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.testCode')}</label>
+              <input style={manualInputStyle} value={form.testCode} onChange={e => setF('testCode', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.departmentName')}</label>
+              <input style={manualInputStyle} value={form.departmentName} onChange={e => setF('departmentName', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.sampleDate')}</label>
+              <input type="date" style={manualInputStyle} value={form.sampleDate} onChange={e => setF('sampleDate', e.target.value)} />
+            </div>
+            <div>
+              <label style={manualLbl}>{t('labResult.resultDate')}</label>
+              <input type="date" style={manualInputStyle} value={form.resultDate} onChange={e => setF('resultDate', e.target.value)} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={manualLbl}>{t('labResult.doctorName')}</label>
+              <input style={manualInputStyle} value={form.doctorName} onChange={e => setF('doctorName', e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>{t('labResult.parameterName')}</span>
+            <button onClick={addItem} style={{ border: '1px dashed #cbd5e1', background: 'white', color: TEAL, borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+              {t('labResult.addParameter')}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {form.resultItems.map((item, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.8fr 0.6fr 0.9fr 0.8fr 28px', gap: 6, alignItems: 'center' }}>
+                <input placeholder={t('labResult.parameterName')} style={manualInputStyle} value={item.parameterName} onChange={e => setItem(i, 'parameterName', e.target.value)} />
+                <input placeholder={t('labResult.value')} style={manualInputStyle} value={item.value} onChange={e => setItem(i, 'value', e.target.value)} />
+                <input placeholder={t('labResult.unit')} style={manualInputStyle} value={item.unit} onChange={e => setItem(i, 'unit', e.target.value)} />
+                <input placeholder={t('labResult.referenceRange')} style={manualInputStyle} value={item.referenceRange} onChange={e => setItem(i, 'referenceRange', e.target.value)} />
+                <select style={manualInputStyle} value={item.status} onChange={e => setItem(i, 'status', e.target.value)}>
+                  {Object.entries(MANUAL_FLAG_CFG).map(([v, cfg]) => <option key={v} value={v}>{t(`labResult.${cfg.label}`)}</option>)}
+                </select>
+                {form.resultItems.length > 1 && (
+                  <button onClick={() => removeItem(i)} style={{ width: 28, height: 28, border: 'none', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', fontSize: 16 }}>×</button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <label style={manualLbl}>{t('labResult.generalConclusion')}</label>
+            <textarea rows={3} style={{ ...manualInputStyle, resize: 'vertical' }} value={form.generalConclusion} onChange={e => setF('generalConclusion', e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+            <button onClick={() => submit('draft')} disabled={saving}
+              style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', color: '#475569', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+              {saving ? t('labResult.saving') : t('labResult.saveDraft')}
+            </button>
+            <button onClick={() => submit('completed')} disabled={saving}
+              style={{ padding: '9px 20px', border: 'none', borderRadius: 9, background: TEAL, color: 'white', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+              {saving ? t('labResult.saving') : t('labResult.markCompleted')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* List of manually created results */}
+      <div style={{ marginTop: 18, borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+        {loadingList ? (
+          <div style={{ textAlign: 'center', padding: 20, color: '#94a3b8', fontSize: 13 }}>Yüklənir...</div>
+        ) : results.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 20, color: '#94a3b8', fontSize: 13 }}>{t('labResult.noResults')}</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  {[t('labResult.protocolNo'), t('labResult.patient'), t('labResult.testName'), t('labResult.resultDate'), t('labResult.status'), ''].map(h => (
+                    <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {results.map(r => {
+                  const sc = MANUAL_STATUS_CFG[r.status] || MANUAL_STATUS_CFG.draft
+                  return (
+                    <tr key={r._id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                      <td style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: TEAL }}>{r.protocolNo}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: '#334155' }}>{r.patientFullName}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 12, color: '#64748b' }}>{r.testName}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 12, color: '#64748b' }}>{r.resultDate ? new Date(r.resultDate).toLocaleDateString('az-AZ') : '—'}</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20, background: sc.bg, color: sc.color }}>{t(`labResult.${sc.label}`)}</span>
+                      </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {r.status === 'completed' && (
+                            <button onClick={() => approve(r._id, window.confirm('Bu nəticə pasiyentə (E-Nəticə səhifəsində) açıq olsun?'))}
+                              style={{ padding: '4px 9px', border: '1px solid #16a34a', borderRadius: 7, background: 'white', color: '#16a34a', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                              {t('labResult.approve')}
+                            </button>
+                          )}
+                          {['draft', 'completed'].includes(r.status) && (
+                            <button onClick={() => cancelResult(r._id)}
+                              style={{ padding: '4px 9px', border: '1px solid #fee2e2', borderRadius: 7, background: 'white', color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                              {t('labResult.cancel')}
+                            </button>
+                          )}
+                          <button onClick={() => downloadPdf(r._id)}
+                            style={{ padding: '4px 9px', border: '1px solid #e2e8f0', borderRadius: 7, background: 'white', color: '#475569', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                            {t('labResult.downloadPdf')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 const STATUS_CONFIG = {
   pending:          { label: 'Gözləyir',    color: '#f59e0b', bg: '#fefce8' },
@@ -231,6 +509,9 @@ export default function LabTechDashboard() {
             </div>
           ))}
         </div>
+
+        {/* Manual / standalone certified results */}
+        <ManualResultPanel />
 
         {/* Main content */}
         <div className="lab-tech-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(360px, 2fr)', gap: 20, alignItems: 'start' }}>

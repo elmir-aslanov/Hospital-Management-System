@@ -2,6 +2,7 @@ import usePageTitle from '../../hooks/usePageTitle'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import api from '../../api/axios'
+import { BASE } from '../../api/config.js'
 import { fadeUp } from '../../utils/animations'
 
 const FONT = "'Poppins', 'Source Sans 3', 'Raleway', sans-serif"
@@ -21,28 +22,14 @@ const ASSETS = {
   tabib: '/tabibenetice.jpeg',
 }
 
-const START_DATE_HINT = 'Laboratoriya nəticələrinin siyahılanacağı başlanğıc tarixini daxil edin. Tarix aralığı 30 günü keçməməlidir.'
-const END_DATE_HINT = 'Laboratoriya nəticələrinin siyahılanacağı son tarixi daxil edin. Tarix aralığı 30 günü keçməməlidir.'
+const FIN_REGEX = /^[A-Za-z0-9]{5,8}$/
 
-const FIN_REGEX = /^[A-Za-z0-9]{7}$/
-
-const FLAG_LABELS = { normal: 'Normal', low: 'Aşağı', high: 'Yüksək', critical: 'Kritik' }
-const FLAG_COLORS = { normal: '#64748b', low: '#d97706', high: '#d97706', critical: '#dc2626' }
+const FLAG_LABELS = { normal: 'Normal', low: 'Aşağı', high: 'Yüksək', critical: 'Kritik', pending: 'Gözləyir' }
+const FLAG_COLORS = { normal: '#15803d', low: '#c2410c', high: '#c2410c', critical: '#b91c1c', pending: '#64748b' }
+const FLAG_BG     = { normal: '#dcfce7', low: '#ffedd5', high: '#ffedd5', critical: '#fee2e2', pending: '#f1f5f9' }
 
 function Spinner() {
   return <span className="enetice-spinner" aria-hidden="true" />
-}
-
-function getDateRangeError(startDate, endDate) {
-  if (!startDate || !endDate) return ''
-
-  const start = new Date(`${startDate}T00:00:00`)
-  const end = new Date(`${endDate}T00:00:00`)
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return ''
-  if (end < start) return 'Başlanğıc tarix son tarixdən böyük ola bilməz'
-
-  return ''
 }
 
 function formatDate(value) {
@@ -107,20 +94,16 @@ export default function ENeticePage() {
   const [patientId, setPatientId] = useState('')
   const [protocol, setProtocol] = useState('')
   const [dateOfBirth, setDob] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
   const [pending, setPending] = useState(false)
   const [modal, setModal] = useState(null)
-  const [tooltip, setTooltip] = useState(null)
 
-  const dateRangeError = getDateRangeError(startDate, endDate)
   const hasRequiredFields = searchMode === 'fin'
     ? patientId.trim() && protocol.trim()
     : dateOfBirth && protocol.trim()
-  const canSubmit = Boolean(hasRequiredFields) && !dateRangeError && !loading
+  const canSubmit = Boolean(hasRequiredFields) && !loading
 
   const handleSearchModeChange = (mode) => {
     setSearchMode(mode)
@@ -138,38 +121,30 @@ export default function ENeticePage() {
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
         setModal(null)
-        setTooltip(null)
       }
     }
 
-    function handleDocumentClick(event) {
-      const target = event.target
-      const isInsideInfoControl = target instanceof Element && target.closest('[data-info-root]')
-      if (!isInsideInfoControl) setTooltip(null)
-    }
-
     document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('click', handleDocumentClick)
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('click', handleDocumentClick)
     }
   }, [])
 
   const openModal = (type) => {
-    setTooltip(null)
     setModal(type)
   }
 
   const validateForm = () => {
     if (searchMode === 'fin') {
       if (!patientId.trim()) return 'FİN kod daxil edilməlidir'
-      if (!FIN_REGEX.test(patientId.trim())) return 'FİN kod 7 simvoldan ibarət olmalıdır'
+      if (!FIN_REGEX.test(patientId.trim())) return 'FİN kod 5-8 simvol arası hərf və rəqəmdən ibarət olmalıdır'
     }
-    if (searchMode === 'birth' && !dateOfBirth) return 'Doğum tarixi daxil edilməlidir'
+    if (searchMode === 'birth') {
+      if (!dateOfBirth) return 'Doğum tarixi daxil edilməlidir'
+      if (new Date(`${dateOfBirth}T00:00:00`).getTime() > Date.now()) return 'Doğum tarixi gələcəkdə ola bilməz'
+    }
     if (!protocol.trim()) return 'Protokol nömrəsi daxil edilməlidir'
-    if (dateRangeError) return dateRangeError
     return ''
   }
 
@@ -179,13 +154,12 @@ export default function ENeticePage() {
     }
 
     if (searchMode === 'fin') {
-      payload.fin = patientId.trim()
+      payload.method = 'fin'
+      payload.fin = patientId.trim().toUpperCase()
     } else {
+      payload.method = 'birthDate'
       payload.birthDate = dateOfBirth
     }
-
-    if (startDate) payload.startDate = startDate
-    if (endDate) payload.endDate = endDate
 
     return payload
   }
@@ -205,14 +179,10 @@ export default function ENeticePage() {
     setPending(false)
 
     try {
-      const res = await api.post('/lab-results/lookup', buildPayload())
+      const res = await api.post('/lab-results/verify', buildPayload())
       const data = res.data?.data || null
       if (!data) {
-        setError('Məlumatlar uyğun gəlmədi və ya nəticə tapılmadı')
-        return
-      }
-      if (data.status === 'pending') {
-        setPending(true)
+        setError('Nəticə tapılmadı. Məlumatları yoxlayıb yenidən cəhd edin.')
         return
       }
       setResult(data)
@@ -237,8 +207,6 @@ export default function ENeticePage() {
     setPatientId('')
     setProtocol('')
     setDob('')
-    setStartDate('')
-    setEndDate('')
   }
 
   return (
@@ -1156,46 +1124,6 @@ export default function ENeticePage() {
               </div>
             </div>
 
-            <div className="enetice-date-grid">
-              <div className="enetice-field" data-info-root>
-                <div className="enetice-label-row">
-                  <label htmlFor="enetice-start-date">Başlanğıc tarix</label>
-                  <InfoButton
-                    label="Başlanğıc tarix barədə məlumat"
-                    onClick={() => setTooltip((current) => (current === 'start' ? null : 'start'))}
-                  />
-                </div>
-                {tooltip === 'start' && <div className="enetice-tooltip" role="tooltip">{START_DATE_HINT}</div>}
-                <input
-                  id="enetice-start-date"
-                  className="enetice-input"
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                />
-              </div>
-
-              <div className="enetice-field" data-info-root>
-                <div className="enetice-label-row">
-                  <label htmlFor="enetice-end-date">Son tarix</label>
-                  <InfoButton
-                    label="Son tarix barədə məlumat"
-                    onClick={() => setTooltip((current) => (current === 'end' ? null : 'end'))}
-                  />
-                </div>
-                {tooltip === 'end' && <div className="enetice-tooltip" role="tooltip">{END_DATE_HINT}</div>}
-                <input
-                  id="enetice-end-date"
-                  className="enetice-input"
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                />
-              </div>
-            </div>
-
-            {dateRangeError && <div className="enetice-date-error">{dateRangeError}</div>}
-
             <div className="enetice-actions">
               <button className="enetice-submit" type="submit" disabled={!canSubmit}>
                 {loading ? <><Spinner />Yoxlanılır...</> : 'Nəticəni göstər'}
@@ -1226,8 +1154,8 @@ export default function ENeticePage() {
               <div className="enetice-result-card">
                 <div className="enetice-result-header">
                   <div>
-                    <h2 className="enetice-result-name">{result.patientName || 'Pasiyent'}</h2>
-                    <p className="enetice-result-subtitle">Analiz nəticəsi tapıldı</p>
+                    <h2 className="enetice-result-name">{result.patientFullName || 'Pasiyent'}</h2>
+                    <p className="enetice-result-subtitle">{result.testName || 'Analiz nəticəsi tapıldı'}</p>
                   </div>
                   <span className="enetice-result-badge">Hazırdır</span>
                 </div>
@@ -1238,46 +1166,50 @@ export default function ENeticePage() {
                     <div className="enetice-mini-value">{result.protocolNo || '—'}</div>
                   </div>
                   <div className="enetice-mini-card">
-                    <div className="enetice-mini-label">Sifariş tarixi</div>
-                    <div className="enetice-mini-value">{formatDate(result.orderDate)}</div>
+                    <div className="enetice-mini-label">Nəticə tarixi</div>
+                    <div className="enetice-mini-value">{formatDate(result.resultDate)}</div>
                   </div>
                   <div className="enetice-mini-card">
-                    <div className="enetice-mini-label">Tamamlanma tarixi</div>
-                    <div className="enetice-mini-value">{formatDate(result.completedAt)}</div>
-                  </div>
-                  <div className="enetice-mini-card">
-                    <div className="enetice-mini-label">Həkim</div>
-                    <div className="enetice-mini-value">{result.doctorName || '—'}</div>
+                    <div className="enetice-mini-label">Test kodu</div>
+                    <div className="enetice-mini-value">{result.testCode || '—'}</div>
                   </div>
                 </div>
 
-                {Array.isArray(result.tests) && result.tests.length > 0 && (
+                {Array.isArray(result.results) && result.results.length > 0 && (
                   <div className="enetice-result-table">
                     <div className="enetice-result-row is-head">
-                      <span>Test</span>
+                      <span>Parametr</span>
                       <span>Nəticə</span>
                       <span>Vahid</span>
-                      <span>Referans</span>
+                      <span>Referans aralığı</span>
                       <span>Status</span>
                     </div>
-                    {result.tests.map((item, index) => (
-                      <div className="enetice-result-row" key={`${item.testName || 'test'}-${index}`}>
-                        <span className="enetice-result-test">{item.testName || 'Analiz'}</span>
+                    {result.results.map((item, index) => (
+                      <div className="enetice-result-row" key={`${item.parameterName || 'param'}-${index}`}>
+                        <span className="enetice-result-test">{item.parameterName || 'Parametr'}</span>
                         <span>{item.value || '—'}</span>
                         <span>{item.unit || '—'}</span>
                         <span>{item.referenceRange || '—'}</span>
-                        <span style={{ fontWeight: 800, color: FLAG_COLORS[item.flag] || FLAG_COLORS.normal }}>
-                          {FLAG_LABELS[item.flag] || FLAG_LABELS.normal}
+                        <span style={{
+                          fontWeight: 700, padding: '2px 9px', borderRadius: 999, display: 'inline-block',
+                          color: FLAG_COLORS[item.status] || FLAG_COLORS.normal,
+                          background: FLAG_BG[item.status] || FLAG_BG.normal,
+                        }}>
+                          {FLAG_LABELS[item.status] || FLAG_LABELS.normal}
                         </span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {result.summary && <p className="enetice-result-subtitle" style={{ marginTop: 12 }}>{result.summary}</p>}
+                {result.generalConclusion && <p className="enetice-result-subtitle" style={{ marginTop: 12 }}>{result.generalConclusion}</p>}
 
-                {result.resultPdf && (
-                  <a className="enetice-result-link" href={result.resultPdf} target="_blank" rel="noreferrer">
+                {result.id && result.accessToken && (
+                  <a
+                    className="enetice-result-link"
+                    href={`${BASE}/api/v1/lab-results/${result.id}/pdf?accessToken=${encodeURIComponent(result.accessToken)}`}
+                    target="_blank" rel="noreferrer"
+                  >
                     PDF yüklə
                   </a>
                 )}

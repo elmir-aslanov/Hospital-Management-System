@@ -1,7 +1,200 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '../../components/admin/AdminLayout'
+import api from '../../api/axios'
 
 import { BASE } from '../../api/config.js'
+
+const MANUAL_STATUS_CFG = {
+  draft:     { label: 'statusDraft',     bg: '#f1f5f9', color: '#64748b' },
+  completed: { label: 'statusCompleted', bg: '#eff6ff', color: '#2563eb' },
+  approved:  { label: 'statusApproved',  bg: '#f0fdf4', color: '#16a34a' },
+  cancelled: { label: 'statusCancelled', bg: '#fef2f2', color: '#ef4444' },
+}
+
+function ManualResultsTab() {
+  const { t } = useTranslation()
+  const [results, setResults]   = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [search, setSearch]     = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [selected, setSelected] = useState(null)
+
+  const fetchResults = async () => {
+    setLoading(true)
+    try {
+      const params = { limit: 100 }
+      if (search) params.search = search
+      if (filterStatus !== 'all') params.status = filterStatus
+      const res = await api.get('/lab/results/manual', { params })
+      setResults(res.data?.data?.results || [])
+    } catch {
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(fetchResults, 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, filterStatus])
+
+  const approve = async (id) => {
+    const makePublic = window.confirm('Bu nəticə pasiyentə (E-Nəticə səhifəsində) açıq olsun?')
+    try {
+      await api.patch(`/lab/results/manual/${id}/approve`, { isPublicVisible: makePublic })
+      fetchResults()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Xəta baş verdi')
+    }
+  }
+
+  const cancelResult = async (id) => {
+    if (!window.confirm('Bu nəticəni ləğv etmək istəyirsiniz?')) return
+    try {
+      await api.patch(`/lab/results/manual/${id}/cancel`)
+      fetchResults()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Xəta baş verdi')
+    }
+  }
+
+  const downloadPdf = async (id) => {
+    try {
+      const res = await api.get(`/lab-results/${id}/pdf`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'lab-result.pdf'
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      alert('PDF yüklənmədi')
+    }
+  }
+
+  const inp = { width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', background: 'white' }
+
+  return (
+    <div style={{ display: 'flex', gap: 18 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('labResult.search')} style={{ ...inp, flex: 1 }} />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inp, width: 170 }}>
+            <option value="all">{t('labResult.allStatuses')}</option>
+            {Object.entries(MANUAL_STATUS_CFG).map(([k, cfg]) => <option key={k} value={k}>{t(`labResult.${cfg.label}`)}</option>)}
+          </select>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', overflow: 'auto' }}>
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+              <div style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            </div>
+          ) : results.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8', fontSize: 14 }}>{t('labResult.noResults')}</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  {[t('labResult.protocolNo'), t('labResult.patient'), t('labResult.testName'), t('labResult.resultDate'), t('labResult.status'), 'Public', ''].map(h => (
+                    <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {results.map(r => {
+                  const sc = MANUAL_STATUS_CFG[r.status] || MANUAL_STATUS_CFG.draft
+                  const isSel = selected === r._id
+                  return (
+                    <tr key={r._id} onClick={() => setSelected(r._id)}
+                      style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer', background: isSel ? '#f0fafb' : 'white' }}>
+                      <td style={{ padding: '11px 14px', fontSize: 12, fontWeight: 700, color: '#00848e' }}>{r.protocolNo}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 13, color: '#334155' }}>{r.patientFullName}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: '#64748b' }}>{r.testName}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: '#64748b' }}>{r.resultDate ? new Date(r.resultDate).toLocaleDateString('az-AZ') : '—'}</td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: sc.bg, color: sc.color }}>{t(`labResult.${sc.label}`)}</span>
+                      </td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: r.isPublicVisible ? '#16a34a' : '#94a3b8', fontWeight: 600 }}>{r.isPublicVisible ? '✓' : '—'}</td>
+                      <td style={{ padding: '11px 14px' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                          {r.status === 'completed' && (
+                            <button onClick={() => approve(r._id)}
+                              style={{ padding: '4px 9px', border: '1px solid #16a34a', borderRadius: 7, background: 'white', color: '#16a34a', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                              {t('labResult.approve')}
+                            </button>
+                          )}
+                          {['draft', 'completed'].includes(r.status) && (
+                            <button onClick={() => cancelResult(r._id)}
+                              style={{ padding: '4px 9px', border: '1px solid #fee2e2', borderRadius: 7, background: 'white', color: '#ef4444', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                              {t('labResult.cancel')}
+                            </button>
+                          )}
+                          <button onClick={() => downloadPdf(r._id)}
+                            style={{ padding: '4px 9px', border: '1px solid #e2e8f0', borderRadius: 7, background: 'white', color: '#475569', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                            {t('labResult.downloadPdf')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Detail panel */}
+      <div style={{ width: selected ? 320 : 0, transition: 'width 0.25s', overflow: 'hidden', flexShrink: 0 }}>
+        {selected && (() => {
+          const r = results.find(x => x._id === selected)
+          if (!r) return null
+          const sc = MANUAL_STATUS_CFG[r.status] || MANUAL_STATUS_CFG.draft
+          return (
+            <div style={{ width: 320, background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', height: '100%', overflow: 'auto', padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d' }}>{t('labResult.details')}</span>
+                <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
+              </div>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>{r.patientFullName}</p>
+              <p style={{ margin: '4px 0 12px', fontSize: 12, color: '#64748b' }}>{r.protocolNo}</p>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: sc.bg, color: sc.color }}>{t(`labResult.${sc.label}`)}</span>
+
+              <div style={{ marginTop: 14, fontSize: 13, color: '#334155' }}>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.testName')}:</strong> {r.testName || '—'}</p>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.departmentName')}:</strong> {r.departmentName || '—'}</p>
+                <p style={{ margin: '0 0 6px' }}><strong>{t('labResult.doctorName')}:</strong> {r.doctorName || '—'}</p>
+              </div>
+
+              {(r.results || []).length > 0 && (
+                <div style={{ marginTop: 14, background: '#f8fafc', borderRadius: 10, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      {r.results.map((item, i) => (
+                        <tr key={i} style={{ borderTop: i ? '1px solid #f1f5f9' : 'none' }}>
+                          <td style={{ padding: '7px 10px', fontSize: 12, color: '#334155' }}>{item.testName}</td>
+                          <td style={{ padding: '7px 10px', fontSize: 12, fontWeight: 600 }}>{item.value} {item.unit}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {r.generalConclusion && (
+                <p style={{ fontSize: 12, color: '#334155', marginTop: 10, padding: '8px 12px', background: '#f0fdf4', borderRadius: 8 }}>{r.generalConclusion}</p>
+              )}
+            </div>
+          )
+        })()}
+      </div>
+    </div>
+  )
+}
 
 const STATUS_CFG = {
   pending:          { label: 'Gözləyir',      bg: '#f8fafc', color: '#64748b' },
@@ -46,6 +239,7 @@ export default function AdminLab() {
   const token   = localStorage.getItem('adminToken') || localStorage.getItem('token')
   const headers = { Authorization: `Bearer ${token}` }
 
+  const [activeMainTab, setActiveMainTab] = useState('orders')
   const [orders,       setOrders]       = useState([])
   const [summary,      setSummary]      = useState({ byStatus:[], todayOrders:0 })
   const [patients,     setPatients]     = useState([])
@@ -127,7 +321,6 @@ export default function AdminLab() {
       method: 'PATCH', headers: { ...headers, 'Content-Type':'application/json' },
       body: JSON.stringify({ status: newStatus }),
     })
-    const data = await r.json()
     if (r.ok) setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o))
   }
 
@@ -240,13 +433,33 @@ export default function AdminLab() {
           <h1 style={{ margin:0, fontSize:22, fontWeight:700, color:'#0f1b2d' }}>Laboratoriya</h1>
           <p style={{ margin:'4px 0 0', color:'#64748b', fontSize:13 }}>{orders.length} sifariş</p>
         </div>
-        <button onClick={() => { setOrderForm(emptyOrder); setOrderErr(''); setShowOrderModal(true) }}
-          style={{ background:'#00848e', color:'white', border:'none', borderRadius:10, padding:'10px 20px', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Yeni Sifariş
-        </button>
+        {activeMainTab === 'orders' && (
+          <button onClick={() => { setOrderForm(emptyOrder); setOrderErr(''); setShowOrderModal(true) }}
+            style={{ background:'#00848e', color:'white', border:'none', borderRadius:10, padding:'10px 20px', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Yeni Sifariş
+          </button>
+        )}
       </div>
 
+      {/* ── Tabs ───────────────────────────────────────────────── */}
+      <div style={{ display:'flex', gap:6, marginBottom:20 }}>
+        {[['orders', 'Sifarişlər'], ['results', 'Nəticələr']].map(([k, label]) => (
+          <button key={k} onClick={() => setActiveMainTab(k)}
+            style={{ padding:'8px 16px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', border:'1px solid',
+              background:   activeMainTab === k ? '#00848e' : 'white',
+              color:        activeMainTab === k ? 'white'   : '#475569',
+              borderColor:  activeMainTab === k ? '#00848e' : '#e2e8f0',
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeMainTab === 'results' ? (
+        <ManualResultsTab />
+      ) : (
+        <>
       {/* ── Summary cards ───────────────────────────────────────── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:24 }}>
         {[
@@ -463,6 +676,8 @@ export default function AdminLab() {
           )}
         </div>
       </div>
+        </>
+      )}
 
       {/* ════ ADD ORDER MODAL ════════════════════════════════════════ */}
       {showOrderModal && (
