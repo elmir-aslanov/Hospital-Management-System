@@ -30,7 +30,18 @@
     "patientPortal": "Pasiyent Portalı",
     "login": "Daxil olun və ya",
     "register": "Qeydiyyatdan Keçin",
-    "welcome": "Xoş gəldiniz"
+    "welcome": "Xoş gəldiniz",
+    "aiAssistant": "AI köməkçi",
+    "openAiAssistant": "AI köməkçini aç"
+  },
+  "aiChat": {
+    "title": "Aslan Medical AI",
+    "dialogLabel": "Aslan Medical AI söhbəti",
+    "greeting": "Salam! 👋 Aslan Medical Center-ə xoş gəlmisiniz. Həkimlər, şöbələr, randevu və digər məsələlərdə sizə kömək edə bilərəm.",
+    "fallbackError": "Hal-hazırda cavab vermək mümkün olmadı. Zəhmət olmasa bir az sonra yenidən cəhd edin.",
+    "placeholder": "Sualınızı yazın...",
+    "send": "Göndər",
+    "close": "Bağla"
   },
   "hero": {
     "badge": "TİBBİ MƏRKƏZ & MÜAYİNƏ",

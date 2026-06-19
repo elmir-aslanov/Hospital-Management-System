@@ -30,7 +30,18 @@
     "patientPortal": "Patient Portal",
     "login": "Sign in or",
     "register": "Register",
-    "welcome": "Welcome"
+    "welcome": "Welcome",
+    "aiAssistant": "AI Assistant",
+    "openAiAssistant": "Open AI Assistant"
+  },
+  "aiChat": {
+    "title": "Aslan Medical AI",
+    "dialogLabel": "Aslan Medical AI chat",
+    "greeting": "Hello! 👋 Welcome to Aslan Medical Center. I can help you with doctors, departments, appointments, and other questions.",
+    "fallbackError": "I am unable to respond right now. Please try again a little later.",
+    "placeholder": "Type your question...",
+    "send": "Send",
+    "close": "Close"
   },
   "hero": {
     "badge": "MEDICAL CENTER & DIAGNOSTICS",

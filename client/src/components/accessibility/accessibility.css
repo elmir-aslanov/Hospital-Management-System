@@ -204,7 +204,7 @@
   margin: 0;
   color: inherit;
   font-size: 19px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.25;
 }
 
@@ -217,16 +217,16 @@
 }
 
 .aslan-a11y-close {
-  flex: 0 0 46px;
-  width: 46px;
-  height: 46px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   border: 2px solid rgba(255, 255, 255, .85);
   border-radius: 50%;
   background: #073dbd;
   color: #fff;
-  font-size: 23px;
+  font-size: 19px;
   cursor: pointer;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, .28);
 }
@@ -257,19 +257,23 @@
 .aslan-a11y-info-button,
 .aslan-a11y-reset {
   width: 100%;
-  min-height: 56px;
+  min-height: 46px;
   border: 0;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   background: #1455ff;
   color: #fff;
-  font-size: 16px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   box-shadow: 0 7px 18px rgba(20, 85, 255, .16);
+}
+
+.aslan-a11y-info-button {
+  font-size: 15px;
 }
 
 .aslan-a11y-info-icon,
@@ -281,43 +285,43 @@
 }
 
 .aslan-a11y-info-icon {
-  width: 31px;
-  height: 31px;
+  width: 27px;
+  height: 27px;
   background: rgba(3, 43, 148, .55);
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .aslan-a11y-description {
-  margin: 10px 4px 0;
-  padding: 12px 14px;
+  margin: 8px 4px 0;
+  padding: 10px 12px;
   border: 1px solid #d8e2fb;
   border-radius: 12px;
   background: #fff;
   color: #344054;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
 .aslan-a11y-oversized-row {
-  min-height: 64px;
+  min-height: 52px;
   padding: 5px 4px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   color: #101828;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 600;
 }
 
 .aslan-a11y-switch {
   position: relative;
-  flex: 0 0 56px;
-  width: 56px;
-  height: 30px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 30px;
+  border-radius: 24px;
   background: #34466d;
   cursor: pointer;
   transition: background .16s ease;
@@ -325,10 +329,10 @@
 
 .aslan-a11y-switch span {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 22px;
-  height: 22px;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #fff;
   transition: transform .16s ease;
@@ -339,25 +343,25 @@
 }
 
 .aslan-a11y-switch.is-checked span {
-  transform: translateX(26px);
+  transform: translateX(18px);
 }
 
 .aslan-a11y-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 11px;
+  gap: 13px;
 }
 
 .aslan-a11y-card {
   position: relative;
   min-width: 0;
-  min-height: 142px;
-  padding: 22px 10px 14px;
+  min-height: 134px;
+  padding: 17px 12px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   overflow: hidden;
   border: 2px solid transparent;
   border-radius: 16px;
@@ -381,40 +385,44 @@
 }
 
 .aslan-a11y-card-icon {
-  min-height: 38px;
+  min-height: 32px;
   display: grid;
   place-items: center;
   color: #050505;
-  font-size: 34px;
+  font-size: 32px;
   line-height: 1;
 }
 
 .aslan-a11y-letter-icon {
-  font-size: 39px;
-  letter-spacing: 2px;
+  font-size: 32px;
+  letter-spacing: 1px;
 }
 
 .aslan-a11y-dyslexia-icon {
   font-family: Arial, sans-serif !important;
-  font-size: 32px;
+  font-size: 30px;
 }
 
 .aslan-a11y-cursor-icon {
   display: inline-block;
-  font-size: 35px;
+  font-size: 32px;
   transform: rotate(-45deg);
 }
 
 .aslan-a11y-card-label {
-  min-height: 40px;
+  min-height: 36px;
+  max-height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   overflow-wrap: anywhere;
+  hyphens: auto;
   color: #090909;
-  font-size: 15.5px;
-  font-weight: 700;
-  line-height: 1.25;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
 }
 
 .aslan-a11y-card-check {
@@ -441,7 +449,7 @@
 
 .aslan-a11y-progress {
   width: calc(100% - 16px);
-  height: 4px;
+  height: 3px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 3px;
@@ -457,13 +465,13 @@
 }
 
 .aslan-a11y-reset {
-  margin-top: 14px;
+  margin-top: 12px;
   padding: 10px 16px;
   line-height: 1.25;
 }
 
 .aslan-a11y-placement {
-  margin-top: 18px;
+  margin-top: 16px;
   border-radius: 16px;
   background: #fff;
   overflow: hidden;
@@ -471,32 +479,32 @@
 
 .aslan-a11y-placement-toggle {
   width: 100%;
-  min-height: 68px;
-  padding: 10px 14px 10px 8px;
+  min-height: 58px;
+  padding: 8px 14px 8px 8px;
   display: grid;
-  grid-template-columns: 42px 1fr 24px;
+  grid-template-columns: 36px 1fr 22px;
   align-items: center;
   gap: 9px;
   border: 0;
   background: #fff;
   color: #101828;
   text-align: left;
-  font-size: 15.5px;
-  font-weight: 720;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .aslan-a11y-settings-icon {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   background: #1455ff;
   color: #fff;
-  font-size: 19px;
+  font-size: 16px;
 }
 
 .aslan-a11y-chevron {
   justify-self: center;
-  font-size: 24px;
+  font-size: 20px;
   transform: rotate(0);
   transition: transform .16s ease;
 }
@@ -506,12 +514,12 @@
 }
 
 .aslan-a11y-placement-options {
-  padding: 0 24px 16px;
+  padding: 0 20px 14px;
 }
 
 .aslan-a11y-placement-options button {
   width: 100%;
-  min-height: 51px;
+  min-height: 44px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -520,7 +528,7 @@
   border-top: 1px solid #d9dfeb;
   background: #fff;
   color: #1d2939;
-  font-size: 15px;
+  font-size: 13.5px;
   cursor: pointer;
 }
 
@@ -717,12 +725,12 @@ body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a):focus-visible::afte
   }
 
   .aslan-a11y-panel-header {
-    min-height: 64px;
+    min-height: 68px;
     padding-left: 17px;
   }
 
   .aslan-a11y-panel-header h2 {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .aslan-a11y-panel-scroll {
@@ -730,7 +738,7 @@ body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a):focus-visible::afte
   }
 
   .aslan-a11y-card {
-    min-height: 137px;
+    min-height: 134px;
     padding-inline: 8px;
   }
 
@@ -739,8 +747,13 @@ body.aslan-a11y-tooltips a[aria-label]:not(.aslan-a11y-ui a):focus-visible::afte
   }
 }
 
-@media (max-width: 340px) {
+@media (max-width: 420px) {
   .aslan-a11y-grid {
     grid-template-columns: 1fr;
+  }
+
+  .aslan-a11y-card {
+    min-height: 130px;
+    padding-inline: 16px;
   }
 }

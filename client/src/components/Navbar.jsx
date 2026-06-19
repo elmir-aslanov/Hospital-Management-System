@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { Sparkles } from 'lucide-react';
 import { useExternalLink } from '../hooks/useExternalLink';
 import ExternalLinkModal from './ui/ExternalLinkModal';
 import { useAuth } from '../context/AuthContext';
@@ -514,6 +515,22 @@ export default function Navbar() {
 
           {/* 3. Right button group */}
           <div className="mid-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('aslan:open-ai-chat'))}
+              className="nav-ai-btn"
+              aria-label={t('header.aiAssistant')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                fontSize: '14px', fontWeight: 600, fontFamily: FONT,
+                color: 'var(--aslan-ai-blue)', border: '1.5px solid var(--aslan-ai-blue)', cursor: 'pointer',
+                background: '#ffffff', padding: '8px 18px',
+                borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0,
+                marginRight: '10px', transition: 'background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s',
+              }}
+            >
+              <Sparkles size={16} className="nav-ai-btn-icon" style={{ transition: 'transform 0.2s' }} />
+              {t('header.aiAssistant')}
+            </button>
             <button onClick={() => navigate('/e-netice')} style={{
               fontSize: '14px', fontWeight: 600, fontFamily: FONT,
               color: '#ffffff', border: 'none', cursor: 'pointer',
@@ -546,6 +563,23 @@ export default function Navbar() {
               >{label}</button>
             ))}
           </div>
+
+          {/* AI assistant — circular icon button, mobile only */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('aslan:open-ai-chat'))}
+            className="nav-ai-mobile-btn"
+            title={t('header.openAiAssistant')}
+            aria-label={t('header.openAiAssistant')}
+            style={{
+              display: 'none', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px', borderRadius: '50%',
+              border: '1.5px solid var(--aslan-ai-blue)', background: '#ffffff', color: 'var(--aslan-ai-blue)',
+              cursor: 'pointer', padding: 0, flexShrink: 0, marginRight: '4px',
+              transition: 'background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s',
+            }}
+          >
+            <Sparkles size={16} />
+          </button>
 
           {/* Hamburger — mobile only */}
           <button onClick={() => setMobileOpen(o => !o)} className="nav-hamburger"
@@ -1030,6 +1064,23 @@ export default function Navbar() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        .nav-ai-btn:hover {
+          background: var(--aslan-ai-blue-soft) !important;
+          border-color: var(--aslan-ai-blue-dark) !important;
+          color: var(--aslan-ai-blue-dark) !important;
+          box-shadow: 0 2px 8px var(--aslan-ai-blue-ring);
+        }
+        .nav-ai-btn:hover .nav-ai-btn-icon { transform: scale(1.05); }
+        .nav-ai-mobile-btn:hover {
+          background: var(--aslan-ai-blue-soft) !important;
+          border-color: var(--aslan-ai-blue-dark) !important;
+          color: var(--aslan-ai-blue-dark) !important;
+        }
+        .nav-ai-btn:focus-visible,
+        .nav-ai-mobile-btn:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px var(--aslan-ai-blue-ring);
+        }
         @media (max-width: 768px) {
           .site-header { top: 0 !important; margin-top: 0 !important; }
           .top-bar     { display: none !important; padding: 0 !important; }
@@ -1037,6 +1088,7 @@ export default function Navbar() {
           .mid-actions { display: none !important; }
           .mid-login   { display: none !important; }
           .nav-hamburger { display: flex !important; }
+          .nav-ai-mobile-btn { display: flex !important; }
           .nav-layer3  { display: none !important; }
           .mid-bar     { overflow: hidden; }
           .mid-bar > div { height: 60px !important; padding: 0 16px !important; }

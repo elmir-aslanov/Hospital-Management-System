@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+:root {
+  --aslan-ai-blue: #1455ff;
+  --aslan-ai-blue-dark: #0d43d6;
+  --aslan-ai-blue-soft: #eef4ff;
+  --aslan-ai-blue-disabled: #a9c2ff;
+  --aslan-ai-blue-ring: rgba(20, 85, 255, 0.24);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
