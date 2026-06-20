@@ -15,3 +15,8 @@ export const validateDischargePatient = [
   body('dischargeDate').optional()
     .isISO8601().withMessage('dischargeDate must be a valid date'),
 ];
+
+export const validateTransferPatient = [
+  body('bedId').notEmpty().withMessage('bedId is required')
+    .isMongoId().withMessage('bedId must be a valid ObjectId'),
+];

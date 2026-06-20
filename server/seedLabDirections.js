@@ -1,7 +1,7 @@
 /**
- * Idempotent seed — 6 laboratory direction service records.
+ * Idempotent seed — active laboratory direction service records.
  * Run: node server/seedLabDirections.js   (from inside server/ dir)
- * Safe to re-run: uses $setOnInsert + upsert, never deletes.
+ * Safe to re-run: upserts approved directions and removes retired directions.
  * Also deactivates the two older generic lab records.
  */
 import dns      from 'dns';
@@ -16,6 +16,13 @@ import Service from './models/Service.model.js';
 const DEACTIVATE_SLUGS = [
   'umumi-qan-analizi',
   'biokimyevi-analizler',
+];
+
+const RETIRED_SLUGS = [
+  'digital-patologiya',
+  'derman-monitorinqi',
+  'flow',
+  'hematologiya',
 ];
 
 const SERVICES = [
@@ -41,50 +48,6 @@ const SERVICES = [
     order:          2,
     isActive:       true,
   },
-  {
-    name:           'Digital Patologiya',
-    slug:           'digital-patologiya',
-    category:       'pathology',
-    iconKey:        'microscope',
-    description:    'Rəqəmsal patologiya və histoloji analiz xidmətləri.',
-    resultDuration: '3-5 iş günü',
-    department:     'Laboratoriya',
-    order:          3,
-    isActive:       true,
-  },
-  {
-    name:           'Dərman monitorinqi',
-    slug:           'derman-monitorinqi',
-    category:       'pharmacology',
-    iconKey:        'pill',
-    description:    'Dərman səviyyələrinin və effektivliyinin monitorinqi.',
-    resultDuration: '1-2 iş günü',
-    department:     'Laboratoriya',
-    order:          4,
-    isActive:       true,
-  },
-  {
-    name:           'FLOW',
-    slug:           'flow',
-    category:       'cytometry',
-    iconKey:        'cells',
-    description:    'Axın sitometriyası ilə hüceyrə analizi.',
-    resultDuration: '2-3 iş günü',
-    department:     'Laboratoriya',
-    order:          5,
-    isActive:       true,
-  },
-  {
-    name:           'Hematologiya',
-    slug:           'hematologiya',
-    category:       'hematology',
-    iconKey:        'blood-tube',
-    description:    'Qan hüceyrələrinin və hematoloji göstəricilərin analizi.',
-    resultDuration: '1 iş günü',
-    department:     'Laboratoriya',
-    order:          6,
-    isActive:       true,
-  },
 ];
 
 const run = async () => {
@@ -95,6 +58,9 @@ const run = async () => {
     await mongoose.connect(uri);
     console.log('✅ MongoDB connected\n');
 
+    const retired = await Service.deleteMany({ slug: { $in: RETIRED_SLUGS } });
+    console.log(`🗑  Removed ${retired.deletedCount} retired direction record(s)\n`);
+
     // Deactivate old generic records
     const deact = await Service.updateMany(
       { slug: { $in: DEACTIVATE_SLUGS } },
@@ -102,7 +68,7 @@ const run = async () => {
     );
     console.log(`⏹  Deactivated ${deact.modifiedCount} old record(s)\n`);
 
-    // Upsert 6 lab direction records
+    // Upsert approved lab direction records
     let created = 0;
     let skipped = 0;
     for (const svc of SERVICES) {

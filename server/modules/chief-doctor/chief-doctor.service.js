@@ -170,21 +170,29 @@ export const documents = async (query) => {
 export const reviewDocument = async (kind,id,{action,reason},userId,req) => {
   const Model=documentModels[kind]; if(!Model) throw new ApiError(400,'Invalid document type');
   const doc=await Model.findById(id); if(!doc) throw new ApiError(404,'Document not found');
-  if(doc.approvalStatus!=='submitted') throw new ApiError(400,'Only submitted document can be reviewed');
-  if(action==='return' && !reason?.trim()) throw new ApiError(400,'Reason is required');
-  doc.approvalStatus=action==='approve'?'approved':'returned'; doc.approvedBy=action==='approve'?userId:null; doc.approvedAt=action==='approve'?new Date():null; doc.returnReason=action==='return'?reason.trim():'';
+
+  if (action === 'archive') {
+    if (doc.approvalStatus !== 'approved') throw new ApiError(400, 'Only an approved document can be archived');
+    doc.approvalStatus = 'archived';
+    doc.archivedAt = new Date();
+    doc.archivedBy = userId;
+  } else {
+    if(doc.approvalStatus!=='submitted') throw new ApiError(400,'Only submitted document can be reviewed');
+    if(action==='return' && !reason?.trim()) throw new ApiError(400,'Reason is required');
+    doc.approvalStatus=action==='approve'?'approved':'returned'; doc.approvedBy=action==='approve'?userId:null; doc.approvedAt=action==='approve'?new Date():null; doc.returnReason=action==='return'?reason.trim():'';
+  }
   await doc.save();
   const doctorRef = kind==='ehr' ? doc.doctorId : kind==='discharge' ? doc.dischargingDoctor : doc.doctorId;
   if (doctorRef) {
     const doctor = await Doctor.findById(doctorRef).select('userId');
     if (doctor?.userId) await createNotification({
       userId:doctor.userId,
-      title:action==='approve'?'Tibbi sənəd təsdiqləndi':'Tibbi sənəd geri qaytarıldı',
-      message:action==='approve'?'Sənəd Baş həkim tərəfindən təsdiqləndi.':reason.trim(),
+      title:action==='approve'?'Tibbi sənəd təsdiqləndi':action==='archive'?'Tibbi sənəd arxivləşdirildi':'Tibbi sənəd geri qaytarıldı',
+      message:action==='approve'?'Sənəd Baş həkim tərəfindən təsdiqləndi.':action==='archive'?'Sənəd arxivləşdirildi.':reason.trim(),
       type:'general', link:'/bas-hekim/tibbi-senedler',
     });
   }
-  const actionName=action==='approve'?'CHIEF_DOCUMENT_APPROVE':'CHIEF_DOCUMENT_RETURN';
+  const actionName=action==='approve'?'CHIEF_DOCUMENT_APPROVE':action==='archive'?'CHIEF_DOCUMENT_ARCHIVE':'CHIEF_DOCUMENT_RETURN';
   logAction({userId,action:actionName,resourceType:Model.modelName,resourceId:doc._id,description:`${Model.modelName} ${action}`,req,metadata:{reason:doc.returnReason}});
   return doc;
 };

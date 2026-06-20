@@ -6,7 +6,9 @@ const workScheduleSchema = new mongoose.Schema(
     dayOfWeek: { type: Number, required: true, min: 0, max: 6 },
     startTime: { type: String, required: true },   // "HH:MM"
     endTime: { type: String, required: true },     // "HH:MM"
-    slotDuration: { type: Number, default: 30 },  // minutes
+    breakStartTime: { type: String, default: '' }, // "HH:MM" — optional
+    breakEndTime: { type: String, default: '' },   // "HH:MM" — optional
+    slotDuration: { type: Number, default: 30, enum: [15, 20, 30, 45, 60] },
     isOff: { type: Boolean, default: false },
   },
   { timestamps: true }

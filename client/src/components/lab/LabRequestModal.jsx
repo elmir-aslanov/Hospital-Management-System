@@ -135,8 +135,9 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   const [existingCardNumber, setExistingCardNumber] = useState('');
   const [lookupStatus, setLookupStatus] = useState('idle'); // idle | checking | found | error
   const [maskedName, setMaskedName] = useState('');
-  const [newPatient, setNewPatient] = useState({ firstName: '', lastName: '', fin: '', birthDate: '', phone: '', email: '' });
+  const [newPatient, setNewPatient] = useState({ firstName: '', lastName: '', fin: '', birthDate: '', phone: '', email: '', password: '', confirmPassword: '' });
   const [step2Errors, setStep2Errors] = useState({});
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Step 3
   const [branchName, setBranchName] = useState('');
@@ -150,14 +151,18 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
   const [dateOptions, setDateOptions] = useState(getDefaultDateOptions);
 
   useEffect(() => {
-    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (showTermsModal) { setShowTermsModal(false); return; }
+      onClose();
+    };
     document.addEventListener('keydown', onKeyDown);
     const triggerEl = triggerRef?.current;
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       triggerEl?.focus?.();
     };
-  }, [onClose, triggerRef]);
+  }, [onClose, triggerRef, showTermsModal]);
 
   const redirectToLogin = () => {
     onClose();
@@ -325,7 +330,11 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
       if (!newPatient.fin.trim() || !FIN_RX.test(newPatient.fin.trim())) errs.fin = t('labRequest.finInvalid');
       if (!newPatient.birthDate) errs.birthDate = t('labRequest.birthDateRequired');
       if (!newPatient.phone.trim() || !PHONE_RX.test(newPatient.phone.trim())) errs.phone = t('labRequest.phoneInvalid');
-      if (newPatient.email.trim() && !EMAIL_RX.test(newPatient.email.trim())) errs.email = t('labRequest.emailInvalid');
+      if (!newPatient.email.trim()) errs.email = t('labRequest.emailRequired');
+      else if (!EMAIL_RX.test(newPatient.email.trim())) errs.email = t('labRequest.emailInvalid');
+      if (!newPatient.password) errs.password = t('labRequest.passwordRequired');
+      else if (newPatient.password.length < 6) errs.password = t('labRequest.passwordTooShort');
+      if (newPatient.password && newPatient.confirmPassword !== newPatient.password) errs.confirmPassword = t('labRequest.passwordMismatch');
     }
     setStep2Errors(errs);
     return Object.keys(errs).length === 0;
@@ -440,16 +449,23 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
           birthDate: newPatient.birthDate,
           phone:     newPatient.phone.trim(),
           email:     newPatient.email.trim(),
+          password:  newPatient.password,
+          confirmPassword: newPatient.confirmPassword,
         };
       }
       const res = await api.post('/lab-results/requests', payload);
-      setSuccessData(res.data?.data || null);
+      const data = res.data?.data || null;
+      setSuccessData(data);
+      if (data?.accountCreated) toast.success(t('labRequest.accountCreated'));
     } catch (err) {
       const status = err.response?.status;
       const code = err.response?.data?.code;
       const backendMessage = err.response?.data?.message;
       const message =
         code === 'LAB_REQUEST_ALREADY_EXISTS' ? t('labRequest.alreadyExists')
+        : code === 'FIN_ALREADY_EXISTS' ? t('labRequest.finAlreadyExists')
+        : code === 'EMAIL_ALREADY_EXISTS' ? t('labRequest.emailAlreadyExists')
+        : code === 'PHONE_ALREADY_EXISTS' ? t('labRequest.phoneAlreadyExists')
         : backendMessage === 'Düzgün tarix seçin.' ? t('labRequest.invalidDate')
         : patientType === 'existing' && status === 401 ? t('labRequest.step2.loginRequiredText')
         : patientType === 'existing' && status === 404 ? t('labRequest.step2.profileNotFoundText')
@@ -457,6 +473,7 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
         : backendMessage || t('labRequest.genericError');
       setSubmitError(message);
       toast.error(message);
+      if (['FIN_ALREADY_EXISTS', 'EMAIL_ALREADY_EXISTS', 'PHONE_ALREADY_EXISTS'].includes(code)) setStep(2);
     } finally {
       submitLockRef.current = false;
       setSubmitting(false);
@@ -559,7 +576,16 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer', fontSize: 12.5, color: '#334155', lineHeight: 1.5 }}>
                   <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setAgreeError(''); }}
                     style={{ width: 14, height: 14, marginTop: 2, accentColor: TEAL, cursor: 'pointer', flexShrink: 0 }} />
-                  <span>{t('labRequest.step1.agreementCheckbox')}</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title={t('labRequest.step1.clickToViewTerms')}
+                    onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowTermsModal(true); } }}
+                    style={{ textDecoration: 'underline', textDecorationStyle: 'dotted', cursor: 'pointer' }}
+                  >
+                    {t('labRequest.step1.agreementCheckbox')}
+                  </span>
                 </label>
                 {agreeError && <div style={errStyle}>{agreeError}</div>}
               </div>
@@ -655,10 +681,22 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
                       {step2Errors.phone && <div style={errStyle}>{step2Errors.phone}</div>}
                     </div>
                     <div>
-                      <label style={labelStyle}>{t('labRequest.step2.emailLabel')}</label>
+                      <label style={labelStyle}>{t('labRequest.step2.emailLabel')} *</label>
                       <input type="email" value={newPatient.email}
                         onChange={(e) => setNewPatient((f) => ({ ...f, email: e.target.value }))} style={inputStyle} />
                       {step2Errors.email && <div style={errStyle}>{step2Errors.email}</div>}
+                    </div>
+                    <div>
+                      <label style={labelStyle}>{t('labRequest.step2.passwordLabel')} *</label>
+                      <input type="password" autoComplete="new-password" value={newPatient.password}
+                        onChange={(e) => setNewPatient((f) => ({ ...f, password: e.target.value }))} style={inputStyle} />
+                      {step2Errors.password && <div style={errStyle}>{step2Errors.password}</div>}
+                    </div>
+                    <div>
+                      <label style={labelStyle}>{t('labRequest.step2.confirmPasswordLabel')} *</label>
+                      <input type="password" autoComplete="new-password" value={newPatient.confirmPassword}
+                        onChange={(e) => setNewPatient((f) => ({ ...f, confirmPassword: e.target.value }))} style={inputStyle} />
+                      {step2Errors.confirmPassword && <div style={errStyle}>{step2Errors.confirmPassword}</div>}
                     </div>
                   </div>
                 )}
@@ -773,6 +811,75 @@ export default function LabRequestModal({ test, onClose, triggerRef }) {
           </form>
         )}
       </div>
+
+      {showTermsModal && (
+        <div className="hsm-overlay" style={{ zIndex: 1200 }} onClick={(e) => { if (e.target === e.currentTarget) setShowTermsModal(false); }}>
+          <div className="hsm-dialog" role="dialog" aria-modal="true" style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: NAVY, fontFamily: "'Raleway', sans-serif" }}>
+                {t('labRequest.step1.termsModalTitle')}
+              </h3>
+              <button type="button" onClick={() => setShowTermsModal(false)} aria-label={t('labRequest.closeButton')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 22, lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontFamily: FONT }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: NAVY, margin: 0 }}>{test.name}</p>
+              {test.shortDescription && (
+                <p style={{ fontSize: 13, color: '#334155', margin: 0, lineHeight: 1.6 }}>{test.shortDescription}</p>
+              )}
+
+              <dl style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', margin: 0 }}>
+                {tech.sampleType && (
+                  <div>
+                    <dt style={{ fontSize: 11.5, color: MUTED, margin: '0 0 2px' }}>{t('labRequest.step1.sampleTypeLabel')}</dt>
+                    <dd style={{ fontSize: 13, fontWeight: 600, color: NAVY, margin: 0 }}>{tech.sampleType}</dd>
+                  </div>
+                )}
+                {tech.turnaround && (
+                  <div>
+                    <dt style={{ fontSize: 11.5, color: MUTED, margin: '0 0 2px' }}>{t('labRequest.step1.turnaroundLabel')}</dt>
+                    <dd style={{ fontSize: 13, fontWeight: 600, color: NAVY, margin: 0 }}>{tech.turnaround}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt style={{ fontSize: 11.5, color: MUTED, margin: '0 0 2px' }}>{t('labRequest.step1.priceLabel')}</dt>
+                  <dd style={{ fontSize: 13, fontWeight: 600, color: NAVY, margin: 0 }}>{fmtPrice(test.price)} {test.currency || 'AZN'}</dd>
+                </div>
+              </dl>
+
+              {tech.preparation && (
+                <div>
+                  <p style={{ fontSize: 11.5, color: MUTED, margin: '0 0 2px' }}>{t('labRequest.step1.preparationLabel')}</p>
+                  <p style={{ fontSize: 13, color: '#334155', margin: 0, lineHeight: 1.6 }}>{tech.preparation}</p>
+                </div>
+              )}
+
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', fontSize: 12.5, color: '#475569', lineHeight: 1.6 }}>
+                {t('labRequest.step1.clinicVisitNotice')}
+              </div>
+
+              {tech.additionalNotes && (
+                <div>
+                  <p style={{ fontSize: 11.5, color: MUTED, margin: '0 0 2px' }}>{t('labRequest.step1.additionalNotesLabel')}</p>
+                  <p style={{ fontSize: 13, color: '#334155', margin: 0, lineHeight: 1.6 }}>{tech.additionalNotes}</p>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+              <button type="button" onClick={() => setShowTermsModal(false)}
+                style={{ padding: '9px 18px', borderRadius: 9, border: '1px solid #e2e8f0', background: 'white', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {t('labRequest.closeButton')}
+              </button>
+              <button type="button" onClick={() => { setAgreed(true); setAgreeError(''); setShowTermsModal(false); }}
+                style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: TEAL, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                {t('labRequest.step1.agreeButton')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .hsm-overlay {

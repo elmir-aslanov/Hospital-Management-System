@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 
@@ -56,7 +55,6 @@ function StoryCard({ story, gridStyle, animDelay }) {
 }
 
 export default function PatientStories({ stories = defaultStories }) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { isMobile, isTablet } = useBreakpoint();
 
@@ -68,8 +66,6 @@ export default function PatientStories({ stories = defaultStories }) {
   const overline      = t('patientStories.overline');
   const title         = t('patientStories.title1');
   const titleHighlight= t('patientStories.title2');
-
-  const px = isMobile ? 16 : isTablet ? 24 : 32;
 
   return (
     <div style={{
@@ -150,18 +146,29 @@ export default function PatientStories({ stories = defaultStories }) {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
+          style={{ minWidth: 0, maxWidth: '100%' }}
         >
           <p style={{
             fontSize: '11px', letterSpacing: '3px',
             color: '#00848e', fontWeight: 700,
             textTransform: 'uppercase', marginBottom: '14px',
+            maxWidth: '100%', overflowWrap: 'break-word',
+            wordBreak: 'normal', hyphens: 'auto',
           }}>
             {overline}
           </p>
 
-          <h2 style={{ lineHeight: 1.2, marginBottom: 0 }}>
-            <span style={{ color: '#0a1628', fontWeight: 800, fontSize: '40px' }}>{title} </span>
-            <span style={{ color: '#00848e', fontWeight: 800, fontSize: '40px' }}>{titleHighlight}</span>
+          <h2 style={{
+            lineHeight: 1.2,
+            marginBottom: 0,
+            fontSize: isMobile ? 'clamp(30px, 9vw, 36px)' : isTablet ? '36px' : '40px',
+            maxWidth: '100%',
+            overflowWrap: 'break-word',
+            wordBreak: 'normal',
+            hyphens: 'auto',
+          }}>
+            <span style={{ color: '#0a1628', fontWeight: 800 }}>{title} </span>
+            <span style={{ color: '#00848e', fontWeight: 800 }}>{titleHighlight}</span>
           </h2>
 
           <div style={{
@@ -174,6 +181,8 @@ export default function PatientStories({ stories = defaultStories }) {
             fontSize: '18px', color: '#4a5568',
             lineHeight: 1.8, marginBottom: '28px',
             fontStyle: 'italic',
+            maxWidth: '100%', overflowWrap: 'break-word',
+            wordBreak: 'normal', hyphens: 'auto',
           }}>
             {t('patientStories.quote')}
           </p>

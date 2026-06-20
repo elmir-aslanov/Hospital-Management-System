@@ -4,6 +4,14 @@ import bcrypt from 'bcryptjs';
 
 const SAFE_SELECT = '-password -refreshToken';
 
+// ADMIN must never be able to create, promote to, edit, deactivate, or
+// delete a SUPER_ADMIN account — only SUPER_ADMIN can act on SUPER_ADMIN.
+const assertNotEscalating = (requesterRole, targetRole) => {
+  if (targetRole === 'SUPER_ADMIN' && requesterRole !== 'SUPER_ADMIN') {
+    throw new ApiError(403, 'Only SUPER_ADMIN can perform this action on a SUPER_ADMIN account');
+  }
+};
+
 const paginate = (page = 1, limit = 10) => {
   const pg  = Math.max(1, parseInt(page));
   const lim = Math.min(100, Math.max(1, parseInt(limit)));
@@ -45,9 +53,11 @@ export const getUserById = async (id) => {
   return user;
 };
 
-export const updateUser = async (id, data) => {
+export const updateUser = async (id, data, requesterRole) => {
   const existing = await User.findById(id);
   if (!existing) throw new ApiError(404, 'User not found');
+  assertNotEscalating(requesterRole, existing.role);
+  if (data.role !== undefined) assertNotEscalating(requesterRole, data.role);
 
   if (data.name !== undefined || data.surname !== undefined) {
     const n = data.name    ?? existing.name    ?? '';
@@ -64,26 +74,30 @@ export const updateUser = async (id, data) => {
   return existing;
 };
 
-export const toggleUserActive = async (targetUserId, requestingUserId) => {
+export const toggleUserActive = async (targetUserId, requestingUserId, requesterRole) => {
   if (String(targetUserId) === String(requestingUserId)) {
     throw new ApiError(400, 'You cannot deactivate your own account');
   }
   const user = await User.findById(targetUserId).select(SAFE_SELECT);
   if (!user) throw new ApiError(404, 'User not found');
+  assertNotEscalating(requesterRole, user.role);
   user.isActive = !user.isActive;
   await user.save({ validateBeforeSave: false });
   return user;
 };
 
-export const deactivateUser = async (id) => {
+export const deactivateUser = async (id, requesterRole) => {
+  const existing = await User.findById(id).select('role');
+  if (!existing) throw new ApiError(404, 'User not found');
+  assertNotEscalating(requesterRole, existing.role);
   const user = await User.findByIdAndUpdate(id, { isActive: false }, { new: true }).select(SAFE_SELECT);
-  if (!user) throw new ApiError(404, 'User not found');
   return user;
 };
 
-export const createUser = async (data) => {
+export const createUser = async (data, requesterRole) => {
   const { name, surname, email, password, role, ...rest } = data;
   if (!email || !password || !role) throw new ApiError(400, 'Email, şifrə və rol məcburidir');
+  assertNotEscalating(requesterRole, role);
   const exists = await User.findOne({ email: email.toLowerCase() });
   if (exists) throw new ApiError(409, 'Bu email artıq istifadə olunur');
   // fullName is synced in pre-save hook; set it now so legacy readers work immediately
@@ -94,8 +108,10 @@ export const createUser = async (data) => {
   return User.findById(user._id).select(SAFE_SELECT);
 };
 
-export const deleteUser = async (id) => {
+export const deleteUser = async (id, requesterRole) => {
+  const existing = await User.findById(id).select('role');
+  if (!existing) throw new ApiError(404, 'User not found');
+  assertNotEscalating(requesterRole, existing.role);
   const user = await User.findByIdAndDelete(id);
-  if (!user) throw new ApiError(404, 'User not found');
   return user;
 };

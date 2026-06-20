@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import Doctor from '../../models/Doctor.model.js';
 import User from '../../models/User.model.js';
 import WorkSchedule from '../../models/WorkSchedule.model.js';
-import Appointment from '../../models/Appointment.model.js';
 import Department from '../../models/Department.model.js';
 import ApiError from '../../utils/ApiError.js';
 import logger from '../../utils/logger.js';
@@ -23,12 +22,51 @@ export const getPublicDoctors = async (limit = 8) => {
     .lean();
 };
 
-export const getAllPublicDoctors = async () => {
-  return Doctor.find({ isActive: true })
+// Mirrors appointments.service.js DEFAULT_HOURS day map — a doctor with no
+// WorkSchedule rows at all follows clinic defaults (Mon–Sat, Sun closed).
+const DEFAULT_AVAILABLE_DAYS = new Set([1, 2, 3, 4, 5, 6]);
+
+export const getAllPublicDoctors = async ({ search, departmentId, day, isActive } = {}) => {
+  const filter = { isActive: isActive === undefined ? true : isActive === 'true' || isActive === true };
+  if (departmentId) filter.departmentId = departmentId;
+  if (search) {
+    const userIds = await User.find({ fullName: new RegExp(search, 'i') }).distinct('_id');
+    filter.$or = [
+      { userId: { $in: userIds } },
+      { specialization: new RegExp(search, 'i') },
+    ];
+  }
+
+  const doctors = await Doctor.find(filter)
     .populate('userId', POPULATE_USER)
     .populate(POPULATE_DEPT)
     .sort({ order: 1, createdAt: -1 })
     .lean();
+
+  // Single bulk schedule query — avoids an N+1 lookup per doctor.
+  const schedules = await WorkSchedule.find({ doctorId: { $in: doctors.map((d) => d._id) } })
+    .select('doctorId dayOfWeek isOff');
+  const hasSchedule = new Set();
+  const availableDaysByDoctor = {};
+  for (const s of schedules) {
+    const key = String(s.doctorId);
+    hasSchedule.add(key);
+    if (!s.isOff) (availableDaysByDoctor[key] ||= new Set()).add(s.dayOfWeek);
+  }
+  const isAvailableOn = (doctorId, dow) => {
+    const key = String(doctorId);
+    return hasSchedule.has(key) ? (availableDaysByDoctor[key]?.has(dow) || false) : DEFAULT_AVAILABLE_DAYS.has(dow);
+  };
+
+  const todayDow = new Date().getDay();
+  let result = doctors.map((d) => ({ ...d, availableToday: isAvailableOn(d._id, todayDow) }));
+
+  if (day !== undefined && day !== null && day !== '') {
+    const dow = Number(day);
+    result = result.filter((d) => isAvailableOn(d._id, dow));
+  }
+
+  return result;
 };
 
 // Public-safe doctor profile — only fields the public detail page is allowed to see
@@ -97,27 +135,6 @@ const deleteDoctorImage = async (publicId) => {
   } catch (err) {
     logger.error(`Doctor image delete failed (${publicId}): ${err.message}`);
   }
-};
-
-const timeToMinutes = (time) => {
-  const [h, m] = time.split(':').map(Number);
-  return h * 60 + m;
-};
-
-const minutesToTime = (minutes) => {
-  const h = Math.floor(minutes / 60).toString().padStart(2, '0');
-  const m = (minutes % 60).toString().padStart(2, '0');
-  return `${h}:${m}`;
-};
-
-const generateTimeSlots = (startTime, endTime, slotDuration) => {
-  const start = timeToMinutes(startTime);
-  const end = timeToMinutes(endTime);
-  const slots = [];
-  for (let t = start; t + slotDuration <= end; t += slotDuration) {
-    slots.push(minutesToTime(t));
-  }
-  return slots;
 };
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -277,14 +294,45 @@ export const getDoctorSchedule = async (doctorId) => {
   return WorkSchedule.find({ doctorId }).sort({ dayOfWeek: 1 });
 };
 
+// Days with at least one working (non-off) entry are required — otherwise the
+// doctor would have no bookable day at all.
+const TIME_RE = /^\d{2}:\d{2}$/;
+
+const validateScheduleArray = (scheduleArray) => {
+  if (!scheduleArray.some((d) => !d.isOff)) {
+    throw new ApiError(400, 'At least one working day is required');
+  }
+  for (const day of scheduleArray) {
+    if (day.isOff) continue;
+    if (day.endTime <= day.startTime) {
+      throw new ApiError(400, `End time must be after start time (day ${day.dayOfWeek})`);
+    }
+    const hasBreak = day.breakStartTime && day.breakEndTime;
+    if (hasBreak) {
+      if (day.breakEndTime <= day.breakStartTime) {
+        throw new ApiError(400, `Break end time must be after break start time (day ${day.dayOfWeek})`);
+      }
+      if (day.breakStartTime < day.startTime || day.breakEndTime > day.endTime) {
+        throw new ApiError(400, `Break time must be inside working hours (day ${day.dayOfWeek})`);
+      }
+    }
+  }
+};
+
 export const updateDoctorSchedule = async (doctorId, scheduleArray) => {
   const doctor = await Doctor.findById(doctorId);
   if (!doctor) throw new ApiError(404, 'Doctor not found');
 
-  const ops = scheduleArray.map(({ dayOfWeek, startTime, endTime, slotDuration, isOff }) =>
+  validateScheduleArray(scheduleArray);
+
+  const ops = scheduleArray.map(({ dayOfWeek, startTime, endTime, breakStartTime, breakEndTime, slotDuration, isOff }) =>
     WorkSchedule.findOneAndUpdate(
       { doctorId, dayOfWeek },
-      { doctorId, dayOfWeek, startTime, endTime, slotDuration, isOff },
+      {
+        doctorId, dayOfWeek, startTime, endTime, slotDuration, isOff,
+        breakStartTime: breakStartTime || '',
+        breakEndTime:   breakEndTime || '',
+      },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     )
   );
@@ -295,47 +343,30 @@ export const updateDoctorSchedule = async (doctorId, scheduleArray) => {
 
 // ─── Availability ─────────────────────────────────────────────────────────────
 
+// Delegates to appointments.service.js's getPublicSlots — the single source of
+// truth for slot computation (UTC day handling, past-time buffer, break time,
+// ACTIVE_APPOINTMENT_STATUSES) — instead of keeping a second, divergent copy of
+// the same logic here. Response is reshaped to preserve this route's existing
+// (currently unused by any frontend) contract.
 export const getDoctorAvailability = async (doctorId, dateStr) => {
-  if (!dateStr) throw new ApiError(400, 'date query parameter is required (YYYY-MM-DD)');
+  const doctor = await Doctor.findById(doctorId);
+  if (!doctor) throw new ApiError(404, 'Doctor not found');
 
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) throw new ApiError(400, 'Invalid date format. Use YYYY-MM-DD');
+  const { getPublicSlots } = await import('../appointments/appointments.service.js');
+  const result = await getPublicSlots(doctorId, dateStr);
 
-  const dayOfWeek = date.getDay();
-
-  const schedule = await WorkSchedule.findOne({ doctorId, dayOfWeek });
-  if (!schedule || schedule.isOff) {
-    return { available: false, slots: [], reason: schedule ? 'Day off' : 'No schedule set' };
-  }
-
-  // Get all booked appointments for this doctor on this date
-  const dayStart = new Date(dateStr);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(dateStr);
-  dayEnd.setHours(23, 59, 59, 999);
-
-  const bookedAppointments = await Appointment.find({
-    doctorId,
-    date: { $gte: dayStart, $lte: dayEnd },
-    status: { $nin: ['cancelled', 'missed', 'no_show'] },
-  }).select('startTime endTime');
-
-  const bookedStartTimes = new Set(bookedAppointments.map((a) => a.startTime));
-
-  const allSlots = generateTimeSlots(schedule.startTime, schedule.endTime, schedule.slotDuration);
-
-  const slots = allSlots.map((time) => ({
-    time,
-    available: !bookedStartTimes.has(time),
-  }));
+  const date = new Date(`${dateStr}T12:00:00.000Z`);
+  const dayOfWeek = Number.isNaN(date.getTime()) ? null : date.getUTCDay();
+  const schedule = dayOfWeek !== null ? await WorkSchedule.findOne({ doctorId, dayOfWeek }) : null;
 
   return {
-    available: true,
-    date: dateStr,
+    available: result.available,
+    date: result.date,
     dayOfWeek,
-    workHours: { start: schedule.startTime, end: schedule.endTime },
-    slotDuration: schedule.slotDuration,
-    slots,
+    reason: result.reason,
+    workHours: schedule ? { start: schedule.startTime, end: schedule.endTime } : null,
+    slotDuration: schedule?.slotDuration ?? null,
+    slots: result.slots,
   };
 };
 

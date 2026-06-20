@@ -37,13 +37,14 @@ export default function PartnersCarousel() {
         fontFamily: FONT,
       }}
     >
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1100, minWidth: 0, margin: '0 auto', padding: '0 24px' }}>
 
         {/* heading */}
         <p style={{
           textAlign: 'center', fontSize: 11, fontWeight: 700,
           color: '#94a3b8', letterSpacing: '0.14em',
           textTransform: 'uppercase', margin: '0 0 20px',
+          overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'auto',
         }}>
           {t('partners.title')}
         </p>

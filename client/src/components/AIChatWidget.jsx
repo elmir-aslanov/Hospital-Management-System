@@ -3,61 +3,14 @@ import { Sparkles, X, Send, Square, RotateCcw, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
-import { API_URL } from '../api/config'
 import { useBreakpoint } from '../hooks/useBreakpoint'
 
 const AI_BLUE = 'var(--aslan-ai-blue)'
 const NAVY   = '#0a1628'
 const BORDER = '#E2E8F0'
 const FONT   = "'Source Sans 3', sans-serif"
+const MAX_MESSAGE_LENGTH = 2000
 const SAFE_ACTION_PATHS = ['/hekimler', '/randevu', '/services', '/departments']
-
-const parseEventBlock = (block) => {
-  const lines = block.split(/\r?\n/)
-  const event = lines.find((line) => line.startsWith('event:'))?.slice(6).trim()
-  const data = lines.filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n')
-  if (!event || !data) return null
-  try {
-    return { event, data: JSON.parse(data) }
-  } catch {
-    return null
-  }
-}
-
-const streamChat = async ({ payload, signal, onEvent }) => {
-  const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
-  const response = await fetch(`${API_URL}/ai/chat`, {
-    method: 'POST',
-    credentials: 'include',
-    signal,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'text/event-stream',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok || !response.body) {
-    const error = new Error('AI request failed')
-    error.code = response.status === 429 ? 'AI_RATE_LIMITED' : 'AI_UNAVAILABLE'
-    throw error
-  }
-
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const blocks = buffer.split(/\r?\n\r?\n/)
-    buffer = blocks.pop() || ''
-    blocks.forEach((block) => {
-      const parsed = parseEventBlock(block)
-      if (parsed) onEvent(parsed.event, parsed.data)
-    })
-  }
-}
 
 function TypingIndicator() {
   return (
@@ -91,6 +44,7 @@ export default function AIChatWidget() {
   const [lastFailedMessage, setLastFailedMessage] = useState('')
   const listRef = useRef(null)
   const abortRef = useRef(null)
+  const sendingRef = useRef(false)
   const shouldAutoScrollRef = useRef(true)
 
   useEffect(() => {
@@ -111,7 +65,20 @@ export default function AIChatWidget() {
 
   const send = async (overrideText) => {
     const text = String(overrideText ?? input).trim()
-    if (!text || sending) return
+    if (!text || sendingRef.current) return
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: t('aiChat.errors.AI_MESSAGE_TOO_LONG'),
+          error: true,
+        },
+      ])
+      setLastFailedMessage('')
+      return
+    }
 
     const assistantId = crypto.randomUUID()
     setMessages((current) => [
@@ -120,6 +87,7 @@ export default function AIChatWidget() {
       { id: assistantId, role: 'assistant', content: '', streaming: true, actions: [] },
     ])
     setInput('')
+    sendingRef.current = true
     setSending(true)
     setLastFailedMessage('')
     shouldAutoScrollRef.current = true
@@ -127,37 +95,42 @@ export default function AIChatWidget() {
     abortRef.current = controller
 
     try {
-      await streamChat({
-        signal: controller.signal,
-        payload: {
+      const response = await api.post(
+        '/ai/chat',
+        {
           message: text,
           conversationId: conversationId || undefined,
           locale: ['az', 'en', 'ru'].includes(i18n.language) ? i18n.language : i18n.language?.split('-')[0],
           pageContext: { pathname: window.location.pathname },
         },
-        onEvent: (event, data) => {
-          if (event === 'meta') setConversationId(data.conversationId)
-          if (event === 'delta') {
-            setMessages((current) => current.map((message) =>
-              message.id === assistantId
-                ? { ...message, content: `${message.content}${data.text || ''}` }
-                : message))
-          }
-          if (event === 'done') {
-            setMessages((current) => current.map((message) =>
-              message.id === assistantId
-                ? { ...message, streaming: false, actions: data.actions || [] }
-                : message))
-          }
-          if (event === 'error') {
-            const error = new Error(data.code || 'AI_UNAVAILABLE')
-            error.code = data.code
-            throw error
-          }
+        {
+          signal: controller.signal,
+          silentNetworkError: true,
         },
-      })
+      )
+      const data = response.data?.data
+      if (!data?.response) {
+        const invalidResponseError = new Error('Invalid AI response')
+        invalidResponseError.code = 'AI_UNAVAILABLE'
+        throw invalidResponseError
+      }
+      setConversationId(data.conversationId || '')
+      setMessages((current) => current.map((message) =>
+        message.id === assistantId
+          ? {
+              ...message,
+              content: data.response,
+              streaming: false,
+              actions: Array.isArray(data.actions) ? data.actions : [],
+            }
+          : message))
     } catch (error) {
-      const wasStopped = error.name === 'AbortError'
+      const wasStopped = error.name === 'CanceledError'
+        || error.code === 'ERR_CANCELED'
+        || error.name === 'AbortError'
+      const errorCode = error.response?.data?.code
+        || error.code
+        || (error.response?.status === 429 ? 'AI_RATE_LIMITED' : 'AI_UNAVAILABLE')
       setLastFailedMessage(wasStopped ? '' : text)
       setMessages((current) => current.map((message) =>
         message.id === assistantId
@@ -165,12 +138,13 @@ export default function AIChatWidget() {
               ...message,
               streaming: false,
               error: !wasStopped,
-              content: message.content || (wasStopped ? t('aiChat.stopped') : t(`aiChat.errors.${error.code}`, {
+              content: message.content || (wasStopped ? t('aiChat.stopped') : t(`aiChat.errors.${errorCode}`, {
                 defaultValue: t('aiChat.fallbackError'),
               })),
             }
           : message))
     } finally {
+      sendingRef.current = false
       setSending(false)
       abortRef.current = null
     }
@@ -187,6 +161,7 @@ export default function AIChatWidget() {
 
   const startNewConversation = async () => {
     abortRef.current?.abort()
+    sendingRef.current = false
     if (conversationId) {
       try {
         await api.post('/ai/chat/reset', { conversationId })
@@ -349,8 +324,9 @@ export default function AIChatWidget() {
                 rows={1}
                 className="ai-chat-input"
                 value={input}
-                onChange={(e) => setInput(e.target.value.slice(0, 2000))}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
+                maxLength={MAX_MESSAGE_LENGTH + 1}
                 placeholder={t('aiChat.placeholder')}
                 style={{
                   flex: 1, border: `1px solid ${BORDER}`, borderRadius: '18px',

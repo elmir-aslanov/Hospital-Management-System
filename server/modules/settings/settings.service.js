@@ -13,6 +13,12 @@ const DEFAULTS = {
   social_facebook:  { value: 'https://facebook.com',          group: 'social', label: 'Facebook' },
   social_youtube:   { value: 'https://youtube.com',           group: 'social', label: 'YouTube' },
   social_whatsapp:  { value: 'https://wa.me/994508363694',    group: 'social', label: 'WhatsApp' },
+  clinic_logo:                  { value: '',     group: 'clinic',      label: 'Loqo URL' },
+  appointment_rules:            { value: '',     group: 'appointment', label: 'Randevu qaydaları' },
+  default_appointment_duration: { value: 30,     group: 'appointment', label: 'Standart randevu müddəti (dəq)' },
+  enetice_help_text:            { value: '',     group: 'enetice',     label: 'E-Nəticə kömək mətni' },
+  maintenance_mode:             { value: false,  group: 'system',      label: 'Texniki xidmət rejimi' },
+  public_registration_enabled:  { value: true,   group: 'system',      label: 'Açıq qeydiyyat aktivdir' },
 };
 
 export const getSettings = async (group) => {

@@ -2,6 +2,8 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import ApiError from '../../utils/ApiError.js';
 import Patient from '../../models/Patient.model.js';
+import Doctor from '../../models/Doctor.model.js';
+import Appointment from '../../models/Appointment.model.js';
 import * as patientsService from './patients.service.js';
 
 const ensurePatientOwnership = (req, patient) => {
@@ -11,6 +13,18 @@ const ensurePatientOwnership = (req, patient) => {
   if (!ownerId || String(ownerId) !== String(req.user.id)) {
     throw new ApiError(403, 'Forbidden: patient record does not belong to you');
   }
+};
+
+// A DOCTOR may only view the full clinical timeline of a patient they have
+// actually treated — mirrors the same Appointment-based check used for
+// EHR/consent forms. ADMIN/SUPER_ADMIN/BAS_HEKIM/NURSE/RECEPTIONIST are
+// unrestricted (RECEPTIONIST is further source-limited inside the service).
+const ensureDoctorTreatedPatient = async (req, patientId) => {
+  if (req.user.role !== 'DOCTOR') return;
+  const doctor = await Doctor.findOne({ userId: req.user.id }).select('_id');
+  if (!doctor) throw new ApiError(404, 'Doctor profile not found for this user');
+  const hasAppointment = await Appointment.exists({ doctorId: doctor._id, patientId });
+  if (!hasAppointment) throw new ApiError(403, 'Bu pasiyent sizə aid deyil');
 };
 
 export const createPatient = asyncHandler(async (req, res) => {
@@ -72,4 +86,13 @@ export const getPatientByUserId = asyncHandler(async (req, res) => {
     .lean();
   if (!patient) throw new ApiError(404, 'Pasiyent profili tapılmadı.');
   res.json(new ApiResponse(200, { patient }, 'Uğurla alındı.'));
+});
+
+export const getPatientTimeline = asyncHandler(async (req, res) => {
+  await ensureDoctorTreatedPatient(req, req.params.patientId);
+  const { type, source, dateFrom, dateTo, page, limit } = req.query;
+  const result = await patientsService.getPatientTimeline(req.params.patientId, {
+    type, source, dateFrom, dateTo, page, limit, viewerRole: req.user.role,
+  });
+  res.json(new ApiResponse(200, result));
 });

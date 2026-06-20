@@ -190,12 +190,16 @@ function TabPassword() {
 /* ════════════════════════════════════════════════════════════════
    TAB 3 — Sistem
 ════════════════════════════════════════════════════════════════ */
-const CLINIC_DEF = { name: '', address: '', phone: '', email: '', website: '', workHours: '08:00 - 20:00' }
+const CLINIC_DEF = { name: '', address: '', phone: '', email: '', website: '', workHours: '08:00 - 20:00', logo: '' }
+const OPS_DEF = { appointmentRules: '', defaultAppointmentDuration: 30, eneticeHelpText: '', maintenanceMode: false, publicRegistrationEnabled: true }
 
 function TabSystem() {
   const [form,           setForm]           = useState(CLINIC_DEF)
+  const [ops,             setOps]             = useState(OPS_DEF)
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [settingsSaved,   setSettingsSaved]   = useState(false)
+  const [opsLoading,      setOpsLoading]      = useState(false)
+  const [opsSaved,        setOpsSaved]        = useState(false)
 
   useEffect(() => {
     fetch(`${BASE}/api/v1/settings?group=clinic`)
@@ -209,6 +213,23 @@ function TabSystem() {
           email:     s.clinic_email   || '',
           website:   s.clinic_website || '',
           workHours: s.work_hours     || '08:00 - 20:00',
+          logo:      s.clinic_logo    || '',
+        })
+      })
+      .catch(() => {})
+
+    Promise.all([
+      fetch(`${BASE}/api/v1/settings?group=appointment`).then(r => r.json()),
+      fetch(`${BASE}/api/v1/settings?group=enetice`).then(r => r.json()),
+      fetch(`${BASE}/api/v1/settings?group=system`).then(r => r.json()),
+    ])
+      .then(([appt, enetice, sys]) => {
+        setOps({
+          appointmentRules:           appt.data?.appointment_rules ?? '',
+          defaultAppointmentDuration: appt.data?.default_appointment_duration ?? 30,
+          eneticeHelpText:            enetice.data?.enetice_help_text ?? '',
+          maintenanceMode:            sys.data?.maintenance_mode ?? false,
+          publicRegistrationEnabled:  sys.data?.public_registration_enabled ?? true,
         })
       })
       .catch(() => {})
@@ -226,6 +247,7 @@ function TabSystem() {
         clinic_email:   form.email,
         clinic_website: form.website,
         work_hours:     form.workHours,
+        clinic_logo:    form.logo,
       }),
     })
       .then(r => r.json())
@@ -234,44 +256,103 @@ function TabSystem() {
       .finally(() => setSettingsLoading(false))
   }
 
-  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const saveOpsSettings = () => {
+    setOpsLoading(true)
+    fetch(`${BASE}/api/v1/settings`, {
+      method: 'PUT',
+      headers: hdrs(),
+      body: JSON.stringify({
+        appointment_rules:            ops.appointmentRules,
+        default_appointment_duration: Number(ops.defaultAppointmentDuration) || 30,
+        enetice_help_text:            ops.eneticeHelpText,
+        maintenance_mode:             ops.maintenanceMode,
+        public_registration_enabled:  ops.publicRegistrationEnabled,
+      }),
+    })
+      .then(r => r.json())
+      .then(() => { setOpsSaved(true); setTimeout(() => setOpsSaved(false), 3000) })
+      .catch(() => {})
+      .finally(() => setOpsLoading(false))
+  }
+
+  const setF  = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setOp = (k, v) => setOps(o => ({ ...o, [k]: v }))
 
   return (
-    <div style={card}>
-      <h2 style={{ margin: '0 0 22px', fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>Klinik Məlumatlar</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div style={{ gridColumn: '1/-1' }}>
-          <label style={lbl}>Klinik adı</label>
-          <input style={inp} value={form.name} onChange={e => setF('name', e.target.value)} placeholder="Aslan Medical Center" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={card}>
+        <h2 style={{ margin: '0 0 22px', fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>Klinik Məlumatlar</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={lbl}>Klinik adı</label>
+            <input style={inp} value={form.name} onChange={e => setF('name', e.target.value)} placeholder="Aslan Medical Center" />
+          </div>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={lbl}>Loqo URL</label>
+            <input style={inp} value={form.logo} onChange={e => setF('logo', e.target.value)} placeholder="https://.../logo.png" />
+          </div>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={lbl}>Ünvan</label>
+            <input style={inp} value={form.address} onChange={e => setF('address', e.target.value)} placeholder="Bakı, Xətai r., Afiyəddin Cəlilov küçəsi" />
+          </div>
+          <div>
+            <label style={lbl}>Telefon</label>
+            <input style={inp} value={form.phone} onChange={e => setF('phone', e.target.value)} placeholder="+994 50 836 36 94" />
+          </div>
+          <div>
+            <label style={lbl}>E-poçt</label>
+            <input style={inp} value={form.email} onChange={e => setF('email', e.target.value)} placeholder="info@aslanmedical.az" />
+          </div>
+          <div>
+            <label style={lbl}>Veb sayt</label>
+            <input style={inp} value={form.website} onChange={e => setF('website', e.target.value)} placeholder="https://aslanmedical.az" />
+          </div>
+          <div>
+            <label style={lbl}>İş saatları</label>
+            <input style={inp} value={form.workHours} onChange={e => setF('workHours', e.target.value)} placeholder="08:00 - 20:00" />
+          </div>
         </div>
-        <div style={{ gridColumn: '1/-1' }}>
-          <label style={lbl}>Ünvan</label>
-          <input style={inp} value={form.address} onChange={e => setF('address', e.target.value)} placeholder="Bakı, Xətai r., Afiyəddin Cəlilov küçəsi" />
-        </div>
-        <div>
-          <label style={lbl}>Telefon</label>
-          <input style={inp} value={form.phone} onChange={e => setF('phone', e.target.value)} placeholder="+994 50 836 36 94" />
-        </div>
-        <div>
-          <label style={lbl}>E-poçt</label>
-          <input style={inp} value={form.email} onChange={e => setF('email', e.target.value)} placeholder="info@aslanmedical.az" />
-        </div>
-        <div>
-          <label style={lbl}>Veb sayt</label>
-          <input style={inp} value={form.website} onChange={e => setF('website', e.target.value)} placeholder="https://aslanmedical.az" />
-        </div>
-        <div>
-          <label style={lbl}>İş saatları</label>
-          <input style={inp} value={form.workHours} onChange={e => setF('workHours', e.target.value)} placeholder="08:00 - 20:00" />
-        </div>
+        <button
+          onClick={saveClinicSettings}
+          disabled={settingsLoading}
+          style={{ padding: '10px 24px', background: settingsSaved ? '#16a34a' : TEAL, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: settingsLoading ? 'not-allowed' : 'pointer', opacity: settingsLoading ? 0.7 : 1, transition: 'background 0.3s', marginTop: 20 }}
+        >
+          {settingsLoading ? 'Saxlanır...' : settingsSaved ? '✓ Saxlandı' : 'Yadda saxla'}
+        </button>
       </div>
-      <button
-        onClick={saveClinicSettings}
-        disabled={settingsLoading}
-        style={{ padding: '10px 24px', background: settingsSaved ? '#16a34a' : TEAL, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: settingsLoading ? 'not-allowed' : 'pointer', opacity: settingsLoading ? 0.7 : 1, transition: 'background 0.3s', marginTop: 20 }}
-      >
-        {settingsLoading ? 'Saxlanır...' : settingsSaved ? '✓ Saxlandı' : 'Yadda saxla'}
-      </button>
+
+      <div style={card}>
+        <h2 style={{ margin: '0 0 22px', fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>Randevu və E-Nəticə Ayarları</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={lbl}>Randevu qaydaları</label>
+            <textarea rows={3} style={{ ...inp, resize: 'vertical' }} value={ops.appointmentRules} onChange={e => setOp('appointmentRules', e.target.value)} placeholder="Randevu götürmə qaydaları, ləğv siyasəti..." />
+          </div>
+          <div>
+            <label style={lbl}>Standart randevu müddəti (dəq)</label>
+            <input type="number" min="5" step="5" style={inp} value={ops.defaultAppointmentDuration} onChange={e => setOp('defaultAppointmentDuration', e.target.value)} />
+          </div>
+          <div style={{ gridColumn: '1/-1' }}>
+            <label style={lbl}>E-Nəticə kömək mətni</label>
+            <textarea rows={3} style={{ ...inp, resize: 'vertical' }} value={ops.eneticeHelpText} onChange={e => setOp('eneticeHelpText', e.target.value)} placeholder="E-Nəticə səhifəsində göstəriləcək izahat mətni" />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gridColumn: '1/-1', padding: '10px 0', borderTop: '1px solid #f1f5f9' }}>
+            <span style={{ fontSize: 13, color: '#334155' }}>Texniki xidmət rejimi</span>
+            <Toggle checked={ops.maintenanceMode} onChange={() => setOp('maintenanceMode', !ops.maintenanceMode)} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gridColumn: '1/-1', padding: '10px 0' }}>
+            <span style={{ fontSize: 13, color: '#334155' }}>Açıq qeydiyyat aktivdir</span>
+            <Toggle checked={ops.publicRegistrationEnabled} onChange={() => setOp('publicRegistrationEnabled', !ops.publicRegistrationEnabled)} />
+          </div>
+        </div>
+        <button
+          onClick={saveOpsSettings}
+          disabled={opsLoading}
+          style={{ padding: '10px 24px', background: opsSaved ? '#16a34a' : TEAL, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: opsLoading ? 'not-allowed' : 'pointer', opacity: opsLoading ? 0.7 : 1, transition: 'background 0.3s', marginTop: 20 }}
+        >
+          {opsLoading ? 'Saxlanır...' : opsSaved ? '✓ Saxlandı' : 'Yadda saxla'}
+        </button>
+      </div>
     </div>
   )
 }

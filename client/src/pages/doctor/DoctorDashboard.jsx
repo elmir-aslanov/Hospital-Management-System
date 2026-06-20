@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import DoctorLayout from '../../components/doctor/DoctorLayout'
 import { C, Badge, Spinner, Avatar } from '../../components/doctor/DoctorUI'
 import { BASE } from '../../api/config.js'
+import api from '../../api/axios'
+import { showError, getErrorMessage } from '../../utils/alert'
 
 const TABS = ['Analizlər', 'Reseptlər', 'Tarix']
 
@@ -17,35 +20,48 @@ function formatDate(str) {
 }
 
 // ── Patient detail panel (right) ─────────────────────────────────────────────
-function PatientPanel({ doctor, patient, onClose, token }) {
+function PatientPanel({ patient, onClose, token, onCreatePrescription }) {
+  const { t } = useTranslation()
   const [tab, setTab]               = useState('Analizlər')
   const [analyses, setAnalyses]     = useState([])
   const [prescripts, setPrescripts] = useState([])
   const [history, setHistory]       = useState([])
-  const [showForm, setShowForm]     = useState(false)
-  const [form, setForm]             = useState({ medicine: '', dose: '', duration: '', note: '' })
-  const [submitting, setSubmitting] = useState(false)
-  const [msg, setMsg]               = useState('')
+  const [prescriptionError, setPrescriptionError] = useState(false)
 
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   const patId   = patient?._id
 
   useEffect(() => {
     if (!patId) return
-    setAnalyses([]); setPrescripts([]); setHistory([]); setMsg('')
+    let active = true
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
     fetch(`${BASE}/api/v1/doctor/patients/${patId}/analyses`, { headers })
-      .then(r => r.json()).then(d => setAnalyses(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []))
-      .catch(() => {})
+      .then(r => r.json()).then(d => {
+        if (active) setAnalyses(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : [])
+      })
+      .catch(() => {
+        // Keep the empty analyses state.
+      })
 
-    fetch(`${BASE}/api/v1/doctor/patients/${patId}/prescriptions`, { headers })
-      .then(r => r.json()).then(d => setPrescripts(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []))
-      .catch(() => {})
+    api.get(`/prescriptions/patient/${patId}`, { params: { limit: 100 } })
+      .then(({ data }) => {
+        if (!active) return
+        setPrescripts(data.data?.prescriptions || [])
+        setPrescriptionError(false)
+      })
+      .catch(() => {
+        if (active) setPrescriptionError(true)
+      })
 
     fetch(`${BASE}/api/v1/appointments?patientId=${patId}&limit=20`, { headers })
-      .then(r => r.json()).then(d => setHistory(Array.isArray(d) ? d : d.appointments || d.data || []))
-      .catch(() => {})
-  }, [patId])
+      .then(r => r.json()).then(d => {
+        if (active) setHistory(Array.isArray(d) ? d : d.appointments || d.data || [])
+      })
+      .catch(() => {
+        // Keep the empty history state.
+      })
+    return () => { active = false }
+  }, [patId, token])
 
   // Escape key
   useEffect(() => {
@@ -53,29 +69,6 @@ function PatientPanel({ doctor, patient, onClose, token }) {
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
   }, [onClose])
-
-  const handlePrescribe = async e => {
-    e.preventDefault()
-    if (!form.medicine.trim() || !form.dose.trim() || !form.duration.trim()) {
-      setMsg('Bütün məcburi sahələri doldurun'); return
-    }
-    setSubmitting(true); setMsg('')
-    try {
-      const res = await fetch(`${BASE}/api/v1/doctor/prescriptions`, {
-        method: 'POST', headers,
-        body: JSON.stringify({ patientId: patId, medicine: form.medicine, dose: form.dose, duration: form.duration, note: form.note }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Xəta baş verdi')
-      setMsg('success')
-      setShowForm(false)
-      setForm({ medicine: '', dose: '', duration: '', note: '' })
-      fetch(`${BASE}/api/v1/doctor/patients/${patId}/prescriptions`, { headers })
-        .then(r => r.json()).then(d => setPrescripts(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []))
-        .catch(() => {})
-    } catch (err) { setMsg(err.message) }
-    finally { setSubmitting(false) }
-  }
 
   if (!patient) {
     return (
@@ -95,11 +88,6 @@ function PatientPanel({ doctor, patient, onClose, token }) {
 
   const name  = patient.userId?.fullName || patient.fullName || 'Naməlum'
   const phone = patient.userId?.phone    || patient.phone    || '—'
-
-  const inp = {
-    width: '100%', padding: '8px 10px', fontSize: 12,
-    border: `1px solid ${C.border}`, borderRadius: 7, outline: 'none', boxSizing: 'border-box',
-  }
 
   return (
     <div>
@@ -142,37 +130,29 @@ function PatientPanel({ doctor, patient, onClose, token }) {
       {/* Tab: Prescriptions */}
       {tab === 'Reseptlər' && (
         <div>
-          {msg === 'success' && <p style={{ fontSize: 12, color: '#16a34a', marginBottom: 8 }}>Resept yazıldı</p>}
-          {msg && msg !== 'success' && <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>{msg}</p>}
-          {prescripts.length === 0
-            ? <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '8px 0' }}>Resept yoxdur</p>
+          {prescriptionError
+            ? <p style={{ fontSize: 13, color: '#ef4444', textAlign: 'center', padding: '8px 0' }}>{t('prescription.loadError')}</p>
+            : prescripts.length === 0
+            ? <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '8px 0' }}>{t('prescription.empty')}</p>
             : prescripts.map((p, i) => (
               <div key={i} style={{ padding: '9px 11px', background: '#f8fafc', borderRadius: 7, marginBottom: 7 }}>
                 {p.medications?.map((m, j) => (
-                  <p key={j} style={{ fontWeight: 600, fontSize: 13, color: C.navy, margin: '0 0 2px' }}>{m.name} – {m.dosage}</p>
+                  <div key={j} style={{ marginBottom: 4 }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, color: C.navy, margin: 0 }}>{m.name} – {m.dosage}</p>
+                    <p style={{ fontSize: 11, color: C.sub, margin: '2px 0 0' }}>{m.frequency} · {m.duration}</p>
+                  </div>
                 ))}
                 {p.medicine && <p style={{ fontWeight: 600, fontSize: 13, color: C.navy, margin: '0 0 2px' }}>{p.medicine} — {p.dose}</p>}
-                <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>{formatDate(p.createdAt)}</p>
+                <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>
+                  {formatDate(p.createdAt)} · {t(`prescription.statuses.${p.isCancelled ? 'cancelled' : (p.status || 'active')}`)}
+                </p>
               </div>
             ))
           }
-          {!showForm
-            ? <button onClick={() => setShowForm(true)} style={{ marginTop: 10, width: '100%', background: C.teal, color: 'white', border: 'none', padding: '8px 0', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Yeni Resept</button>
-            : <form onSubmit={handlePrescribe} style={{ marginTop: 10, background: '#f0fafa', borderRadius: 9, padding: 12 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {[['Dərman adı *', 'medicine'], ['Doza *', 'dose'], ['Müddət *', 'duration']].map(([ph, key]) => (
-                    <input key={key} placeholder={ph} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} style={inp} />
-                  ))}
-                </div>
-                <textarea placeholder="Qeyd" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={2} style={{ ...inp, height: 'auto', marginTop: 8, resize: 'vertical', fontFamily: 'inherit' }} />
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <button type="submit" disabled={submitting} style={{ flex: 1, background: C.teal, color: 'white', border: 'none', padding: '8px 0', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
-                    {submitting ? 'Yazılır...' : 'Resepti Yaz'}
-                  </button>
-                  <button type="button" onClick={() => setShowForm(false)} style={{ padding: '8px 14px', background: 'white', border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
-                </div>
-              </form>
-          }
+          <button
+            onClick={onCreatePrescription}
+            style={{ marginTop: 10, width: '100%', background: C.teal, color: 'white', border: 'none', padding: '8px 0', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >+ {t('prescription.createPrescription')}</button>
         </div>
       )}
 
@@ -194,30 +174,58 @@ function PatientPanel({ doctor, patient, onClose, token }) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export default function DoctorDashboard() {
   const navigate  = useNavigate()
-  const [doctor, setDoctor]             = useState(null)
+  const { t } = useTranslation()
   const [appointments, setAppointments] = useState([])
   const [selectedPatient, setSelected]  = useState(null)
   const [loading, setLoading]           = useState(true)
   const [stats, setStats]               = useState({})
+  const [actingId, setActingId]         = useState(null)
+
+  const handleStart = async (apt) => {
+    setActingId(apt._id)
+    try {
+      const { data } = await api.patch(`/doctor/appointments/${apt._id}/start`)
+      setAppointments(prev => prev.map(a => a._id === apt._id ? data.data : a))
+    } catch (e) { showError(getErrorMessage(e, t('checkIn.startConsultation'))) }
+    finally { setActingId(null) }
+  }
+
+  const handleComplete = async (apt) => {
+    setActingId(apt._id)
+    try {
+      const { data } = await api.patch(`/doctor/appointments/${apt._id}/complete`)
+      setAppointments(prev => prev.map(a => a._id === apt._id ? data.data : a))
+    } catch (e) { showError(getErrorMessage(e, t('checkIn.completeConsultation'))) }
+    finally { setActingId(null) }
+  }
 
   const token   = localStorage.getItem('adminToken') || localStorage.getItem('doctorToken')
-  const headers = { Authorization: `Bearer ${token}` }
 
   useEffect(() => {
     if (!token) { navigate('/admin'); return }
-    const u = localStorage.getItem('adminUser') || localStorage.getItem('doctorUser')
-    if (u) { try { setDoctor(JSON.parse(u)) } catch {} }
-
+    const headers = { Authorization: `Bearer ${token}` }
+    let active = true
     fetch(`${BASE}/api/v1/doctor/appointments?date=${new Date().toISOString().split('T')[0]}`, { headers })
       .then(r => r.json())
-      .then(d => setAppointments(d.data?.appointments || d.appointments || []))
-      .catch(() => setAppointments([]))
-      .finally(() => setLoading(false))
+      .then(d => {
+        if (active) setAppointments(d.data?.appointments || d.appointments || [])
+      })
+      .catch(() => {
+        if (active) setAppointments([])
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
 
     fetch(`${BASE}/api/v1/doctor/stats`, { headers })
-      .then(r => r.json()).then(d => setStats(d.data || {}))
-      .catch(() => {})
-  }, [])
+      .then(r => r.json()).then(d => {
+        if (active) setStats(d.data || {})
+      })
+      .catch(() => {
+        // Keep zero-value statistics.
+      })
+    return () => { active = false }
+  }, [navigate, token])
 
   const today = new Date().toLocaleDateString('az-AZ', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -294,6 +302,20 @@ export default function DoctorDashboard() {
                   <p style={{ fontSize: 11, color: C.sub, margin: 0 }}>{[gender, age ? `${age} yaş` : null].filter(Boolean).join(', ') || '—'}</p>
                 </div>
                 <Badge status={apt.status || 'scheduled'} />
+                {apt.status === 'waiting' && (
+                  <button
+                    onClick={() => handleStart(apt)}
+                    disabled={actingId === apt._id}
+                    style={{ background: '#dbeafe', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: 7, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: actingId === apt._id ? 'not-allowed' : 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  >{t('checkIn.startConsultation')}</button>
+                )}
+                {apt.status === 'in_progress' && (
+                  <button
+                    onClick={() => handleComplete(apt)}
+                    disabled={actingId === apt._id}
+                    style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0', borderRadius: 7, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: actingId === apt._id ? 'not-allowed' : 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  >{t('checkIn.completeConsultation')}</button>
+                )}
                 <button
                   onClick={() => setSelected(pat)}
                   style={{
@@ -317,10 +339,11 @@ export default function DoctorDashboard() {
           border: `1px solid ${C.border}`, padding: 18,
         }}>
           <PatientPanel
-            doctor={doctor}
+            key={selectedPatient?._id || 'empty'}
             patient={selectedPatient}
             onClose={closePanel}
             token={token}
+            onCreatePrescription={() => navigate('/doctor/prescriptions')}
           />
         </div>
       </div>

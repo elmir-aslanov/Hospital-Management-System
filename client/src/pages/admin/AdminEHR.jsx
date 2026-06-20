@@ -1,39 +1,66 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '../../components/admin/AdminLayout'
+import PatientTimeline from '../../components/common/PatientTimeline'
 import { BASE } from '../../api/config.js'
+import api from '../../api/axios'
 const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
 const hdrs  = () => ({ Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' })
 const TEAL  = '#00848e'
 const NAVY  = '#0a1628'
 const FONT  = "'Source Sans 3', sans-serif"
 
+// labelKey resolves either via adminEHR.types.* (clinical note types) or
+// doctorDocuments.types.* (reused — same document types added for the
+// doctor-facing Medical Documents feature).
 const TYPE_CONFIG = {
-  diagnosis:    { label: 'Diaqnoz',      color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
-  procedure:    { label: 'Prosedur',     color: '#2563eb', bg: '#eff6ff', icon: '🔵' },
-  allergy:      { label: 'Allergiya',    color: '#ea580c', bg: '#fff7ed', icon: '🟠' },
-  prescription: { label: 'Resept',       color: '#7c3aed', bg: '#f5f3ff', icon: '🟣' },
-  lab:          { label: 'Laboratoriya', color: '#0891b2', bg: '#ecfeff', icon: '🔷' },
-  note:         { label: 'Qeyd',         color: '#64748b', bg: '#f8fafc', icon: '⚪' },
-  vaccination:  { label: 'Peyvənd',      color: '#16a34a', bg: '#f0fdf4', icon: '🟢' },
+  diagnosis:    { labelKey: 'diagnosis',    ns: 'adminEHR',       color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
+  procedure:    { labelKey: 'procedure',    ns: 'adminEHR',       color: '#2563eb', bg: '#eff6ff', icon: '🔵' },
+  allergy:      { labelKey: 'allergy',      ns: 'adminEHR',       color: '#ea580c', bg: '#fff7ed', icon: '🟠' },
+  prescription: { labelKey: 'prescription', ns: 'adminEHR',       color: '#7c3aed', bg: '#f5f3ff', icon: '🟣' },
+  lab:          { labelKey: 'lab',          ns: 'adminEHR',       color: '#0891b2', bg: '#ecfeff', icon: '🔷' },
+  note:         { labelKey: 'note',         ns: 'adminEHR',       color: '#64748b', bg: '#f8fafc', icon: '⚪' },
+  vaccination:  { labelKey: 'vaccination',  ns: 'adminEHR',       color: '#16a34a', bg: '#f0fdf4', icon: '🟢' },
+  medical_certificate:   { labelKey: 'medical_certificate',   ns: 'doctorDocuments', color: '#0f766e', bg: '#f0fdfa', icon: '📄' },
+  epicrisis:             { labelKey: 'epicrisis',             ns: 'doctorDocuments', color: '#9333ea', bg: '#faf5ff', icon: '📋' },
+  consultation_opinion:  { labelKey: 'consultation_opinion',  ns: 'doctorDocuments', color: '#1d4ed8', bg: '#eff6ff', icon: '🩺' },
+  operation_protocol:    { labelKey: 'operation_protocol',    ns: 'doctorDocuments', color: '#be123c', bg: '#fff1f2', icon: '🔬' },
+  lab_summary:           { labelKey: 'lab_summary',           ns: 'doctorDocuments', color: '#0891b2', bg: '#ecfeff', icon: '🧪' },
+  other:                 { labelKey: 'other',                 ns: 'doctorDocuments', color: '#64748b', bg: '#f8fafc', icon: '📁' },
 }
 
 const TABS = [
-  { key: 'all', label: 'Hamısı' },
-  { key: 'diagnosis',    label: 'Diaqnoz' },
-  { key: 'procedure',   label: 'Prosedur' },
-  { key: 'allergy',     label: 'Allergiya' },
-  { key: 'prescription',label: 'Resept' },
-  { key: 'lab',         label: 'Lab' },
-  { key: 'note',        label: 'Qeyd' },
-  { key: 'vaccination', label: 'Peyvənd' },
+  { key: 'all' },
+  { key: 'diagnosis' },
+  { key: 'procedure' },
+  { key: 'allergy' },
+  { key: 'prescription' },
+  { key: 'lab' },
+  { key: 'note' },
+  { key: 'vaccination' },
+  { key: 'medical_certificate' },
+  { key: 'epicrisis' },
+  { key: 'consultation_opinion' },
+  { key: 'operation_protocol' },
+  { key: 'lab_summary' },
+  { key: 'other' },
 ]
+
+const STATUS_CONFIG = {
+  draft:     { color: '#475569', bg: '#f1f5f9' },
+  submitted: { color: '#854d0e', bg: '#fef9c3' },
+  approved:  { color: '#166534', bg: '#dcfce7' },
+  returned:  { color: '#991b1b', bg: '#fee2e2' },
+  archived:  { color: '#475569', bg: '#f1f5f9' },
+}
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString('az-AZ') : '—'
 
 export default function AdminEHR() {
   const { patientId } = useParams()
   const navigate      = useNavigate()
+  const { t }         = useTranslation()
 
   const [summary,    setSummary]    = useState(null)
   const [loading,    setLoading]    = useState(true)
@@ -45,16 +72,21 @@ export default function AdminEHR() {
     date: new Date().toISOString().split('T')[0],
   })
 
-  const load = () => {
-    setLoading(true)
+  useEffect(() => {
+    let active = true
     fetch(`${BASE}/api/v1/ehr/patient/${patientId}/summary`, { headers: hdrs() })
       .then(r => r.json())
-      .then(d => setSummary(d.data || null))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { load() }, [patientId])
+      .then(d => {
+        if (active) setSummary(d.data || null)
+      })
+      .catch(() => {
+        // Keep the existing empty EHR state when the request fails.
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => { active = false }
+  }, [patientId])
 
   const handleAdd = async () => {
     if (!addForm.title.trim()) return
@@ -83,12 +115,33 @@ export default function AdminEHR() {
         setShowAdd(false)
         setAddForm({ type: 'note', title: '', description: '', date: new Date().toISOString().split('T')[0] })
       }
-    } catch {}
+    } catch {
+      // Existing form remains open so the user can retry.
+    }
     finally { setSaving(false) }
   }
 
+  const [submittingId, setSubmittingId] = useState(null)
+
+  const handleSubmitForApproval = async (id) => {
+    setSubmittingId(id)
+    try {
+      const { data } = await api.patch(`/ehr/records/${id}/submit`)
+      const updated = data?.data
+      setSummary(prev => {
+        if (!prev || !updated) return prev
+        const apply = (list) => list.map(r => r._id === id ? { ...r, ...updated } : r)
+        return { ...prev, records: apply(prev.records), byType: Object.fromEntries(Object.entries(prev.byType).map(([k, v]) => [k, apply(v)])) }
+      })
+    } catch {
+      // Existing status remains visible so the user can retry.
+    } finally {
+      setSubmittingId(null)
+    }
+  }
+
   const handleDelete = async (id) => {
-    if (!window.confirm('Bu qeydi silmək istəyirsiniz?')) return
+    if (!window.confirm(t('adminEHR.confirmDelete'))) return
     await fetch(`${BASE}/api/v1/ehr/records/${id}`, { method: 'DELETE', headers: hdrs() })
     setSummary(prev => {
       if (!prev) return prev
@@ -128,7 +181,7 @@ export default function AdminEHR() {
         fontFamily: FONT, fontWeight: 600, marginBottom: 20, padding: 0,
       }}>
         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Pasiyentlər
+        {t('adminLayout.nav.patients')}
       </button>
 
       {loading ? (
@@ -176,7 +229,7 @@ export default function AdminEHR() {
                   fontSize: 12, fontWeight: 600, fontFamily: FONT,
                   transition: 'all 0.15s',
                 }}>
-                  {tab.label} {count > 0 && <span style={{ opacity: 0.8 }}>({count})</span>}
+                  {tab.key === 'all' ? t('adminInventory.all') : (TYPE_CONFIG[tab.key] ? t(`${TYPE_CONFIG[tab.key].ns}.types.${TYPE_CONFIG[tab.key].labelKey}`) : tab.key)} {count > 0 && <span style={{ opacity: 0.8 }}>({count})</span>}
                 </button>
               )
             })}
@@ -189,7 +242,7 @@ export default function AdminEHR() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {displayed.length === 0 ? (
                 <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #f1f5f9', padding: '48px 24px', textAlign: 'center', color: '#94a3b8', fontSize: 14, fontFamily: FONT }}>
-                  Bu kateqoriyada qeyd yoxdur
+                  {t('adminEHR.noRecordsInCategory')}
                 </div>
               ) : displayed.map(rec => {
                 const tc = TYPE_CONFIG[rec.type] || TYPE_CONFIG.note
@@ -204,28 +257,52 @@ export default function AdminEHR() {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: tc.bg, color: tc.color, fontFamily: FONT }}>
-                            {tc.icon} {tc.label}
+                            {tc.icon} {t(`${tc.ns}.types.${tc.labelKey}`)}
                           </span>
+                          {rec.approvalStatus && (() => {
+                            const sc = STATUS_CONFIG[rec.approvalStatus] || STATUS_CONFIG.draft
+                            return (
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: sc.bg, color: sc.color, fontFamily: FONT }}>
+                                {t(`doctorDocuments.statuses.${rec.approvalStatus}`)}
+                              </span>
+                            )
+                          })()}
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: FONT, marginBottom: 4 }}>{rec.title}</div>
                         {rec.description && (
                           <div style={{ fontSize: 13, color: '#475569', fontFamily: FONT, lineHeight: 1.6 }}>{rec.description}</div>
                         )}
+                        {rec.approvalStatus === 'returned' && rec.returnReason && (
+                          <div style={{ fontSize: 12, color: '#991b1b', fontFamily: FONT, marginTop: 6, background: '#fef2f2', borderRadius: 8, padding: '6px 10px' }}>
+                            {t('doctorDocuments.returnReason')}: {rec.returnReason}
+                          </div>
+                        )}
                         {rec.doctorId?.userId?.fullName && (
                           <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, fontFamily: FONT }}>
-                            Həkim: {rec.doctorId.userId.fullName}
+                            {t('adminEHR.doctorLabel')}: {rec.doctorId.userId.fullName}
                           </div>
                         )}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
                         <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: FONT }}>{fmt(rec.date)}</span>
+                        {['draft', 'returned'].includes(rec.approvalStatus) && (
+                          <button
+                            onClick={() => handleSubmitForApproval(rec._id)}
+                            disabled={submittingId === rec._id}
+                            style={{
+                              padding: '3px 9px', border: '1px solid #bbf7d0', borderRadius: 6,
+                              background: '#fff', color: '#16a34a', fontSize: 11,
+                              cursor: submittingId === rec._id ? 'not-allowed' : 'pointer', fontFamily: FONT,
+                            }}
+                          >{submittingId === rec._id ? '…' : t('doctorDocuments.submit')}</button>
+                        )}
                         <button onClick={() => handleDelete(rec._id)} style={{
                           padding: '3px 9px', border: '1px solid #fee2e2', borderRadius: 6,
                           background: '#fff', color: '#ef4444', fontSize: 11,
                           cursor: 'pointer', fontFamily: FONT,
-                        }}>Sil</button>
+                        }}>{t('adminDoctors.delete')}</button>
                       </div>
                     </div>
                   </div>
@@ -238,13 +315,13 @@ export default function AdminEHR() {
 
               {/* Stats */}
               <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #f1f5f9', padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, fontFamily: FONT }}>Xülasə</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, fontFamily: FONT }}>{t('adminEHR.summary')}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {Object.entries(TYPE_CONFIG).map(([key, tc]) => {
                     const count = byType[key]?.length || 0
                     return (
                       <div key={key} onClick={() => setActiveType(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 10px', borderRadius: 9, cursor: 'pointer', background: activeType === key ? tc.bg : 'transparent', transition: 'background 0.15s' }}>
-                        <span style={{ fontSize: 12, color: '#475569', fontFamily: FONT }}>{tc.icon} {tc.label}</span>
+                        <span style={{ fontSize: 12, color: '#475569', fontFamily: FONT }}>{tc.icon} {t(`${tc.ns}.types.${tc.labelKey}`)}</span>
                         <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: tc.bg, color: tc.color, fontFamily: FONT }}>{count}</span>
                       </div>
                     )
@@ -262,46 +339,53 @@ export default function AdminEHR() {
                     alignItems: 'center', justifyContent: 'center', gap: 7,
                   }}>
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Qeyd əlavə et
+                    {t('adminEHR.addRecord')}
                   </button>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: FONT, marginBottom: 2 }}>Yeni Qeyd</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: FONT, marginBottom: 2 }}>{t('adminEHR.newRecord')}</div>
 
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>Növ</label>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>{t('adminEHR.recordType')}</label>
                       <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))} style={inputSt}>
                         {Object.entries(TYPE_CONFIG).map(([k, v]) => (
-                          <option key={k} value={k}>{v.icon} {v.label}</option>
+                          <option key={k} value={k}>{v.icon} {t(`${v.ns}.types.${v.labelKey}`)}</option>
                         ))}
                       </select>
                     </div>
 
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>Başlıq *</label>
-                      <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} placeholder="Başlıq daxil edin" style={inputSt} />
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>{t('adminEHR.titleField')} *</label>
+                      <input value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} placeholder={t('adminEHR.titlePlaceholder')} style={inputSt} />
                     </div>
 
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>Açıqlama</label>
-                      <textarea rows={3} value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder="Ətraflı məlumat..." style={{ ...inputSt, resize: 'vertical' }} />
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>{t('adminInventory.description')}</label>
+                      <textarea rows={3} value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder={t('adminEHR.descriptionPlaceholder')} style={{ ...inputSt, resize: 'vertical' }} />
                     </div>
 
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>Tarix</label>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4, fontFamily: FONT }}>{t('adminAppointments.date')}</label>
                       <input type="date" value={addForm.date} onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} style={inputSt} />
                     </div>
 
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => setShowAdd(false)} style={{ flex: 1, padding: '9px', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Ləğv et</button>
+                      <button onClick={() => setShowAdd(false)} style={{ flex: 1, padding: '9px', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{t('labResult.cancel')}</button>
                       <button onClick={handleAdd} disabled={saving || !addForm.title.trim()} style={{ flex: 1, padding: '9px', background: saving ? '#7ec8cc' : TEAL, color: '#fff', border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
-                        {saving ? '…' : 'Saxla'}
+                        {saving ? '…' : t('adminDoctors.save')}
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             </div>
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #f1f5f9', padding: 20, marginTop: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: FONT, marginBottom: 14 }}>
+              {t('prescription.listTitle')}
+            </div>
+            <PatientTimeline patientId={patientId} fixedSource="prescription" />
           </div>
         </>
       )}

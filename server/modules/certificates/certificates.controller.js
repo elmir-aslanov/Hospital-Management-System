@@ -17,16 +17,16 @@ export const createCertificate = asyncHandler(async (req, res) => {
 });
 
 export const getCertificateById = asyncHandler(async (req, res) => {
-  const cert = await certificatesService.getCertificateById(req.params.id);
+  const cert = await certificatesService.getCertificateById(req.params.id, req.user.role);
   res.status(200).json(new ApiResponse(200, cert));
 });
 
 export const getPatientCertificates = asyncHandler(async (req, res) => {
-  const result = await certificatesService.getPatientCertificates(req.params.patientId, req.query);
+  const result = await certificatesService.getPatientCertificates(req.params.patientId, req.query, req.user.role);
   res.status(200).json(new ApiResponse(200, result));
 });
 
 export const downloadCertificate = asyncHandler(async (req, res) => {
-  const cert = await certificatesService.getCertificateById(req.params.id);
+  const cert = await certificatesService.getCertificateById(req.params.id, req.user.role);
   res.status(200).json(new ApiResponse(200, { pdfUrl: cert.pdfUrl, certificateNumber: cert.certificateNumber }));
 });

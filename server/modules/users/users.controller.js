@@ -27,27 +27,27 @@ export const getUserById = asyncHandler(async (req, res) => {
 });
 
 export const updateUser = asyncHandler(async (req, res) => {
-  const user = await usersService.updateUser(req.params.id, req.body);
+  const user = await usersService.updateUser(req.params.id, req.body, req.user.role);
   res.status(200).json(new ApiResponse(200, user, 'User updated'));
 });
 
 export const deactivateUser = asyncHandler(async (req, res) => {
-  await usersService.deactivateUser(req.params.id);
+  await usersService.deactivateUser(req.params.id, req.user.role);
   res.status(200).json(new ApiResponse(200, null, 'User deactivated'));
 });
 
 export const toggleUserActive = asyncHandler(async (req, res) => {
-  const user = await usersService.toggleUserActive(req.params.id, req.user.id);
+  const user = await usersService.toggleUserActive(req.params.id, req.user.id, req.user.role);
   res.status(200).json(new ApiResponse(200, user, 'User status updated'));
 });
 
 export const createUser = asyncHandler(async (req, res) => {
-  const user = await usersService.createUser(req.body);
+  const user = await usersService.createUser(req.body, req.user.role);
   res.status(201).json(new ApiResponse(201, user, 'User created'));
 });
 
 export const deleteUser = asyncHandler(async (req, res) => {
-  await usersService.deleteUser(req.params.id);
+  await usersService.deleteUser(req.params.id, req.user.role);
   res.status(200).json(new ApiResponse(200, null, 'User deleted'));
 });
 

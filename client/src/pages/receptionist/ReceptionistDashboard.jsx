@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate }         from 'react-router-dom'
+import { useTranslation }      from 'react-i18next'
 import api from '../../api/axios'
 import { clearAuthStorage } from '../../utils/authSession'
+import { showError, getErrorMessage } from '../../utils/alert'
 
 const BASE  = 'http://localhost:5000'
 const token = () => localStorage.getItem('token')
@@ -28,6 +30,7 @@ const STATUS_LABELS = {
 
 export default function ReceptionistDashboard() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [todayAppts,  setTodayAppts]  = useState([])
   const [muraciet,    setMuraciet]    = useState([])
@@ -36,6 +39,20 @@ export default function ReceptionistDashboard() {
   const [user]                         = useState(() => JSON.parse(localStorage.getItem('user') || '{}'))
   const [searchQ,     setSearchQ]     = useState('')
   const [searchRes,   setSearchRes]   = useState([])
+  const [checkingInId, setCheckingInId] = useState(null)
+
+  const handleCheckIn = async (appt) => {
+    setCheckingInId(appt._id)
+    try {
+      const { data } = await api.patch(`/appointments/${appt._id}/check-in`)
+      const updated = data.data
+      setTodayAppts(prev => prev.map(a => a._id === appt._id ? updated : a))
+    } catch (e) {
+      showError(getErrorMessage(e, t('checkIn.alreadyCheckedIn')))
+    } finally {
+      setCheckingInId(null)
+    }
+  }
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
@@ -205,18 +222,29 @@ export default function ReceptionistDashboard() {
                 const pName = a.patientId?.userId?.fullName || a.patientId?.fullName || '—'
                 const dName = a.doctorId?.userId?.fullName  || a.doctorId?.fullName  || '—'
                 const color = STATUS_COLORS[a.status] || '#64748b'
+                const canCheckIn = a.status === 'scheduled'
+                const checkingIn = checkingInId === a._id
                 return (
-                  <div key={a._id || i} style={{ display: 'grid', gridTemplateColumns: '78px 1fr 120px', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < todayAppts.length - 1 ? '1px solid #f8fafc' : 'none' }}>
+                  <div key={a._id || i} style={{ display: 'grid', gridTemplateColumns: '78px 1fr 120px 120px', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < todayAppts.length - 1 ? '1px solid #f8fafc' : 'none' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#e0f7fa', color: TEAL, borderRadius: 7, padding: '5px 8px', textAlign: 'center' }}>
                       {a.startTime || a.time || '—'}
                     </span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: NAVY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pName}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{dName}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{dName}{a.queueNumber ? ` · №${a.queueNumber}` : ''}</div>
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 8, background: color + '18', color, textAlign: 'center' }}>
                       {STATUS_LABELS[a.status] || a.status || '—'}
                     </span>
+                    {canCheckIn ? (
+                      <button
+                        onClick={() => handleCheckIn(a)}
+                        disabled={checkingIn}
+                        style={{ border: 'none', background: checkingIn ? '#94a3b8' : TEAL, color: 'white', borderRadius: 7, padding: '7px 10px', fontSize: 11, fontWeight: 700, cursor: checkingIn ? 'not-allowed' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}
+                      >
+                        {checkingIn ? '...' : t('checkIn.checkIn')}
+                      </button>
+                    ) : <span />}
                   </div>
                 )
               })}
@@ -276,7 +304,7 @@ export default function ReceptionistDashboard() {
           div[style*="grid-template-columns: 1fr 1fr"] {
             grid-template-columns: 1fr !important;
           }
-          div[style*="grid-template-columns: 78px 1fr 120px"] {
+          div[style*="grid-template-columns: 78px 1fr 120px 120px"] {
             grid-template-columns: 1fr !important;
           }
         }

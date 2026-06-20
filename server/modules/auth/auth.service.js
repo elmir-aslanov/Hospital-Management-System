@@ -17,35 +17,32 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
   await user.save();
 };
 
-export const registerUser = async ({ fullName, email, password, age, idCode }, req) => {
-  const existing = await User.findOne({ email });
-  if (existing) throw new ApiError(409, 'Email already registered');
+// Single place that creates a brand-new PATIENT account (User + linked
+// Patient profile). Role is always hardcoded here — callers can never pass
+// a role through, so no entry point built on top of this can escalate
+// privileges. Used by both self-registration and the public lab-request
+// "new patient" path so there is exactly one account-creation code path.
+export const createPatientAccount = async ({ fullName, name, surname, email, password, phone, birthDate, sexiyyatId }) => {
+  const user = await User.create({
+    fullName, name, surname, email, password, phone, birthDate, sexiyyatId,
+    role: 'PATIENT',
+  });
 
-  const ageNum = Number(age);
-  if (age !== undefined && (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 120)) {
-    throw new ApiError(400, 'Yaş 1–120 arasında olmalıdır');
-  }
-  if (idCode !== undefined && String(idCode).trim().length < 5) {
-    throw new ApiError(400, 'Şəxsiyyət vəsiqəsi kodu ən az 5 simvol olmalıdır');
-  }
-
-  const role = 'PATIENT';
-  // Only the birth year is known from age, not the exact day — approximate as
-  // Jan 1 of that year so User.birthDate/age virtual aren't left empty.
-  const birthDate = Number.isFinite(ageNum) && ageNum > 0
-    ? new Date(new Date().getFullYear() - ageNum, 0, 1)
-    : undefined;
-  const sexiyyatId = idCode ? String(idCode).trim() : undefined;
-  const user = await User.create({ fullName, email, password, role, birthDate, sexiyyatId });
-
-  // Create linked Patient profile so the patient portal can find this user
+  // No DB transaction support assumed (replica set may not be configured) —
+  // if the Patient link fails, undo the User we just created so a
+  // login-capable account can never be left without a clinical profile.
+  let patient;
   try {
-    await Patient.create({ userId: user._id });
+    patient = await Patient.create({ userId: user._id });
   } catch (e) {
-    console.error('Patient profile create failed:', e.message);
+    await User.findByIdAndDelete(user._id);
+    throw e;
   }
 
-  // Send email verification OTP
+  return { user, patient };
+};
+
+export const sendEmailVerificationOtp = async (email) => {
   try {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
@@ -68,6 +65,30 @@ export const registerUser = async ({ fullName, email, password, age, idCode }, r
   } catch (e) {
     console.error('Email OTP send failed:', e.message);
   }
+};
+
+export const registerUser = async ({ fullName, email, password, age, idCode }, req) => {
+  const existing = await User.findOne({ email });
+  if (existing) throw new ApiError(409, 'Email already registered');
+
+  const ageNum = Number(age);
+  if (age !== undefined && (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 120)) {
+    throw new ApiError(400, 'Yaş 1–120 arasında olmalıdır');
+  }
+  if (idCode !== undefined && String(idCode).trim().length < 5) {
+    throw new ApiError(400, 'Şəxsiyyət vəsiqəsi kodu ən az 5 simvol olmalıdır');
+  }
+
+  // Only the birth year is known from age, not the exact day — approximate as
+  // Jan 1 of that year so User.birthDate/age virtual aren't left empty.
+  const birthDate = Number.isFinite(ageNum) && ageNum > 0
+    ? new Date(new Date().getFullYear() - ageNum, 0, 1)
+    : undefined;
+  const sexiyyatId = idCode ? String(idCode).trim() : undefined;
+  const { user } = await createPatientAccount({ fullName, email, password, birthDate, sexiyyatId });
+  const role = user.role;
+
+  await sendEmailVerificationOtp(email);
 
   const accessToken  = generateAccessToken(user._id, user.role);
   const refreshToken = generateRefreshToken(user._id);

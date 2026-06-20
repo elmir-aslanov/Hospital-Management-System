@@ -1,6 +1,5 @@
 import mongoose  from 'mongoose';
 import jwt       from 'jsonwebtoken';
-import crypto    from 'crypto';
 import LabOrder  from '../../models/LabOrder.model.js';
 import LabResult from '../../models/LabResult.model.js';
 import PriceList from '../../models/PriceList.model.js';
@@ -9,10 +8,13 @@ import User      from '../../models/User.model.js';
 import Setting   from '../../models/Setting.model.js';
 import ApiError  from '../../utils/ApiError.js';
 import logAction from '../../utils/auditLogger.js';
+import { createPatientAccount, sendEmailVerificationOtp } from '../auth/auth.service.js';
 import logger     from '../../utils/logger.js';
 import { uploadBuffer } from '../../config/cloudinary.js';
 import { createLabResultPDF } from '../../utils/generateLabResultPdf.js';
 import { nextSequence } from '../../models/Counter.model.js';
+import sendEmail from '../../utils/sendEmail.js';
+import { createNotification } from '../notifications/notifications.service.js';
 
 const POP_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POP_DOCTOR  = { path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } };
@@ -824,7 +826,105 @@ export const approveManualResult = async (id, userId, isPublicVisible) => {
   try {
     logAction({ userId, action: 'LAB_RESULT_APPROVE', resourceType: 'LabResult', resourceId: result._id, description: `Manual lab result ${result.protocolNo} approved` });
   } catch (_) {}
-  return result.populate(POP_MANUAL);
+
+  // PDF + email + notification are best-effort: a failure here must never
+  // undo the approval that already succeeded above.
+  const emailStatus = await sendApprovedResultEmail(result, userId);
+
+  const populated = await result.populate(POP_MANUAL);
+  return { ...populated.toObject(), emailSent: emailStatus === 'sent', emailStatus };
+};
+
+// Generates the certified PDF and emails it to the patient.
+// Returns 'sent' | 'no_email' | 'failed' — never throws, since the approval
+// itself is already committed by the time this runs.
+const sendApprovedResultEmail = async (result, approverUserId) => {
+  let patientEmail = '';
+  let patientUserId = null;
+  try {
+    if (result.patientId) {
+      const patient = await Patient.findById(result.patientId).populate('userId', 'email fullName name surname');
+      patientEmail = trim(patient?.userId?.email);
+      patientUserId = patient?.userId?._id || null;
+    }
+
+    if (!patientEmail) {
+      logger.warn(`Approved lab result ${result.protocolNo} has no patient email — skipping PDF email`);
+      return 'no_email';
+    }
+
+    const [labTechnician, approvedBy] = await Promise.all([
+      result.labTechnicianId ? User.findById(result.labTechnicianId).select('fullName name surname') : null,
+      User.findById(result.approvedBy).select('fullName name surname'),
+    ]);
+
+    const pdfBuffer = await createLabResultPDF({
+      patientFullName: result.patientFullName,
+      patientFin: result.patientFin,
+      patientBirthDate: result.patientBirthDate,
+      protocolNo: result.protocolNo,
+      testName: result.testName,
+      testCode: result.testCode,
+      departmentName: result.departmentName,
+      sampleDate: result.sampleDate,
+      resultDate: result.resultDate,
+      doctorName: result.doctorName,
+      results: result.results,
+      generalConclusion: result.generalConclusion,
+      labTechnicianName: displayUserName(labTechnician),
+      approvedByName: displayUserName(approvedBy),
+      approvedAt: result.approvedAt,
+    });
+
+    await sendEmail({
+      to: patientEmail,
+      subject: 'Laborator analiz nəticəniz hazırdır',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px">
+          <h2 style="color:#0a1628">Laborator analiz nəticəniz hazırdır</h2>
+          <p style="color:#475569">Hörmətli ${result.patientFullName || 'pasiyent'},</p>
+          <p style="color:#475569">${result.testName || 'Analiz'} nəticəniz təsdiqlənib. Nəticə bu məktuba PDF formatında əlavə olunub.</p>
+          <p style="color:#94a3b8;font-size:13px">Protokol nömrəsi: ${result.protocolNo}</p>
+        </div>
+      `,
+      attachments: [{ filename: `lab-result-${result.protocolNo}.pdf`, content: pdfBuffer }],
+    });
+
+    try {
+      logAction({ userId: approverUserId, action: 'LAB_RESULT_PDF_EMAIL_SENT', resourceType: 'LabResult', resourceId: result._id, description: `PDF emailed to patient for result ${result.protocolNo}` });
+    } catch (_) {}
+
+    if (patientUserId) {
+      try {
+        await createNotification({
+          userId: patientUserId,
+          title: 'Laborator nəticəniz hazırdır',
+          message: `${result.testName || 'Analiz'} nəticəniz təsdiqlənib və E-Nəticə bölməsində mövcuddur.`,
+          type: 'lab_result',
+          link: '/e-netice',
+        });
+      } catch (_) { /* best-effort */ }
+    }
+
+    return 'sent';
+  } catch (err) {
+    logger.error(`Failed to email approved lab result ${result.protocolNo}: ${err.message}`);
+    try {
+      logAction({ userId: approverUserId, action: 'LAB_RESULT_PDF_EMAIL_FAILED', resourceType: 'LabResult', resourceId: result._id, description: `PDF email failed for result ${result.protocolNo}: ${err.message}` });
+    } catch (_) {}
+    if (patientUserId) {
+      try {
+        await createNotification({
+          userId: patientUserId,
+          title: 'Laborator nəticəniz hazırdır',
+          message: `${result.testName || 'Analiz'} nəticəniz təsdiqlənib. E-Nəticə bölməsindən baxa bilərsiniz.`,
+          type: 'lab_result',
+          link: '/e-netice',
+        });
+      } catch (_) { /* best-effort */ }
+    }
+    return 'failed';
+  }
 };
 
 export const cancelManualResult = async (id, userId) => {
@@ -1189,6 +1289,19 @@ export const getCurrentPatientForRequest = async (userId) => {
   };
 };
 
+const FIN_RX = /^[A-Za-z0-9]{5,8}$/;
+const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const assertValidBirthDate = (birthDate) => {
+  const parsed = new Date(birthDate);
+  if (Number.isNaN(parsed.getTime())) throw new ApiError(400, 'Doğum tarixi düzgün deyil');
+  const now = new Date();
+  if (parsed.getTime() > now.getTime()) throw new ApiError(400, 'Doğum tarixi gələcəkdə ola bilməz');
+  const minDate = new Date(now.getFullYear() - 120, now.getMonth(), now.getDate());
+  if (parsed.getTime() < minDate.getTime()) throw new ApiError(400, 'Doğum tarixi düzgün deyil');
+  return parsed;
+};
+
 export const createPublicLabRequest = async (body = {}, authUser = null) => {
   const {
     testSlug, patientType = 'existing', patient: patientBody = {},
@@ -1207,38 +1320,62 @@ export const createPublicLabRequest = async (body = {}, authUser = null) => {
   const validatedSlot = await assertLabRequestSlotIsBookable(date, time, branchName);
 
   let patientMongoId;
+  let newAccountCreated = false;
+  let requestActorUserId = authUser?.id || null;
 
   if (patientType === 'new') {
-    const { firstName, lastName, fin, birthDate, phone, email } = patientBody;
+    const { firstName, lastName, fin, birthDate, phone, email, password, confirmPassword } = patientBody;
     if (!firstName?.trim()) throw new ApiError(400, 'Ad daxil edilməlidir');
     if (!lastName?.trim())  throw new ApiError(400, 'Soyad daxil edilməlidir');
-    if (!fin?.trim())       throw new ApiError(400, 'FİN daxil edilməlidir');
+    if (!fin?.trim() || !FIN_RX.test(fin.trim())) throw new ApiError(400, 'FİN düzgün formatda deyil');
     if (!birthDate)         throw new ApiError(400, 'Doğum tarixi daxil edilməlidir');
     if (!phone?.trim())     throw new ApiError(400, 'Telefon daxil edilməlidir');
+    if (!email?.trim() || !EMAIL_RX.test(email.trim())) throw new ApiError(400, 'E-poçt daxil edilməlidir');
+    if (!password || password.length < 6) throw new ApiError(400, 'Şifrə ən azı 6 simvol olmalıdır');
+    if (password !== confirmPassword) throw new ApiError(400, 'Şifrələr uyğun gəlmir');
+
+    const validatedBirthDate = assertValidBirthDate(birthDate);
+    const cleanFin   = fin.trim().toUpperCase();
+    const cleanPhone = phone.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Identity-conflict guard — an unauthenticated "new patient" claim that
+    // matches an existing account is never silently merged (that would let
+    // anyone attach a lab request to a stranger's medical record just by
+    // guessing their FIN/phone/email). Surface a readable error instead so
+    // the real owner logs in via "Mövcud pasiyentəm".
+    const [finOwner, emailOwner, phoneOwner] = await Promise.all([
+      User.findOne({ sexiyyatId: cleanFin }).select('_id'),
+      User.findOne({ email: cleanEmail }).select('_id'),
+      User.findOne({ phone: cleanPhone }).select('_id'),
+    ]);
+    if (finOwner)   throw new ApiError(409, 'Bu FIN ilə pasiyent artıq mövcuddur', [], '', 'FIN_ALREADY_EXISTS');
+    if (emailOwner) throw new ApiError(409, 'Bu e-poçt ilə hesab artıq mövcuddur', [], '', 'EMAIL_ALREADY_EXISTS');
+    if (phoneOwner) throw new ApiError(409, 'Bu telefon nömrəsi ilə hesab artıq mövcuddur', [], '', 'PHONE_ALREADY_EXISTS');
 
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
-    const cleanPhone = phone.trim();
-
-    let user = await User.findOne({ phone: cleanPhone });
-    if (!user) {
-      const guestEmail = email?.trim()?.toLowerCase()
-        || `walkin.${cleanPhone.replace(/\D/g, '')}.${Date.now()}@aslanmedical.az`;
-
-      user = await User.create({
+    let created;
+    try {
+      created = await createPatientAccount({
         fullName,
-        email: guestEmail,
+        name: firstName.trim(),
+        surname: lastName.trim(),
+        email: cleanEmail,
+        password,
         phone: cleanPhone,
-        role: 'PATIENT',
-        password: crypto.randomBytes(24).toString('hex'),
-        sexiyyatId: fin.trim().toUpperCase().slice(0, 8),
-        birthDate: new Date(birthDate),
-        isActive: true,
+        birthDate: validatedBirthDate,
+        sexiyyatId: cleanFin,
       });
+    } catch (e) {
+      if (e?.code === 11000) throw new ApiError(409, 'Bu e-poçt ilə hesab artıq mövcuddur', [], '', 'EMAIL_ALREADY_EXISTS');
+      throw e;
     }
+    patientMongoId = created.patient._id;
+    newAccountCreated = true;
+    requestActorUserId = created.user._id;
 
-    let patient = await Patient.findOne({ userId: user._id });
-    if (!patient) patient = await Patient.create({ userId: user._id });
-    patientMongoId = patient._id;
+    try { await sendEmailVerificationOtp(cleanEmail); } catch (_) { /* best-effort */ }
+    try { logAction({ userId: created.user._id, action: 'USER_REGISTER', resourceType: 'User', resourceId: created.user._id, description: `New patient registered via public lab request: ${cleanEmail}` }); } catch (_) {}
   } else {
     if (!authUser?.id) throw new ApiError(401, 'Mövcud pasiyent kimi davam etmək üçün giriş tələb olunur');
 
@@ -1266,7 +1403,7 @@ export const createPublicLabRequest = async (body = {}, authUser = null) => {
   });
 
   try {
-    logAction({ userId: patientType === 'new' ? null : authUser?.id, action: 'LAB_REQUEST_CREATE_PUBLIC', resourceType: 'LabOrder', resourceId: order._id, description: `Public lab request ${order.requestNumber} created for ${priceList.name}` });
+    logAction({ userId: requestActorUserId, action: 'LAB_REQUEST_CREATE_PUBLIC', resourceType: 'LabOrder', resourceId: order._id, description: `Public lab request ${order.requestNumber} created for ${priceList.name}` });
   } catch (_) {}
 
   return {
@@ -1278,6 +1415,7 @@ export const createPublicLabRequest = async (body = {}, authUser = null) => {
     price: priceList.price,
     currency: priceList.currency || 'AZN',
     preparation: priceList.technicalDetails?.preparation || '',
+    accountCreated: newAccountCreated,
   };
 };
 
@@ -1288,7 +1426,13 @@ export const getResultPdfBuffer = async (id, { accessToken, authUser } = {}) => 
 
   const isStaff = authUser && STAFF_ROLES.includes(authUser.role);
 
-  if (!isStaff) {
+  // A logged-in patient may download their own approved result directly —
+  // isPublicVisible only gates the anonymous/public E-Nəticə flow below, not
+  // an authenticated patient looking at their own record.
+  const isOwningPatient = !isStaff && authUser?.role === 'PATIENT' && result.patientId
+    && await Patient.exists({ _id: result.patientId, userId: authUser.id });
+
+  if (!isStaff && !isOwningPatient) {
     if (!accessToken) throw new ApiError(401, 'Giriş tokeni tələb olunur');
     let payload;
     try {
@@ -1302,6 +1446,8 @@ export const getResultPdfBuffer = async (id, { accessToken, authUser } = {}) => 
     if (result.status !== 'approved' || !result.isPublicVisible) {
       throw new ApiError(404, 'Nəticə tapılmadı');
     }
+  } else if (isOwningPatient && result.status !== 'approved') {
+    throw new ApiError(403, 'Yalnız təsdiqlənmiş nəticələr yüklənilə bilər');
   }
 
   const buffer = await createLabResultPDF({

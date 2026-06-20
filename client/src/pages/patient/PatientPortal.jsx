@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import api from '../../api/axios';
 import { clearAuthStorage } from '../../utils/authSession';
 import AvatarUpload from '../../components/common/AvatarUpload';
+import PatientTimeline from '../../components/common/PatientTimeline';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
@@ -29,13 +31,15 @@ const STATUS_COLORS = {
   cancelled:   { bg: '#fee2e2', color: '#991b1b', label: 'Ləğv edildi' },
   missed:      { bg: '#fef9c3', color: '#854d0e', label: 'Gəlmədi'    },
   no_show:     { bg: '#fef3c7', color: '#92400e', label: 'Gəlmədi'    },
+  archived:    { bg: '#f1f5f9', color: '#475569', label: 'Arxivləşdirilib' },
+  superseded:  { bg: '#f1f5f9', color: '#475569', label: 'Əvəzlənib'  },
 };
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, label }) {
   const s = STATUS_COLORS[status] || { bg: '#f1f5f9', color: '#475569', label: status };
   return (
     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: s.bg, color: s.color, fontFamily: FONT, whiteSpace: 'nowrap' }}>
-      {s.label}
+      {label || s.label}
     </span>
   );
 }
@@ -52,28 +56,49 @@ function SectionTitle({ children }) {
   return <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{children}</h3>;
 }
 
+function PrescriptionDetail({ label, value, block = false }) {
+  if (!value) return null;
+  return (
+    <div style={{ marginTop: block ? 10 : 0, fontFamily: FONT }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#334155', marginTop: 2, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{value}</div>
+    </div>
+  );
+}
+
 export default function PatientPortal() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   let user = {};
-  try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch {}
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {
+    // Invalid local session data is handled as a signed-out state.
+  }
+  const userId = user._id;
 
   const [patient, setPatient]           = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
+  const [prescriptionError, setPrescriptionError] = useState(false);
+  const [expandedPrescriptionId, setExpandedPrescriptionId] = useState(null);
   const [vitals, setVitals]             = useState(null);
-  const [loading, setLoading]           = useState(true);
+  const [loading, setLoading]           = useState(Boolean(userId));
   const [notFound, setNotFound]         = useState(false);
   const [labResults,  setLabResults]    = useState([]);
+  const [downloadingLabId, setDownloadingLabId] = useState(null);
   const [invoices,    setInvoices]      = useState([]);
+  const [invoiceBalances, setInvoiceBalances] = useState({});
   const [notifs,      setNotifs]        = useState([]);
   const [unreadCount, setUnreadCount]   = useState(0);
   const [notifOpen,   setNotifOpen]     = useState(false);
   const [userPhoto,   setUserPhoto]     = useState(user.photoUrl || '');
+  const [currentTime] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!user._id) { setLoading(false); return; }
+    if (!userId) return;
 
-    api.get(`/patients/by-user/${user._id}`)
+    api.get(`/patients/by-user/${userId}`)
       .then(res => {
         const pat = res.data?.data?.patient ?? res.data?.patient;
         setPatient(pat);
@@ -81,7 +106,7 @@ export default function PatientPortal() {
 
         return Promise.allSettled([
           api.get(`/appointments/patient/${pid}`, { params: { limit: 10 } }),
-          api.get(`/prescriptions/patient/${pid}`, { params: { limit: 5 } }),
+          api.get(`/prescriptions/patient/${pid}`, { params: { limit: 100 } }),
           api.get(`/vitals/patient/${pid}/latest`),
           api.get(`/lab/results/patient/${pid}`),
           api.get(`/billing/patient/${pid}`),
@@ -98,6 +123,9 @@ export default function PatientPortal() {
         if (presR.status === 'fulfilled') {
           const d = presR.value.data?.data;
           setPrescriptions(d?.prescriptions ?? (Array.isArray(d) ? d : []));
+          setPrescriptionError(false);
+        } else {
+          setPrescriptionError(true);
         }
         if (vitR.status === 'fulfilled') {
           const d = vitR.value.data?.data;
@@ -109,7 +137,24 @@ export default function PatientPortal() {
         }
         if (billR.status === 'fulfilled') {
           const d = billR.value.data?.data;
-          setInvoices(Array.isArray(d) ? d : []);
+          const invoiceList = Array.isArray(d) ? d : [];
+          setInvoices(invoiceList);
+
+          // Only partially-paid invoices need a remaining-balance lookup —
+          // paid/draft/cancelled invoices don't need a payment breakdown.
+          const partial = invoiceList.filter(inv => inv.status === 'partially_paid');
+          if (partial.length) {
+            Promise.allSettled(partial.map(inv => api.get(`/billing/${inv._id}/payments`)))
+              .then(balanceResults => {
+                const map = {};
+                balanceResults.forEach((r, idx) => {
+                  if (r.status === 'fulfilled') {
+                    map[partial[idx]._id] = r.value.data?.data || {};
+                  }
+                });
+                setInvoiceBalances(map);
+              });
+          }
         }
       })
       .catch(err => {
@@ -120,21 +165,17 @@ export default function PatientPortal() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
-    const t = localStorage.getItem('token')
-    if (!t) return
-    fetch('http://localhost:5000/api/v1/notifications?page=1&limit=20', {
-      headers: { Authorization: `Bearer ${t}` },
-    })
-      .then(r => r.json())
-      .then(d => {
-        const list   = d.data?.notifications || []
+    if (!localStorage.getItem('token')) return
+    api.get('/notifications', { params: { page: 1, limit: 20 } })
+      .then(({ data }) => {
+        const list   = data.data?.notifications || []
         const now    = Date.now()
         const last24 = list.filter(n => now - new Date(n.createdAt).getTime() < 86400000)
         setNotifs(last24)
-        setUnreadCount(d.data?.unreadCount || 0)
+        setUnreadCount(data.data?.unreadCount || 0)
       })
       .catch(() => {})
   }, [])
@@ -149,40 +190,49 @@ export default function PatientPortal() {
   };
 
   const upcomingAppts   = appointments.filter(a => a.status === 'scheduled');
-  const completedAppts  = appointments.filter(a => a.status === 'completed').sort((a, b) => new Date(b.date) - new Date(a.date));
-  const nextAppt        = [...upcomingAppts].sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-
+  const activePrescriptions = prescriptions.filter(
+    p => !p.isCancelled && (!p.status || p.status === 'active')
+  );
   const unpaidTotal = invoices
     .filter(inv => ['issued', 'partially_paid', 'overdue'].includes(inv.status))
     .reduce((s, inv) => s + (inv.total || 0), 0);
 
   const STATS = [
     { label: 'Gözləyən Randevular', value: upcomingAppts.length,                                        color: TEAL      },
-    { label: 'Aktiv Reseptlər',     value: prescriptions.length,                                         color: TEAL      },
+    { label: 'Aktiv Reseptlər',     value: activePrescriptions.length,                                   color: TEAL      },
     { label: 'Lab Nəticəsi',        value: labResults.length,                                            color: '#2563eb' },
     { label: 'Ödənilməmiş',        value: unpaidTotal > 0 ? unpaidTotal.toFixed(0) + ' ₼' : '—',       color: unpaidTotal > 0 ? '#dc2626' : '#16a34a' },
   ];
 
   const markAllRead = () => {
-    const t = localStorage.getItem('token')
-    fetch('http://localhost:5000/api/v1/notifications/read-all', {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${t}` },
-    }).then(() => {
+    api.patch('/notifications/read-all').then(() => {
       setNotifs(prev => prev.map(n => ({ ...n, isRead: true })))
       setUnreadCount(0)
     }).catch(() => {})
   }
 
   const markOneRead = (id) => {
-    const t = localStorage.getItem('token')
-    fetch(`http://localhost:5000/api/v1/notifications/${id}/read`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${t}` },
-    }).then(() => {
+    api.patch(`/notifications/${id}/read`).then(() => {
       setNotifs(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n))
       setUnreadCount(prev => Math.max(0, prev - 1))
     }).catch(() => {})
+  }
+
+  const downloadLabPdf = async (id) => {
+    setDownloadingLabId(id)
+    try {
+      const res = await api.get(`/lab-results/${id}/pdf`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'lab-result.pdf'
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      toast.error(t('labAdmin.pdfError'))
+    } finally {
+      setDownloadingLabId(null)
+    }
   }
 
   const notifTypeColor = (type) => ({
@@ -194,7 +244,7 @@ export default function PatientPortal() {
   }[type] || { bg: '#f8fafc', color: '#64748b', label: 'Ümumi' })
 
   const timeAgo = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime()
+    const diff = currentTime - new Date(dateStr).getTime()
     const m    = Math.floor(diff / 60000)
     if (m < 1)  return 'İndicə'
     if (m < 60) return `${m} dəq əvvəl`
@@ -439,28 +489,74 @@ export default function PatientPortal() {
               )}
             </Card>
 
+            {/* Medical history / timeline */}
+            <Card>
+              <SectionTitle>{t('timeline.title')}</SectionTitle>
+              {patient?._id && <PatientTimeline patientId={patient._id} />}
+            </Card>
+
             {/* Prescriptions */}
             <Card>
-              <SectionTitle>Reseptlərim</SectionTitle>
-              {prescriptions.length === 0 ? (
-                <p style={{ color: '#9ca3af', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>Resept tapılmadı</p>
+              <SectionTitle>{t('prescription.myPrescriptions')}</SectionTitle>
+              {prescriptionError ? (
+                <p style={{ color: '#dc2626', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>{t('prescription.loadError')}</p>
+              ) : prescriptions.length === 0 ? (
+                <p style={{ color: '#9ca3af', fontSize: 14, margin: 0, textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>{t('prescription.empty')}</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {prescriptions.map((p, i) => (
-                    <div key={p._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: FONT }}>
-                          {p.medications?.[0]?.name || p.medicationName || '—'}
+                  {prescriptions.map((p, i) => {
+                    const names = (p.medications || []).map(m => m.name).filter(Boolean).join(', ')
+                    const status = p.isCancelled ? 'cancelled' : (p.status || 'active')
+                    const prescriptionKey = p._id || i
+                    const expanded = expandedPrescriptionId === prescriptionKey
+                    return (
+                      <div key={prescriptionKey} style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, fontFamily: FONT, overflowWrap: 'anywhere' }}>
+                              {names || p.medicationName || '—'}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#718096', marginTop: 3, fontFamily: FONT }}>
+                              {p.prescribedBy?.userId?.fullName || p.doctorId?.userId?.fullName || '—'}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                            <span style={{ fontSize: 12, color: '#9ca3af', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                              {fmt(p.createdAt || p.prescribedDate)}
+                            </span>
+                            <StatusBadge status={status} label={t(`prescription.statuses.${status}`, status)} />
+                          </div>
                         </div>
-                        <div style={{ fontSize: 12, color: '#718096', marginTop: 3, fontFamily: FONT }}>
-                          {p.medications?.[0]?.dosage || p.dosage || '—'} · {p.doctorId?.userId?.fullName || '—'}
-                        </div>
+
+                        <button
+                          onClick={() => setExpandedPrescriptionId(expanded ? null : prescriptionKey)}
+                          style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', color: TEAL, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                        >
+                          {expanded ? t('prescription.hideDetails') : t('prescription.viewDetails')}
+                        </button>
+
+                        {expanded && (
+                          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
+                            {(p.medications || []).map((medicine, medicineIndex) => (
+                              <div key={`${medicine.name || 'medicine'}-${medicineIndex}`} style={{ padding: '8px 0', borderBottom: medicineIndex < (p.medications || []).length - 1 ? '1px solid #edf2f7' : 'none' }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{medicine.name || '—'}</div>
+                                <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 6 }}>
+                                  <PrescriptionDetail label={t('prescription.dosage')} value={medicine.dosage} />
+                                  <PrescriptionDetail label={t('prescription.frequency')} value={medicine.frequency} />
+                                  <PrescriptionDetail label={t('prescription.duration')} value={medicine.duration} />
+                                  <PrescriptionDetail label={t('prescription.instructions')} value={medicine.instructions} />
+                                </div>
+                              </div>
+                            ))}
+                            <PrescriptionDetail label={t('prescription.generalInstructions')} value={p.notes} block />
+                            <PrescriptionDetail label={t('prescription.diagnosis')} value={p.diagnosis} block />
+                            {status === 'cancelled' && <PrescriptionDetail label={t('prescription.cancelReason')} value={p.cancelReason} block />}
+                            {status === 'archived' && <PrescriptionDetail label={t('prescription.archiveReason')} value={p.archiveReason} block />}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0, marginLeft: 12, fontFamily: FONT }}>
-                        {fmt(p.createdAt || p.prescribedDate)}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </Card>
@@ -491,6 +587,15 @@ export default function PatientPortal() {
                             <span style={{ fontSize: 11, color: '#9ca3af', fontFamily: FONT }}>{date}</span>
                           </div>
                         </div>
+                        {r.status === 'approved' && (
+                          <button
+                            onClick={() => downloadLabPdf(r._id)}
+                            disabled={downloadingLabId === r._id}
+                            style={{ marginBottom: 8, padding: '4px 10px', border: '1px solid #00848e', borderRadius: 7, background: 'white', color: TEAL, fontSize: 11, fontWeight: 600, cursor: downloadingLabId === r._id ? 'not-allowed' : 'pointer', opacity: downloadingLabId === r._id ? 0.6 : 1, fontFamily: FONT }}
+                          >
+                            {downloadingLabId === r._id ? '…' : t('labResult.downloadPdf')}
+                          </button>
+                        )}
                         {r.results?.slice(0, 3).map((res, j) => {
                           const statusColor = { normal: '#16a34a', low: '#2563eb', high: '#ea580c', critical: '#dc2626' }[res.status] || '#64748b'
                           return (
@@ -559,7 +664,9 @@ export default function PatientPortal() {
                     try {
                       const u = JSON.parse(localStorage.getItem('user') || '{}')
                       localStorage.setItem('user', JSON.stringify({ ...u, photoUrl: url }))
-                    } catch {}
+                    } catch {
+                      // The uploaded image is already saved on the server.
+                    }
                   }}
                 />
               </div>
@@ -578,6 +685,18 @@ export default function PatientPortal() {
                   </div>
                 ))}
               </div>
+            </Card>
+
+            {/* Feedback / complaints */}
+            <Card>
+              <SectionTitle>{t('feedback.myFeedback')}</SectionTitle>
+              <FeedbackPanel patientUserId={userId} t={t} />
+            </Card>
+
+            {/* Consent forms */}
+            <Card>
+              <SectionTitle>{t('consentForms.myConsentForms')}</SectionTitle>
+              <ConsentFormsPanel t={t} />
             </Card>
 
             {/* Billing */}
@@ -600,11 +719,17 @@ export default function PatientPortal() {
                     }
                     const s    = STATUS_INV[inv.status] || STATUS_INV.draft
                     const date = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('az-AZ') : '—'
+                    const balance = invoiceBalances[inv._id]
                     return (
                       <div key={inv._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: FONT }}>{inv.invoiceNumber || '—'}</div>
                           <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, fontFamily: FONT }}>{date}</div>
+                          {inv.status === 'partially_paid' && balance && (
+                            <div style={{ fontSize: 11, color: '#ca8a04', marginTop: 2, fontFamily: FONT }}>
+                              Ödənilib: {Number(balance.paidAmount || 0).toFixed(2)} ₼ · Qalıq: {Number(balance.remainingBalance || 0).toFixed(2)} ₼
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 14, fontWeight: 800, color: TEAL, fontFamily: FONT }}>{inv.total} ₼</span>
@@ -626,6 +751,216 @@ export default function PatientPortal() {
       </div>
 
       <style>{`@keyframes skelpulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
+    </div>
+  );
+}
+
+function FeedbackPanel({ t }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ category: 'feedback', priority: 'medium', subject: '', message: '' });
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const load = () => {
+    setLoading(true);
+    api.get('/feedback/mine', { params: { limit: 5 } })
+      .then(({ data }) => setItems(data?.data?.items || []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const submit = async () => {
+    if (!form.subject.trim() || !form.message.trim()) {
+      setSubmitError(t('feedback.requiredFields'));
+      return;
+    }
+    setSaving(true);
+    setSubmitError('');
+    try {
+      await api.post('/feedback', form);
+      setForm({ category: 'feedback', priority: 'medium', subject: '', message: '' });
+      setShowForm(false);
+      load();
+    } catch (err) {
+      setSubmitError(err.response?.data?.message || t('feedback.loadError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const STATUS_LABEL = {
+    new: { bg: '#eff6ff', color: '#2563eb' }, in_review: { bg: '#fff7ed', color: '#c2410c' },
+    resolved: { bg: '#f0fdf4', color: '#16a34a' }, rejected: { bg: '#fef2f2', color: '#dc2626' }, closed: { bg: '#f1f5f9', color: '#475569' },
+  };
+
+  return (
+    <div>
+      {loading ? (
+        <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '12px 0' }}>{t('errorLogs.loading')}</p>
+      ) : items.length === 0 ? (
+        <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '8px 0' }}>{t('feedback.noFeedbackFound')}</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {items.map(item => {
+            const sc = STATUS_LABEL[item.status] || STATUS_LABEL.new;
+            return (
+              <div key={item._id} style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 9, border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#0a1628' }}>{item.subject}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: sc.bg, color: sc.color, whiteSpace: 'nowrap' }}>{t(`feedback.statuses.${item.status}`)}</span>
+                </div>
+                {item.adminResponse && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#334155', background: 'white', borderRadius: 7, padding: '6px 8px' }}>
+                    <strong>{t('feedback.adminResponse')}:</strong> {item.adminResponse}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!showForm ? (
+        <button onClick={() => setShowForm(true)} style={{ width: '100%', padding: '9px 0', background: '#00848e', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          {t('feedback.submitFeedback')}
+        </button>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {submitError && <p style={{ color: '#dc2626', fontSize: 12, margin: 0 }}>{submitError}</p>}
+          <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+            style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '7px 10px', fontSize: 12 }}>
+            {['feedback', 'complaint', 'suggestion', 'service_quality', 'doctor_related', 'lab_related', 'billing_related'].map(c => (
+              <option key={c} value={c}>{t(`feedback.categories.${c}`)}</option>
+            ))}
+          </select>
+          <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+            placeholder={t('feedback.subject')} style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '7px 10px', fontSize: 12 }} />
+          <textarea rows={3} value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+            placeholder={t('feedback.message')} style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '7px 10px', fontSize: 12, resize: 'vertical' }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setShowForm(false)} style={{ flex: 1, padding: '8px 0', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              {t('feedback.cancel')}
+            </button>
+            <button onClick={submit} disabled={saving} style={{ flex: 1, padding: '8px 0', background: '#00848e', color: 'white', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+              {saving ? t('errorLogs.loading') : t('feedback.save')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConsentFormsPanel({ t }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState(null);
+  const [declineReason, setDeclineReason] = useState('');
+  const [showDecline, setShowDecline] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [respondError, setRespondError] = useState('');
+
+  const load = () => {
+    setLoading(true);
+    api.get('/consent-forms/mine', { params: { limit: 10 } })
+      .then(({ data }) => setItems(data?.data?.items || []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const respond = async (id, action, reason) => {
+    setSaving(true);
+    setRespondError('');
+    try {
+      await api.patch(`/consent-forms/${id}/respond`, { action, declinedReason: reason });
+      setActive(null);
+      setShowDecline(false);
+      setDeclineReason('');
+      load();
+    } catch (err) {
+      setRespondError(err.response?.data?.message || t('errorLogs.loadError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const STATUS_LABEL = {
+    draft: { bg: '#f1f5f9', color: '#475569' }, pending_patient: { bg: '#fff7ed', color: '#c2410c' },
+    signed: { bg: '#f0fdf4', color: '#16a34a' }, declined: { bg: '#fef2f2', color: '#dc2626' }, archived: { bg: '#f1f5f9', color: '#475569' },
+  };
+
+  if (loading) return <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '12px 0' }}>{t('errorLogs.loading')}</p>;
+  if (items.length === 0) return <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '8px 0' }}>{t('consentForms.empty')}</p>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => {
+        const sc = STATUS_LABEL[item.status] || STATUS_LABEL.draft;
+        const isActive = active === item._id;
+        return (
+          <div key={item._id} style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 9, border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0a1628' }}>{item.title}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>{item.doctorId?.userId?.fullName || ''}</div>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: sc.bg, color: sc.color, whiteSpace: 'nowrap' }}>
+                {t(`consentForms.statuses.${item.status}`)}
+              </span>
+            </div>
+
+            {item.status === 'pending_patient' && (
+              isActive ? (
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontSize: 12, color: '#334155', whiteSpace: 'pre-wrap', margin: '0 0 8px' }}>{item.content}</p>
+                  {respondError && <p style={{ color: '#dc2626', fontSize: 12, margin: '0 0 8px' }}>{respondError}</p>}
+                  {!showDecline ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => respond(item._id, 'sign')} disabled={saving}
+                        style={{ flex: 1, padding: '7px 0', background: '#16a34a', color: 'white', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
+                        {t('consentForms.signConfirm')}
+                      </button>
+                      <button onClick={() => setShowDecline(true)} disabled={saving}
+                        style={{ flex: 1, padding: '7px 0', background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        {t('consentForms.decline')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <textarea rows={2} value={declineReason} onChange={e => setDeclineReason(e.target.value)}
+                        placeholder={t('consentForms.declineReasonPlaceholder')}
+                        style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '7px 10px', fontSize: 12, resize: 'vertical' }} />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setShowDecline(false)} style={{ flex: 1, padding: '7px 0', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          {t('consentForms.dismiss')}
+                        </button>
+                        <button onClick={() => respond(item._id, 'decline', declineReason)} disabled={saving || !declineReason.trim()}
+                          style={{ flex: 1, padding: '7px 0', background: '#dc2626', color: 'white', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
+                          {t('consentForms.confirmDecline')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button onClick={() => setActive(item._id)} style={{ marginTop: 6, background: 'none', border: 'none', color: '#00848e', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                  {t('consentForms.viewAndRespond')}
+                </button>
+              )
+            )}
+
+            {item.status === 'declined' && item.declinedReason && (
+              <div style={{ marginTop: 6, fontSize: 11, color: '#991b1b' }}>{t('consentForms.declineReason')}: {item.declinedReason}</div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

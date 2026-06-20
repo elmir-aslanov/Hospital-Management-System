@@ -62,9 +62,18 @@ export const validateUpdateSchedule = [
     .notEmpty().withMessage('endTime is required')
     .matches(/^\d{2}:\d{2}$/).withMessage('endTime must be in HH:MM format'),
 
+  body('*.breakStartTime')
+    .optional({ checkFalsy: true })
+    .matches(/^\d{2}:\d{2}$/).withMessage('breakStartTime must be in HH:MM format'),
+
+  body('*.breakEndTime')
+    .optional({ checkFalsy: true })
+    .matches(/^\d{2}:\d{2}$/).withMessage('breakEndTime must be in HH:MM format'),
+
   body('*.slotDuration')
     .optional()
-    .isInt({ min: 15, max: 120 }).withMessage('slotDuration must be between 15 and 120 minutes'),
+    .customSanitizer((v) => Number(v))
+    .isIn([15, 20, 30, 45, 60]).withMessage('slotDuration must be one of 15, 20, 30, 45, 60 minutes'),
 
   body('*.isOff')
     .optional()

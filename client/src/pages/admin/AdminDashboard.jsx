@@ -74,6 +74,7 @@ export default function AdminDashboard() {
   const [billing,    setBilling]    = useState({ totalRevenue: 0, todayRevenue: 0 })
   const [labSummary, setLabSummary] = useState({ todayOrders: 0, byStatus: [] })
   const [todayAppts, setTodayAppts] = useState([])
+  const [lowStockCount, setLowStockCount] = useState(0)
 
   // Notifications
   const [notifs,       setNotifs]       = useState([])
@@ -168,7 +169,11 @@ export default function AdminDashboard() {
       })
       .catch(() => {})
 
-    Promise.allSettled([p1, p2, p3, p4, p5, p6, p7, p8, p9]).finally(() => setLoading(false))
+    const p10 = api.get('/inventory/stats')
+      .then(({ data }) => setLowStockCount(data?.data?.lowStockCount || 0))
+      .catch(() => markStatError('inventory'))
+
+    Promise.allSettled([p1, p2, p3, p4, p5, p6, p7, p8, p9, p10]).finally(() => setLoading(false))
   }, [navigate, token])
 
   const handleLogout = async () => {
@@ -208,6 +213,7 @@ export default function AdminDashboard() {
     lab:         { bg: '#f0fdf4', color: '#16a34a' },
     billing:     { bg: '#fefce8', color: '#ca8a04' },
     admission:   { bg: '#fdf4ff', color: '#9333ea' },
+    inventory:   { bg: '#fff7ed', color: '#ea580c' },
     general:     { bg: '#f8fafc', color: '#64748b' },
   }[type] || { bg: '#f8fafc', color: '#64748b' })
   const labPending = labSummary.byStatus.find(s => s._id === 'pending')?.count || 0
@@ -260,6 +266,12 @@ export default function AdminDashboard() {
       sub: 'icrada',
       iconBg: '#FED7AA', iconColor: '#C2410C',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    },
+    {
+      label: 'Az stok', value: statErrors.inventory ? '—' : safeAmount(lowStockCount),
+      sub: 'anbar',
+      iconBg: '#FFEDD5', iconColor: '#EA580C',
+      icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
     },
   ]
 

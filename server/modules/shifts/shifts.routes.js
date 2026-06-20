@@ -13,8 +13,8 @@ router.get('/today',            authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTION
 router.get('/my',               authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'), shiftsController.getMyShifts);
 router.get('/weekly/:userId',   authorize('ADMIN', 'DOCTOR', 'NURSE'),                 shiftsController.getWeeklySchedule);
 
-router.post('/',                authorize('ADMIN'), validateCreateShift, validate,      shiftsController.createShift);
-router.get('/',                 authorize('ADMIN', 'DOCTOR', 'NURSE'),                 shiftsController.getShifts);
-router.patch('/:id/status',     authorize('ADMIN', 'DOCTOR', 'NURSE'), validateUpdateShiftStatus, validate, shiftsController.updateShiftStatus);
+router.post('/',                authorize('ADMIN', 'SUPER_ADMIN'), validateCreateShift, validate, shiftsController.createShift);
+router.get('/',                 authorize('ADMIN', 'SUPER_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'LAB_TECHNICIAN'), shiftsController.getShifts);
+router.patch('/:id/status',     authorize('ADMIN', 'SUPER_ADMIN'), validateUpdateShiftStatus, validate, shiftsController.updateShiftStatus);
 
 export default router;

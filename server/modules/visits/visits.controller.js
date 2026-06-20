@@ -32,11 +32,20 @@ export const closeVisit = asyncHandler(async (req, res) => {
 });
 
 export const getPatientVisits = asyncHandler(async (req, res) => {
-  const result = await visitsService.getPatientVisits(req.params.patientId, req.query);
+  const doctorId = req.user.role === 'DOCTOR'
+    ? await resolveDoctorId(req.user.id)
+    : null;
+  const result = await visitsService.getPatientVisits(req.params.patientId, {
+    ...req.query,
+    doctorId,
+  });
   res.status(200).json(new ApiResponse(200, result));
 });
 
 export const getDoctorVisits = asyncHandler(async (req, res) => {
-  const result = await visitsService.getDoctorVisits(req.params.doctorId, req.query);
+  const requestedDoctorId = req.user.role === 'DOCTOR'
+    ? await resolveDoctorId(req.user.id)
+    : req.params.doctorId;
+  const result = await visitsService.getDoctorVisits(requestedDoctorId, req.query);
   res.status(200).json(new ApiResponse(200, result));
 });

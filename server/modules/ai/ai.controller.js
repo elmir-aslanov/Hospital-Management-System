@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
-import logger from '../../utils/logger.js';
 import * as aiService from './ai.service.js';
 
 /**
  * POST /api/v1/ai/chat
- * Body: { messages: [{ role: 'user' | 'assistant', content: string }] }
+ * Body: { message, locale, conversationId?, pageContext? }
  */
 const SESSION_COOKIE = 'aslan_ai_session';
 
@@ -26,48 +25,28 @@ const getOwnerKey = (req, res) => {
   return `anonymous:${sessionId}`;
 };
 
-const writeEvent = (res, event, data) => {
-  if (!res.writableEnded) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-};
-
-export const streamChat = async (req, res, next) => {
-  let streamStarted = false;
+export const chat = async (req, res, next) => {
   try {
-    const input = aiService.validateStreamingInput(req.body);
+    const input = aiService.validateChatInput(req.body);
     const ownerKey = getOwnerKey(req, res);
     const abortController = new AbortController();
     req.on('aborted', () => abortController.abort());
 
-    res.status(200);
-    res.set({
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    });
-    res.flushHeaders();
-    streamStarted = true;
-
-    await aiService.streamAssistantResponse({
+    const result = await aiService.getAssistantResponse({
       ownerKey,
       input,
       signal: abortController.signal,
-      emit: (event, data) => writeEvent(res, event, data),
     });
-    res.end();
-  } catch (error) {
-    if (!streamStarted) return next(error);
     if (!res.writableEnded) {
-      const code = error.code
-        || (error.statusCode === 409 ? 'AI_BUSY' : error.statusCode === 400 ? 'AI_INVALID_REQUEST' : 'AI_UNAVAILABLE');
-      logger.error(`[AI] stream error: ${error.message}`);
-      writeEvent(res, 'error', { code });
-      res.end();
+      res.json(new ApiResponse(200, result, 'AI response is ready.'));
     }
+  } catch (error) {
+    if (req.aborted || res.writableEnded) return;
+    next(error);
   }
 };
 
 export const reset = asyncHandler(async (req, res) => {
-  aiService.resetStreamingConversation(getOwnerKey(req, res), req.body?.conversationId);
+  aiService.resetConversation(getOwnerKey(req, res), req.body?.conversationId);
   res.json(new ApiResponse(200, {}, 'Conversation reset.'));
 });

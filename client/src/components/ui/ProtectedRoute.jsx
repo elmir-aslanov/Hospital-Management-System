@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const SAFE_ROUTE_BY_ROLE = {
   ADMIN: '/admin/dashboard',
@@ -32,23 +35,28 @@ export default function ProtectedRoute({
   loginPath = '/login',
   unauthorizedPath,
 }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const { token, user } = getStoredAuth();
+  const role = user?.role?.toUpperCase();
+  const normalizedAllowedRoles = allowedRoles?.length ? allowedRoles.map(item => item.toUpperCase()) : null;
+  const isRoleMismatch = Boolean(token && normalizedAllowedRoles && role && !normalizedAllowedRoles.includes(role));
+
+  useEffect(() => {
+    if (isRoleMismatch) toast.error(t('permissions.sectionNotAvailable'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRoleMismatch, location.pathname]);
 
   if (!token) {
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
-  const role = user?.role?.toUpperCase();
-
-  if (allowedRoles?.length) {
-    const normalizedAllowedRoles = allowedRoles.map(item => item.toUpperCase());
-
+  if (normalizedAllowedRoles) {
     if (!role) {
       return <Navigate to={loginPath} state={{ from: location }} replace />;
     }
 
-    if (!normalizedAllowedRoles.includes(role)) {
+    if (isRoleMismatch) {
       return <Navigate to={unauthorizedPath || SAFE_ROUTE_BY_ROLE[role] || '/'} replace />;
     }
   }

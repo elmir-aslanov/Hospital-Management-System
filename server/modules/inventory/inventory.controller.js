@@ -24,3 +24,11 @@ export const dispenseMedicines = asyncHandler(async (req, res) => {
   const result = await inventoryService.dispenseMedicines(req.body.prescriptionId, req.body.items, req.user.id);
   res.status(200).json(new ApiResponse(200, result, 'Medicines dispensed'));
 });
+
+export const getPendingDispenseQueue = asyncHandler(async (req, res) => {
+  res.status(200).json(new ApiResponse(200, await inventoryService.getPendingDispenseQueue(req.query)));
+});
+
+export const getPrescriptionDispenseDetail = asyncHandler(async (req, res) => {
+  res.status(200).json(new ApiResponse(200, await inventoryService.getPrescriptionDispenseDetail(req.params.prescriptionId)));
+});

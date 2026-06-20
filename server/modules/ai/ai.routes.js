@@ -32,11 +32,22 @@ const router = Router();
  *               locale:
  *                 type: string
  *                 enum: [az, en, ru]
+ *               pageContext:
+ *                 oneOf:
+ *                   - type: string
+ *                   - type: object
+ *                     properties:
+ *                       pathname:
+ *                         type: string
  *     responses:
  *       200:
- *         description: Server-sent event stream with AI response deltas
+ *         description: AI response
  *       400:
- *         description: Invalid messages payload
+ *         description: Invalid message payload
+ *       429:
+ *         description: Too many AI requests
+ *       503:
+ *         description: AI provider is unavailable or not configured
  */
 const optionalAuthenticate = (req, _res, next) => {
   const authHeader = req.headers.authorization;
@@ -49,11 +60,11 @@ const optionalAuthenticate = (req, _res, next) => {
     req.user = { id: payload.userId, role: payload.role };
     return next();
   } catch {
-    return next(new ApiError(401, 'Invalid access token'));
+    return next();
   }
 };
 
-router.post('/chat', optionalAuthenticate, aiChatLimiter, ctrl.streamChat);
+router.post('/chat', optionalAuthenticate, aiChatLimiter, ctrl.chat);
 router.post('/chat/reset', optionalAuthenticate, aiChatLimiter, ctrl.reset);
 
 const FALLBACK = (name) =>

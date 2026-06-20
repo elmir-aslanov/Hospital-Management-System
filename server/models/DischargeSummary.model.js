@@ -23,11 +23,13 @@ const dischargeSummarySchema = new mongoose.Schema(
     followUpDate:        { type: Date },
     followUpInstructions: { type: String, trim: true },
     pdfUrl:              { type: String, default: null },
-    approvalStatus:      { type: String, enum: ['draft','submitted','approved','returned'], default: 'submitted' },
+    approvalStatus:      { type: String, enum: ['draft','submitted','approved','returned','archived'], default: 'submitted' },
     approvedBy:          { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     approvedAt:          { type: Date, default: null },
     returnReason:        { type: String, trim: true, maxlength: 1000, default: '' },
     submittedAt:         { type: Date, default: Date.now },
+    archivedAt:          { type: Date, default: null },
+    archivedBy:          { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true }
 );

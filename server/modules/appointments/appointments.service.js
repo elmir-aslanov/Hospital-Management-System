@@ -7,6 +7,25 @@ import ApiError from '../../utils/ApiError.js';
 import { APPOINTMENT_STATUS, APPOINTMENT_TRANSITIONS } from '../../config/constants.js';
 import { createNotification } from '../notifications/notifications.service.js';
 import User from '../../models/User.model.js';
+import logAction from '../../utils/auditLogger.js';
+import sendEmail from '../../utils/sendEmail.js';
+import logger from '../../utils/logger.js';
+
+// Best-effort email alongside the in-app notification — never blocks the
+// appointment flow. Reminder/notification text intentionally excludes
+// clinical details (reason/notes) per privacy requirements.
+const sendAppointmentEmail = async (to, subject, bodyText) => {
+  if (!to) return; // missing email is handled gracefully — in-app notification still fires
+  try {
+    await sendEmail({
+      to,
+      subject,
+      html: `<p>${bodyText}</p>`,
+    });
+  } catch (err) {
+    logger.warn(`Appointment email skipped: ${err.message}`);
+  }
+};
 
 export const ACTIVE_APPOINTMENT_STATUSES = Object.freeze([
   APPOINTMENT_STATUS.SCHEDULED,
@@ -45,6 +64,16 @@ const getUtcDayRange = (date) => {
     throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
   }
   return { dateString, dayStart, dayEnd };
+};
+
+// Backend is the final authority on "no past dates" — used by createAppointment
+// and rescheduleAppointment so public/admin/receptionist flows can't bypass it
+// by calling the shared service with an old date.
+const assertNotPastDate = (dayStart) => {
+  const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
+  if (dayStart.getTime() < todayStart.getTime()) {
+    throw new ApiError(400, 'Keçmiş tarixə randevu yaradıla bilməz.', [], '', 'APPOINTMENT_PAST_DATE');
+  }
 };
 
 export const withAppointmentSlotLock = async ({ doctorId, date }, operation) => {
@@ -114,6 +143,7 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
   // Step 3 — check work schedule
   // UTC noon avoids timezone midnight-shift when calculating day-of-week
   const { dateString, dayStart } = getUtcDayRange(date);
+  assertNotPastDate(dayStart);
   const apptDate  = dayStart;
   const dayOfWeek = new Date(`${dateString}T12:00:00.000Z`).getUTCDay();
   const schedule  = await WorkSchedule.findOne({ doctorId, dayOfWeek });
@@ -148,13 +178,15 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
     const doctorUser  = await User.findById(doctor.userId);
     const dateStr     = new Date(date).toLocaleDateString('az-AZ');
     if (patientUser) {
+      const message = `${dateStr} tarixində saat ${startTime}–${endTime} arası Dr. ${doctorUser?.fullName || 'Həkim'} ilə randevunuz yaradıldı.`;
       await createNotification({
         userId:  patientUser._id,
         title:   'Randevunuz təsdiqləndi',
-        message: `${dateStr} tarixində saat ${startTime}–${endTime} arası Dr. ${doctorUser?.fullName || 'Həkim'} ilə randevunuz yaradıldı.`,
+        message,
         type:    'appointment',
         link:    '/patient/appointments',
       });
+      await sendAppointmentEmail(patientUser.email, 'Randevunuz təsdiqləndi', message);
     }
     // Notify doctor
     if (doctorUser) {
@@ -215,20 +247,29 @@ export const getPublicSlots = async (doctorId, dateStr) => {
 
   const dayOfWeek = date.getUTCDay();
 
+  // A fully past date (not just an elapsed time-slot on today) has zero
+  // available slots — backend is the final authority here too.
+  const todayStrCheck = new Date().toISOString().split('T')[0];
+  if (dateStr < todayStrCheck) {
+    return { date: dateStr, doctorId, available: false, slots: [], reason: 'Keçmiş tarixdir' };
+  }
+
   // Try doctor-specific schedule first
   const schedule = await WorkSchedule.findOne({ doctorId, dayOfWeek });
 
-  let startTime, endTime, slotDuration;
+  let startTime, endTime, slotDuration, breakStartTime, breakEndTime;
 
   if (schedule) {
     if (schedule.isOff) {
       return { date: dateStr, doctorId, available: false, slots: [], reason: 'İstirahət günüdür' };
     }
-    startTime    = schedule.startTime;
-    endTime      = schedule.endTime;
-    slotDuration = schedule.slotDuration || DEFAULT_SLOT_DURATION;
+    startTime      = schedule.startTime;
+    endTime        = schedule.endTime;
+    slotDuration   = schedule.slotDuration || DEFAULT_SLOT_DURATION;
+    breakStartTime = schedule.breakStartTime || null;
+    breakEndTime   = schedule.breakEndTime || null;
   } else {
-    // Fallback to clinic defaults
+    // Fallback to clinic defaults — no schedule configured for this doctor/day yet
     const defaults = DEFAULT_HOURS[dayOfWeek];
     if (!defaults) {
       return { date: dateStr, doctorId, available: false, slots: [], reason: 'Bazar günü qəbul yoxdur' };
@@ -263,12 +304,14 @@ export const getPublicSlots = async (doctorId, dateStr) => {
     const time = minsToTime(cur);
     const slotEnd = minsToTime(cur + slotDuration);
     const pastTime = isToday && cur < nowMins;
+    const onBreak = !!(breakStartTime && breakEndTime && time < breakEndTime && slotEnd > breakStartTime);
     const overlaps = booked.some(item => item.startTime < slotEnd && item.endTime > time);
-    slots.push({ time, available: !overlaps && !pastTime });
+    const reason = pastTime ? 'past' : overlaps ? 'booked' : onBreak ? 'break' : null;
+    slots.push({ time, available: !reason, reason });
     cur += slotDuration;
   }
 
-  return { date: dateStr, doctorId, available: true, slots };
+  return { date: dateStr, doctorId, available: true, slotDuration, slots };
 };
 
 // ─── Public booking (no auth) — existing OR new patient ──────────────────────
@@ -428,9 +471,12 @@ export const getDoctorAppointments = async (doctorId, { date, status, page, limi
 
 // ─── Update ───────────────────────────────────────────────────────────────────
 
-export const updateAppointmentStatus = async (appointmentId, status, userId) => {
+export const updateAppointmentStatus = async (appointmentId, status, userId, { actingDoctorId, isPrivileged } = {}) => {
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) throw new ApiError(404, 'Appointment not found');
+  if (!isPrivileged && String(appointment.doctorId) !== String(actingDoctorId)) {
+    throw new ApiError(403, 'You can only update your own appointments');
+  }
 
   const allowed = APPOINTMENT_TRANSITIONS[appointment.status] || [];
   if (!allowed.includes(status)) {
@@ -486,15 +532,17 @@ export const cancelAppointment = async (appointmentId, userId, cancelReason) => 
     const patient     = await Patient.findById(appointment.patientId);
     const patientUser = patient ? await User.findById(patient.userId) : null;
     if (patientUser) {
+      const message = cancelReason
+        ? `Randevunuz ləğv edildi. Səbəb: ${cancelReason}`
+        : 'Randevunuz ləğv edildi.';
       await createNotification({
         userId:  patientUser._id,
         title:   'Randevunuz ləğv edildi',
-        message: cancelReason
-          ? `Randevunuz ləğv edildi. Səbəb: ${cancelReason}`
-          : 'Randevunuz ləğv edildi.',
+        message,
         type:    'appointment',
         link:    '/patient/appointments',
       });
+      await sendAppointmentEmail(patientUser.email, 'Randevunuz ləğv edildi', message);
     }
   } catch (_) {}
 
@@ -512,7 +560,7 @@ export const cancelAppointment = async (appointmentId, userId, cancelReason) => 
   return populateAppointment(Appointment.findById(appointment._id));
 };
 
-export const rescheduleAppointment = async (appointmentId, { date, startTime, endTime }, userId) => {
+export const rescheduleAppointment = async (appointmentId, { date, startTime, endTime }, userId, req) => {
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) throw new ApiError(404, 'Appointment not found');
 
@@ -524,6 +572,9 @@ export const rescheduleAppointment = async (appointmentId, { date, startTime, en
   if (cancellable.includes(appointment.status)) {
     throw new ApiError(400, `Cannot reschedule an appointment with status '${appointment.status}'`);
   }
+
+  const { dayStart: newDayStart } = getUtcDayRange(date);
+  assertNotPastDate(newDayStart);
 
   await withAppointmentSlotLock({ doctorId: appointment.doctorId, date }, async () => {
     await assertAppointmentSlotAvailable({
@@ -537,7 +588,226 @@ export const rescheduleAppointment = async (appointmentId, { date, startTime, en
     appointment.startTime = startTime;
     appointment.endTime   = endTime;
     appointment.status    = APPOINTMENT_STATUS.SCHEDULED;
+    // A rescheduled slot needs fresh reminders — clear any prior sends.
+    appointment.reminder24hSentAt = null;
+    appointment.reminder2hSentAt  = null;
     await appointment.save();
   });
+
+  try {
+    const patient     = await Patient.findById(appointment.patientId);
+    const patientUser = patient ? await User.findById(patient.userId) : null;
+    const dateStr      = new Date(appointment.date).toLocaleDateString('az-AZ');
+    if (patientUser) {
+      const message = `Randevunuz yeni tarixə köçürüldü: ${dateStr} saat ${startTime}–${endTime}.`;
+      await createNotification({
+        userId:  patientUser._id,
+        title:   'Randevunuz yenidən planlandı',
+        message,
+        type:    'appointment',
+        link:    '/patient/appointments',
+      });
+      await sendAppointmentEmail(patientUser.email, 'Randevunuz yenidən planlandı', message);
+    }
+  } catch (_) {}
+
+  logAction({
+    userId, action: 'APPOINTMENT_RESCHEDULE', resourceType: 'Appointment', resourceId: appointment._id,
+    description: 'Appointment rescheduled', req, metadata: { date: appointment.date, startTime, endTime },
+  });
+
   return populateAppointment(Appointment.findById(appointment._id));
+};
+
+// ─── Check-in / queue workflow ─────────────────────────────────────────────────
+
+const isSameUtcDay = (date, reference = new Date()) => {
+  const d = new Date(date);
+  return d.getUTCFullYear() === reference.getUTCFullYear()
+    && d.getUTCMonth() === reference.getUTCMonth()
+    && d.getUTCDate() === reference.getUTCDate();
+};
+
+// Receptionist/admin confirms the patient has physically arrived. Only today's
+// 'scheduled' appointments are eligible — this is exactly the existing
+// scheduled → waiting transition, just triggered from the front desk instead
+// of a raw status dropdown, with check-in metadata attached.
+export const checkInAppointment = async (appointmentId, userId, req) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+
+  if (!isSameUtcDay(appointment.date)) {
+    throw new ApiError(400, 'Only today\'s appointments can be checked in', [], '', 'APPOINTMENT_NOT_TODAY');
+  }
+  if (appointment.status !== APPOINTMENT_STATUS.SCHEDULED) {
+    throw new ApiError(
+      400,
+      appointment.checkedInAt
+        ? 'This appointment has already been checked in'
+        : `Cannot check in an appointment with status '${appointment.status}'`,
+      [], '', 'APPOINTMENT_ALREADY_CHECKED_IN',
+    );
+  }
+
+  const queueNumber = 1 + await Appointment.countDocuments({
+    doctorId: appointment.doctorId,
+    checkedInAt: { $ne: null },
+    date: appointment.date,
+  });
+
+  appointment.status      = APPOINTMENT_STATUS.WAITING;
+  appointment.checkedInAt = new Date();
+  appointment.checkedInBy = userId;
+  appointment.queueNumber = queueNumber;
+  await appointment.save();
+
+  try {
+    const doctor     = await Doctor.findById(appointment.doctorId);
+    const doctorUser = doctor ? await User.findById(doctor.userId) : null;
+    const patient     = await Patient.findById(appointment.patientId);
+    const patientUser = patient ? await User.findById(patient.userId) : null;
+    if (doctorUser) {
+      await createNotification({
+        userId:  doctorUser._id,
+        title:   'Pasiyent gəldi',
+        message: `${patientUser?.fullName || 'Pasiyent'} qəbula gəldi (Növbə №${queueNumber}).`,
+        type:    'appointment',
+        link:    '/doctor/dashboard',
+      });
+    }
+  } catch (_) {}
+
+  logAction({
+    userId, action: 'APPOINTMENT_CHECKIN', resourceType: 'Appointment', resourceId: appointment._id,
+    description: `Patient checked in, queue #${queueNumber}`, req, metadata: { queueNumber },
+  });
+
+  return populateAppointment(Appointment.findById(appointment._id));
+};
+
+// `actingDoctorId` is the Doctor._id resolved from the caller's own profile.
+// When `isPrivileged` is true (ADMIN/SUPER_ADMIN), ownership is not enforced.
+export const startConsultation = async (appointmentId, { actingDoctorId, isPrivileged }, userId, req) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+  if (!isPrivileged && String(appointment.doctorId) !== String(actingDoctorId)) {
+    throw new ApiError(403, 'You can only start your own appointments');
+  }
+  if (appointment.status !== APPOINTMENT_STATUS.WAITING) {
+    throw new ApiError(400, `Cannot start consultation from status '${appointment.status}'`);
+  }
+
+  appointment.status                = APPOINTMENT_STATUS.IN_PROGRESS;
+  appointment.consultationStartedAt = new Date();
+  await appointment.save();
+
+  logAction({
+    userId, action: 'APPOINTMENT_CONSULTATION_START', resourceType: 'Appointment', resourceId: appointment._id,
+    description: 'Consultation started', req,
+  });
+
+  return populateAppointment(Appointment.findById(appointment._id));
+};
+
+export const completeAppointment = async (appointmentId, { actingDoctorId, isPrivileged }, userId, req) => {
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) throw new ApiError(404, 'Appointment not found');
+  if (!isPrivileged && String(appointment.doctorId) !== String(actingDoctorId)) {
+    throw new ApiError(403, 'You can only complete your own appointments');
+  }
+  if (appointment.status !== APPOINTMENT_STATUS.IN_PROGRESS) {
+    throw new ApiError(400, `Cannot complete consultation from status '${appointment.status}'`);
+  }
+
+  appointment.status      = APPOINTMENT_STATUS.COMPLETED;
+  appointment.completedAt = new Date();
+  await appointment.save();
+
+  logAction({
+    userId, action: 'APPOINTMENT_CONSULTATION_COMPLETE', resourceType: 'Appointment', resourceId: appointment._id,
+    description: 'Consultation completed', req,
+  });
+
+  return populateAppointment(Appointment.findById(appointment._id));
+};
+
+// ─── Reminder scan ──────────────────────────────────────────────────────────
+//
+// No live job scheduler exists in this project (Redis is disabled — see
+// server/config/redis.js — and the BullMQ files under server/jobs/ are not
+// imported anywhere). This exposes a minimal, idempotent scan that can be
+// triggered by an ops cron / admin action instead of a background worker.
+//
+// De-duplication: each appointment is claimed atomically via findOneAndUpdate
+// with `reminderXSentAt: null` in the filter, so concurrent/overlapping scans
+// can never send the same reminder twice. Only `scheduled` appointments are
+// eligible — cancelled/missed/completed never receive a reminder.
+
+const combineDateAndTime = (date, hhmm) => {
+  const d = new Date(date);
+  const [h, m] = String(hhmm || '00:00').split(':').map(Number);
+  d.setUTCHours(h, m, 0, 0);
+  return d;
+};
+
+const claimAndSendReminder = async ({ field, auditAction, title, buildMessage }) => {
+  const now = new Date();
+  const candidates = await Appointment.find({ status: APPOINTMENT_STATUS.SCHEDULED, [field]: null })
+    .populate({ path: 'patientId', populate: { path: 'userId', select: 'fullName email' } })
+    .populate({ path: 'doctorId',  populate: { path: 'userId', select: 'fullName' } });
+
+  let sent = 0;
+  for (const appt of candidates) {
+    const apptAt = combineDateAndTime(appt.date, appt.startTime);
+    const hoursUntil = (apptAt.getTime() - now.getTime()) / 3_600_000;
+    const inWindow = field === 'reminder24hSentAt'
+      ? hoursUntil <= 24 && hoursUntil > 2
+      : hoursUntil <= 2 && hoursUntil > 0;
+    if (!inWindow) continue;
+
+    // Atomic claim — guarantees exactly-once even if scan overlaps itself.
+    const claimed = await Appointment.findOneAndUpdate(
+      { _id: appt._id, [field]: null, status: APPOINTMENT_STATUS.SCHEDULED },
+      { $set: { [field]: new Date() } },
+    );
+    if (!claimed) continue; // another scan already claimed it
+
+    const patientUser = appt.patientId?.userId;
+    const doctorName  = appt.doctorId?.userId?.fullName || 'Həkim';
+    const dateStr      = apptAt.toLocaleDateString('az-AZ');
+    if (patientUser) {
+      const message = buildMessage({ dateStr, startTime: appt.startTime, doctorName });
+      try {
+        await createNotification({
+          userId: patientUser._id, title, message, type: 'appointment', link: '/patient/appointments',
+        });
+        await sendAppointmentEmail(patientUser.email, title, message);
+      } catch (_) {}
+    }
+
+    logAction({
+      userId: patientUser?._id || null, action: auditAction, resourceType: 'Appointment', resourceId: appt._id,
+      description: title,
+    });
+    sent += 1;
+  }
+  return sent;
+};
+
+export const scanAndSendReminders = async () => {
+  const sent24h = await claimAndSendReminder({
+    field: 'reminder24hSentAt',
+    auditAction: 'APPOINTMENT_REMINDER_24H_SENT',
+    title: 'Randevu xatırlatması',
+    buildMessage: ({ dateStr, startTime, doctorName }) =>
+      `Sabah, ${dateStr} saat ${startTime}-də Dr. ${doctorName} ilə randevunuz var.`,
+  });
+  const sent2h = await claimAndSendReminder({
+    field: 'reminder2hSentAt',
+    auditAction: 'APPOINTMENT_REMINDER_2H_SENT',
+    title: 'Randevu xatırlatması',
+    buildMessage: ({ startTime, doctorName }) =>
+      `Bugün saat ${startTime}-də (2 saat sonra) Dr. ${doctorName} ilə randevunuz var.`,
+  });
+  return { sent24h, sent2h };
 };

@@ -14,9 +14,20 @@ const dayBounds = (dateStr) => {
   return { start, end };
 };
 
+// Active (non-cancelled, non-absence) shift statuses — these are the only
+// ones that can actually overlap in a way that double-books a staff member.
+const ACTIVE_SHIFT_STATUSES = ['scheduled', 'active', 'completed'];
+
 export const createShift = async (data, assignedBy) => {
   const user = await User.findById(data.userId);
   if (!user) throw new ApiError(404, 'User not found');
+
+  if (data.startTime >= data.endTime) {
+    throw new ApiError(400, 'Start time must be before end time');
+  }
+  if (data.breakStartTime && data.breakEndTime && data.breakStartTime >= data.breakEndTime) {
+    throw new ApiError(400, 'Break start time must be before break end time');
+  }
 
   const { start, end } = dayBounds(data.date);
 
@@ -24,7 +35,7 @@ export const createShift = async (data, assignedBy) => {
   const overlap = await Shift.findOne({
     userId: data.userId,
     date:   { $gte: start, $lte: end },
-    status: { $nin: ['cancelled'] },
+    status: { $in: ACTIVE_SHIFT_STATUSES },
     $or: [
       { startTime: { $lt: data.endTime }, endTime: { $gt: data.startTime } },
     ],
@@ -34,21 +45,28 @@ export const createShift = async (data, assignedBy) => {
   return Shift.create({ ...data, assignedBy, date: new Date(data.date) });
 };
 
-export const getShifts = async ({ wardId, date, shiftType, userId, page, limit } = {}) => {
+export const getShifts = async ({ wardId, departmentId, date, shiftType, userId, role, status, page, limit } = {}) => {
   const { pg, lim, skip } = paginate(page, limit);
   const filter = {};
-  if (wardId)    filter.wardId    = wardId;
-  if (shiftType) filter.shiftType = shiftType;
-  if (userId)    filter.userId    = userId;
+  if (wardId)       filter.wardId       = wardId;
+  if (departmentId) filter.departmentId = departmentId;
+  if (shiftType)    filter.shiftType    = shiftType;
+  if (userId)       filter.userId       = userId;
+  if (status)       filter.status       = status;
   if (date) {
     const { start, end } = dayBounds(date);
     filter.date = { $gte: start, $lte: end };
+  }
+  if (role) {
+    const userIds = await User.find({ role }).distinct('_id');
+    filter.userId = filter.userId ? filter.userId : { $in: userIds };
   }
 
   const [shifts, total] = await Promise.all([
     Shift.find(filter)
       .populate('userId', 'fullName role')
       .populate('wardId', 'name type')
+      .populate('departmentId', 'name')
       .sort({ date: 1, startTime: 1 }).skip(skip).limit(lim),
     Shift.countDocuments(filter),
   ]);

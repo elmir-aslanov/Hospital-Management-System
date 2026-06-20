@@ -154,7 +154,7 @@ export default function AdminAppointments() {
 
   const handleSave = async () => {
     if (!selectedPatient || !selectedDoctor || !apptDate || (!apptTime && !startTime)) {
-      setFormError('Pasiyent, həkim, tarix və saat mütləqdir')
+      setFormError(t('adminAppointments.requiredFieldsError'))
       return
     }
     const selectedSlot = adminSlots.find(slot => slot.time === (startTime || apptTime))
@@ -176,14 +176,14 @@ export default function AdminAppointments() {
             const em = m + 30;
             return `${String(em >= 60 ? h + 1 : h).padStart(2,'0')}:${String(em % 60).padStart(2,'0')}`;
           })(),
-          reason:    note || 'Müayinə',
+          reason:    note || t('adminAppointments.defaultReason'),
       })
       closeModal()
       load()
     } catch (error) {
       setFormError(error.response?.status === 409
         ? t('appointmentConflict.doctorBusy')
-        : error.response?.data?.message || 'Server xətası, yenidən cəhd edin')
+        : error.response?.data?.message || t('adminAppointments.serverError'))
     } finally {
       setSaving(false)
     }
@@ -242,11 +242,11 @@ export default function AdminAppointments() {
 
   const handleReschedule = async () => {
     if (!rescheduleDate || !rescheduleStart || !rescheduleEnd) {
-      setRescheduleErr('Tarix, başlama və bitmə vaxtı mütləqdir')
+      setRescheduleErr(t('adminAppointments.rescheduleRequiredError'))
       return
     }
     if (rescheduleStart >= rescheduleEnd) {
-      setRescheduleErr('Bitmə vaxtı başlama vaxtından sonra olmalıdır')
+      setRescheduleErr(t('adminAppointments.endAfterStartError'))
       return
     }
     setRescheduleSaving(true); setRescheduleErr('')
@@ -264,7 +264,7 @@ export default function AdminAppointments() {
     } catch (error) {
       setRescheduleErr(error.response?.status === 409
         ? t('appointmentConflict.doctorBusy')
-        : error.response?.data?.message || 'Server xətası')
+        : error.response?.data?.message || t('adminAppointments.serverError'))
     }
     finally { setRescheduleSaving(false) }
   }
@@ -289,8 +289,8 @@ export default function AdminAppointments() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Randevular</h1>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{filtered.length} randevu göstərilir</p>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>{t('adminLayout.nav.appointments')}</h1>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{t('adminAppointments.showingCount', { count: filtered.length })}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 9, padding: 3 }}>
@@ -301,7 +301,7 @@ export default function AdminAppointments() {
                 boxShadow: view === 'table' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}>
               <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ marginRight: 5 }}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              Cədvəl
+              {t('adminAppointments.tableView')}
             </button>
             <button onClick={() => setView('calendar')}
               style={{ padding: '7px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center',
@@ -310,12 +310,12 @@ export default function AdminAppointments() {
                 boxShadow: view === 'calendar' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}>
               <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ marginRight: 5 }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Təqvim
+              {t('adminAppointments.calendarView')}
             </button>
           </div>
           <button onClick={openModal} style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Yeni randevu
+            {t('adminAppointments.newAppointment')}
           </button>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function AdminAppointments() {
           ))}
         </div>
         <input type="date" value={dateFilter} onChange={e => setDate(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: 9, padding: '6px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white' }} />
-        {dateFilter && <button onClick={() => setDate('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 12 }}>Təmizlə</button>}
+        {dateFilter && <button onClick={() => setDate('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 12 }}>{t('adminAppointments.clear')}</button>}
         <button
           onClick={() => exportToCsv('randevular.csv',
             appts.map(a => [
@@ -341,7 +341,7 @@ export default function AdminAppointments() {
               a.status || '',
               a.reason || '',
             ]),
-            ['Pasiyent', 'Həkim', 'Tarix', 'Saat', 'Status', 'Səbəb']
+            [t('adminAppointments.patient'), t('adminAppointments.doctor'), t('adminAppointments.date'), t('adminAppointments.time'), t('adminAppointments.statusLabel'), t('adminAppointments.reason')]
           )}
           style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
         >
@@ -358,12 +358,12 @@ export default function AdminAppointments() {
               <div style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             </div>
           ) : filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8', fontSize: 14 }}>Randevu tapılmadı</div>
+            <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8', fontSize: 14 }}>{t('adminAppointments.noResults')}</div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  {['Pasiyent', 'Həkim', 'Tarix', 'Saat', 'Status', 'Əməliyyat'].map(h => (
+                  {[t('adminAppointments.patient'), t('adminAppointments.doctor'), t('adminAppointments.date'), t('adminAppointments.time'), t('adminAppointments.statusLabel'), t('adminAppointments.actions')].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -380,7 +380,20 @@ export default function AdminAppointments() {
                       <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getDate(a)}</td>
                       <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getTime(a)}</td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: sc.bg, color: sc.color }}>{statusLabel(a.status)}</span>
+                        <span
+                          title={a.checkedInAt ? `${t('checkIn.checkedInAt')}: ${new Date(a.checkedInAt).toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' })}` : undefined}
+                          style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: sc.bg, color: sc.color }}
+                        >
+                          {statusLabel(a.status)}{a.queueNumber ? ` · №${a.queueNumber}` : ''}
+                        </span>
+                        {a.status === 'scheduled' && (
+                          <span
+                            title={a.reminder24hSentAt || a.reminder2hSentAt ? t('appointmentReminders.sent') : t('appointmentReminders.pending')}
+                            style={{ marginLeft: 6, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20, background: (a.reminder24hSentAt || a.reminder2hSentAt) ? '#f0fdf4' : '#f8fafc', color: (a.reminder24hSentAt || a.reminder2hSentAt) ? '#16a34a' : '#94a3b8' }}
+                          >
+                            🔔 {(a.reminder24hSentAt || a.reminder2hSentAt) ? t('appointmentReminders.sent') : t('appointmentReminders.pending')}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '12px 16px', display: 'flex', gap: 6, alignItems: 'center' }}>
                         <select
@@ -398,12 +411,12 @@ export default function AdminAppointments() {
                         {!['completed','cancelled','missed'].includes(a.status) && (
                           <button
                             onClick={() => openReschedule(a)}
-                            title="Vaxtı dəyiş"
+                            title={t('adminAppointments.changeTime')}
                             style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid #e2e8f0', background: 'white', fontSize: 11, fontWeight: 600, color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }}
                             onMouseEnter={e => e.currentTarget.style.borderColor = '#00848e'}
                             onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}
                           >
-                            📅 Dəyiş
+                            📅 {t('adminAppointments.change')}
                           </button>
                         )}
                       </td>
@@ -437,8 +450,8 @@ export default function AdminAppointments() {
 
           {/* Day headers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: '1px solid #f1f5f9' }}>
-            {['B.e','Ç.a','Çər','C.a','Cüm','Şnb','Bzr'].map(d => (
-              <div key={d} style={{ padding: '10px 0', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{d}</div>
+            {['mon','tue','wed','thu','fri','sat','sun'].map(d => (
+              <div key={d} style={{ padding: '10px 0', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t(`adminAppointments.weekdays.${d}`)}</div>
             ))}
           </div>
 
@@ -462,7 +475,7 @@ export default function AdminAppointments() {
                           </div>
                         ))}
                         {dayAppts.length > 3 && (
-                          <div style={{ fontSize: 10, color: '#94a3b8', paddingLeft: 5 }}>+{dayAppts.length - 3} daha</div>
+                          <div style={{ fontSize: 10, color: '#94a3b8', paddingLeft: 5 }}>{t('adminAppointments.moreCount', { count: dayAppts.length - 3 })}</div>
                         )}
                       </div>
                     </>
@@ -482,7 +495,7 @@ export default function AdminAppointments() {
         >
           <div style={{ background: 'white', borderRadius: 16, width: 500, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>Yeni randevu</h2>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>{t('adminAppointments.newAppointment')}</h2>
               <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
             </div>
 
@@ -490,16 +503,16 @@ export default function AdminAppointments() {
 
               {/* Patient search */}
               <div style={{ gridColumn: '1/-1', position: 'relative' }}>
-                <label style={labelStyle}>Pasiyent <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>{t('adminAppointments.patient')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   value={patientSearch}
                   onChange={e => handlePatientSearch(e.target.value)}
-                  placeholder="Ad və ya soyad ilə axtar..."
+                  placeholder={t('adminAppointments.patientSearchPlaceholder')}
                   style={{ ...inputStyle, borderColor: selectedPatient ? '#00848e' : '#e2e8f0' }}
                 />
                 {selectedPatient && (
                   <div style={{ fontSize: 11, color: '#00848e', marginTop: 4 }}>
-                    ✓ Seçildi: {selectedPatient.userId?.fullName || selectedPatient.fullName || selectedPatient.name}
+                    ✓ {t('adminAppointments.selected')}: {selectedPatient.userId?.fullName || selectedPatient.fullName || selectedPatient.name}
                   </div>
                 )}
                 {patientResults.length > 0 && (
@@ -526,7 +539,7 @@ export default function AdminAppointments() {
 
               {/* Doctor select */}
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Həkim <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>{t('adminAppointments.doctor')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <select
                   value={selectedDoctor}
                   onChange={e => {
@@ -538,7 +551,7 @@ export default function AdminAppointments() {
                   }}
                   style={{ ...inputStyle, height: 38, cursor: 'pointer' }}
                 >
-                  <option value="">— Həkim seçin —</option>
+                  <option value="">— {t('labAdmin.selectDoctorPlaceholder')} —</option>
                   {doctors.map(d => {
                     const u = d.userId
                     const name = d.userId?.fullName || d.fullName || (u?.fullName?.trim()) || ((u?.name || '') + ' ' + (u?.surname || '')).trim() || d.name || '—'
@@ -549,7 +562,7 @@ export default function AdminAppointments() {
 
               {/* Date */}
               <div>
-                <label style={labelStyle}>Tarix <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>{t('adminAppointments.date')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="date"
                   value={apptDate}
@@ -567,7 +580,7 @@ export default function AdminAppointments() {
 
               {/* Start time */}
               <div>
-                <label style={labelStyle}>Başlama saatı <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>{t('adminAppointments.startTime')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="time"
                   value={startTime || apptTime}
@@ -588,7 +601,7 @@ export default function AdminAppointments() {
 
               {/* End time */}
               <div>
-                <label style={labelStyle}>Bitmə saatı <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>{t('adminAppointments.endTime')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="time"
                   value={endTime}
@@ -599,7 +612,7 @@ export default function AdminAppointments() {
 
               {/* Reason */}
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Səbəb / Müayinə məqsədi</label>
+                <label style={labelStyle}>{t('adminAppointments.reasonLabel')}</label>
                 <textarea
                   value={note}
                   onChange={e => setNote(e.target.value)}
@@ -614,9 +627,9 @@ export default function AdminAppointments() {
             )}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
-              <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
+              <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>{t('labResult.cancel')}</button>
               <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Saxlanır...' : 'Yarat'}
+                {saving ? t('labResult.saving') : t('adminAppointments.createAction')}
               </button>
             </div>
           </div>
@@ -631,7 +644,7 @@ export default function AdminAppointments() {
           <div style={{ background: 'white', borderRadius: 16, width: 420, maxWidth: '100%', padding: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>Vaxtı Dəyiş</h2>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f1b2d' }}>{t('adminAppointments.changeTimeTitle')}</h2>
                 <p style={{ margin: '3px 0 0', fontSize: 12, color: '#94a3b8' }}>
                   {getName(rescheduleAppt)} — {getDoctor(rescheduleAppt)}
                 </p>
@@ -641,7 +654,7 @@ export default function AdminAppointments() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
               <div>
-                <label style={labelStyle}>Yeni tarix <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>{t('adminAppointments.newDate')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="date"
                   value={rescheduleDate}
@@ -652,11 +665,11 @@ export default function AdminAppointments() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>Başlama vaxtı <span style={{ color: '#ef4444' }}>*</span></label>
+                  <label style={labelStyle}>{t('adminAppointments.startTime')} <span style={{ color: '#ef4444' }}>*</span></label>
                   <input type="time" value={rescheduleStart} onChange={e => setRescheduleStart(e.target.value)} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Bitmə vaxtı <span style={{ color: '#ef4444' }}>*</span></label>
+                  <label style={labelStyle}>{t('adminAppointments.endTime')} <span style={{ color: '#ef4444' }}>*</span></label>
                   <input type="time" value={rescheduleEnd} onChange={e => setRescheduleEnd(e.target.value)} style={inputStyle} />
                 </div>
               </div>
@@ -670,10 +683,10 @@ export default function AdminAppointments() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
               <button onClick={() => setRescheduleModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>
-                Ləğv et
+                {t('labResult.cancel')}
               </button>
               <button onClick={handleReschedule} disabled={rescheduleSaving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: rescheduleSaving ? 'not-allowed' : 'pointer', opacity: rescheduleSaving ? 0.7 : 1 }}>
-                {rescheduleSaving ? 'Saxlanır...' : 'Təsdiqlə'}
+                {rescheduleSaving ? t('labResult.saving') : t('adminAppointments.confirm')}
               </button>
             </div>
           </div>

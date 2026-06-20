@@ -39,6 +39,7 @@ export default function AvatarUpload({
   previewBackground = 'transparent',
   previewBorder = '3px solid #e2e8f0',
   placeholderColor = 'white',
+  showChangeButton = true,
 }) {
   const [uploading, setUploading] = useState(false)
   const [error,     setError]     = useState('')
@@ -59,7 +60,8 @@ export default function AvatarUpload({
 
     if (allowedTypes?.length) {
       if (!allowedTypes.includes(file.type)) {
-        const message = 'Yalnız JPG və PNG formatları dəstəklənir.'
+        const extList = allowedTypes.map((m) => m.split('/')[1]?.toUpperCase()).filter(Boolean).join(', ')
+        const message = `Yalnız ${extList} formatları dəstəklənir.`
         setError(message)
         onValidationChange?.({ valid: false, message })
         setPreview(null)
@@ -189,20 +191,24 @@ export default function AvatarUpload({
         )}
       </div>
 
-      {/* Upload button */}
-      <button
-        onClick={() => !uploading && inputRef.current?.click()}
-        disabled={uploading}
-        style={{
-          fontSize: 11, fontWeight: 600, color: '#00848e',
-          background: 'none', border: '1px solid #00848e',
-          borderRadius: 8, padding: '4px 12px',
-          cursor: uploading ? 'not-allowed' : 'pointer',
-          opacity: uploading ? 0.6 : 1,
-        }}
-      >
-        {uploading ? 'Yüklənir...' : 'Şəkil dəyiş'}
-      </button>
+      {/* Upload button — the avatar circle itself is already clickable
+          (with a hover affordance), so callers that only need the compact
+          circle (e.g. the header) can opt out via showChangeButton=false. */}
+      {showChangeButton && (
+        <button
+          onClick={() => !uploading && inputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            fontSize: 11, fontWeight: 600, color: '#00848e',
+            background: 'none', border: '1px solid #00848e',
+            borderRadius: 8, padding: '4px 12px',
+            cursor: uploading ? 'not-allowed' : 'pointer',
+            opacity: uploading ? 0.6 : 1,
+          }}
+        >
+          {uploading ? 'Yüklənir...' : 'Şəkil dəyiş'}
+        </button>
+      )}
 
       {error && (
         <span style={{ fontSize: 11, color: '#dc2626', textAlign: 'center', maxWidth: 240 }}>{error}</span>

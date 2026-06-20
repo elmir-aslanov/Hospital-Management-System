@@ -16,6 +16,7 @@ router.get('/',                   authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIS
 router.post('/',                  authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'),           ctrl.createInvoice);
 router.get('/patient/:patientId', authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST', 'PATIENT'), requirePatientOwnership('params.patientId'), ctrl.getPatientInvoices);
 router.get('/:id',                authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST', 'PATIENT'), requirePatientOwnershipForModel(Invoice), ctrl.getInvoiceById);
+router.get('/:id/payments',       authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST', 'PATIENT'), requirePatientOwnershipForModel(Invoice), ctrl.getInvoicePayments);
 router.patch('/:id/status',       authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'),           ctrl.updateInvoiceStatus);
 router.post('/payments',          authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'),           ctrl.addPayment);
 

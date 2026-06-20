@@ -747,7 +747,7 @@ export default function RandevuPage() {
                       </p>
                     ) : slots.length === 0 ? (
                       <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
-                        Bu tarix üçün boş saat yoxdur.
+                        {t('doctorSchedule.noSlotsForDate')}
                       </p>
                     ) : (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -758,7 +758,7 @@ export default function RandevuPage() {
                               key={s.time}
                               onClick={() => s.available && setSelSlot(s.time)}
                               disabled={!s.available}
-                              title={!s.available ? t('appointmentConflict.alreadyExists') : ''}
+                              title={!s.available ? t('doctorSchedule.slotUnavailable') : ''}
                               style={{
                                 padding: '9px 16px', borderRadius: 8, fontSize: 13,
                                 fontWeight: 600, fontFamily: T.font,

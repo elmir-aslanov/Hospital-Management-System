@@ -50,6 +50,16 @@ import AdminBlog            from './pages/admin/AdminBlog';
 import AdminBilling         from './pages/admin/AdminBilling';
 import AdminAnalitika       from './pages/admin/AdminAnalitika';
 import AdminAuditLog        from './pages/admin/AdminAuditLog';
+import AdminErrorLogs       from './pages/admin/AdminErrorLogs';
+import AdminSystemHealth    from './pages/admin/AdminSystemHealth';
+import AdminClinicalReports from './pages/admin/AdminClinicalReports';
+import AdminFeedback        from './pages/admin/AdminFeedback';
+import AdminShifts          from './pages/admin/AdminShifts';
+import AdminDispensing      from './pages/admin/AdminDispensing';
+import AdminEquipment       from './pages/admin/AdminEquipment';
+import AdminOperations      from './pages/admin/AdminOperations';
+import AdminReferrals       from './pages/admin/AdminReferrals';
+import ChiefDoctorClinicalReports from './pages/chief-doctor/ChiefDoctorClinicalReports';
 import AdminAnbar           from './pages/admin/AdminAnbar';
 import AdminPriceList       from './pages/admin/AdminPriceList';
 import AdminSettings        from './pages/admin/AdminSettings';
@@ -64,6 +74,8 @@ import DoctorDashboard      from './pages/doctor/DoctorDashboard'
 import DoctorPatients       from './pages/doctor/DoctorPatients'
 import DoctorPrescriptions  from './pages/doctor/DoctorPrescriptions'
 import DoctorAnalyses       from './pages/doctor/DoctorAnalyses'
+import DoctorDocuments      from './pages/doctor/DoctorDocuments'
+import DoctorConsentForms   from './pages/doctor/DoctorConsentForms'
 import DoctorProfile        from './pages/doctor/DoctorProfile';
 import ChiefDoctorPage      from './pages/chief-doctor/ChiefDoctorPage';
 
@@ -84,6 +96,7 @@ import PatientsPage     from './pages/dashboard/PatientsPage';
 import DoctorsPage      from './pages/dashboard/DoctorsPage';
 import AppointmentsPage from './pages/dashboard/AppointmentsPage';
 import WardsPage        from './pages/dashboard/WardsPage';
+import AdmissionsPage   from './pages/dashboard/AdmissionsPage';
 import SiteDoctorsPage  from './pages/dashboard/SiteDoctorsPage';
 
 function RouteLoader() {
@@ -191,6 +204,15 @@ function Layout() {
           <Route path="/admin/pricelist"    element={<AdminPriceList />} />
           <Route path="/admin/analytics"    element={<AdminAnalitika />} />
           <Route path="/admin/audit-log"    element={<AdminAuditLog />} />
+          <Route path="/admin/error-logs"   element={<AdminErrorLogs />} />
+          <Route path="/admin/system-health" element={<AdminSystemHealth />} />
+          <Route path="/admin/clinical-reports" element={<AdminClinicalReports />} />
+          <Route path="/admin/feedback" element={<AdminFeedback />} />
+          <Route path="/admin/shifts" element={<AdminShifts />} />
+          <Route path="/admin/dispensing" element={<AdminDispensing />} />
+          <Route path="/admin/equipment" element={<AdminEquipment />} />
+          <Route path="/admin/operations" element={<AdminOperations />} />
+          <Route path="/admin/referrals" element={<AdminReferrals />} />
           <Route path="/admin/settings"     element={<AdminSettings />} />
           <Route path="/admin/discharge"    element={<AdminDischarge />} />
           <Route path="/admin/ehr/:patientId" element={<AdminEHR />} />
@@ -213,6 +235,8 @@ function Layout() {
           <Route path="/doctor/patients"      element={<DoctorPatients />} />
           <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
           <Route path="/doctor/analyses"      element={<DoctorAnalyses />} />
+          <Route path="/doctor/documents"     element={<DoctorDocuments />} />
+          <Route path="/doctor/consent-forms" element={<DoctorConsentForms />} />
           <Route path="/doctor/profile"       element={<DoctorProfile />} />
         </Route>
         <Route element={<ProtectedRoute allowedRoles={CHIEF_DOCTOR_ROLES} loginPath="/admin" />}>
@@ -227,6 +251,7 @@ function Layout() {
           <Route path="/bas-hekim/kritik-hallar" element={<ChiefDoctorPage section="incidents" />} />
           <Route path="/bas-hekim/hesabatlar" element={<ChiefDoctorPage section="reports" />} />
           <Route path="/bas-hekim/audit" element={<ChiefDoctorPage section="audit" />} />
+          <Route path="/bas-hekim/klinik-hesabatlar" element={<ChiefDoctorClinicalReports />} />
         </Route>
 
         {/* ── Auth ── */}
@@ -252,6 +277,7 @@ function Layout() {
           <Route path="doctors"      element={<DoctorsPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="wards"        element={<WardsPage />} />
+          <Route path="admissions"   element={<AdmissionsPage />} />
           <Route path="site-doctors" element={<SiteDoctorsPage />} />
         </Route>
 

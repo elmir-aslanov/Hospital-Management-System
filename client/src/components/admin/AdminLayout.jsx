@@ -22,7 +22,16 @@ const NAV = [
   { key: 'lab',          label: 'Laboratoriya', path: '/admin/lab',           icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg> },
   { key: 'inventory',    label: 'Anbar',        path: '/admin/inventory',    icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8L6 7h12l-2-4z"/></svg> },
   { key: 'analytics',    label: 'Analitika',    path: '/admin/analytics',    icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+  { key: 'clinical-reports', label: 'Klinik hesabatlar', path: '/admin/clinical-reports', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 17v-6m4 6V7m4 10v-3"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
   { key: 'audit-log',    label: 'Audit Log',    path: '/admin/audit-log',    icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> },
+  { key: 'error-logs',   label: 'Xəta jurnalı', path: '/admin/error-logs',   icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
+  { key: 'system-health', label: 'Sistem statusu', path: '/admin/system-health', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> },
+  { key: 'feedback',     label: 'Rəy və Şikayət', path: '/admin/feedback', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+  { key: 'shifts',       label: 'İş Cədvəli',  path: '/admin/shifts',  icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+  { key: 'dispensing',   label: 'Dərman Verilişi', path: '/admin/dispensing', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg> },
+  { key: 'equipment',    label: 'Avadanlıq',   path: '/admin/equipment', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
+  { key: 'operations',   label: 'Əməliyyatlar', path: '/admin/operations', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 2v6m0 14v-6m-9-3h6m6 0h6"/><circle cx="12" cy="12" r="3"/></svg> },
+  { key: 'referrals',    label: 'Yönləndirmələr', path: '/admin/referrals', icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 8l4 4-4 4M3 12h18"/></svg> },
   { key: 'settings',     label: 'Ayarlar',      path: '/admin/settings',     icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
 ]
 
@@ -158,7 +167,7 @@ export default function AdminLayout({ children, activePage }) {
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 {item.icon}
-                <span style={{ flex: 1 }}>{item.label}</span>
+                <span style={{ flex: 1 }}>{t(`adminLayout.nav.${item.key}`, item.label)}</span>
                 {item.key === 'muraciet' && unreadMuraciet > 0 && !active && (
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444' }} />
                 )}
@@ -269,11 +278,13 @@ export default function AdminLayout({ children, activePage }) {
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '5px 12px 5px 5px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '4px 10px 4px 4px', minWidth: 0, maxWidth: 200, flexShrink: 0 }}>
               <AvatarUpload
                 currentUrl={adminPhoto}
                 userName={adminUser?.fullName || 'Admin'}
-                size={34}
+                size={32}
+                showChangeButton={false}
+                previewBorder="1px solid #e2e8f0"
                 onSuccess={(url) => {
                   setAdminPhoto(url)
                   try {
@@ -284,9 +295,9 @@ export default function AdminLayout({ children, activePage }) {
                   }
                 }}
               />
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1b2d' }}>{adminUser?.fullName || 'Admin'}</div>
-                <div style={{ fontSize: 10, color: '#94a3b8' }}>{adminUser?.email || ''}</div>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#0f1b2d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={adminUser?.fullName || 'Admin'}>{adminUser?.fullName || 'Admin'}</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={adminUser?.email || ''}>{adminUser?.email || ''}</div>
               </div>
             </div>
           </div>

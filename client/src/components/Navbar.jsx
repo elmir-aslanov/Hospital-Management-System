@@ -7,10 +7,10 @@ import { Sparkles } from 'lucide-react';
 import { useExternalLink } from '../hooks/useExternalLink';
 import ExternalLinkModal from './ui/ExternalLinkModal';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif";
 const TEAL = '#00848e';
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
 const ACTION_PILLS = ['Randevu Al', 'Pasiyent Portalı'];
 
@@ -197,18 +197,13 @@ export default function Navbar() {
       setSearchLoading(true);
       try {
         const [doctorsResponse, deptsResponse] = await Promise.all([
-          fetch(`${BASE_URL}/api/v1/doctors/public/all`, { signal: controller.signal }),
-          fetch(`${BASE_URL}/api/v1/departments`, { signal: controller.signal }),
-        ]);
-        if (!doctorsResponse.ok || !deptsResponse.ok) {
-          throw new Error(`Search request failed (${doctorsResponse.status}/${deptsResponse.status})`);
-        }
-        const [doctors, depts] = await Promise.all([
-          doctorsResponse.json(),
-          deptsResponse.json(),
+          api.get('/doctors/public/all', { signal: controller.signal }),
+          api.get('/departments', { signal: controller.signal }),
         ]);
         if (controller.signal.aborted) return;
 
+        const doctors = doctorsResponse.data;
+        const depts = deptsResponse.data;
         const q = searchQuery.toLowerCase();
         const doctorList = (doctors.data || [])
           .filter(d => (d.userId?.fullName || '').toLowerCase().includes(q) || (d.specialization || '').toLowerCase().includes(q))
@@ -221,7 +216,7 @@ export default function Navbar() {
         setSearchResults([...doctorList, ...deptList]);
         setSearchOpen(true);
       } catch (err) {
-        if (err.name !== 'AbortError') {
+        if (!controller.signal.aborted && err.code !== 'ERR_CANCELED') {
           console.error('Navbar search failed:', err);
           setSearchResults([]);
           setSearchOpen(false);
@@ -246,16 +241,18 @@ export default function Navbar() {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch(`${BASE_URL}/api/v1/settings?group=social`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error(`Social settings request failed (${response.status})`);
-        return response.json();
-      })
-      .then((data) => {
+    api.get('/settings', {
+      params: { group: 'social' },
+      signal: controller.signal,
+      silentNetworkError: true,
+    })
+      .then(({ data }) => {
         if (data.data) setSocialLinks(prev => ({ ...prev, ...data.data }));
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') console.error('Navbar social settings failed:', err);
+        if (!controller.signal.aborted && err.code !== 'ERR_CANCELED') {
+          console.error('Navbar social settings failed:', err);
+        }
       });
 
     return () => controller.abort();

@@ -2,9 +2,19 @@ import usePageTitle from '../../hooks/usePageTitle'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AboutDirector from '../../components/sections/AboutDirector'
 import api from '../../api/axios'
 import { fadeUp } from '../../utils/animations'
+
+const WEEKDAYS = [
+  { value: '1', label: 'Bazar ertəsi' },
+  { value: '2', label: 'Çərşənbə axşamı' },
+  { value: '3', label: 'Çərşənbə' },
+  { value: '4', label: 'Cümə axşamı' },
+  { value: '5', label: 'Cümə' },
+  { value: '6', label: 'Şənbə' },
+]
 
 const FONT = "'Source Sans 3', 'Raleway', sans-serif"
 const TEAL = '#1D8B95'
@@ -69,6 +79,7 @@ function getClinicalInterests(doctor) {
 
 function DoctorCard({ doctor }) {
   const navigate   = useNavigate()
+  const { t } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
   const fullName   = doctor.userId?.fullName || doctor.fullName || doctor.name || 'Həkim'
   const department = getDoctorDepartment(doctor)
@@ -154,7 +165,13 @@ function DoctorCard({ doctor }) {
             <p style={{ margin: '0 0 10px', fontSize: 13, color: '#475569' }}>{spec}</p>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginBottom: 12 }}>
+            {doctor.availableToday && (
+              <span style={{ display:'flex', alignItems:'center', gap: 4, fontSize: 11.5, fontWeight: 700, color: '#16a34a', background: '#f0fdf4', padding: '3px 9px', borderRadius: 20 }}>
+                <svg width="11" height="11" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {t('publicDoctors.availableToday', 'Bu gün aktiv')}
+              </span>
+            )}
             <span style={{ display:'flex', alignItems:'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: isAvailable ? '#16a34a' : '#94a3b8' }}>
               {isAvailable && <svg width="13" height="13" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
               {isAvailable ? 'Qəbul edir' : 'Məşğul'}
@@ -218,12 +235,14 @@ function DoctorCard({ doctor }) {
 }
 
 export default function HekimlerPage() {
+  const { t } = useTranslation()
   usePageTitle('Həkimlər', 'Aslan Medical Center-in peşəkar həkim heyəti ilə tanış olun.')
   const [doctors, setDoctors]       = useState([])
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(false)
   const [search, setSearch]         = useState('')
   const [activeSpec, setActiveSpec] = useState('Hamısı')
+  const [dayFilter, setDayFilter]   = useState('')
   const [visibleCount, setVisibleCount] = useState(8)
   const [view, setView] = useState('table')
   const [expandedId, setExpandedId] = useState(null)
@@ -231,15 +250,18 @@ export default function HekimlerPage() {
   const DOCTORS_PER_PAGE = 10
 
   useEffect(() => {
-    // Public site-doctors endpoint — no auth required
-    api.get('/doctors/public/all')
+    setLoading(true)
+    setError(false)
+    // Public doctors endpoint — no auth required. `day` filters by real
+    // WorkSchedule availability; everything else stays client-side below.
+    api.get('/doctors/public/all', { params: dayFilter ? { day: dayFilter } : undefined })
       .then(res => {
         const data = res.data?.data ?? res.data
         setDoctors(Array.isArray(data) ? data : [])
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }, [dayFilter])
 
   const filtered = [...doctors].sort((a, b) => {
     const nameA = a.userId?.fullName || a.fullName || ''
@@ -328,7 +350,7 @@ export default function HekimlerPage() {
                 </span>
                 <input
                   type="text"
-                  placeholder="Həkim adı ilə axtar..."
+                  placeholder={t('publicDoctors.searchPlaceholder', 'Həkim adı ilə axtar...')}
                   value={search}
                   onChange={e => { setSearch(e.target.value); setVisibleCount(8) }}
                 />
@@ -337,7 +359,7 @@ export default function HekimlerPage() {
               <label className="doctor-filter" aria-label="Şöbə seçimi">
                 <select value={activeSpec} onChange={e => { setActiveSpec(e.target.value); setVisibleCount(8) }}>
                   {filterOptions.map(spec => (
-                    <option key={spec} value={spec}>{spec === 'Hamısı' ? 'Bütün şöbələr' : spec}</option>
+                    <option key={spec} value={spec}>{spec === 'Hamısı' ? t('publicDoctors.selectDepartment', 'Bütün şöbələr') : spec}</option>
                   ))}
                 </select>
                 <span aria-hidden="true">
@@ -346,6 +368,28 @@ export default function HekimlerPage() {
                   </svg>
                 </span>
               </label>
+
+              <label className="doctor-filter" aria-label={t('publicDoctors.availabilityDay', 'Mövcudluq günü')}>
+                <select value={dayFilter} onChange={e => setDayFilter(e.target.value)}>
+                  <option value="">{t('publicDoctors.availabilityDay', 'Mövcudluq günü')}</option>
+                  {WEEKDAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                </select>
+                <span aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
+              </label>
+
+              {(search || activeSpec !== 'Hamısı' || dayFilter) && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(''); setActiveSpec('Hamısı'); setDayFilter('') }}
+                  style={{ height: 50, padding: '0 16px', border: '1px solid #E2E8F0', borderRadius: 12, background: 'white', color: '#64748B', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}
+                >
+                  {t('publicDoctors.clearFilters', 'Filtrləri təmizlə')}
+                </button>
+              )}
             </div>
 
             </div>
@@ -368,7 +412,7 @@ export default function HekimlerPage() {
 
           {!loading && !error && filtered.length === 0 && (
             <div className="doctor-empty-state">
-              <h3>{doctors.length === 0 ? 'Həkim tapılmadı' : 'Həkim tapılmadı'}</h3>
+              <h3>{t('publicDoctors.noDoctorsFound', 'Həkim tapılmadı')}</h3>
               <p>
                 {doctors.length === 0 ? 'Hazırda həkim məlumatı əlavə edilməyib.' : 'Axtarış və ya filtr nəticəsinə uyğun həkim mövcud deyil.'}
               </p>

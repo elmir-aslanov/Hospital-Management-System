@@ -75,17 +75,24 @@ export const createCertificate = async (data, doctorId) => {
   return populateCert(MedicalCertificate.findById(cert._id));
 };
 
-export const getCertificateById = async (id) => {
+export const getCertificateById = async (id, viewerRole) => {
   const cert = await populateCert(MedicalCertificate.findById(id));
   if (!cert) throw new ApiError(404, 'Certificate not found');
+  // Patients only ever see certificates that have cleared clinical approval.
+  if (viewerRole === 'PATIENT' && cert.approvalStatus !== 'approved') {
+    throw new ApiError(404, 'Certificate not found');
+  }
   return cert;
 };
 
-export const getPatientCertificates = async (patientId, { page, limit } = {}) => {
+export const getPatientCertificates = async (patientId, { page, limit } = {}, viewerRole) => {
   const { pg, lim, skip } = paginate(page, limit);
+  const filter = { patientId };
+  // Patients only ever see certificates that have cleared clinical approval.
+  if (viewerRole === 'PATIENT') filter.approvalStatus = 'approved';
   const [certificates, total] = await Promise.all([
-    populateCert(MedicalCertificate.find({ patientId })).sort({ issuedAt: -1 }).skip(skip).limit(lim),
-    MedicalCertificate.countDocuments({ patientId }),
+    populateCert(MedicalCertificate.find(filter)).sort({ issuedAt: -1 }).skip(skip).limit(lim),
+    MedicalCertificate.countDocuments(filter),
   ]);
   return { certificates, total, page: pg, limit: lim };
 };

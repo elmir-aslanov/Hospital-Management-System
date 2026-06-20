@@ -12,6 +12,8 @@ router.use(authenticate);
 router.get('/medicines/low-stock', authorize('ADMIN', 'NURSE'),                          inventoryController.getLowStockMedicines);
 router.get('/stats',               authorize('ADMIN'),                                    inventoryController.getInventoryStats);
 router.post('/dispense',           authorize('ADMIN', 'NURSE'), validateDispenseMedicine, validate, inventoryController.dispenseMedicines);
+router.get('/dispense/queue',      authorize('ADMIN', 'NURSE'),                            inventoryController.getPendingDispenseQueue);
+router.get('/dispense/:prescriptionId', authorize('ADMIN', 'NURSE', 'DOCTOR'),              inventoryController.getPrescriptionDispenseDetail);
 
 router.post('/medicines',          authorize('ADMIN'), validateAddMedicine, validate,     inventoryController.addMedicine);
 router.get('/medicines',           authorize('ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'), inventoryController.getMedicines);

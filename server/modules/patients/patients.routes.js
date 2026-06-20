@@ -9,6 +9,7 @@ import {
 import validate from '../../middleware/validate.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
 import authorize from '../../middleware/rbac.middleware.js';
+import { requirePatientOwnership } from '../../middleware/patientOwnership.middleware.js';
 
 const router = Router();
 
@@ -259,6 +260,33 @@ router.get(
   '/:id/medical-history',
   authorize('ADMIN', 'DOCTOR', 'NURSE'),
   patientsController.getMedicalHistory
+);
+
+/**
+ * @swagger
+ * /patients/{patientId}/timeline:
+ *   get:
+ *     summary: Unified read-only clinical timeline composed from appointments, lab, EHR, prescriptions and billing
+ *     tags: [Patients]
+ *     parameters:
+ *       - in: path
+ *         name: patientId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Paginated, sorted timeline items
+ *       403:
+ *         description: Forbidden — patient record does not belong to caller
+ *       404:
+ *         description: Patient not found
+ */
+router.get(
+  '/:patientId/timeline',
+  authorize('ADMIN', 'SUPER_ADMIN', 'BAS_HEKIM', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT'),
+  requirePatientOwnership('params.patientId'),
+  patientsController.getPatientTimeline
 );
 
 export default router;

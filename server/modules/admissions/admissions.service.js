@@ -19,18 +19,22 @@ const paginate = (page = 1, limit = 10) => {
 };
 
 export const admitPatient = async ({ patientId, bedId, wardId, reason }, admittedBy, req) => {
-  const [patient, bed] = await Promise.all([
-    Patient.findById(patientId),
-    Bed.findById(bedId),
-  ]);
+  const patient = await Patient.findById(patientId);
   if (!patient) throw new ApiError(404, 'Patient not found');
-  if (!bed)     throw new ApiError(404, 'Bed not found');
-  if (bed.status !== BED_STATUS.AVAILABLE) throw new ApiError(409, 'Bed is not available');
 
   const activeAdmission = await Admission.findOne({ patientId, status: ADMISSION_STATUS.ADMITTED });
   if (activeAdmission) throw new ApiError(409, 'Patient is already admitted');
 
-  await Bed.findByIdAndUpdate(bedId, { status: BED_STATUS.OCCUPIED, currentPatientId: patientId });
+  // Atomic claim — only matches (and flips) the bed when it's still available,
+  // so two concurrent admit requests can never both land on the same bed.
+  const bed = await Bed.findOneAndUpdate(
+    { _id: bedId, status: BED_STATUS.AVAILABLE },
+    { $set: { status: BED_STATUS.OCCUPIED, currentPatientId: patientId } },
+  );
+  if (!bed) {
+    const exists = await Bed.exists({ _id: bedId });
+    throw new ApiError(exists ? 409 : 404, exists ? 'Bed is not available' : 'Bed not found');
+  }
 
   const admission = await Admission.create({
     patientId, bedId, wardId, reason, admittedBy,
@@ -39,6 +43,40 @@ export const admitPatient = async ({ patientId, bedId, wardId, reason }, admitte
   });
 
   logAction({ userId: admittedBy, action: 'ADMISSION_CREATE', resourceType: 'Admission', resourceId: admission._id, description: `Patient ${patientId} admitted`, req });
+
+  return populateAdmission(Admission.findById(admission._id));
+};
+
+// Moves an actively-admitted patient to a different bed — frees the old bed
+// only after the new one has been atomically claimed, so a failed transfer
+// never leaves the patient bed-less.
+export const transferPatient = async (admissionId, { bedId: newBedId }, userId, req) => {
+  const admission = await Admission.findById(admissionId);
+  if (!admission) throw new ApiError(404, 'Admission not found');
+  if (admission.status !== ADMISSION_STATUS.ADMITTED) {
+    throw new ApiError(400, `Cannot transfer an admission with status '${admission.status}'`);
+  }
+  if (String(admission.bedId) === String(newBedId)) {
+    throw new ApiError(400, 'Patient is already in this bed');
+  }
+
+  const newBed = await Bed.findById(newBedId);
+  if (!newBed) throw new ApiError(404, 'Bed not found');
+
+  const claimedBed = await Bed.findOneAndUpdate(
+    { _id: newBedId, status: BED_STATUS.AVAILABLE },
+    { $set: { status: BED_STATUS.OCCUPIED, currentPatientId: admission.patientId } },
+  );
+  if (!claimedBed) throw new ApiError(409, 'Target bed is not available');
+
+  const oldBedId = admission.bedId;
+  admission.bedId  = newBedId;
+  admission.wardId = newBed.wardId;
+  await admission.save();
+
+  await Bed.findByIdAndUpdate(oldBedId, { status: BED_STATUS.AVAILABLE, currentPatientId: null });
+
+  logAction({ userId, action: 'ADMISSION_TRANSFER', resourceType: 'Admission', resourceId: admission._id, description: `Patient transferred to bed ${newBedId}`, req });
 
   return populateAdmission(Admission.findById(admission._id));
 };

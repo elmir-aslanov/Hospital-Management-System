@@ -20,9 +20,9 @@ const imageFilter = (_req, file, cb) => {
 };
 
 const doctorImageFilter = (_req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png'];
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (allowed.includes(file.mimetype)) cb(null, true);
-  else cb(new ApiError(400, 'Yalnız JPG və PNG formatları dəstəklənir.'), false);
+  else cb(new ApiError(400, 'Yalnız JPG, PNG və WebP formatları dəstəklənir.'), false);
 };
 
 const documentFilter = (_req, file, cb) => {

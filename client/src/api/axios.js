@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { clearAuthStorage } from '../utils/authSession';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 const REFRESH_PATH = '/auth/refresh-token';
 const SKIP_REFRESH_PATHS = [
   '/auth/login',
@@ -79,7 +79,7 @@ api.interceptors.response.use(
     if (!error.response) {
       const url = error.config?.url || '';
       const silentRoutes = ['/notifications', '/dashboard/stats', '/analytics', '/doctors', '/site-doctors', '/departments', '/services', '/blog', '/appointments', '/ehr/patient-results'];
-      if (!silentRoutes.some(r => url.includes(r))) {
+      if (!error.config?.silentNetworkError && !silentRoutes.some(r => url.includes(r))) {
         toast.error('Server ilə əlaqə qurulmadı. Backend işləyirmi?');
       }
       return Promise.reject(error);
@@ -130,6 +130,10 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    if (status === 403 && !originalRequest?.silentForbidden) {
+      toast.error(error.response?.data?.message || 'Bu əməliyyat üçün icazəniz yoxdur.');
     }
 
     if (status === 500) {

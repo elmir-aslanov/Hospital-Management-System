@@ -23,6 +23,7 @@ function ManualResultsTab({ onEdit }) {
   const [selected, setSelected] = useState(null)
   const [currentUser] = useState(() => { try { return JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('user') || '{}') } catch { return {} } })
   const canApprove = APPROVER_ROLES.includes(String(currentUser.role || '').toUpperCase())
+  const [downloadingId, setDownloadingId] = useState(null)
 
   const fetchResults = async () => {
     setLoading(true)
@@ -59,6 +60,7 @@ function ManualResultsTab({ onEdit }) {
   }
 
   const downloadPdf = async (id) => {
+    setDownloadingId(id)
     try {
       const res = await api.get(`/lab-results/${id}/pdf`, { responseType: 'blob' })
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
@@ -69,6 +71,8 @@ function ManualResultsTab({ onEdit }) {
       window.URL.revokeObjectURL(url)
     } catch {
       alert(t('labAdmin.pdfError'))
+    } finally {
+      setDownloadingId(null)
     }
   }
 
@@ -139,10 +143,12 @@ function ManualResultsTab({ onEdit }) {
                               {t('labResult.approveAndPublish')}
                             </button>
                           )}
-                          <button onClick={() => downloadPdf(r._id)}
-                            style={{ padding: '4px 9px', border: '1px solid #e2e8f0', borderRadius: 7, background: 'white', color: '#475569', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                            {t('labResult.downloadPdf')}
-                          </button>
+                          {r.status === 'approved' && (
+                            <button onClick={() => downloadPdf(r._id)} disabled={downloadingId === r._id}
+                              style={{ padding: '4px 9px', border: '1px solid #e2e8f0', borderRadius: 7, background: 'white', color: '#475569', fontSize: 11, fontWeight: 600, cursor: downloadingId === r._id ? 'not-allowed' : 'pointer', opacity: downloadingId === r._id ? 0.6 : 1 }}>
+                              {downloadingId === r._id ? '…' : t('labResult.downloadPdf')}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -245,9 +251,9 @@ const PRIORITY_CFG = {
   stat:    { labelKey: 'priorityStat',     color: '#dc2626' },
 }
 
-const CATEGORY_LABELS = {
-  hematology:'Hematologiya', biochemistry:'Biokimya', microbiology:'Mikrobiologiya',
-  imaging:'Görüntüləmə', urine:'Sidik', other:'Digər',
+const CATEGORY_LABEL_KEYS = {
+  hematology: 'categoryHematology', biochemistry: 'categoryBiochemistry', microbiology: 'categoryMicrobiology',
+  imaging: 'categoryImaging', urine: 'categoryUrine', other: 'categoryOther',
 }
 
 const RESULT_STATUS = {
@@ -315,6 +321,7 @@ export default function AdminLab() {
   const [resultErr,       setResultErr]       = useState('')
   const [pdfFile,         setPdfFile]         = useState(null)
   const [resultsRefreshKey, setResultsRefreshKey] = useState(0)
+  const [downloadingResultId, setDownloadingResultId] = useState(null)
 
   /* detail panel */
   const [selected,   setSelected]   = useState(null)
@@ -414,9 +421,9 @@ export default function AdminLab() {
   const updateTest = (i, k, v) => setOrderForm(f => ({ ...f, tests: f.tests.map((t,idx) => idx===i ? {...t,[k]:v} : t) }))
 
   const saveOrder = async () => {
-    if (!orderForm.patientId) { setOrderErr('Pasiyent seçin'); return }
-    if (!orderForm.doctorId)  { setOrderErr('Həkim seçin'); return }
-    if (orderForm.tests.some(t => !t.testName.trim())) { setOrderErr('Test adı boş ola bilməz'); return }
+    if (!orderForm.patientId) { setOrderErr(t('labAdmin.selectPatientError')); return }
+    if (!orderForm.doctorId)  { setOrderErr(t('labAdmin.selectDoctorError')); return }
+    if (orderForm.tests.some(t => !t.testName.trim())) { setOrderErr(t('labAdmin.testNameEmptyError')); return }
     setOrderSaving(true); setOrderErr('')
     try {
       const res = await api.post('/lab/orders', orderForm)
@@ -541,7 +548,7 @@ export default function AdminLab() {
   }
 
   const saveResult = async () => {
-    if (resultForm.results.some(r => !r.value.trim())) { setResultErr('Bütün testlər üçün dəyər daxil edin'); return }
+    if (resultForm.results.some(r => !r.value.trim())) { setResultErr(t('labAdmin.allValuesRequiredError')); return }
     setResultSaving(true); setResultErr('')
     try {
       let savedResultId = resultId
@@ -582,11 +589,17 @@ export default function AdminLab() {
     if (!result?._id || !canApprove) return
     try {
       const res = await api.patch(`/lab/results/manual/${result._id}/approve`, { isPublicVisible: true })
-      setDetailResult(res.data?.data || result)
+      const approved = res.data?.data || result
+      setDetailResult(approved)
       await loadLabData()
       if (selected) {
         const orderRes = await api.get(`/lab/orders/${selected}`)
         setDetail(orderRes.data?.data)
+      }
+      if (approved.emailStatus === 'failed') {
+        alert(t('labAdmin.pdfEmailFailed'))
+      } else if (approved.emailStatus === 'sent') {
+        alert(t('labAdmin.pdfEmailSent'))
       }
     } catch (error) {
       alert(error.response?.data?.message || t('labAdmin.genericError'))
@@ -595,6 +608,7 @@ export default function AdminLab() {
 
   const downloadResultPdf = async (result) => {
     if (!result?._id) return
+    setDownloadingResultId(result._id)
     try {
       const res = await api.get(`/lab-results/${result._id}/pdf`, { responseType: 'blob' })
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
@@ -605,6 +619,8 @@ export default function AdminLab() {
       window.URL.revokeObjectURL(url)
     } catch {
       alert(t('labAdmin.pdfError'))
+    } finally {
+      setDownloadingResultId(null)
     }
   }
 
@@ -615,7 +631,7 @@ export default function AdminLab() {
       {/* ── Header ──────────────────────────────────────────────── */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <h1 style={{ margin:0, fontSize:22, fontWeight:700, color:'#0f1b2d' }}>Laboratoriya</h1>
+          <h1 style={{ margin:0, fontSize:22, fontWeight:700, color:'#0f1b2d' }}>{t('adminLayout.nav.lab')}</h1>
           <p style={{ margin:'4px 0 0', color:'#64748b', fontSize:13 }}>{orders.length} sifariş</p>
         </div>
         {activeMainTab === 'orders' && (
@@ -629,7 +645,7 @@ export default function AdminLab() {
 
       {/* ── Tabs ───────────────────────────────────────────────── */}
       <div style={{ display:'flex', gap:6, marginBottom:20 }}>
-        {[['orders', 'Sifarişlər'], ['results', 'Nəticələr']].map(([k, label]) => (
+        {[['orders', t('labAdmin.tabOrders')], ['results', t('labAdmin.tabResults')]].map(([k, label]) => (
           <button key={k} onClick={() => setActiveMainTab(k)}
             style={{ padding:'8px 16px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', border:'1px solid',
               background:   activeMainTab === k ? '#00848e' : 'white',
@@ -672,12 +688,12 @@ export default function AdminLab() {
               <div style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)' }}>
                 <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </div>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Sifariş №, pasiyent axtar..."
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('labAdmin.searchOrdersPlaceholder')}
                 style={{ ...inp, paddingLeft:36 }} />
             </div>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
               style={{ ...inp, width:160 }}>
-              <option value="all">Bütün statuslar</option>
+              <option value="all">{t('labAdmin.allStatuses')}</option>
               {Object.entries(STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{t(`labAdmin.${v.labelKey}`)}</option>)}
             </select>
           </div>
@@ -688,7 +704,7 @@ export default function AdminLab() {
                 <div style={{ width:32, height:32, border:'3px solid #e2e8f0', borderTopColor:'#00848e', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
               </div>
             ) : filtered.length === 0 ? (
-              <div style={{ textAlign:'center', padding:60, color:'#94a3b8', fontSize:14 }}>Sifariş tapılmadı</div>
+              <div style={{ textAlign:'center', padding:60, color:'#94a3b8', fontSize:14 }}>{t('labAdmin.noOrdersFound')}</div>
             ) : (
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
@@ -770,9 +786,9 @@ export default function AdminLab() {
                               </button>
                             )}
                             {o.status === 'approved' && (
-                              <button onClick={() => downloadResultPdf(o.resultInfo)}
-                                style={{ padding:'4px 9px', border:'1px solid #cbd5e1', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                                {t('labResult.downloadPdf')}
+                              <button onClick={() => downloadResultPdf(o.resultInfo)} disabled={downloadingResultId === o.resultInfo?._id}
+                                style={{ padding:'4px 9px', border:'1px solid #cbd5e1', borderRadius:7, background:'white', color:'#475569', fontSize:11, fontWeight:600, cursor: downloadingResultId === o.resultInfo?._id ? 'not-allowed' : 'pointer', opacity: downloadingResultId === o.resultInfo?._id ? 0.6 : 1, whiteSpace:'nowrap' }}>
+                                {downloadingResultId === o.resultInfo?._id ? '…' : t('labResult.downloadPdf')}
                               </button>
                             )}
                             {o.status === 'approved' && canApprove && (
@@ -842,12 +858,12 @@ export default function AdminLab() {
                   {detail.notes && <p style={{ fontSize:12, color:'#64748b', background:'#f8fafc', borderRadius:8, padding:'8px 12px', marginBottom:14 }}>{detail.notes}</p>}
 
                   {/* Tests */}
-                  <p style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 8px' }}>Testlər</p>
-                  {(detail.tests||[]).map((t,i) => (
+                  <p style={{ fontSize:11, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 8px' }}>{t('labAdmin.tests')}</p>
+                  {(detail.tests||[]).map((test,i) => (
                     <div key={i} style={{ padding:'8px 12px', background:'#f8fafc', borderRadius:8, marginBottom:6 }}>
-                      <span style={{ fontSize:13, fontWeight:600, color:'#0f1b2d' }}>{t.testName}</span>
-                      <span style={{ fontSize:11, color:'#94a3b8', marginLeft:8 }}>{CATEGORY_LABELS[t.category]||t.category}</span>
-                      {t.urgency !== 'routine' && <span style={{ fontSize:10, fontWeight:700, color: t.urgency==='stat' ? '#dc2626':'#ea580c', marginLeft:6 }}>{t.urgency.toUpperCase()}</span>}
+                      <span style={{ fontSize:13, fontWeight:600, color:'#0f1b2d' }}>{test.testName}</span>
+                      <span style={{ fontSize:11, color:'#94a3b8', marginLeft:8 }}>{CATEGORY_LABEL_KEYS[test.category] ? t(`labAdmin.${CATEGORY_LABEL_KEYS[test.category]}`) : test.category}</span>
+                      {test.urgency !== 'routine' && <span style={{ fontSize:10, fontWeight:700, color: test.urgency==='stat' ? '#dc2626':'#ea580c', marginLeft:6 }}>{test.urgency.toUpperCase()}</span>}
                     </div>
                   ))}
 
@@ -905,10 +921,12 @@ export default function AdminLab() {
                         <div>{t('labAdmin.approvedBy')}: {detailResult.approvedBy?.fullName || '—'}</div>
                         <div>{t('labAdmin.approvedAt')}: {fmtDate(detailResult.approvedAt)}</div>
                       </div>
-                      <button onClick={() => downloadResultPdf(detailResult)}
-                        style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', cursor:'pointer' }}>
-                        {t('labResult.downloadPdf')}
-                      </button>
+                      {detailResult.status === 'approved' && (
+                        <button onClick={() => downloadResultPdf(detailResult)} disabled={downloadingResultId === detailResult._id}
+                          style={{ display:'inline-block', marginTop:10, fontSize:12, fontWeight:600, padding:'6px 12px', border:'1px solid #00848e', borderRadius:8, background:'white', color:'#00848e', cursor: downloadingResultId === detailResult._id ? 'not-allowed' : 'pointer', opacity: downloadingResultId === detailResult._id ? 0.6 : 1 }}>
+                          {downloadingResultId === detailResult._id ? '…' : t('labResult.downloadPdf')}
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <p style={{ marginTop:14, padding:'10px 12px', borderRadius:8, background:'#f8fafc', color:'#64748b', fontSize:12 }}>
@@ -931,7 +949,7 @@ export default function AdminLab() {
           <div style={{ background:'white', borderRadius:16, width:640, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', padding:28 }}>
 
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
-              <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>Yeni Lab Sifarişi</h2>
+              <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f1b2d' }}>{t('labAdmin.newOrderTitle')}</h2>
               <button onClick={() => setShowOrderModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:22 }}>×</button>
             </div>
 
@@ -941,16 +959,16 @@ export default function AdminLab() {
               {/* Patient + Doctor */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div>
-                  <label style={lbl}>Pasiyent *</label>
+                  <label style={lbl}>{t('labAdmin.patient')} *</label>
                   <select style={inp} value={orderForm.patientId} onChange={e => setOF('patientId', e.target.value)}>
-                    <option value="">Pasiyent seçin...</option>
+                    <option value="">{t('labAdmin.selectPatientPlaceholder')}</option>
                     {patients.map(p => <option key={p._id} value={p._id}>{patFull(p)}{p.patientId ? ` (${p.patientId})`:''}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Həkim *</label>
+                  <label style={lbl}>{t('labAdmin.doctor')} *</label>
                   <select style={inp} value={orderForm.doctorId} onChange={e => setOF('doctorId', e.target.value)}>
-                    <option value="">Həkim seçin...</option>
+                    <option value="">{t('labAdmin.selectDoctorPlaceholder')}</option>
                     {doctors.map(d => <option key={d._id} value={d._id}>{docFull(d)}{d.specialization ? ` — ${d.specialization}`:''}</option>)}
                   </select>
                 </div>
@@ -959,34 +977,34 @@ export default function AdminLab() {
               {/* Priority + Notes */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:14 }}>
                 <div>
-                  <label style={lbl}>Prioritet</label>
+                  <label style={lbl}>{t('labAdmin.priority')}</label>
                   <select style={inp} value={orderForm.priority} onChange={e => setOF('priority', e.target.value)}>
-                    <option value="routine">Adi</option>
-                    <option value="urgent">Təcili</option>
-                    <option value="stat">STAT</option>
+                    <option value="routine">{t('labAdmin.priorityRoutine')}</option>
+                    <option value="urgent">{t('labAdmin.priorityUrgent')}</option>
+                    <option value="stat">{t('labAdmin.priorityStat')}</option>
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Qeyd</label>
-                  <input style={inp} value={orderForm.notes} onChange={e => setOF('notes', e.target.value)} placeholder="Opsional..." />
+                  <label style={lbl}>{t('labAdmin.notes')}</label>
+                  <input style={inp} value={orderForm.notes} onChange={e => setOF('notes', e.target.value)} placeholder={t('labAdmin.optionalPlaceholder')} />
                 </div>
               </div>
 
               {/* Tests */}
               <div>
-                <label style={lbl}>Testlər *</label>
+                <label style={lbl}>{t('labAdmin.tests')} *</label>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                  {orderForm.tests.map((t, i) => (
+                  {orderForm.tests.map((test, i) => (
                     <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 90px 120px 100px 24px', gap:6, alignItems:'center' }}>
-                      <input style={inp} placeholder="Test adı *" value={t.testName} onChange={e => updateTest(i,'testName',e.target.value)} />
-                      <input style={inp} placeholder="Kod" value={t.testCode} onChange={e => updateTest(i,'testCode',e.target.value)} />
-                      <select style={inp} value={t.category} onChange={e => updateTest(i,'category',e.target.value)}>
-                        {Object.entries(CATEGORY_LABELS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                      <input style={inp} placeholder={`${t('labAdmin.testName')} *`} value={test.testName} onChange={e => updateTest(i,'testName',e.target.value)} />
+                      <input style={inp} placeholder={t('labAdmin.testCode')} value={test.testCode} onChange={e => updateTest(i,'testCode',e.target.value)} />
+                      <select style={inp} value={test.category} onChange={e => updateTest(i,'category',e.target.value)}>
+                        {Object.entries(CATEGORY_LABEL_KEYS).map(([v,key]) => <option key={v} value={v}>{t(`labAdmin.${key}`)}</option>)}
                       </select>
-                      <select style={inp} value={t.urgency} onChange={e => updateTest(i,'urgency',e.target.value)}>
-                        <option value="routine">Adi</option>
-                        <option value="urgent">Təcili</option>
-                        <option value="stat">STAT</option>
+                      <select style={inp} value={test.urgency} onChange={e => updateTest(i,'urgency',e.target.value)}>
+                        <option value="routine">{t('labAdmin.priorityRoutine')}</option>
+                        <option value="urgent">{t('labAdmin.priorityUrgent')}</option>
+                        <option value="stat">{t('labAdmin.priorityStat')}</option>
                       </select>
                       {orderForm.tests.length > 1 && (
                         <button onClick={() => setOrderForm(f => ({ ...f, tests: f.tests.filter((_,idx) => idx!==i) }))}
@@ -996,17 +1014,17 @@ export default function AdminLab() {
                   ))}
                   <button onClick={() => setOrderForm(f => ({ ...f, tests: [...f.tests, emptyTest()] }))}
                     style={{ padding:'7px 14px', border:'1px dashed #e2e8f0', borderRadius:8, background:'white', color:'#64748b', fontSize:12, cursor:'pointer', textAlign:'left' }}>
-                    + Test əlavə et
+                    + {t('labAdmin.addTest')}
                   </button>
                 </div>
               </div>
             </div>
 
             <div style={{ display:'flex', gap:10, marginTop:22, justifyContent:'flex-end' }}>
-              <button onClick={() => setShowOrderModal(false)} style={{ padding:'10px 20px', border:'1px solid #e2e8f0', borderRadius:9, background:'white', fontSize:13, cursor:'pointer', color:'#475569' }}>Ləğv et</button>
+              <button onClick={() => setShowOrderModal(false)} style={{ padding:'10px 20px', border:'1px solid #e2e8f0', borderRadius:9, background:'white', fontSize:13, cursor:'pointer', color:'#475569' }}>{t('labResult.cancel')}</button>
               <button onClick={saveOrder} disabled={orderSaving}
                 style={{ padding:'10px 24px', border:'none', borderRadius:9, background:'#00848e', color:'white', fontSize:13, fontWeight:600, cursor: orderSaving?'not-allowed':'pointer', opacity: orderSaving?0.7:1 }}>
-                {orderSaving ? 'Saxlanır...' : 'Sifariş Yarat'}
+                {orderSaving ? t('labResult.saving') : t('labAdmin.createOrder')}
               </button>
             </div>
           </div>

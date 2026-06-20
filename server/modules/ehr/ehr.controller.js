@@ -29,11 +29,36 @@ export const getRecordById = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, record));
 });
 
-export const getPatientEHR   = asyncHandler(async (req, res) => { const d = await ehrService.getPatientEHR(req.params.patientId, req.query);  res.json(new ApiResponse(200, d)); });
+export const getPatientEHR   = asyncHandler(async (req, res) => { const d = await ehrService.getPatientEHR(req.params.patientId, req.query, req.user.role);  res.json(new ApiResponse(200, d)); });
 export const getEHRSummary   = asyncHandler(async (req, res) => { const d = await ehrService.getEHRSummary(req.params.patientId);              res.json(new ApiResponse(200, d)); });
-export const addEHRRecord    = asyncHandler(async (req, res) => { const d = await ehrService.addEHRRecord(req.body);                            res.status(201).json(new ApiResponse(201, d, 'Qeyd əlavə edildi')); });
-export const updateEHRRecord = asyncHandler(async (req, res) => { const d = await ehrService.updateEHRRecord(req.params.id, req.body);          res.json(new ApiResponse(200, d, 'Qeyd yeniləndi')); });
+export const addEHRRecord = asyncHandler(async (req, res) => {
+  const isPrivileged = req.user.role !== 'DOCTOR';
+  const doctorId = isPrivileged ? null : await resolveDoctorId(req.user.id || req.user._id);
+  const d = await ehrService.addEHRRecord(req.body, { doctorId, isPrivileged, userId: req.user.id || req.user._id, req });
+  res.status(201).json(new ApiResponse(201, d, 'Qeyd əlavə edildi'));
+});
+export const updateEHRRecord = asyncHandler(async (req, res) => {
+  const isPrivileged = req.user.role !== 'DOCTOR';
+  const doctorId = isPrivileged ? null : await resolveDoctorId(req.user.id || req.user._id);
+  const d = await ehrService.updateEHRRecord(req.params.id, req.body, { doctorId, isPrivileged, userId: req.user.id || req.user._id, req });
+  res.json(new ApiResponse(200, d, 'Qeyd yeniləndi'));
+});
 export const deleteEHRRecord = asyncHandler(async (req, res) => { await ehrService.deleteEHRRecord(req.params.id);                             res.json(new ApiResponse(200, null, 'Qeyd silindi')); });
+
+export const getMyRecords = asyncHandler(async (req, res) => {
+  const doctorId = await resolveDoctorId(req.user.id || req.user._id);
+  const d = await ehrService.getMyRecords(doctorId, req.query);
+  res.json(new ApiResponse(200, d));
+});
+
+export const submitEHRRecord = asyncHandler(async (req, res) => {
+  const isPrivileged = req.user.role !== 'DOCTOR';
+  const doctorId = isPrivileged ? null : await resolveDoctorId(req.user.id || req.user._id);
+  const record = await ehrService.submitEHRRecord(req.params.id, {
+    doctorId, isPrivileged, userId: req.user.id || req.user._id, req,
+  });
+  res.json(new ApiResponse(200, record, 'Qeyd təsdiqə göndərildi'));
+});
 
 export const getPatientResults = asyncHandler(async (req, res) => {
   const { patientId, dateOfBirth, phone } = req.query;

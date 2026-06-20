@@ -12,7 +12,7 @@ const resolveDoctorId = async (userId) => {
 
 export const createPrescription = asyncHandler(async (req, res) => {
   const doctorId = await resolveDoctorId(req.user.id);
-  const prescription = await prescriptionsService.createPrescription(req.body, doctorId, req);
+  const prescription = await prescriptionsService.createPrescription(req.body, doctorId, req, req.user.id);
   res.status(201).json(new ApiResponse(201, prescription, 'Prescription created'));
 });
 
@@ -28,31 +28,67 @@ export const getPrescriptions = asyncHandler(async (req, res) => {
 });
 
 export const getPrescriptionById = asyncHandler(async (req, res) => {
-  const prescription = await prescriptionsService.getPrescriptionById(req.params.id);
+  const doctorId = req.user.role === 'DOCTOR'
+    ? await resolveDoctorId(req.user.id)
+    : null;
+  const prescription = await prescriptionsService.getPrescriptionById(req.params.id, {
+    viewerRole: req.user.role,
+    doctorId,
+  });
   res.status(200).json(new ApiResponse(200, prescription));
 });
 
 export const getPrescriptionsByVisit = asyncHandler(async (req, res) => {
-  const prescriptions = await prescriptionsService.getPrescriptionsByVisit(req.params.visitId);
+  const doctorId = req.user.role === 'DOCTOR'
+    ? await resolveDoctorId(req.user.id)
+    : null;
+  const prescriptions = await prescriptionsService.getPrescriptionsByVisit(req.params.visitId, {
+    viewerRole: req.user.role,
+    doctorId,
+  });
   res.status(200).json(new ApiResponse(200, prescriptions));
 });
 
 export const getPatientPrescriptions = asyncHandler(async (req, res) => {
-  const result = await prescriptionsService.getPatientPrescriptions(req.params.patientId, req.query);
+  const doctorId = req.user.role === 'DOCTOR'
+    ? await resolveDoctorId(req.user.id)
+    : null;
+  const result = await prescriptionsService.getPatientPrescriptions(req.params.patientId, {
+    ...req.query,
+    viewerRole: req.user.role,
+    doctorId,
+  });
   res.status(200).json(new ApiResponse(200, result));
 });
 
-export const deletePrescription = asyncHandler(async (req, res) => {
+export const cancelPrescription = asyncHandler(async (req, res) => {
   const doctorId = req.user.role === 'DOCTOR'
     ? await resolveDoctorId(req.user.id)
     : null;
 
-  const result = await prescriptionsService.deletePrescription(req.params.id, {
+  const result = await prescriptionsService.cancelPrescription(req.params.id, {
     userRole: req.user.role,
     doctorId,
     userId: req.user.id,
     req,
+    reason: req.body?.reason,
   });
 
-  res.status(200).json(new ApiResponse(200, result, 'Prescription deleted'));
+  res.status(200).json(new ApiResponse(200, result, 'Prescription cancelled'));
+});
+
+export const archivePrescription = asyncHandler(async (req, res) => {
+  const doctorId = req.user.role === 'DOCTOR'
+    ? await resolveDoctorId(req.user.id)
+    : null;
+
+  const result = await prescriptionsService.archivePrescription(req.params.id, {
+    userRole: req.user.role,
+    doctorId,
+    userId: req.user.id,
+    req,
+    reason: req.body?.reason,
+  });
+
+  res.status(200).json(new ApiResponse(200, result, 'Prescription archived'));
 });

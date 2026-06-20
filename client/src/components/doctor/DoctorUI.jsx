@@ -65,6 +65,15 @@ const BADGE_MAP = {
   reviewed:    { bg: '#dbeafe', color: '#1e40af', label: 'Baxıldı'     },
   normal:      { bg: '#dcfce7', color: '#166534', label: 'Normal'      },
   abnormal:    { bg: '#fee2e2', color: '#991b1b', label: 'Anormal'     },
+  archived:    { bg: '#f3f4f6', color: '#374151', label: 'Arxivləşdirilib' },
+  superseded:  { bg: '#f3f4f6', color: '#374151', label: 'Əvəzlənib'   },
+  draft:       { bg: '#f3f4f6', color: '#475569', label: 'Qaralama'    },
+  submitted:   { bg: '#fef9c3', color: '#854d0e', label: 'Baxılır'     },
+  approved:    { bg: '#dcfce7', color: '#166534', label: 'Təsdiqlənib' },
+  returned:    { bg: '#fee2e2', color: '#991b1b', label: 'Geri qaytarılıb' },
+  pending_patient: { bg: '#fef9c3', color: '#854d0e', label: 'Pasiyenti gözləyir' },
+  signed:          { bg: '#dcfce7', color: '#166534', label: 'İmzalanıb' },
+  declined:        { bg: '#fee2e2', color: '#991b1b', label: 'Rədd edilib' },
 }
 
 export function Badge({ status, label }) {

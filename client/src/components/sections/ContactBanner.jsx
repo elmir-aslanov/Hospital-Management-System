@@ -52,25 +52,25 @@ const ContactBanner = () => {
       )}
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '760px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '760px', minWidth: 0, margin: '0 auto' }}>
 
         {/* Badge */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(29,182,166,0.18)', borderRadius: 999, padding: '7px 18px', marginBottom: 24, backdropFilter: 'blur(8px)' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E8F96" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, maxWidth: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(29,182,166,0.18)', borderRadius: 999, padding: '7px 18px', marginBottom: 24, backdropFilter: 'blur(8px)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E8F96" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#0E8F96', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <span style={{ minWidth: 0, fontSize: 11, fontWeight: 700, color: '#0E8F96', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'auto' }}>
             {t('contactBanner.badge')}
           </span>
         </div>
 
         {/* Heading */}
-        <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight: 800, color: '#0B1D34', lineHeight: 1.15, marginBottom: 20 }}>
+        <h2 style={{ fontSize: isMobile ? 'clamp(26px, 8vw, 28px)' : 44, fontWeight: 800, color: '#0B1D34', lineHeight: 1.15, marginBottom: 20, maxWidth: '100%', overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'auto' }}>
           {t('contactBanner.titleLine1')}<br/>{t('contactBanner.titleLine2')}
         </h2>
 
         {/* Subtitle */}
-        <p style={{ fontSize: 16, color: '#4B6473', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 36px' }}>
+        <p style={{ fontSize: 16, color: '#4B6473', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 36px', overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'auto' }}>
           {t('contactBanner.subtitle')}
         </p>
 
@@ -86,20 +86,24 @@ const ContactBanner = () => {
             e.currentTarget.style.boxShadow = '0 14px 32px rgba(14,143,150,0.28)'
           }}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             background: 'linear-gradient(135deg, #1DB6A6 0%, #0E8F96 100%)',
             color: 'white', border: 'none', borderRadius: 14,
             padding: isMobile ? '14px 28px' : '16px 36px',
             fontSize: 16, fontWeight: 600, cursor: 'pointer',
             boxShadow: '0 14px 32px rgba(14,143,150,0.28)',
             transition: 'all 0.2s ease',
+            maxWidth: '100%', boxSizing: 'border-box',
+            whiteSpace: 'normal', textAlign: 'center',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
           </svg>
-          {t('contactBanner.button')}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'auto' }}>
+            {t('contactBanner.button')}
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>

@@ -10,6 +10,7 @@ const NAV=[
   ['laboratory','/bas-hekim/laboratoriya','⌁'],['documents','/bas-hekim/tibbi-senedler','▤'],
   ['councils','/bas-hekim/konsiliumlar','◎'],['incidents','/bas-hekim/kritik-hallar','!'],
   ['reports','/bas-hekim/hesabatlar','▥'],['audit','/bas-hekim/audit','◷'],
+  ['clinicalReports','/bas-hekim/klinik-hesabatlar','◫'],
 ]
 const C={navy:'#071B2E',teal:'#168C96',bg:'#f4f7fa',border:'#dce5ec'}
 

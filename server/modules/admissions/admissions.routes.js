@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as admissionsController from './admissions.controller.js';
-import { validateAdmitPatient, validateDischargePatient } from './admissions.validator.js';
+import { validateAdmitPatient, validateDischargePatient, validateTransferPatient } from './admissions.validator.js';
 import validate     from '../../middleware/validate.middleware.js';
 import authenticate from '../../middleware/auth.middleware.js';
 import authorize    from '../../middleware/rbac.middleware.js';
@@ -40,6 +40,12 @@ router.patch('/:id/discharge',
   authorize('ADMIN', 'DOCTOR'),
   validateDischargePatient, validate,
   admissionsController.dischargePatient
+);
+
+router.patch('/:id/transfer',
+  authorize('ADMIN', 'DOCTOR', 'NURSE'),
+  validateTransferPatient, validate,
+  admissionsController.transferPatient
 );
 
 export default router;

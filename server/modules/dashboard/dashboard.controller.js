@@ -6,6 +6,7 @@ import Doctor from '../../models/Doctor.model.js';
 import Admission from '../../models/Admission.model.js';
 import Bed from '../../models/Bed.model.js';
 import Ward from '../../models/Ward.model.js';
+import Medicine from '../../models/Medicine.model.js';
 import { ADMISSION_STATUS, BED_STATUS, APPOINTMENT_STATUS } from '../../config/constants.js';
 
 export const getDashboardStats = asyncHandler(async (req, res) => {
@@ -44,6 +45,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     // Bed agg for low-bed wards
     bedAggByWard,
     allWards,
+    lowStockCount,
   ] = await Promise.all([
     // Today
     Appointment.countDocuments({ date: { $gte: todayStart, $lte: todayEnd } }),
@@ -97,6 +99,9 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
     // All wards (for name lookup)
     Ward.find().select('_id name type'),
+
+    // Low-stock medicines (reuses Medicine model — no second inventory system)
+    Medicine.countDocuments({ isActive: true, $expr: { $lte: ['$stock', '$minStockLevel'] } }),
   ]);
 
   // ── Derived stats ──────────────────────────────────────────────────────────
@@ -149,6 +154,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     alerts: {
       lowBedWards,
       overdueAppointments,
+      lowStockCount,
     },
   }));
 });

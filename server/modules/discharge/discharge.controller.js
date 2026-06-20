@@ -17,12 +17,12 @@ export const createDischargeSummary = asyncHandler(async (req, res) => {
 });
 
 export const getDischargeSummaryById = asyncHandler(async (req, res) => {
-  const summary = await dischargeService.getDischargeSummaryById(req.params.id);
+  const summary = await dischargeService.getDischargeSummaryById(req.params.id, req.user.role);
   res.status(200).json(new ApiResponse(200, summary));
 });
 
 export const getDischargeSummaryByVisit = asyncHandler(async (req, res) => {
-  const summary = await dischargeService.getDischargeSummaryByVisit(req.params.visitId);
+  const summary = await dischargeService.getDischargeSummaryByVisit(req.params.visitId, req.user.role);
   res.status(200).json(new ApiResponse(200, summary));
 });
 

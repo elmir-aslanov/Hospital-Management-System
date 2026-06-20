@@ -25,6 +25,21 @@ const appointmentSchema = new mongoose.Schema(
     }], default: [], validate: v => v.length <= 100 },
     cancelledBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     cancelReason: { type: String, trim: true },
+
+    // Check-in / queue workflow — connects the booking record to the actual
+    // clinic visit. All optional/additive: existing appointments simply have
+    // these unset until they go through check-in.
+    checkedInAt:           { type: Date, default: null },
+    checkedInBy:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    queueNumber:           { type: Number, default: null },
+    consultationStartedAt: { type: Date, default: null },
+    completedAt:           { type: Date, default: null },
+
+    // Reminder tracking — additive/optional, unset on existing appointments
+    // until the reminder scan claims them. Presence of a timestamp is the
+    // de-duplication guard (see appointments.service.js scanAndSendReminders).
+    reminder24hSentAt: { type: Date, default: null },
+    reminder2hSentAt:  { type: Date, default: null },
   },
   { timestamps: true }
 );

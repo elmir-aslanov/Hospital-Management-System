@@ -3,10 +3,11 @@ import ApiResponse   from '../../utils/ApiResponse.js';
 import ApiError      from '../../utils/ApiError.js';
 import Appointment   from '../../models/Appointment.model.js';
 import MedicalRecord from '../../models/MedicalRecord.model.js';
-import Prescription  from '../../models/Prescription.model.js';
 import Doctor        from '../../models/Doctor.model.js';
 import Patient       from '../../models/Patient.model.js';
 import LabOrder      from '../../models/LabOrder.model.js';
+import * as appointmentsService from '../appointments/appointments.service.js';
+import * as prescriptionsService from '../prescriptions/prescriptions.service.js';
 
 // Helper: resolve Doctor doc from req.user (User _id)
 const getDoctorDoc = async (userId) => {
@@ -40,37 +41,66 @@ export const getPatientAnalyses = asyncHandler(async (req, res) => {
 });
 
 export const getPatientPrescriptions = asyncHandler(async (req, res) => {
-  const prescriptions = await Prescription.find({ patientId: req.params.id })
-    .sort({ createdAt: -1 })
-    .lean();
-  res.json(new ApiResponse(200, prescriptions));
+  const doctor = req.user.role === 'DOCTOR'
+    ? await getDoctorDoc(req.user.id)
+    : null;
+  const result = await prescriptionsService.getPatientPrescriptions(req.params.id, {
+    ...req.query,
+    viewerRole: req.user.role,
+    doctorId: doctor?._id,
+  });
+  res.json(new ApiResponse(200, result.prescriptions));
 });
 
 export const createPrescription = asyncHandler(async (req, res) => {
   const doctor = await getDoctorDoc(req.user.id);
-  const { patientId, medicine, dose, duration, note } = req.body;
-
-  if (!patientId || !medicine || !dose || !duration) {
-    throw new ApiError(400, 'patientId, medicine, dose və duration tələb olunur');
-  }
-
-  const visitId = req.body.visitId;
-  if (!visitId) throw new ApiError(400, 'visitId tələb olunur');
-
-  const Visit = (await import('../../models/Visit.model.js')).default;
-  const visit = await Visit.findById(visitId);
-  if (!visit) throw new ApiError(404, 'Visit tapılmadı');
-  if (visit.doctorId?.toString() !== doctor._id.toString()) {
-    throw new ApiError(403, 'Bu visit sizə aid deyil');
-  }
-
-  const prescription = await Prescription.create({
+  const {
     visitId,
     patientId,
-    prescribedBy: doctor._id,
-    medications: [{ name: medicine, dosage: dose, frequency: '-', duration, instructions: note || '' }],
-    notes: note,
-  });
+    medicine,
+    dose,
+    frequency,
+    duration,
+    instructions,
+    note,
+    medications,
+    notes,
+  } = req.body;
+
+  const normalizedMedications = Array.isArray(medications)
+    ? medications
+    : [{
+        name: medicine,
+        dosage: dose,
+        frequency,
+        duration,
+        instructions: instructions || note,
+      }];
+
+  if (
+    !visitId
+    || !patientId
+    || normalizedMedications.length === 0
+    || normalizedMedications.some((item) =>
+      !item?.name?.trim()
+      || !item?.dosage?.trim()
+      || !item?.frequency?.trim()
+      || !item?.duration?.trim()
+      || !item?.instructions?.trim()
+    )
+  ) {
+    throw new ApiError(
+      400,
+      'visitId, patientId and complete medication instructions are required'
+    );
+  }
+
+  const prescription = await prescriptionsService.createPrescription({
+    visitId,
+    patientId,
+    medications: normalizedMedications,
+    notes: notes ?? note,
+  }, doctor._id, req, req.user.id);
 
   res.status(201).json(new ApiResponse(201, prescription, 'Resept yazıldı'));
 });
@@ -146,6 +176,26 @@ export const createLabOrder = asyncHandler(async (req, res) => {
   const doctor = await getDoctorDoc(req.user.id);
   const order = await LabOrder.create({ ...req.body, doctorId: doctor._id });
   res.status(201).json(new ApiResponse(201, order, 'Lab order created'));
+});
+
+// ─── Check-in / queue workflow ───────────────────────────────────────────────
+
+export const startMyConsultation = asyncHandler(async (req, res) => {
+  const isPrivileged = req.user.role !== 'DOCTOR';
+  const actingDoctorId = isPrivileged ? null : (await getDoctorDoc(req.user.id))._id;
+  const appointment = await appointmentsService.startConsultation(
+    req.params.id, { actingDoctorId, isPrivileged }, req.user.id, req
+  );
+  res.json(new ApiResponse(200, appointment, 'Consultation started'));
+});
+
+export const completeMyConsultation = asyncHandler(async (req, res) => {
+  const isPrivileged = req.user.role !== 'DOCTOR';
+  const actingDoctorId = isPrivileged ? null : (await getDoctorDoc(req.user.id))._id;
+  const appointment = await appointmentsService.completeAppointment(
+    req.params.id, { actingDoctorId, isPrivileged }, req.user.id, req
+  );
+  res.json(new ApiResponse(200, appointment, 'Consultation completed'));
 });
 
 export const getMyLabOrders = asyncHandler(async (req, res) => {

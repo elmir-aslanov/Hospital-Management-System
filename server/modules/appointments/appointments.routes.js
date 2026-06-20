@@ -228,6 +228,21 @@ router.patch(
   appointmentsController.updateAppointmentStatus
 );
 
+router.patch(
+  '/:id/check-in',
+  authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'),
+  appointmentsController.checkInAppointment
+);
+
+// Minimal reminder-scan trigger — no live job scheduler exists in this
+// project (see appointments.service.js scanAndSendReminders comment).
+// Intended to be called by an ops cron or manually by an admin.
+router.post(
+  '/reminders/scan',
+  authorize('ADMIN', 'SUPER_ADMIN'),
+  appointmentsController.scanReminders
+);
+
 /**
  * @swagger
  * /appointments/{id}:

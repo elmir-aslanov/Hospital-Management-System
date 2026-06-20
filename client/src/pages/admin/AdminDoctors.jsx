@@ -4,6 +4,7 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import { BASE } from '../../api/config.js'
 import api from '../../api/axios'
 import AvatarUpload from '../../components/common/AvatarUpload'
+import DoctorScheduleModal from '../../components/admin/DoctorScheduleModal'
 import { showSuccess, showError, getErrorMessage } from '../../utils/alert'
 import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
@@ -42,6 +43,7 @@ export default function AdminDoctors() {
   const [, setDoctorUsers]  = useState([])
   const [doctorSuccessModal, setDoctorSuccessModal] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [scheduleDoctor, setScheduleDoctor] = useState(null)
 
   // ─── Form fields ──────────────────────────────────────────────────────────
   const [, setCreateMode]      = useState('quick')
@@ -165,7 +167,7 @@ export default function AdminDoctors() {
         setDoctors(prev => prev.map(d => d._id === editDoctor._id ? saved : d))
         showSuccess('Həkim məlumatları uğurla yeniləndi.')
         setShowModal(false); setEditDoctor(null)
-      } catch (e) { setError(e.message); showError(getErrorMessage(e, 'Həkim yenilənmədi.')) }
+      } catch (e) { const msg = getErrorMessage(e, 'Həkim yenilənmədi.'); setError(msg); showError(msg) }
       finally { setSaving(false) }
     } else {
       // ── QUICK CREATE (admin-create) ──────────────────
@@ -200,7 +202,7 @@ export default function AdminDoctors() {
         showSuccess('Yeni həkim uğurla əlavə edildi.')
         setCopied(false)
         closeModal()
-      } catch (e) { setError(e.message); showError(getErrorMessage(e, 'Həkim əlavə edilmədi.')) }
+      } catch (e) { const msg = getErrorMessage(e, 'Həkim əlavə edilmədi.'); setError(msg); showError(msg) }
       finally { setSaving(false) }
     }
   }
@@ -266,15 +268,15 @@ export default function AdminDoctors() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>Həkimlər</h1>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{filtered.length} həkim qeydiyyatda</p>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f1b2d' }}>{t('adminLayout.nav.doctors')}</h1>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>{t('adminDoctors.registeredCount', { count: filtered.length })}</p>
         </div>
         <button
           onClick={openCreate}
           style={{ background: '#00848e', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
         >
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Həkim əlavə et
+          {t('adminDoctors.addDoctor')}
         </button>
       </div>
 
@@ -283,7 +285,7 @@ export default function AdminDoctors() {
         <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
           <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </div>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Ad, ixtisas axtar..."
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('adminDoctors.searchPlaceholder')}
           style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '9px 14px 9px 36px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box' }} />
       </div>
 
@@ -293,20 +295,20 @@ export default function AdminDoctors() {
           <div style={{ width: 36, height: 36, border: '3px solid #e2e8f0', borderTopColor: '#00848e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 80, color: '#94a3b8', fontSize: 14 }}>Həkim tapılmadı</div>
+        <div style={{ textAlign: 'center', padding: 80, color: '#94a3b8', fontSize: 14 }}>{t('adminDoctors.notFound')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 18 }}>
           {filtered.map(doc => (
-            <div key={doc._id} style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
-              <div style={{ height: 130, background: 'linear-gradient(135deg,#e8f6f8,#f0fafb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <div key={doc._id} style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ height: 150, background: 'linear-gradient(135deg,#e8f6f8,#f0fafb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 }}>
                 {getPhoto(doc) ? (
-                  <img src={getPhoto(doc)} alt={getName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                  <img src={getPhoto(doc)} alt={getName(doc)} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 20%' }} />
                 ) : (
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#00848e,#00a8b5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
                     {getName(doc).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 5 }}>
+                <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 5, zIndex: 1 }}>
                   {doc.isActive === false && (
                     <span style={{ fontSize: 10, fontWeight: 600, background: '#fef2f2', color: '#dc2626', borderRadius: 6, padding: '2px 6px' }}>
                       Deaktiv
@@ -314,30 +316,39 @@ export default function AdminDoctors() {
                   )}
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: doc.isAvailable ? '#22c55e' : '#94a3b8', boxShadow: doc.isAvailable ? '0 0 6px rgba(34,197,94,0.5)' : 'none', marginTop: 1 }} />
                 </div>
+                {/* Soft fade so the photo doesn't end in a hard line against the content below */}
+                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 28, background: 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.9))', pointerEvents: 'none' }} />
               </div>
-              <div style={{ padding: '14px 16px' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getName(doc)}</div>
-                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>
+              <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={getName(doc)}>{getName(doc)}</div>
+                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={doc.departmentId?.name || doc.department || doc.userId?.department || '—'}>
                   {doc.departmentId?.name || doc.department || doc.userId?.department || '—'}
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {doc.specialization || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>
                 {doc.licenseNumber && (
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>Lic: {doc.licenseNumber}</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Lic: {doc.licenseNumber}</div>
                 )}
                 {doc.bio && (
                   <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{doc.bio}</div>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
                   <button
                     onClick={() => { populateForm(doc); setEditDoctor(doc); setError(''); setShowModal(true) }}
-                    style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', color: '#475569', cursor: 'pointer' }}
-                  >Redaktə</button>
+                    style={{ flex: 1, height: 32, fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >{t('adminDoctors.edit')}</button>
+                  <button
+                    onClick={() => setScheduleDoctor(doc)}
+                    title={t('doctorSchedule.title')}
+                    style={{ width: 36, height: 32, fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', color: '#00848e', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </button>
                   <button
                     onClick={() => handleDelete(doc._id)}
-                    style={{ padding: '7px 12px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer' }}
-                  >Sil</button>
+                    style={{ height: 32, padding: '0 12px', fontSize: 12, fontWeight: 600, border: 'none', borderRadius: 8, background: '#fef2f2', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  >{t('adminDoctors.delete')}</button>
                 </div>
               </div>
             </div>
@@ -355,7 +366,7 @@ export default function AdminDoctors() {
         >
           <div style={{ width: 'min(560px, calc(100vw - 32px))', background: '#ffffff', border: '1px solid #E2E8F0', borderRadius: 22, boxShadow: '0 24px 70px rgba(15, 23, 42, 0.22)', padding: 28, boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
-              <button onClick={closeDoctorSuccessModal} aria-label="Bağla" style={{ width: 32, height: 32, border: '1px solid #E2E8F0', borderRadius: 10, background: '#fff', color: '#64748B', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+              <button onClick={closeDoctorSuccessModal} aria-label={t('adminDoctors.close')} style={{ width: 32, height: 32, border: '1px solid #E2E8F0', borderRadius: 10, background: '#fff', color: '#64748B', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: 22 }}>
@@ -364,23 +375,23 @@ export default function AdminDoctors() {
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
               </div>
-              <h2 id="doctor-success-title" style={{ margin: 0, fontSize: 22, lineHeight: 1.25, fontWeight: 800, color: '#0B1D34' }}>Həkim yaradıldı!</h2>
+              <h2 id="doctor-success-title" style={{ margin: 0, fontSize: 22, lineHeight: 1.25, fontWeight: 800, color: '#0B1D34' }}>{t('adminDoctors.doctorCreated')}</h2>
               {doctorSuccessModal.name && (
                 <p style={{ margin: '7px 0 0', color: '#64748B', fontSize: 13 }}>{doctorSuccessModal.name}</p>
               )}
             </div>
 
             <div style={{ border: '1px solid #E2E8F0', borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
-              <CredentialRow icon={<MailIcon />} label="E-poçt" value={doctorSuccessModal.email} />
-              <CredentialRow icon={<LockIcon />} label="Şifrə" value={doctorSuccessModal.password} />
-              <CredentialRow icon={<LicenseIcon />} label="Lisenziya" value={doctorSuccessModal.licenseNumber} last />
+              <CredentialRow icon={<MailIcon />} label={t('adminDoctors.email')} value={doctorSuccessModal.email} />
+              <CredentialRow icon={<LockIcon />} label={t('adminDoctors.password')} value={doctorSuccessModal.password} />
+              <CredentialRow icon={<LicenseIcon />} label={t('adminDoctors.license')} value={doctorSuccessModal.licenseNumber} last />
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#E6F7F8', border: '1px solid rgba(29, 139, 149, 0.18)', borderRadius: 14, padding: '12px 14px', color: '#1D8B95', fontSize: 13, fontWeight: 600, marginBottom: 22 }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
                 <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
               </svg>
-              Bu məlumatı həkimə bildirin.
+              {t('adminDoctors.notifyDoctor')}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
@@ -388,10 +399,10 @@ export default function AdminDoctors() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
                 </svg>
-                {copied ? 'Kopyalandı' : 'Kopyala'}
+                {copied ? t('adminDoctors.copied') : t('adminDoctors.copy')}
               </button>
               <button onClick={closeDoctorSuccessModal} style={{ padding: '10px 24px', border: 'none', borderRadius: 10, background: '#1D8B95', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 20px rgba(29,139,149,0.22)' }}>
-                Tamam
+                {t('adminDoctors.ok')}
               </button>
             </div>
           </div>
@@ -407,7 +418,7 @@ export default function AdminDoctors() {
           <div style={{ background: 'white', borderRadius: 16, width: 520, maxWidth: '95vw', maxHeight: '90vh', overflow: 'auto', padding: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
               <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f1b2d' }}>
-                {editDoctor ? 'Həkimi Redaktə Et' : 'Yeni Həkim əlavə et'}
+                {editDoctor ? t('adminDoctors.editDoctorTitle') : t('adminDoctors.newDoctorTitle')}
               </h2>
               <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20, lineHeight: 1 }}>×</button>
             </div>
@@ -424,14 +435,14 @@ export default function AdminDoctors() {
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" strokeLinecap="round" strokeWidth="2.5"/>
                   </svg>
                   <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
-                    <strong style={{ color: '#0a1628' }}>Avtomatik yaradılır:</strong> Lisenziya nömrəsi (DR-2025-XXXXX) və müvəqqəti şifrə. Şifrə yalnız bir dəfə göstəriləcək.
+                    <strong style={{ color: '#0a1628' }}>{t('adminDoctors.autoGenerated')}:</strong> {t('adminDoctors.autoGeneratedNote')}
                   </div>
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>
-                  <MF label="Ad Soyad *" value={newFullName} onChange={setNewFullName} placeholder="məs. Nigar Əliyeva" />
+                  <MF label={`${t('adminDoctors.fullName')} *`} value={newFullName} onChange={setNewFullName} placeholder={t('adminDoctors.fullNamePlaceholder')} />
                 </div>
                 <div style={{ gridColumn: 'span 2' }}>
-                  <MF label="E-poçt *" value={newEmail} onChange={setNewEmail} type="email" placeholder="hekim@aslanmedical.az" />
+                  <MF label={`${t('adminDoctors.email')} *`} value={newEmail} onChange={setNewEmail} type="email" placeholder="hekim@aslanmedical.az" />
                 </div>
               </div>
             )}
@@ -443,8 +454,8 @@ export default function AdminDoctors() {
                 userName={newFullName || (editDoctor ? (editDoctor.userId?.fullName || '') : '')}
                 size={160}
                 uploadImmediately={false}
-                allowedTypes={['image/jpeg', 'image/png']}
-                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                 maxSizeBytes={2 * 1024 * 1024}
                 minWidth={600}
                 minHeight={600}
@@ -456,8 +467,8 @@ export default function AdminDoctors() {
                 previewBackground="#F1F5F9"
                 previewBorder="1px solid #E2E8F0"
                 placeholderColor="#94A3B8"
-                helperText="Tövsiyə olunan ölçü: 600x600 px, kvadrat şəkil. JPG/PNG, maksimum 2MB."
-                guidanceText="Şəkli yükləməzdən əvvəl kvadrat formatda crop edin."
+                helperText={t('adminDoctors.photoHelperText')}
+                guidanceText={t('adminDoctors.photoGuidanceText')}
                 onFileSelect={(file) => setDoctorPhotoFile(file)}
                 onValidationChange={({ valid, message }) => setDoctorPhotoError(valid ? '' : message)}
               />
@@ -471,9 +482,9 @@ export default function AdminDoctors() {
                 onChange={setSpecialization}
                 placeholder={t('adminDoctors.specializationPlaceholder')}
               />
-              <MF label="Təcrübə (il)" value={experience}     onChange={setExperience}     type="number" min={0} integer placeholder="0" />
+              <MF label={t('adminDoctors.experienceYears')} value={experience}     onChange={setExperience}     type="number" min={0} integer placeholder="0" />
               <div style={{ gridColumn: 'span 2' }}>
-                <MF label="Bio" value={bio} onChange={setBio} placeholder="Həkim haqqında qısa məlumat..." />
+                <MF label={t('adminDoctors.bio')} value={bio} onChange={setBio} placeholder={t('adminDoctors.bioPlaceholder')} />
               </div>
 
               <div style={{ gridColumn: '1/-1' }}>
@@ -517,8 +528,8 @@ export default function AdminDoctors() {
                   </div>
                 )}
               </div>
-              <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" min={0} placeholder="0" />
-              <MF label="Göstərilmə sırası" value={order} onChange={setOrder} type="number" min={0} integer placeholder="0" />
+              <MF label={t('adminDoctors.consultationFee')} value={consultationFee} onChange={setConsultationFee} type="number" min={0} placeholder="0" />
+              <MF label={t('adminDoctors.displayOrder')} value={order} onChange={setOrder} type="number" min={0} integer placeholder="0" />
 
               <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <input
@@ -529,7 +540,7 @@ export default function AdminDoctors() {
                   style={{ width: 16, height: 16, accentColor: '#00848e' }}
                 />
                 <label htmlFor="isActive" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>
-                  Profil ictimai saytda görünsün
+                  {t('adminDoctors.publicProfileVisible')}
                 </label>
               </div>
 
@@ -537,7 +548,7 @@ export default function AdminDoctors() {
               {editDoctor && (
                 <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <input type="checkbox" id="isAvailable" checked={isAvailable} onChange={e => setIsAvailable(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#00848e' }} />
-                  <label htmlFor="isAvailable" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>Qəbul aparır (mövcuddur)</label>
+                  <label htmlFor="isAvailable" style={{ fontSize: 13, color: '#475569', cursor: 'pointer' }}>{t('adminDoctors.acceptingPatients')}</label>
                 </div>
               )}
             </div>
@@ -545,14 +556,22 @@ export default function AdminDoctors() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
               <button onClick={closeModal} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 9, background: 'white', fontSize: 13, cursor: 'pointer', color: '#475569' }}>
-                Ləğv et
+                {t('labResult.cancel')}
               </button>
               <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', border: 'none', borderRadius: 9, background: '#00848e', color: 'white', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Saxlanır...' : editDoctor ? 'Yenilə' : 'Saxla'}
+                {saving ? t('labResult.saving') : editDoctor ? t('adminDoctors.update') : t('adminDoctors.save')}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {scheduleDoctor && (
+        <DoctorScheduleModal
+          doctorId={scheduleDoctor._id}
+          doctorName={getName(scheduleDoctor)}
+          onClose={() => setScheduleDoctor(null)}
+        />
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>

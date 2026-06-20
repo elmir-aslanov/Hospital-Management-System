@@ -46,11 +46,14 @@ export const getVisitById = async (visitId) => {
   return visit;
 };
 
-export const getPatientVisits = async (patientId, { page, limit } = {}) => {
+export const getPatientVisits = async (patientId, { status, doctorId, page, limit } = {}) => {
   const { pg, lim, skip } = paginate(page, limit);
+  const filter = { patientId };
+  if (doctorId) filter.doctorId = doctorId;
+  if (status) filter.status = status;
   const [visits, total] = await Promise.all([
-    populateVisit(Visit.find({ patientId })).sort({ createdAt: -1 }).skip(skip).limit(lim),
-    Visit.countDocuments({ patientId }),
+    populateVisit(Visit.find(filter)).sort({ createdAt: -1 }).skip(skip).limit(lim),
+    Visit.countDocuments(filter),
   ]);
   return { visits, total, page: pg, limit: lim };
 };

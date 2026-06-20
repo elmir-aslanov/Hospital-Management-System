@@ -181,6 +181,25 @@ export const getPatientPayments = async (patientId) => {
   return Payment.find({ patientId }).sort({ createdAt: -1 }).populate('invoiceId', 'invoiceNumber total');
 };
 
+// Payment history for a single invoice, plus the derived paid/remaining
+// amounts the UI needs (computed the same way addPayment does, so the two
+// can never disagree).
+export const getInvoicePayments = async (invoiceId) => {
+  const invoice = await Invoice.findById(invoiceId).select('total status');
+  if (!invoice) throw new ApiError(404, 'Invoice not found');
+
+  const payments = await Payment.find({ invoiceId })
+    .sort({ createdAt: -1 })
+    .populate('receivedBy', 'fullName name surname');
+
+  const paidAmount = payments
+    .filter(p => p.status === 'completed')
+    .reduce((sum, p) => sum + p.amount, 0);
+  const remainingBalance = Math.max(0, Number(invoice.total || 0) - paidAmount);
+
+  return { payments, paidAmount, remainingBalance };
+};
+
 export const getBillingSummary = async () => {
   const [byStatus, totalRevenue, todayRevenue] = await Promise.all([
     Invoice.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, total: { $sum: '$total' } } }]),

@@ -1,7 +1,18 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
+import ApiError from '../../utils/ApiError.js';
 import * as doctorsService from './doctors.service.js';
 import Doctor from '../../models/Doctor.model.js';
+
+// A DOCTOR caller may only edit their own profile/schedule — ADMIN/SUPER_ADMIN
+// are unrestricted. Mirrors the ownership pattern used in EHR/prescriptions.
+const assertOwnDoctorProfile = async (req) => {
+  if (req.user.role !== 'DOCTOR') return;
+  const own = await Doctor.findOne({ userId: req.user.id }).select('_id');
+  if (!own || String(own._id) !== String(req.params.id)) {
+    throw new ApiError(403, 'You can only manage your own doctor profile');
+  }
+};
 
 export const getPublicDoctors = asyncHandler(async (req, res) => {
   const limit = req.query.limit || 8;
@@ -10,7 +21,7 @@ export const getPublicDoctors = asyncHandler(async (req, res) => {
 });
 
 export const getAllPublicDoctors = asyncHandler(async (req, res) => {
-  const data = await doctorsService.getAllPublicDoctors();
+  const data = await doctorsService.getAllPublicDoctors(req.query);
   res.json(new ApiResponse(200, data));
 });
 
@@ -47,6 +58,7 @@ export const getDoctorById = asyncHandler(async (req, res) => {
 });
 
 export const updateDoctor = asyncHandler(async (req, res) => {
+  await assertOwnDoctorProfile(req);
   const doctor = await doctorsService.updateDoctor(req.params.id, req.body, req.file);
   res.status(200).json(new ApiResponse(200, doctor, 'Həkim məlumatları yeniləndi'));
 });
@@ -62,6 +74,7 @@ export const getDoctorSchedule = asyncHandler(async (req, res) => {
 });
 
 export const updateDoctorSchedule = asyncHandler(async (req, res) => {
+  await assertOwnDoctorProfile(req);
   const schedule = await doctorsService.updateDoctorSchedule(req.params.id, req.body);
   res.status(200).json(new ApiResponse(200, schedule, 'Schedule updated'));
 });

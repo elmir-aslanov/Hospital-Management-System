@@ -32,6 +32,11 @@ export const getPatientPayments = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, payments));
 });
 
+export const getInvoicePayments = asyncHandler(async (req, res) => {
+  const data = await billingService.getInvoicePayments(req.params.id);
+  res.json(new ApiResponse(200, data));
+});
+
 // Returns invoices (not raw payments) for the patient portal billing section
 export const getPatientInvoices = asyncHandler(async (req, res) => {
   const { invoices } = await billingService.getInvoices({ patientId: req.params.patientId });

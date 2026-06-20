@@ -101,6 +101,15 @@ export default function ENeticePage() {
   const [result, setResult] = useState(null)
   const [pending, setPending] = useState(false)
   const [modal, setModal] = useState(null)
+  const [helpText, setHelpText] = useState('')
+
+  // Optional admin-managed help text — hidden entirely when not configured,
+  // so the page is visually unchanged unless an admin sets one.
+  useEffect(() => {
+    api.get('/settings', { params: { group: 'enetice' } })
+      .then(({ data }) => setHelpText(data?.data?.enetice_help_text || ''))
+      .catch(() => {})
+  }, [])
 
   const hasRequiredFields = searchMode === 'fin'
     ? patientId.trim() && protocol.trim()
@@ -146,7 +155,14 @@ export default function ENeticePage() {
       if (!dateOfBirth) return 'Doğum tarixi daxil edilməlidir'
       if (new Date(`${dateOfBirth}T00:00:00`).getTime() > Date.now()) return 'Doğum tarixi gələcəkdə ola bilməz'
     }
-    if (!protocol.trim()) return 'Protokol nömrəsi daxil edilməlidir'
+    const cleanProtocol = protocol.trim()
+    if (!cleanProtocol) return 'Protokol nömrəsi daxil edilməlidir'
+    // LAB-REQ-... is the request number issued at booking time, not the lab
+    // protocol number issued at sample collection — catch the common mix-up
+    // client-side instead of letting it round-trip to the backend.
+    if (/^LAB-REQ-/i.test(cleanProtocol) || !/^LAB-\d{4}-\d{6}$/i.test(cleanProtocol)) {
+      return t('labResult.protocolInvalid')
+    }
     return ''
   }
 
@@ -1051,6 +1067,7 @@ export default function ENeticePage() {
 
           <h1>Laborator analiz nəticələri</h1>
           <p className="enetice-subtitle">Aşağıdakı xanaları dolduraraq analiz nəticələrinizi yoxlaya bilərsiniz</p>
+          {helpText && <p className="enetice-subtitle">{helpText}</p>}
 
           {error && <div className="enetice-error">{error}</div>}
 

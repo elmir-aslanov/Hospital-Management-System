@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import DoctorLayout from '../../components/doctor/DoctorLayout'
 import { C, Toolbar, SearchInput, Badge, Spinner, Avatar, Modal } from '../../components/doctor/DoctorUI'
 import { BASE } from '../../api/config.js'
+import api from '../../api/axios'
 
 const TABS = ['Analizlər', 'Reseptlər', 'Tarix']
 
@@ -16,17 +19,14 @@ function getAge(dob) {
 }
 
 // ── Patient detail modal ──────────────────────────────────────────────────────
-function PatientModal({ patient, onClose, token }) {
+function PatientModal({ patient, onClose, token, onCreatePrescription }) {
+  const { t } = useTranslation()
   const [tab, setTab]               = useState('Analizlər')
   const [analyses, setAnalyses]     = useState([])
   const [prescripts, setPrescripts] = useState([])
   const [history, setHistory]       = useState([])
-  const [showForm, setShowForm]     = useState(false)
-  const [form, setForm]             = useState({ medicine: '', dose: '', duration: '', note: '' })
-  const [submitting, setSubmitting] = useState(false)
-  const [msg, setMsg]               = useState('')
+  const [prescriptionError, setPrescriptionError] = useState(false)
 
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   const patId   = patient?._id
 
   useEffect(() => {
@@ -36,43 +36,39 @@ function PatientModal({ patient, onClose, token }) {
 
   useEffect(() => {
     if (!patId) return
-    setAnalyses([]); setPrescripts([]); setHistory([]); setMsg('')
+    let active = true
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
     fetch(`${BASE}/api/v1/doctor/patients/${patId}/analyses`, { headers })
-      .then(r => r.json()).then(d => setAnalyses(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []))
-      .catch(() => {})
+      .then(r => r.json()).then(d => {
+        if (active) setAnalyses(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : [])
+      })
+      .catch(() => {
+        // Keep the empty analyses state.
+      })
 
-    fetch(`${BASE}/api/v1/doctor/patients/${patId}/prescriptions`, { headers })
-      .then(r => r.json()).then(d => setPrescripts(Array.isArray(d.data) ? d.data : Array.isArray(d) ? d : []))
-      .catch(() => {})
+    api.get(`/prescriptions/patient/${patId}`, { params: { limit: 100 } })
+      .then(({ data }) => {
+        if (!active) return
+        setPrescripts(data.data?.prescriptions || [])
+        setPrescriptionError(false)
+      })
+      .catch(() => {
+        if (active) setPrescriptionError(true)
+      })
 
     fetch(`${BASE}/api/v1/appointments?patientId=${patId}&limit=20`, { headers })
-      .then(r => r.json()).then(d => setHistory(Array.isArray(d) ? d : d.appointments || d.data || []))
-      .catch(() => {})
-  }, [patId])
-
-  const handlePrescribe = async e => {
-    e.preventDefault()
-    setSubmitting(true); setMsg('')
-    try {
-      const res = await fetch(`${BASE}/api/v1/doctor/prescriptions`, {
-        method: 'POST', headers,
-        body: JSON.stringify({ patientId: patId, medicine: form.medicine, dose: form.dose, duration: form.duration, note: form.note }),
+      .then(r => r.json()).then(d => {
+        if (active) setHistory(Array.isArray(d) ? d : d.appointments || d.data || [])
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Xəta')
-      setMsg('success'); setShowForm(false)
-      setForm({ medicine: '', dose: '', duration: '', note: '' })
-      fetch(`${BASE}/api/v1/doctor/patients/${patId}/prescriptions`, { headers })
-        .then(r => r.json()).then(d => setPrescripts(Array.isArray(d.data) ? d.data : []))
-        .catch(() => {})
-    } catch (err) { setMsg(err.message) }
-    finally { setSubmitting(false) }
-  }
+      .catch(() => {
+        // Keep the empty history state.
+      })
+    return () => { active = false }
+  }, [patId, token])
 
   const name  = patient?.userId?.fullName || patient?.fullName || 'Naməlum'
   const phone = patient?.userId?.phone || patient?.phone || '—'
-  const inp   = { width: '100%', padding: '8px 10px', fontSize: 12, border: `1px solid ${C.border}`, borderRadius: 7, outline: 'none', boxSizing: 'border-box' }
 
   return (
     <Modal title="" onClose={onClose} width={640}>
@@ -115,37 +111,29 @@ function PatientModal({ patient, onClose, token }) {
       {/* Prescriptions */}
       {tab === 'Reseptlər' && (
         <div>
-          {msg === 'success' && <p style={{ fontSize: 12, color: '#16a34a', marginBottom: 8 }}>Resept yazıldı</p>}
-          {msg && msg !== 'success' && <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>{msg}</p>}
-          {prescripts.length === 0
-            ? <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '8px 0 12px' }}>Resept yoxdur</p>
+          {prescriptionError
+            ? <p style={{ fontSize: 13, color: '#ef4444', textAlign: 'center', padding: '8px 0 12px' }}>{t('prescription.loadError')}</p>
+            : prescripts.length === 0
+            ? <p style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '8px 0 12px' }}>{t('prescription.empty')}</p>
             : prescripts.map((p, i) => (
               <div key={i} style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 8, marginBottom: 8 }}>
                 {p.medications?.map((m, j) => (
-                  <p key={j} style={{ fontWeight: 600, fontSize: 13, color: C.navy, margin: '0 0 2px' }}>{m.name} — {m.dosage}</p>
+                  <div key={j} style={{ marginBottom: 4 }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, color: C.navy, margin: 0 }}>{m.name} — {m.dosage}</p>
+                    <p style={{ fontSize: 11, color: C.sub, margin: '2px 0 0' }}>{m.frequency} · {m.duration}</p>
+                  </div>
                 ))}
                 {p.medicine && <p style={{ fontWeight: 600, fontSize: 13, color: C.navy, margin: '0 0 2px' }}>{p.medicine} — {p.dose}</p>}
-                <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>{formatDate(p.createdAt)}</p>
+                <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>
+                  {formatDate(p.createdAt)} · {t(`prescription.statuses.${p.isCancelled ? 'cancelled' : (p.status || 'active')}`)}
+                </p>
               </div>
             ))
           }
-          {!showForm
-            ? <button onClick={() => setShowForm(true)} style={{ marginTop: 10, width: '100%', background: C.teal, color: 'white', border: 'none', padding: '9px 0', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Yeni Resept</button>
-            : <form onSubmit={handlePrescribe} style={{ marginTop: 10, background: '#f0fafa', borderRadius: 9, padding: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {[['Dərman adı *', 'medicine'], ['Doza *', 'dose'], ['Müddət *', 'duration']].map(([ph, key]) => (
-                    <input key={key} placeholder={ph} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} style={inp} />
-                  ))}
-                </div>
-                <textarea placeholder="Qeyd" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={2} style={{ ...inp, height: 'auto', marginTop: 8, resize: 'vertical', fontFamily: 'inherit' }} />
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button type="submit" disabled={submitting} style={{ flex: 1, background: C.teal, color: 'white', border: 'none', padding: '8px 0', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
-                    {submitting ? 'Yazılır...' : 'Resepti Yaz'}
-                  </button>
-                  <button type="button" onClick={() => setShowForm(false)} style={{ padding: '8px 14px', background: 'white', border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12, cursor: 'pointer', color: '#475569' }}>Ləğv et</button>
-                </div>
-              </form>
-          }
+          <button
+            onClick={onCreatePrescription}
+            style={{ marginTop: 10, width: '100%', background: C.teal, color: 'white', border: 'none', padding: '9px 0', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >+ {t('prescription.createPrescription')}</button>
         </div>
       )}
 
@@ -166,6 +154,7 @@ function PatientModal({ patient, onClose, token }) {
 
 // ── Patient list ──────────────────────────────────────────────────────────────
 export default function DoctorPatients() {
+  const navigate = useNavigate()
   const [patients, setPatients] = useState([])
   const [total, setTotal]       = useState(0)
   const [loading, setLoading]   = useState(true)
@@ -174,10 +163,10 @@ export default function DoctorPatients() {
   const debounceRef = useRef(null)
 
   const token   = localStorage.getItem('adminToken') || localStorage.getItem('doctorToken')
-  const headers = { Authorization: `Bearer ${token}` }
 
   const load = useCallback((q = '') => {
     setLoading(true)
+    const headers = { Authorization: `Bearer ${token}` }
     const url = q
       ? `${BASE}/api/v1/patients/search?query=${encodeURIComponent(q)}&limit=50`
       : `${BASE}/api/v1/doctor/my-patients`
@@ -190,9 +179,31 @@ export default function DoctorPatients() {
       })
       .catch(() => { setPatients([]); setTotal(0) })
       .finally(() => setLoading(false))
-  }, [])
+  }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    let active = true
+    const headers = { Authorization: `Bearer ${token}` }
+    fetch(`${BASE}/api/v1/doctor/my-patients`, { headers })
+      .then(r => r.json())
+      .then(d => {
+        if (!active) return
+        const list = d.data?.patients || d.patients || d.data || (Array.isArray(d) ? d : [])
+        setPatients(list)
+        setTotal(d.data?.total || d.total || list.length)
+      })
+      .catch(() => {
+        if (!active) return
+        setPatients([])
+        setTotal(0)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => { active = false }
+  }, [token])
+
+  useEffect(() => () => clearTimeout(debounceRef.current), [])
 
   const handleSearch = val => {
     setSearch(val)
@@ -273,7 +284,14 @@ export default function DoctorPatients() {
         </div>
       )}
 
-      {selected && <PatientModal patient={selected} onClose={() => setSelected(null)} token={token} />}
+      {selected && (
+        <PatientModal
+          patient={selected}
+          onClose={() => setSelected(null)}
+          token={token}
+          onCreatePrescription={() => navigate('/doctor/prescriptions')}
+        />
+      )}
     </DoctorLayout>
   )
 }

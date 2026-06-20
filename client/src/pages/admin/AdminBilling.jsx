@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
+import api from '../../api/axios'
 
 import { BASE } from '../../api/config.js'
 
@@ -68,6 +69,10 @@ export default function AdminBilling() {
   const [selected,   setSelected]   = useState(null)
   const [detail,     setDetail]     = useState(null)
   const [detailLoad, setDetailLoad] = useState(false)
+  const [payments,     setPayments]     = useState([])
+  const [paidAmount,   setPaidAmount]   = useState(0)
+  const [remaining,    setRemaining]    = useState(0)
+  const [paymentsLoad, setPaymentsLoad] = useState(false)
 
   /* ── load ──────────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -101,6 +106,18 @@ export default function AdminBilling() {
   })
 
   /* ── detail ─────────────────────────────────────────────────────────── */
+  const loadPayments = (invoiceId) => {
+    setPaymentsLoad(true)
+    api.get(`/billing/${invoiceId}/payments`)
+      .then(({ data }) => {
+        setPayments(data?.data?.payments || [])
+        setPaidAmount(data?.data?.paidAmount || 0)
+        setRemaining(data?.data?.remainingBalance || 0)
+      })
+      .catch(() => { setPayments([]); setPaidAmount(0); setRemaining(0) })
+      .finally(() => setPaymentsLoad(false))
+  }
+
   const openDetail = (inv) => {
     setSelected(inv._id)
     setDetail(inv)
@@ -110,6 +127,7 @@ export default function AdminBilling() {
       .then(d => setDetail(d.data || inv))
       .catch(() => {})
       .finally(() => setDetailLoad(false))
+    loadPayments(inv._id)
   }
 
   /* ── invoice form ───────────────────────────────────────────────────── */
@@ -212,6 +230,7 @@ export default function AdminBilling() {
         }).catch(() => {})
       fetch(`${BASE}/api/v1/billing/summary`, { headers })
         .then(r => r.json()).then(d => setSummary(d.data || {})).catch(() => {})
+      loadPayments(selected)
       // show receipt instead of closing
       setPaySuccess({ ...body, txId, extraNote, createdAt: new Date().toISOString(), invoiceNumber: detail?.invoiceNumber, patientName: patFull(detail?.patientId) })
     } catch (e) { setPayErr(e.message) }
@@ -418,7 +437,7 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                         <td style={{ padding: '12px 16px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             {payable ? (
-                              <button onClick={() => { setSelected(inv._id); setDetail(inv); setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}
+                              <button onClick={() => { setSelected(inv._id); setDetail(inv); setPayForm(emptyPay); setPayErr(''); setShowPayModal(true); loadPayments(inv._id) }}
                                 style={btn('white', '#1D8B95', '1px solid #1D8B95')}>Ödəniş et</button>
                             ) : (
                               <button onClick={() => openDetail(inv)}
@@ -443,7 +462,7 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
             <div style={{ width: 320, background: 'white', borderRadius: 14, border: '1px solid #f1f5f9', height: '100%', overflow: 'auto', padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d' }}>Faktura məlumatı</span>
-                <button onClick={() => { setSelected(null); setDetail(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
+                <button onClick={() => { setSelected(null); setDetail(null); setPayments([]); setPaidAmount(0); setRemaining(0) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20 }}>×</button>
               </div>
 
               {detailLoad ? (
@@ -504,6 +523,40 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 700, color: '#0f1b2d', borderTop: '1px solid #f1f5f9', paddingTop: 8, marginTop: 8 }}>
                     <span>TOPLAM</span><span>{fmt(detail.total)} AZN</span>
                   </div>
+
+                  {/* Paid / remaining balance */}
+                  {!paymentsLoad && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 10 }}>
+                      <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 10, color: '#16a34a', fontWeight: 600, textTransform: 'uppercase' }}>Ödənilib</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#16a34a' }}>{fmt(paidAmount)} AZN</div>
+                      </div>
+                      <div style={{ flex: 1, background: remaining > 0 ? '#fff7ed' : '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 10, color: remaining > 0 ? '#ea580c' : '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Qalıq</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: remaining > 0 ? '#ea580c' : '#64748b' }}>{fmt(remaining)} AZN</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payment history */}
+                  {payments.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>Ödəniş tarixçəsi</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {payments.map(p => (
+                          <div key={p._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderRadius: 8, padding: '7px 10px', fontSize: 12 }}>
+                            <div>
+                              <div style={{ fontWeight: 600, color: '#0f1b2d' }}>{fmt(p.amount)} AZN <span style={{ color: '#94a3b8', fontWeight: 400 }}>· {METHOD_LABELS[p.method] || p.method}</span></div>
+                              <div style={{ color: '#94a3b8', fontSize: 11 }}>{fmtDate(p.createdAt)} — {p.receivedBy?.fullName || ''}</div>
+                            </div>
+                            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10, background: p.status === 'completed' ? '#f0fdf4' : '#fef2f2', color: p.status === 'completed' ? '#16a34a' : '#dc2626' }}>
+                              {p.status === 'completed' ? 'Təsdiqlənib' : p.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {isPayable(detail) ? (
                     <button onClick={() => { setPayForm(emptyPay); setPayErr(''); setShowPayModal(true) }}

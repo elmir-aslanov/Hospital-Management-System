@@ -15,15 +15,16 @@ const transporter = nodemailer.createTransport({
 
 /**
  * Send an email.
- * @param {{ to: string, subject: string, html: string }} options
+ * @param {{ to: string, subject: string, html: string, attachments?: Array<{filename: string, content: Buffer}> }} options
  */
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, attachments }) => {
   try {
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.EMAIL_FROM || `"Hospital System" <${smtpUser}>`,
       to,
       subject,
       html,
+      ...(attachments?.length ? { attachments } : {}),
     });
     logger.info(`Email sent: ${info.messageId}`);
     return info;

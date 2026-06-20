@@ -22,6 +22,11 @@ export const dischargePatient = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, admission, 'Patient discharged successfully'));
 });
 
+export const transferPatient = asyncHandler(async (req, res) => {
+  const admission = await admissionsService.transferPatient(req.params.id, req.body, req.user.id, req);
+  res.status(200).json(new ApiResponse(200, admission, 'Patient transferred successfully'));
+});
+
 export const getActiveAdmissions = asyncHandler(async (req, res) => {
   const admissions = await admissionsService.getActiveAdmissions();
   res.status(200).json(new ApiResponse(200, admissions));

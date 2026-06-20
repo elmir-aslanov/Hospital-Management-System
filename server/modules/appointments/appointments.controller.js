@@ -1,5 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
+import ApiError from '../../utils/ApiError.js';
+import Doctor from '../../models/Doctor.model.js';
 import * as appointmentsService from './appointments.service.js';
 
 export const createAppointment = asyncHandler(async (req, res) => {
@@ -29,10 +31,18 @@ export const getAppointmentById = asyncHandler(async (req, res) => {
 });
 
 export const updateAppointmentStatus = asyncHandler(async (req, res) => {
+  const isPrivileged = req.user.role !== 'DOCTOR';
+  let actingDoctorId = null;
+  if (!isPrivileged) {
+    const doctor = await Doctor.findOne({ userId: req.user.id }).select('_id');
+    if (!doctor) throw new ApiError(404, 'Doctor profile not found for this user');
+    actingDoctorId = doctor._id;
+  }
   const appointment = await appointmentsService.updateAppointmentStatus(
     req.params.id,
     req.body.status,
-    req.user.id
+    req.user.id,
+    { actingDoctorId, isPrivileged }
   );
   res.status(200).json(new ApiResponse(200, appointment, 'Status updated'));
 });
@@ -64,7 +74,19 @@ export const getDoctorAppointments = asyncHandler(async (req, res) => {
 
 export const rescheduleAppointment = asyncHandler(async (req, res) => {
   const appointment = await appointmentsService.rescheduleAppointment(
-    req.params.id, req.body, req.user.id || req.user._id
+    req.params.id, req.body, req.user.id || req.user._id, req
   );
   res.json(new ApiResponse(200, appointment, 'Appointment rescheduled'));
+});
+
+export const scanReminders = asyncHandler(async (req, res) => {
+  const result = await appointmentsService.scanAndSendReminders();
+  res.json(new ApiResponse(200, result, 'Reminder scan complete'));
+});
+
+export const checkInAppointment = asyncHandler(async (req, res) => {
+  const appointment = await appointmentsService.checkInAppointment(
+    req.params.id, req.user.id || req.user._id, req
+  );
+  res.json(new ApiResponse(200, appointment, 'Patient checked in'));
 });

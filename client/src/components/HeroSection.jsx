@@ -40,6 +40,7 @@ const HeroSection = () => {
           flexDirection: 'column',
           justifyContent: 'center',
           clipPath: isMobile ? 'none' : 'polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%)',
+          minWidth: 0,
         }}
       >
         {/* Badge */}
@@ -51,18 +52,30 @@ const HeroSection = () => {
           marginBottom: isMobile ? '12px' : '20px',
           fontFamily: FONT,
           fontWeight: 600,
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'normal',
+          hyphens: 'auto',
         }}>
           {t('hero.badge')}
         </p>
 
         {/* H1 */}
         <h1 style={{
-          fontSize: isMobile ? '32px' : isTablet ? '38px' : '42px',
+          fontSize: isMobile
+            ? 'clamp(28px, 8.5vw, 32px)'
+            : isTablet
+              ? 'clamp(34px, 4.5vw, 38px)'
+              : 'clamp(36px, 3.2vw, 42px)',
           fontWeight: 800,
           color: '#ffffff',
           lineHeight: isMobile ? 1.15 : 1.2,
           marginBottom: isMobile ? '8px' : '16px',
           fontFamily: FONT,
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'normal',
+          hyphens: 'auto',
         }}>
           {t('hero.title').split('\n').map((line, i) => (
             <span key={i}>{line}{i === 0 && <br />}</span>
@@ -76,6 +89,10 @@ const HeroSection = () => {
           marginBottom: isMobile ? '24px' : '36px',
           fontFamily: FONT,
           fontWeight: 400,
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'normal',
+          hyphens: 'auto',
         }}>
           {t('hero.subtitle')}
         </p>

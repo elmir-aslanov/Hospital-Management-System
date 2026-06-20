@@ -1,4 +1,11 @@
-import 'dotenv/config';
+// Must be the first import — populates process.env before app.js (and every
+// module it transitively imports, e.g. the nodemailer/cloudinary clients
+// that read credentials at import time) gets evaluated. A plain
+// `dotenv.config()` call placed below other imports runs too late: ES module
+// imports are hoisted and fully evaluated in source order before this
+// file's own subsequent statements execute.
+import './config/loadEnv.js';
+
 import http from 'http';
 import dns from 'dns';
 

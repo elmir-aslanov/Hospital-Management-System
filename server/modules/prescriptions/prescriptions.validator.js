@@ -13,8 +13,15 @@ export const validateCreatePrescription = [
   body('medications.*.dosage').trim().notEmpty().withMessage('Medication dosage is required'),
   body('medications.*.frequency').trim().notEmpty().withMessage('Medication frequency is required'),
   body('medications.*.duration').trim().notEmpty().withMessage('Medication duration is required'),
-  body('medications.*.instructions').optional().isString().trim(),
+  body('medications.*.instructions').isString().trim()
+    .notEmpty().withMessage('Medication instructions are required'),
   body('medications.*.quantity').optional().isInt({ min: 1 }).withMessage('quantity must be a positive integer'),
 
   body('notes').optional().isString().trim(),
+];
+
+export const validatePrescriptionReason = [
+  body('reason').isString().withMessage('reason must be a string')
+    .trim().notEmpty().withMessage('reason is required')
+    .isLength({ max: 1000 }).withMessage('reason must be at most 1000 characters'),
 ];

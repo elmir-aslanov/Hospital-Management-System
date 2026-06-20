@@ -13,6 +13,10 @@ const medicineSchema = new mongoose.Schema(
     expiryDate:    { type: Date },
     description:   { type: String, trim: true },
     isActive:      { type: Boolean, default: true },
+
+    // De-dup guard for low-stock alerts — set when an alert is sent while
+    // stock <= minStockLevel, cleared once stock is replenished above it.
+    lowStockNotifiedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
