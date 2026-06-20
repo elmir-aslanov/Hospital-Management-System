@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { nextSequenceFrom } from './Counter.model.js';
 
 const invoiceItemSchema = new mongoose.Schema({
   description: { type: String, required: true, trim: true },
@@ -32,8 +33,19 @@ const invoiceSchema = new mongoose.Schema({
 
 invoiceSchema.pre('save', async function (next) {
   if (this.invoiceNumber) return next();
-  const count = await mongoose.model('Invoice').countDocuments();
-  this.invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(5, '0')}`;
+  const year = new Date().getFullYear();
+  const seq = await nextSequenceFrom(`invoiceNumber-${year}`, async () => {
+    const prefix = `INV-${year}-`;
+    const docs = await mongoose.model('Invoice')
+      .find({ invoiceNumber: new RegExp(`^${prefix}`) })
+      .select('invoiceNumber')
+      .lean();
+    return docs.reduce((max, d) => {
+      const n = parseInt(String(d.invoiceNumber).slice(prefix.length), 10);
+      return Number.isFinite(n) && n > max ? n : max;
+    }, 0);
+  });
+  this.invoiceNumber = `INV-${year}-${String(seq).padStart(5, '0')}`;
   next();
 });
 

@@ -3,13 +3,14 @@ import Doctor from '../../models/Doctor.model.js';
 import User from '../../models/User.model.js';
 import WorkSchedule from '../../models/WorkSchedule.model.js';
 import Appointment from '../../models/Appointment.model.js';
+import Department from '../../models/Department.model.js';
 import ApiError from '../../utils/ApiError.js';
 import logger from '../../utils/logger.js';
 import sendEmail from '../../utils/sendEmail.js';
 import { uploadImageBuffer, deleteImage } from '../../config/cloudinary.js';
 
 const POPULATE_USER = 'fullName name surname email phone photoUrl department role';
-const POPULATE_DEPT = { path: 'departmentId', select: 'name slug icon _id' };
+const POPULATE_DEPT = { path: 'departmentId', select: 'name slug icon isActive _id' };
 const DOCTOR_IMAGE_FOLDER = 'aslan-medical/doctors';
 
 export const getPublicDoctors = async (limit = 8) => {
@@ -121,7 +122,20 @@ const generateTimeSlots = (startTime, endTime, slotDuration) => {
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
-export const createDoctor = async ({ userId, specialization, licenseNumber, experience, bio }, imageFile) => {
+const resolveDepartment = async (departmentId, { allowInactiveId } = {}) => {
+  if (!departmentId || !mongoose.Types.ObjectId.isValid(departmentId)) {
+    throw new ApiError(400, 'Şöbə seçilməlidir');
+  }
+  const department = await Department.findById(departmentId);
+  if (!department) throw new ApiError(404, 'Şöbə tapılmadı');
+  if (!department.isActive && String(department._id) !== String(allowInactiveId || '')) {
+    throw new ApiError(400, 'Deaktiv şöbə yeni seçim kimi istifadə edilə bilməz');
+  }
+  return department;
+};
+
+export const createDoctor = async ({ userId, specialization, licenseNumber, experience, bio, departmentId }, imageFile) => {
+  const assignedDepartment = await resolveDepartment(departmentId);
   const [existingUser, existingLicense] = await Promise.all([
     Doctor.findOne({ userId }),
     Doctor.findOne({ licenseNumber }),
@@ -139,12 +153,15 @@ export const createDoctor = async ({ userId, specialization, licenseNumber, expe
       licenseNumber,
       experience,
       bio,
+      department: assignedDepartment.name,
+      departmentId: assignedDepartment._id,
       ...(uploadedImage && {
         image: uploadedImage.url,
         imagePublicId: uploadedImage.publicId,
       }),
     });
-    return doctor.populate('userId', POPULATE_USER);
+    await doctor.populate('userId', POPULATE_USER);
+    return doctor.populate(POPULATE_DEPT);
   } catch (err) {
     await deleteDoctorImage(uploadedImage?.publicId);
     throw err;
@@ -199,14 +216,14 @@ export const updateDoctor = async (id, updateData, imageFile) => {
     delete safe.image;
   }
 
-  if (safe.departmentId) {
-    const dept = await mongoose.model('Department').findById(safe.departmentId);
-    if (!dept) throw new ApiError(404, 'Department not found');
-    safe.department = dept.name;
-  }
-
   const existing = await Doctor.findById(id);
   if (!existing) throw new ApiError(404, 'Doctor not found');
+
+  if (updateData.departmentId !== undefined) {
+    const dept = await resolveDepartment(safe.departmentId, { allowInactiveId: existing.departmentId });
+    safe.departmentId = dept._id;
+    safe.department = dept.name;
+  }
   const oldImagePublicId = existing.imagePublicId;
   const legacyImageChanged = !imageFile
     && safe.image !== undefined
@@ -324,10 +341,11 @@ export const getDoctorAvailability = async (doctorId, dateStr) => {
 
 // ─── Admin one-step doctor creation ──────────────────────────────────────────
 
-export const adminCreateDoctor = async ({ fullName, email, specialization, experience, bio, department, departmentId, consultationFee, order }, imageFile) => {
+export const adminCreateDoctor = async ({ fullName, email, specialization, experience, bio, departmentId, consultationFee, order }, imageFile) => {
   if (!fullName?.trim())       throw new ApiError(400, 'Ad Soyad tələb olunur');
   if (!email?.trim())          throw new ApiError(400, 'E-poçt tələb olunur');
   if (!specialization?.trim()) throw new ApiError(400, 'İxtisas tələb olunur');
+  const assignedDepartment = await resolveDepartment(departmentId);
 
   const existing = await User.findOne({ email: email.toLowerCase().trim() });
   if (existing) throw new ApiError(409, 'Bu e-poçt artıq qeydiyyatdadır');
@@ -359,8 +377,8 @@ export const adminCreateDoctor = async ({ fullName, email, specialization, exper
       licenseNumber,
       experience:      Number(experience) || 0,
       bio:             bio?.trim() || '',
-      department:      department?.trim() || '',
-      departmentId:    departmentId || undefined,
+      department:      assignedDepartment.name,
+      departmentId:    assignedDepartment._id,
       consultationFee: Number(consultationFee) || 0,
       order:           Number(order) || 0,
       isActive:        true,
@@ -372,6 +390,7 @@ export const adminCreateDoctor = async ({ fullName, email, specialization, exper
     });
 
     await doctor.populate('userId', POPULATE_USER);
+    await doctor.populate(POPULATE_DEPT);
 
     try {
       const loginUrl = `${process.env.CLIENT_URL || 'http://localhost:5174'}/daxil-ol`;

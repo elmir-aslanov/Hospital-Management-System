@@ -15,6 +15,7 @@ import ApiError from '../../utils/ApiError.js';
 import logAction from '../../utils/auditLogger.js';
 import { createNotification } from '../notifications/notifications.service.js';
 import { approveManualResult, listManualResults } from '../lab/lab.service.js';
+import { assertAppointmentSlotAvailable, withAppointmentSlotLock } from '../appointments/appointments.service.js';
 
 const pageArgs = ({ page = 1, limit = 20 } = {}) => {
   const pg = Math.max(1, Number(page) || 1);
@@ -116,13 +117,20 @@ export const reassignAppointment = async (id, { doctorId, reason }, userId, req)
   if (!appointment) throw new ApiError(404,'Appointment not found');
   if (!next) throw new ApiError(404,'Available doctor not found');
   if (current?.departmentId && next.departmentId && String(current.departmentId)!==String(next.departmentId)) throw new ApiError(400,'Doctor must belong to the same department');
-  const conflict = await Appointment.exists({ _id:{ $ne:id }, doctorId, date:appointment.date, status:{ $nin:['cancelled','missed','completed'] }, startTime:{ $lt:appointment.endTime }, endTime:{ $gt:appointment.startTime } });
-  if (conflict) throw new ApiError(409,'Doctor is unavailable for this time');
   const fromDoctorId = appointment.doctorId;
-  appointment.doctorId = doctorId;
-  appointment.reassignmentHistory.push({ fromDoctorId, toDoctorId:doctorId, reason:reason.trim(), reassignedBy:userId });
-  if (appointment.reassignmentHistory.length > 100) appointment.reassignmentHistory = appointment.reassignmentHistory.slice(-100);
-  await appointment.save();
+  await withAppointmentSlotLock({ doctorId, date: appointment.date }, async () => {
+    await assertAppointmentSlotAvailable({
+      doctorId,
+      date: appointment.date,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      excludeAppointmentId: id,
+    });
+    appointment.doctorId = doctorId;
+    appointment.reassignmentHistory.push({ fromDoctorId, toDoctorId:doctorId, reason:reason.trim(), reassignedBy:userId });
+    if (appointment.reassignmentHistory.length > 100) appointment.reassignmentHistory = appointment.reassignmentHistory.slice(-100);
+    await appointment.save();
+  });
   const users = await Doctor.find({ _id:{ $in:[fromDoctorId,doctorId] } }).select('userId');
   await Promise.all(users.map(d => createNotification({ userId:d.userId,title:'Randevu yönləndirildi',message:reason.trim(),type:'appointment',link:'/bas-hekim/randevular' })));
   logAction({ userId, action:'CHIEF_APPOINTMENT_REASSIGN', resourceType:'Appointment', resourceId:appointment._id, description:'Clinical appointment reassigned', req, metadata:{ fromDoctorId,toDoctorId:doctorId,reason:reason.trim() } });

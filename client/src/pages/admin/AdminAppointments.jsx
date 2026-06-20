@@ -1,20 +1,33 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { exportToCsv } from '../../utils/exportCsv'
-import { BASE } from '../../api/config.js'
+import api from '../../api/axios'
 
+// Backend enum is the single source of truth (server/config/constants.js APPOINTMENT_STATUS).
+// Keep this list in sync — values here must never include statuses the backend doesn't issue.
 const STATUS_COLORS = {
-  scheduled:   { bg: '#f0fafb', color: '#00848e', label: 'Planlandı'   },
-  pending:     { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir'    },
-  waiting:     { bg: '#fff7ed', color: '#ea580c', label: 'Növbədə'     },
-  in_progress: { bg: '#eff6ff', color: '#2563eb', label: 'Müayinədə'   },
-  confirmed:   { bg: '#dcfce7', color: '#16a34a', label: 'Təsdiqləndi' },
-  completed:   { bg: '#e0f2fe', color: '#0369a1', label: 'Tamamlandı'  },
-  cancelled:   { bg: '#fef2f2', color: '#dc2626', label: 'Ləğv edildi' },
-  missed:      { bg: '#f8fafc', color: '#94a3b8', label: 'Buraxıldı'   },
-  gözləyir:    { bg: '#fef9c3', color: '#ca8a04', label: 'Gözləyir'    },
+  scheduled:   { bg: '#f0fafb', color: '#00848e' },
+  waiting:     { bg: '#fff7ed', color: '#ea580c' },
+  in_progress: { bg: '#eff6ff', color: '#2563eb' },
+  completed:   { bg: '#e0f2fe', color: '#0369a1' },
+  cancelled:   { bg: '#fef2f2', color: '#dc2626' },
+  missed:      { bg: '#f8fafc', color: '#94a3b8' },
 }
+
+// Mirrors server/config/constants.js APPOINTMENT_TRANSITIONS so the dropdown can
+// disable options the backend would reject anyway (backend stays the real guard).
+const APPOINTMENT_TRANSITIONS = {
+  scheduled:   ['waiting', 'cancelled', 'missed'],
+  waiting:     ['in_progress', 'cancelled'],
+  in_progress: ['completed'],
+  completed:   [],
+  cancelled:   [],
+  missed:      [],
+}
+
+const STATUS_ORDER = ['scheduled', 'waiting', 'in_progress', 'completed', 'cancelled', 'missed']
 
 const inputStyle = {
   width: '100%', border: '1px solid #e2e8f0', borderRadius: 9,
@@ -23,8 +36,12 @@ const inputStyle = {
 }
 
 const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }
+const toLocalDateString = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
 export default function AdminAppointments() {
+  const { t } = useTranslation()
+  const statusLabel = (status) => t(`adminAppointments.status.${status}`, status)
   const [appts, setAppts]         = useState([])
   const [loading, setLoading]     = useState(true)
   const [statusFilter, setStatus] = useState('all')
@@ -55,16 +72,13 @@ export default function AdminAppointments() {
   const [endTime,         setEndTime]         = useState('')
   const [note,            setNote]            = useState('')
   const [formError,       setFormError]       = useState('')
+  const [adminSlots,      setAdminSlots]      = useState([])
   const searchTimer = useRef(null)
-
-  const token   = localStorage.getItem('token') || localStorage.getItem('adminToken')
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   const load = () => {
     setLoading(true)
-    fetch(`${BASE}/api/v1/appointments?limit=50`, { headers })
-      .then(r => r.json())
-      .then(d => {
+    api.get('/appointments?limit=50')
+      .then(({ data: d }) => {
         const list = Array.isArray(d.data) ? d.data
         : Array.isArray(d.data?.appointments) ? d.data.appointments
         : Array.isArray(d) ? d
@@ -93,13 +107,13 @@ export default function AdminAppointments() {
     setApptTime('')
     setStartTime('')
     setEndTime('')
+    setAdminSlots([])
     setNote('')
     setFormError('')
     setModal(true)
     /* fetch doctors */
-    fetch(`${BASE}/api/v1/doctors?limit=200`, { headers })
-      .then(r => r.json())
-      .then(d => {
+    api.get('/doctors?limit=200')
+      .then(({ data: d }) => {
         const list = d.data?.doctors || d.doctors || []
         setDoctors(Array.isArray(list) ? list : [])
       })
@@ -115,9 +129,8 @@ export default function AdminAppointments() {
     clearTimeout(searchTimer.current)
     if (!val.trim()) { setPatientResults([]); return }
     searchTimer.current = setTimeout(() => {
-      fetch(`${BASE}/api/v1/patients/search?q=${encodeURIComponent(val)}`, { headers })
-        .then(r => r.json())
-        .then(d => {
+      api.get('/patients/search', { params: { q: val } })
+        .then(({ data: d }) => {
           const list = Array.isArray(d.data) ? d.data : d.data?.patients || d.patients || []
           setPatientResults(Array.isArray(list) ? list.slice(0, 6) : [])
         })
@@ -132,18 +145,27 @@ export default function AdminAppointments() {
     setPatientResults([])
   }
 
+  useEffect(() => {
+    if (!selectedDoctor || !apptDate) return
+    api.get('/appointments/slots', { params: { doctorId: selectedDoctor, date: apptDate } })
+      .then(({ data }) => setAdminSlots(data.data?.slots || []))
+      .catch(() => setAdminSlots([]))
+  }, [selectedDoctor, apptDate])
+
   const handleSave = async () => {
     if (!selectedPatient || !selectedDoctor || !apptDate || (!apptTime && !startTime)) {
       setFormError('Pasiyent, həkim, tarix və saat mütləqdir')
       return
     }
+    const selectedSlot = adminSlots.find(slot => slot.time === (startTime || apptTime))
+    if (selectedSlot && !selectedSlot.available) {
+      setFormError(t('appointmentConflict.doctorBusy'))
+      return
+    }
     setFormError('')
     setSaving(true)
     try {
-      const res = await fetch(`${BASE}/api/v1/appointments`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
+      await api.post('/appointments', {
           patientId: selectedPatient._id,
           doctorId:  selectedDoctor,
           date:      apptDate,
@@ -155,14 +177,13 @@ export default function AdminAppointments() {
             return `${String(em >= 60 ? h + 1 : h).padStart(2,'0')}:${String(em % 60).padStart(2,'0')}`;
           })(),
           reason:    note || 'Müayinə',
-        }),
       })
-      const data = await res.json()
-      if (!res.ok) { setFormError(data.message || 'Xəta baş verdi'); return }
       closeModal()
       load()
-    } catch {
-      setFormError('Server xətası, yenidən cəhd edin')
+    } catch (error) {
+      setFormError(error.response?.status === 409
+        ? t('appointmentConflict.doctorBusy')
+        : error.response?.data?.message || 'Server xətası, yenidən cəhd edin')
     } finally {
       setSaving(false)
     }
@@ -171,12 +192,11 @@ export default function AdminAppointments() {
   const handleStatusPatch = async (id, status) => {
     setPatchId(id)
     try {
-      const res = await fetch(`${BASE}/api/v1/appointments/${id}/status`, {
-        method: 'PATCH', headers, body: JSON.stringify({ status }),
-      })
-      if (!res.ok) return  // keep existing state — backend rejected the update
+      await api.patch(`/appointments/${id}/status`, { status })
       setAppts(prev => prev.map(a => a._id === id ? { ...a, status } : a))
-    } catch {}
+    } catch {
+      // Keep current UI state when the backend rejects an invalid transition.
+    }
     finally { setPatchId(null) }
   }
 
@@ -208,7 +228,7 @@ export default function AdminAppointments() {
     if (a.startTime && a.endTime) return `${a.startTime}–${a.endTime}`
     return a.startTime || a.time || a.timeSlot || '—'
   }
-  const todayStr  = new Date().toISOString().split('T')[0]
+  const todayStr  = toLocalDateString()
 
   const openReschedule = (appt) => {
     setRescheduleAppt(appt)
@@ -231,19 +251,21 @@ export default function AdminAppointments() {
     }
     setRescheduleSaving(true); setRescheduleErr('')
     try {
-      const res = await fetch(`${BASE}/api/v1/appointments/${rescheduleAppt._id}/reschedule`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ date: rescheduleDate, startTime: rescheduleStart, endTime: rescheduleEnd }),
+      await api.patch(`/appointments/${rescheduleAppt._id}/reschedule`, {
+        date: rescheduleDate,
+        startTime: rescheduleStart,
+        endTime: rescheduleEnd,
       })
-      const data = await res.json()
-      if (!res.ok) { setRescheduleErr(data.message || 'Xəta baş verdi'); return }
       setAppts(prev => prev.map(a => a._id === rescheduleAppt._id
         ? { ...a, date: rescheduleDate, startTime: rescheduleStart, endTime: rescheduleEnd, status: 'scheduled' }
         : a
       ))
       setRescheduleModal(false)
-    } catch { setRescheduleErr('Server xətası') }
+    } catch (error) {
+      setRescheduleErr(error.response?.status === 409
+        ? t('appointmentConflict.doctorBusy')
+        : error.response?.data?.message || 'Server xətası')
+    }
     finally { setRescheduleSaving(false) }
   }
 
@@ -301,16 +323,10 @@ export default function AdminAppointments() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          {[
-          ['all',         'Hamısı'      ],
-          ['scheduled',   'Planlandı'   ],
-          ['waiting',     'Növbədə'     ],
-          ['in_progress', 'Müayinədə'   ],
-          ['confirmed',   'Təsdiqləndi' ],
-          ['completed',   'Tamamlandı'  ],
-          ['cancelled',   'Ləğv edildi' ],
-        ].map(([v, l]) => (
-            <button key={v} onClick={() => setStatus(v)} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderColor: statusFilter === v ? '#00848e' : '#e2e8f0', background: statusFilter === v ? '#00848e' : 'white', color: statusFilter === v ? 'white' : '#475569' }}>{l}</button>
+          {['all', ...STATUS_ORDER].map((v) => (
+            <button key={v} onClick={() => setStatus(v)} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderColor: statusFilter === v ? '#00848e' : '#e2e8f0', background: statusFilter === v ? '#00848e' : 'white', color: statusFilter === v ? 'white' : '#475569' }}>
+              {v === 'all' ? t('adminAppointments.status.all', 'Hamısı') : statusLabel(v)}
+            </button>
           ))}
         </div>
         <input type="date" value={dateFilter} onChange={e => setDate(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: 9, padding: '6px 12px', fontSize: 13, color: '#334155', outline: 'none', background: 'white' }} />
@@ -354,8 +370,9 @@ export default function AdminAppointments() {
               </thead>
               <tbody>
                 {filtered.map(a => {
-                  const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending
+                  const sc = STATUS_COLORS[a.status] || STATUS_COLORS.scheduled
                   const patching = patchId === a._id
+                  const allowedNext = APPOINTMENT_TRANSITIONS[a.status] || []
                   return (
                     <tr key={a._id} style={{ borderBottom: '1px solid #f8fafc' }}>
                       <td style={{ padding: '12px 16px' }}><div style={{ fontSize: 13, fontWeight: 600, color: '#0f1b2d' }}>{getName(a)}</div></td>
@@ -363,21 +380,20 @@ export default function AdminAppointments() {
                       <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getDate(a)}</td>
                       <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{getTime(a)}</td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: sc.bg, color: sc.color }}>{sc.label}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: sc.bg, color: sc.color }}>{statusLabel(a.status)}</span>
                       </td>
                       <td style={{ padding: '12px 16px', display: 'flex', gap: 6, alignItems: 'center' }}>
                         <select
-                          disabled={patching}
-                          value={a.status || 'pending'}
+                          disabled={patching || allowedNext.length === 0}
+                          value={a.status || 'scheduled'}
                           onChange={e => handleStatusPatch(a._id, e.target.value)}
-                          style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 8px', fontSize: 12, color: '#334155', outline: 'none', background: 'white', cursor: patching ? 'not-allowed' : 'pointer', opacity: patching ? 0.5 : 1 }}
+                          title={allowedNext.length === 0 ? t('adminAppointments.status.noTransition', 'Bu statusdan dəyişiklik mümkün deyil') : undefined}
+                          style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 8px', fontSize: 12, color: '#334155', outline: 'none', background: 'white', cursor: (patching || allowedNext.length === 0) ? 'not-allowed' : 'pointer', opacity: (patching || allowedNext.length === 0) ? 0.5 : 1 }}
                         >
-                          <option value="scheduled">Planlandı</option>
-                          <option value="waiting">Növbədə</option>
-                          <option value="in_progress">Müayinədə</option>
-                          <option value="completed">Tamamlandı</option>
-                          <option value="cancelled">Ləğv edildi</option>
-                          <option value="missed">Buraxıldı</option>
+                          <option value={a.status}>{statusLabel(a.status)}</option>
+                          {STATUS_ORDER.filter(s => allowedNext.includes(s)).map(s => (
+                            <option key={s} value={s}>{statusLabel(s)}</option>
+                          ))}
                         </select>
                         {!['completed','cancelled','missed'].includes(a.status) && (
                           <button
@@ -513,7 +529,13 @@ export default function AdminAppointments() {
                 <label style={labelStyle}>Həkim <span style={{ color: '#ef4444' }}>*</span></label>
                 <select
                   value={selectedDoctor}
-                  onChange={e => setSelectedDoctor(e.target.value)}
+                  onChange={e => {
+                    setSelectedDoctor(e.target.value)
+                    setStartTime('')
+                    setApptTime('')
+                    setEndTime('')
+                    setAdminSlots([])
+                  }}
                   style={{ ...inputStyle, height: 38, cursor: 'pointer' }}
                 >
                   <option value="">— Həkim seçin —</option>
@@ -532,7 +554,13 @@ export default function AdminAppointments() {
                   type="date"
                   value={apptDate}
                   min={todayStr}
-                  onChange={e => setApptDate(e.target.value)}
+                  onChange={e => {
+                    setApptDate(e.target.value)
+                    setStartTime('')
+                    setApptTime('')
+                    setEndTime('')
+                    setAdminSlots([])
+                  }}
                   style={inputStyle}
                 />
               </div>
@@ -544,8 +572,18 @@ export default function AdminAppointments() {
                   type="time"
                   value={startTime || apptTime}
                   onChange={e => { setStartTime(e.target.value); setApptTime(e.target.value) }}
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: adminSlots.some(slot => slot.time === (startTime || apptTime) && !slot.available)
+                      ? '#dc2626'
+                      : '#e2e8f0',
+                  }}
                 />
+                {adminSlots.some(slot => slot.time === (startTime || apptTime) && !slot.available) && (
+                  <div style={{ color: '#dc2626', fontSize: 11, marginTop: 5 }}>
+                    {t('appointmentConflict.doctorBusy')}
+                  </div>
+                )}
               </div>
 
               {/* End time */}
@@ -607,7 +645,7 @@ export default function AdminAppointments() {
                 <input
                   type="date"
                   value={rescheduleDate}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={todayStr}
                   onChange={e => setRescheduleDate(e.target.value)}
                   style={inputStyle}
                 />

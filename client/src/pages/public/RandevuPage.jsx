@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import axios from '../../api/axios'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
@@ -30,6 +31,8 @@ const DAYS     = Array.from({ length: 31 }, (_, i) => i + 1)
 const YEARS    = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - i)
 const COUNTRIES = ['Azərbaycan','Türkiyə','Rusiya','Gürcüstan','Digər']
 const STEPS    = ['Pasiyent məlumatları', 'Randevu detalları', 'Təsdiq']
+const toLocalDateString = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
 // ── Shared UI helpers ─────────────────────────────────────────────────────────
 const inp = {
@@ -191,6 +194,7 @@ function SRow({ label, value, last }) {
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RandevuPage() {
+  const { t } = useTranslation()
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
   const navigate = useNavigate()
@@ -420,8 +424,8 @@ export default function RandevuPage() {
         setSelSlot('')
         setSlotTick(prev => prev + 1)
         setStep(2)
-        showError('Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.')
-        setError('Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.')
+        showError(t('appointmentConflict.doctorBusy'))
+        setError(t('appointmentConflict.doctorBusy'))
       } else if (s >= 500) {
         showError('Server xətası baş verdi. Yenidən cəhd edin.')
       } else {
@@ -724,7 +728,7 @@ export default function RandevuPage() {
                   <Field label="Tarix" required>
                     <input type="date" value={selDate}
                       onChange={e => { setSelDate(e.target.value); setSelSlot('') }}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={toLocalDateString()}
                       disabled={!selDoctor} style={{ ...inp, colorScheme: 'light' }} />
                   </Field>
 
@@ -754,7 +758,7 @@ export default function RandevuPage() {
                               key={s.time}
                               onClick={() => s.available && setSelSlot(s.time)}
                               disabled={!s.available}
-                              title={!s.available ? 'Bu saat artıq tutulub' : ''}
+                              title={!s.available ? t('appointmentConflict.alreadyExists') : ''}
                               style={{
                                 padding: '9px 16px', borderRadius: 8, fontSize: 13,
                                 fontWeight: 600, fontFamily: T.font,

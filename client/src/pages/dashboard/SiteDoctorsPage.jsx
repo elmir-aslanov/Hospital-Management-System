@@ -217,6 +217,21 @@ export default function SiteDoctorsPage() {
         </button>
       </div>
 
+      {/* This panel manages a separate SiteDoctor collection that the public
+          "Həkimlərimiz" page does not read from — that page is sourced from the
+          main "Həkimlər" (Doctor) panel instead. Surfaced here so admins don't
+          expect changes made on this page to appear on the public site. */}
+      <div style={{
+        margin: '0 0 18px', padding: '12px 16px', borderRadius: 10,
+        background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412',
+        fontSize: 13, fontFamily: FONT, lineHeight: 1.5,
+      }}>
+        ⚠️ Diqqət: Bu panel ayrıca məlumat bazasını idarə edir. Public saytdaki
+        "Həkimlərimiz" səhifəsi bu paneldən deyil, <strong>Həkimlər</strong> panelindən
+        (Dashboard → Həkimlər) məlumat götürür. Həkimi public saytda göstərmək üçün
+        onu Həkimlər panelindən idarə edin.
+      </div>
+
       {/* Table */}
       <div className="panel">
         <table className="tbl">

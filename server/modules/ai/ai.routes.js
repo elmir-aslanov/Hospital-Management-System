@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
+import jwt from 'jsonwebtoken';
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse  from '../../utils/ApiResponse.js';
 import ApiError     from '../../utils/ApiError.js';
-import { authLimiter } from '../../middleware/rateLimiter.middleware.js';
+import { aiChatLimiter, authLimiter } from '../../middleware/rateLimiter.middleware.js';
 import * as ctrl from './ai.controller.js';
 
 const router = Router();
@@ -21,28 +22,39 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - messages
+ *               - message
  *             properties:
- *               messages:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     role:
- *                       type: string
- *                       enum: [user, assistant]
- *                     content:
- *                       type: string
- *                 example:
- *                   - role: user
- *                     content: "Randevu necə ala bilərəm?"
+ *               message:
+ *                 type: string
+ *                 example: "Randevu necə ala bilərəm?"
+ *               conversationId:
+ *                 type: string
+ *               locale:
+ *                 type: string
+ *                 enum: [az, en, ru]
  *     responses:
  *       200:
- *         description: AI assistant response
+ *         description: Server-sent event stream with AI response deltas
  *       400:
  *         description: Invalid messages payload
  */
-router.post('/chat', authLimiter, ctrl.chat);
+const optionalAuthenticate = (req, _res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return next();
+  try {
+    const payload = jwt.verify(
+      authHeader.slice(7),
+      process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+    );
+    req.user = { id: payload.userId, role: payload.role };
+    return next();
+  } catch {
+    return next(new ApiError(401, 'Invalid access token'));
+  }
+};
+
+router.post('/chat', optionalAuthenticate, aiChatLimiter, ctrl.streamChat);
+router.post('/chat/reset', optionalAuthenticate, aiChatLimiter, ctrl.reset);
 
 const FALLBACK = (name) =>
   `Salam, ${name || 'hörmətli pasiyent'}! Hal-hazırda AI xidmətimizdə texniki problem yaranıb. ` +

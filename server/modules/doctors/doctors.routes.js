@@ -59,13 +59,16 @@ router.get(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [userId, specialization]
+ *             required: [userId, specialization, departmentId]
  *             properties:
  *               userId:
  *                 type: string
  *               specialization:
  *                 type: string
  *                 example: Cardiology
+ *               departmentId:
+ *                 type: string
+ *                 description: Active Department document ID
  *               licenseNumber:
  *                 type: string
  *               consultationFee:
@@ -241,6 +244,9 @@ router.get(
  *             properties:
  *               specialization:
  *                 type: string
+ *               departmentId:
+ *                 type: string
+ *                 description: Department document ID
  *               consultationFee:
  *                 type: number
  *               bio:

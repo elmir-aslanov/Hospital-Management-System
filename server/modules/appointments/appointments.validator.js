@@ -48,6 +48,23 @@ export const validateUpdateStatus = [
     .isIn(STATUS_VALUES).withMessage(`status must be one of: ${STATUS_VALUES.join(', ')}`),
 ];
 
+export const validateRescheduleAppointment = [
+  param('id').isMongoId().withMessage('Invalid appointment ID'),
+  body('date')
+    .notEmpty().withMessage('date is required')
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('date must be YYYY-MM-DD'),
+  body('startTime')
+    .notEmpty().withMessage('startTime is required')
+    .matches(TIME_REGEX).withMessage('startTime must be in HH:MM format'),
+  body('endTime')
+    .notEmpty().withMessage('endTime is required')
+    .matches(TIME_REGEX).withMessage('endTime must be in HH:MM format')
+    .custom((endTime, { req }) => {
+      if (endTime <= req.body.startTime) throw new Error('endTime must be after startTime');
+      return true;
+    }),
+];
+
 export const validateGetAppointments = [
   query('status').optional().isIn(STATUS_VALUES).withMessage('Invalid status value'),
   query('doctorId').optional().isMongoId().withMessage('doctorId must be a valid ObjectId'),

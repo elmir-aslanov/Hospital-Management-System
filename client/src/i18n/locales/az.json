@@ -41,7 +41,26 @@
     "fallbackError": "Hal-hazırda cavab vermək mümkün olmadı. Zəhmət olmasa bir az sonra yenidən cəhd edin.",
     "placeholder": "Sualınızı yazın...",
     "send": "Göndər",
-    "close": "Bağla"
+    "close": "Bağla",
+    "stop": "Dayandır",
+    "stopped": "Cavab dayandırıldı.",
+    "retry": "Yenidən cəhd et",
+    "newConversation": "Yeni söhbət",
+    "preparing": "Cavab hazırlanır...",
+    "safetyNotice": "AI səhv edə bilər. Tibbi qərarlar üçün həkimlə məsləhətləşin.",
+    "suggestions": ["Həkim tapmaq istəyirəm", "Laboratoriya testlərini göstər", "Randevu necə ala bilərəm?"],
+    "actions": {
+      "open": "Aç", "doctor": "Həkimə bax", "doctors": "Həkimlərə bax",
+      "department": "Şöbəyə bax", "service": "Xidmətə bax",
+      "services": "Xidmətlərə bax", "appointment": "Randevu al"
+    },
+    "errors": {
+      "AI_RATE_LIMITED": "Çox sayda sorğu göndərildi. Bir az sonra yenidən cəhd edin.",
+      "AI_TIMEOUT": "Cavab gecikdi. Zəhmət olmasa yenidən cəhd edin.",
+      "AI_BUSY": "Əvvəlki cavab hələ hazırlanır.",
+      "AI_INVALID_REQUEST": "Mesaj göndərilə bilmədi.",
+      "AI_UNAVAILABLE": "AI xidməti hazırda əlçatan deyil."
+    }
   },
   "chiefDoctor": {
     "panel": "Baş həkim paneli", "role": "Baş həkim", "logout": "Çıxış", "openMenu": "Menyunu aç",
@@ -318,6 +337,10 @@
     "forward": "İrəli",
     "back": "Geri"
   },
+  "appointmentConflict": {
+    "alreadyExists": "Bu saat üçün artıq randevu mövcuddur.",
+    "doctorBusy": "Seçilmiş həkim bu saatda məşğuldur. Zəhmət olmasa başqa saat seçin."
+  },
   "eNetice": {
     "title": "E-Nəticə Sorğusu",
     "subtitle": "Nəticənizi almaq üçün məlumatlarınızı daxil edin",
@@ -367,6 +390,32 @@
     "welcome": "Xoş gəldiniz",
     "today": "Bu gün",
     "total": "Ümumi"
+  },
+  "adminDoctors": {
+    "departmentLabel": "Şöbə",
+    "departmentPlaceholder": "Şöbə seçin",
+    "departmentLoading": "Şöbələr yüklənir...",
+    "departmentLoadError": "Şöbələri yükləmək mümkün olmadı",
+    "departmentEmpty": "Əvvəl şöbə əlavə edin",
+    "inactiveDepartment": "deaktiv şöbə",
+    "specializationLabel": "İxtisas / Vəzifə",
+    "specializationPlaceholder": "məsələn, Kardioloq",
+    "validation": {
+      "department": "Şöbə seçilməlidir",
+      "specialization": "İxtisas / Vəzifə tələb olunur"
+    }
+  },
+  "adminAppointments": {
+    "status": {
+      "all": "Hamısı",
+      "scheduled": "Planlandı",
+      "waiting": "Növbədə",
+      "in_progress": "Müayinədə",
+      "completed": "Tamamlandı",
+      "cancelled": "Ləğv edildi",
+      "missed": "Buraxıldı",
+      "noTransition": "Bu statusdan dəyişiklik mümkün deyil"
+    }
   },
   "adminLogin": {
     "backHome": "Ana səhifəyə qayıt",

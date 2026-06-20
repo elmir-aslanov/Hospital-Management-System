@@ -6,7 +6,8 @@ import authorize    from '../../middleware/rbac.middleware.js';
 const router = Router();
 
 // ── Public — no auth ───────────────────────────────────────────────────────────
-router.get('/', ctrl.getAll);
+// Must filter isActive — this is the public-facing listing, unlike /admin/all below.
+router.get('/', ctrl.getPublic);
 
 // ── Protected — ADMIN only ─────────────────────────────────────────────────────
 // Must be registered BEFORE /:slug so the static path wins

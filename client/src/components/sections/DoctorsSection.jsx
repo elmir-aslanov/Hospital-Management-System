@@ -22,6 +22,8 @@ const PersonIcon = () => (
 function DoctorCard({ doctor }) {
   const name  = doctor.userId?.fullName || doctor.fullName || doctor.name || '—'
   const photo = resolveImage(doctor.image || doctor.imageUrl || doctor.userId?.photoUrl || doctor.photo)
+  const department = doctor.departmentId?.name || doctor.department || ''
+  const specialization = doctor.specialization || doctor.specialty || ''
   return (
     <div style={{ fontFamily: FONT }}>
       <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', borderRadius: '8px', marginBottom: '16px', background: '#f0f0f0' }}>
@@ -48,9 +50,14 @@ function DoctorCard({ doctor }) {
       <p style={{ fontSize: '16px', fontWeight: 700, color: '#0a1628', marginBottom: '4px', margin: '0 0 4px', fontFamily: FONT }}>
         {name}
       </p>
-      <p style={{ fontSize: '14px', color: '#888', fontWeight: 400, margin: 0, fontFamily: FONT }}>
-        {doctor.specialization || doctor.department || 'Həkim'}
+      <p style={{ fontSize: '14px', color: '#00848e', fontWeight: 600, margin: 0, fontFamily: FONT }}>
+        {department || specialization || 'Həkim'}
       </p>
+      {department && specialization && (
+        <p style={{ fontSize: '13px', color: '#888', fontWeight: 400, margin: '3px 0 0', fontFamily: FONT }}>
+          {specialization}
+        </p>
+      )}
     </div>
   )
 }

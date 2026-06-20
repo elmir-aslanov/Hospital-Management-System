@@ -17,12 +17,26 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
   await user.save();
 };
 
-export const registerUser = async ({ fullName, email, password }, req) => {
+export const registerUser = async ({ fullName, email, password, age, idCode }, req) => {
   const existing = await User.findOne({ email });
   if (existing) throw new ApiError(409, 'Email already registered');
 
+  const ageNum = Number(age);
+  if (age !== undefined && (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 120)) {
+    throw new ApiError(400, 'Yaş 1–120 arasında olmalıdır');
+  }
+  if (idCode !== undefined && String(idCode).trim().length < 5) {
+    throw new ApiError(400, 'Şəxsiyyət vəsiqəsi kodu ən az 5 simvol olmalıdır');
+  }
+
   const role = 'PATIENT';
-  const user = await User.create({ fullName, email, password, role });
+  // Only the birth year is known from age, not the exact day — approximate as
+  // Jan 1 of that year so User.birthDate/age virtual aren't left empty.
+  const birthDate = Number.isFinite(ageNum) && ageNum > 0
+    ? new Date(new Date().getFullYear() - ageNum, 0, 1)
+    : undefined;
+  const sexiyyatId = idCode ? String(idCode).trim() : undefined;
+  const user = await User.create({ fullName, email, password, role, birthDate, sexiyyatId });
 
   // Create linked Patient profile so the patient portal can find this user
   try {

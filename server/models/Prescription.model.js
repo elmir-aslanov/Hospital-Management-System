@@ -19,6 +19,13 @@ const prescriptionSchema = new mongoose.Schema(
     prescribedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor',  required: true },
     medications:  { type: [medicationSchema], required: true },
     notes:        { type: String, trim: true },
+
+    // Medical records are append-only — "deleting" a prescription archives it
+    // instead of removing the document, so the clinical history stays intact.
+    isCancelled:  { type: Boolean, default: false },
+    cancelledAt:  { type: Date, default: null },
+    cancelledBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    cancelReason: { type: String, trim: true, default: '' },
   },
   { timestamps: true }
 );

@@ -9,6 +9,10 @@ export const validateCreateDoctor = [
     .notEmpty().withMessage('Specialization is required')
     .isString().trim(),
 
+  body('departmentId')
+    .notEmpty().withMessage('Department is required')
+    .isMongoId().withMessage('Department must be a valid MongoDB ObjectId'),
+
   body('licenseNumber')
     .notEmpty().withMessage('License number is required')
     .isString().trim(),
@@ -32,6 +36,8 @@ export const validateCreateDoctor = [
 
 export const validateUpdateDoctor = [
   body('specialization').optional().isString().trim(),
+  body('departmentId').optional().notEmpty().withMessage('Department is required')
+    .isMongoId().withMessage('Department must be a valid MongoDB ObjectId'),
   body('licenseNumber').optional().isString().trim(),
   body('experience').optional().isInt({ min: 0 }).withMessage('Experience must be a non-negative integer'),
   body('consultationFee').optional().isFloat({ min: 0 }).withMessage('Consultation fee must be non-negative'),

@@ -8,6 +8,15 @@ import { APPOINTMENT_STATUS, APPOINTMENT_TRANSITIONS } from '../../config/consta
 import { createNotification } from '../notifications/notifications.service.js';
 import User from '../../models/User.model.js';
 
+export const ACTIVE_APPOINTMENT_STATUSES = Object.freeze([
+  APPOINTMENT_STATUS.SCHEDULED,
+  APPOINTMENT_STATUS.WAITING,
+  APPOINTMENT_STATUS.IN_PROGRESS,
+]);
+
+export const APPOINTMENT_CONFLICT_CODE = 'APPOINTMENT_SLOT_CONFLICT';
+const appointmentLocks = new Map();
+
 // ─── Population helpers ───────────────────────────────────────────────────────
 
 const populateAppointment = (query) =>
@@ -21,6 +30,65 @@ const paginate = (page = 1, limit = 10) => {
   const pg  = Math.max(1, parseInt(page));
   const lim = Math.min(100, Math.max(1, parseInt(limit)));
   return { pg, lim, skip: (pg - 1) * lim };
+};
+
+const getUtcDayRange = (date) => {
+  const dateString = date instanceof Date
+    ? date.toISOString().slice(0, 10)
+    : String(date || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
+  }
+  const dayStart = new Date(`${dateString}T00:00:00.000Z`);
+  const dayEnd = new Date(`${dateString}T23:59:59.999Z`);
+  if (Number.isNaN(dayStart.getTime()) || dayStart.toISOString().slice(0, 10) !== dateString) {
+    throw new ApiError(400, 'Tarix formatı səhvdir. YYYY-MM-DD istifadə edin.');
+  }
+  return { dateString, dayStart, dayEnd };
+};
+
+export const withAppointmentSlotLock = async ({ doctorId, date }, operation) => {
+  const { dateString } = getUtcDayRange(date);
+  const key = `${doctorId}:${dateString}`;
+  const previous = appointmentLocks.get(key) || Promise.resolve();
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const tail = previous.then(() => gate);
+  appointmentLocks.set(key, tail);
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    release();
+    if (appointmentLocks.get(key) === tail) appointmentLocks.delete(key);
+  }
+};
+
+export const assertAppointmentSlotAvailable = async ({
+  doctorId,
+  date,
+  startTime,
+  endTime,
+  excludeAppointmentId,
+}) => {
+  const { dayStart, dayEnd } = getUtcDayRange(date);
+  const filter = {
+    doctorId,
+    date: { $gte: dayStart, $lte: dayEnd },
+    status: { $in: ACTIVE_APPOINTMENT_STATUSES },
+    startTime: { $lt: endTime },
+    endTime: { $gt: startTime },
+  };
+  if (excludeAppointmentId) filter._id = { $ne: excludeAppointmentId };
+  if (await Appointment.exists(filter)) {
+    throw new ApiError(
+      409,
+      'Seçilmiş həkim bu saatda məşğuldur. Zəhmət olmasa başqa saat seçin.',
+      [],
+      '',
+      APPOINTMENT_CONFLICT_CODE,
+    );
+  }
 };
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -45,8 +113,9 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
 
   // Step 3 — check work schedule
   // UTC noon avoids timezone midnight-shift when calculating day-of-week
-  const apptDate  = new Date(`${date}T00:00:00.000Z`);
-  const dayOfWeek = new Date(`${date}T12:00:00.000Z`).getUTCDay();
+  const { dateString, dayStart } = getUtcDayRange(date);
+  const apptDate  = dayStart;
+  const dayOfWeek = new Date(`${dateString}T12:00:00.000Z`).getUTCDay();
   const schedule  = await WorkSchedule.findOne({ doctorId, dayOfWeek });
 
   // Mirror getPublicSlots fallback: if no schedule entry, use clinic defaults
@@ -67,20 +136,11 @@ export const createAppointment = async ({ patientId, doctorId, date, startTime, 
     throw new ApiError(400, `Seçilmiş saat həkimin iş saatları xaricindədir (${schedStart}–${schedEnd}).`);
   }
 
-  // Step 4 — conflict detection (UTC range to avoid timezone mismatch)
-  const dayStart = new Date(`${date}T00:00:00.000Z`);
-  const dayEnd   = new Date(`${date}T23:59:59.999Z`);
-
-  const conflict = await Appointment.findOne({
-    doctorId,
-    date: { $gte: dayStart, $lte: dayEnd },
-    status: { $nin: [APPOINTMENT_STATUS.CANCELLED, APPOINTMENT_STATUS.MISSED, 'no_show', APPOINTMENT_STATUS.COMPLETED] },
-    $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
+  // Serialize same doctor/day creates and re-check immediately before insert.
+  const appointment = await withAppointmentSlotLock({ doctorId, date: dateString }, async () => {
+    await assertAppointmentSlotAvailable({ doctorId, date: dateString, startTime, endTime });
+    return Appointment.create({ patientId, doctorId, date: apptDate, startTime, endTime, reason });
   });
-  if (conflict) throw new ApiError(409, 'Bu saat artıq tutulub. Zəhmət olmasa başqa saat seçin.');
-
-  // Step 5 — create
-  const appointment = await Appointment.create({ patientId, doctorId, date: apptDate, startTime, endTime, reason });
 
   // Notify patient
   try {
@@ -179,16 +239,13 @@ export const getPublicSlots = async (doctorId, dateStr) => {
   }
 
   // Fetch already booked appointments — UTC range matches how dates are stored
-  const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
-  const dayEnd   = new Date(`${dateStr}T23:59:59.999Z`);
+  const { dayStart, dayEnd } = getUtcDayRange(dateStr);
 
   const booked = await Appointment.find({
     doctorId,
     date: { $gte: dayStart, $lte: dayEnd },
-    status: { $nin: ['cancelled', 'missed', 'no_show', 'completed'] },
-  }).select('startTime');
-
-  const bookedSet = new Set(booked.map(a => a.startTime));
+    status: { $in: ACTIVE_APPOINTMENT_STATUSES },
+  }).select('startTime endTime');
 
   // Past-time buffer for today (15 min)
   const todayStr = new Date().toISOString().split('T')[0];
@@ -204,8 +261,10 @@ export const getPublicSlots = async (doctorId, dateStr) => {
 
   while (cur + slotDuration <= end) {
     const time = minsToTime(cur);
+    const slotEnd = minsToTime(cur + slotDuration);
     const pastTime = isToday && cur < nowMins;
-    slots.push({ time, available: !bookedSet.has(time) && !pastTime });
+    const overlaps = booked.some(item => item.startTime < slotEnd && item.endTime > time);
+    slots.push({ time, available: !overlaps && !pastTime });
     cur += slotDuration;
   }
 
@@ -457,29 +516,28 @@ export const rescheduleAppointment = async (appointmentId, { date, startTime, en
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) throw new ApiError(404, 'Appointment not found');
 
-  const cancellable = ['completed', 'cancelled', 'missed'];
+  const cancellable = [
+    APPOINTMENT_STATUS.COMPLETED,
+    APPOINTMENT_STATUS.CANCELLED,
+    APPOINTMENT_STATUS.MISSED,
+  ];
   if (cancellable.includes(appointment.status)) {
     throw new ApiError(400, `Cannot reschedule an appointment with status '${appointment.status}'`);
   }
 
-  // Conflict check — same doctor, same date, overlapping time, excluding this appointment
-  const conflict = await Appointment.findOne({
-    _id:      { $ne: appointmentId },
-    doctorId: appointment.doctorId,
-    date:     new Date(date),
-    status:   { $nin: ['cancelled', 'missed'] },
-    $or: [
-      { startTime: { $lt: endTime,   $gte: startTime } },
-      { endTime:   { $gt: startTime, $lte: endTime   } },
-      { startTime: { $lte: startTime }, endTime: { $gte: endTime } },
-    ],
+  await withAppointmentSlotLock({ doctorId: appointment.doctorId, date }, async () => {
+    await assertAppointmentSlotAvailable({
+      doctorId: appointment.doctorId,
+      date,
+      startTime,
+      endTime,
+      excludeAppointmentId: appointmentId,
+    });
+    appointment.date      = getUtcDayRange(date).dayStart;
+    appointment.startTime = startTime;
+    appointment.endTime   = endTime;
+    appointment.status    = APPOINTMENT_STATUS.SCHEDULED;
+    await appointment.save();
   });
-  if (conflict) throw new ApiError(409, 'Bu vaxt aralığında həkim məşğuldur');
-
-  appointment.date      = new Date(date);
-  appointment.startTime = startTime;
-  appointment.endTime   = endTime;
-  appointment.status    = 'scheduled';
-  await appointment.save();
   return populateAppointment(Appointment.findById(appointment._id));
 };

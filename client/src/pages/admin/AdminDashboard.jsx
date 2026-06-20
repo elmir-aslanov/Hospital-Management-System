@@ -59,6 +59,15 @@ export default function AdminDashboard() {
   const [adminUser]          = useState(() => JSON.parse(localStorage.getItem('adminUser') || '{}'))
   const token                = localStorage.getItem('token') || localStorage.getItem('adminToken')
   const [stats, setStats]    = useState({ doctors: 0, patients: 0, appointments: 0, muraciet: 0 })
+  const [statErrors, setStatErrors] = useState({})
+  const markStatError = (key) => setStatErrors(prev => ({ ...prev, [key]: true }))
+  // Renders "—" instead of 0 when the underlying fetch failed, so a real zero
+  // is never confused with "could not load this number".
+  const safeStat = (key, value) => statErrors[key] ? '—' : (value ?? 0)
+  const safeAmount = (value) => {
+    const n = Number(value)
+    return Number.isFinite(n) && n > 0 ? n : 0
+  }
   const [appointments, setAppointments] = useState([])
   const [search, setSearch]  = useState('')
   const [loading, setLoading] = useState(true)
@@ -82,7 +91,7 @@ export default function AdminDashboard() {
         const doctorList = d1.data?.doctors || d1.doctors || []
         setStats(prev => ({ ...prev, doctors: doctorList.length }))
       })
-      .catch(() => {})
+      .catch(() => markStatError('doctors'))
 
     const p2 = fetch(`${API}/patients?page=1&limit=1`, { headers })
       .then(r => r.json())
@@ -90,7 +99,7 @@ export default function AdminDashboard() {
         const count = data.data?.total || data.total || 0
         setStats(prev => ({ ...prev, patients: count }))
       })
-      .catch(() => {})
+      .catch(() => markStatError('patients'))
 
     const p3 = fetch(`${API}/appointments?limit=1`, { headers })
       .then(r => r.json())
@@ -98,7 +107,7 @@ export default function AdminDashboard() {
         const count = data.data?.total || data.total || 0
         setStats(prev => ({ ...prev, appointments: count }))
       })
-      .catch(() => {})
+      .catch(() => markStatError('appointments'))
 
     const p4 = fetch(`${API}/contact`, { headers })
       .then(r => r.json())
@@ -113,7 +122,7 @@ export default function AdminDashboard() {
             const count = Array.isArray(data) ? data.length : data.total || 0
             setStats(prev => ({ ...prev, muraciet: count }))
           })
-          .catch(() => {})
+          .catch(() => markStatError('muraciet'))
       })
 
     const p5 = fetch(`${API}/appointments?limit=5&sort=-createdAt`, { headers })
@@ -131,13 +140,13 @@ export default function AdminDashboard() {
 
     const p6 = fetch(`${API}/billing/summary`, { headers })
       .then(r => r.json())
-      .then(d => setBilling({ totalRevenue: d.data?.totalRevenue || 0, todayRevenue: d.data?.todayRevenue || 0 }))
-      .catch(() => {})
+      .then(d => setBilling({ totalRevenue: safeAmount(d.data?.totalRevenue), todayRevenue: safeAmount(d.data?.todayRevenue) }))
+      .catch(() => markStatError('billing'))
 
     const p7 = fetch(`${API}/lab/summary`, { headers })
       .then(r => r.json())
-      .then(d => setLabSummary({ todayOrders: d.data?.todayOrders || 0, byStatus: d.data?.byStatus || [] }))
-      .catch(() => {})
+      .then(d => setLabSummary({ todayOrders: safeAmount(d.data?.todayOrders), byStatus: d.data?.byStatus || [] }))
+      .catch(() => markStatError('lab'))
 
     const today = new Date().toISOString().split('T')[0]
     const p8 = fetch(`${API}/appointments?date=${today}&limit=10`, { headers })
@@ -205,49 +214,49 @@ export default function AdminDashboard() {
 
   const STAT_CARDS = [
     {
-      label: 'Həkimlər',     value: stats.doctors,
+      label: 'Həkimlər',     value: safeStat('doctors', stats.doctors),
       sub: 'aktiv həkim',
       iconBg: '#E0F7FA', iconColor: '#0E7490',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
     },
     {
-      label: 'Pasiyentlər',  value: stats.patients,
+      label: 'Pasiyentlər',  value: safeStat('patients', stats.patients),
       sub: 'qeydiyyatlı',
       iconBg: '#DCFCE7', iconColor: '#16A34A',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     },
     {
-      label: 'Randevular',   value: stats.appointments,
+      label: 'Randevular',   value: safeStat('appointments', stats.appointments),
       sub: 'ümumi',
       iconBg: '#EDE9FE', iconColor: '#7C3AED',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
     },
     {
-      label: 'Müraciətlər',  value: stats.muraciet,
+      label: 'Müraciətlər',  value: safeStat('muraciet', stats.muraciet),
       sub: 'gözləyir',
       iconBg: '#FEF3C7', iconColor: '#D97706',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
     },
     {
-      label: 'Bu gün gəlir', value: (billing.todayRevenue || 0).toFixed(0) + ' ₼',
+      label: 'Bu gün gəlir', value: statErrors.billing ? '—' : safeAmount(billing.todayRevenue).toFixed(0) + ' ₼',
       sub: 'gündəlik',
       iconBg: '#FCE7F3', iconColor: '#BE185D',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
     },
     {
-      label: 'Ümumi gəlir',  value: (billing.totalRevenue || 0).toFixed(0) + ' ₼',
+      label: 'Ümumi gəlir',  value: statErrors.billing ? '—' : safeAmount(billing.totalRevenue).toFixed(0) + ' ₼',
       sub: 'ödənilmiş',
       iconBg: '#D1FAE5', iconColor: '#065F46',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
     },
     {
-      label: 'Lab sifarişi', value: labSummary.todayOrders,
+      label: 'Lab sifarişi', value: statErrors.lab ? '—' : safeAmount(labSummary.todayOrders),
       sub: 'bu gün',
       iconBg: '#DBEAFE', iconColor: '#1D4ED8',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>,
     },
     {
-      label: 'Lab gözləyir', value: labPending,
+      label: 'Lab gözləyir', value: statErrors.lab ? '—' : safeAmount(labPending),
       sub: 'icrada',
       iconBg: '#FED7AA', iconColor: '#C2410C',
       icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,

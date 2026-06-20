@@ -6,21 +6,26 @@ const BASE  = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://lo
 const token = () => localStorage.getItem('adminToken') || localStorage.getItem('token')
 const hdrs  = () => ({ Authorization: `Bearer ${token()}` })
 
-const CATEGORIES = ['consultation', 'lab', 'imaging', 'surgery', 'pharmacy', 'room', 'other']
+// Keep in sync with server/models/PriceList.model.js category enum.
+const CATEGORIES = ['consultation', 'procedure', 'lab', 'imaging', 'surgery', 'medication', 'pharmacy', 'room', 'other']
 const CATEGORY_AZ = {
   consultation: 'Konsultasiya',
+  procedure:    'Prosedur',
   lab:          'Laboratoriya',
   imaging:      'Görüntüləmə',
   surgery:      'Cərrahiyyə',
+  medication:   'Tibbi məhsul',
   pharmacy:     'Dərman',
   room:         'Palata',
   other:        'Digər',
 }
 const CATEGORY_COLOR = {
   consultation: { bg: '#eff6ff', color: '#2563eb' },
+  procedure:    { bg: '#f5f3ff', color: '#7c3aed' },
   lab:          { bg: '#f0fdf4', color: '#16a34a' },
   imaging:      { bg: '#fefce8', color: '#ca8a04' },
   surgery:      { bg: '#fef2f2', color: '#dc2626' },
+  medication:   { bg: '#ecfeff', color: '#0891b2' },
   pharmacy:     { bg: '#f0fdf4', color: '#16a34a' },
   room:         { bg: '#fdf4ff', color: '#9333ea' },
   other:        { bg: '#f8fafc', color: '#64748b' },

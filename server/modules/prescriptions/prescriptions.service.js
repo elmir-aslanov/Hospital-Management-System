@@ -102,16 +102,22 @@ export const getPatientPrescriptions = async (patientId, { page, limit } = {}) =
   return { prescriptions, total, page: pg, limit: lim };
 };
 
-export const deletePrescription = async (prescriptionId, { userRole, doctorId, userId, req } = {}) => {
+// "Delete" archives the prescription (isCancelled: true) instead of removing it —
+// medical records are append-only, so the document and its history stay intact.
+export const deletePrescription = async (prescriptionId, { userRole, doctorId, userId, req, reason } = {}) => {
   const prescription = await Prescription.findById(prescriptionId);
   if (!prescription) throw new ApiError(404, 'Prescription not found');
 
   if (userRole === 'DOCTOR' && String(prescription.prescribedBy) !== String(doctorId)) {
     throw new ApiError(403, 'You can only delete your own prescriptions');
   }
+  if (prescription.isCancelled) return { id: prescription._id };
 
-  await Prescription.findByIdAndDelete(prescription._id);
-  await Visit.findByIdAndUpdate(prescription.visitId, { $pull: { prescriptions: prescription._id } });
+  prescription.isCancelled  = true;
+  prescription.cancelledAt  = new Date();
+  prescription.cancelledBy  = userId;
+  prescription.cancelReason = reason || '';
+  await prescription.save();
 
   try {
     logAction({
@@ -119,7 +125,7 @@ export const deletePrescription = async (prescriptionId, { userRole, doctorId, u
       action: 'PRESCRIPTION_DELETE',
       resourceType: 'Prescription',
       resourceId: prescription._id,
-      description: `Prescription deleted for patient ${prescription.patientId}`,
+      description: `Prescription cancelled/archived for patient ${prescription.patientId}`,
       req,
     });
   } catch (_) {}

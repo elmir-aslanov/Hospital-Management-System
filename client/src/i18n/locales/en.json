@@ -41,7 +41,26 @@
     "fallbackError": "I am unable to respond right now. Please try again a little later.",
     "placeholder": "Type your question...",
     "send": "Send",
-    "close": "Close"
+    "close": "Close",
+    "stop": "Stop",
+    "stopped": "Response stopped.",
+    "retry": "Try again",
+    "newConversation": "New conversation",
+    "preparing": "Preparing a response...",
+    "safetyNotice": "AI can make mistakes. Consult a clinician for medical decisions.",
+    "suggestions": ["I want to find a doctor", "Show laboratory tests", "How can I book an appointment?"],
+    "actions": {
+      "open": "Open", "doctor": "View doctor", "doctors": "View doctors",
+      "department": "View department", "service": "View service",
+      "services": "View services", "appointment": "Book appointment"
+    },
+    "errors": {
+      "AI_RATE_LIMITED": "Too many requests. Please try again later.",
+      "AI_TIMEOUT": "The response took too long. Please try again.",
+      "AI_BUSY": "The previous response is still being prepared.",
+      "AI_INVALID_REQUEST": "The message could not be sent.",
+      "AI_UNAVAILABLE": "The AI service is currently unavailable."
+    }
   },
   "chiefDoctor": {
     "panel": "Chief doctor panel", "role": "Chief doctor", "logout": "Log out", "openMenu": "Open menu",
@@ -318,6 +337,10 @@
     "forward": "Next",
     "back": "Back"
   },
+  "appointmentConflict": {
+    "alreadyExists": "An appointment already exists for this time.",
+    "doctorBusy": "The selected doctor is busy at this time. Please choose another slot."
+  },
   "eNetice": {
     "title": "E-Result Query",
     "subtitle": "Enter your information to retrieve your result",
@@ -367,6 +390,32 @@
     "welcome": "Welcome",
     "today": "Today",
     "total": "Total"
+  },
+  "adminDoctors": {
+    "departmentLabel": "Department",
+    "departmentPlaceholder": "Select department",
+    "departmentLoading": "Loading departments...",
+    "departmentLoadError": "Departments could not be loaded",
+    "departmentEmpty": "Please add a department first",
+    "inactiveDepartment": "inactive department",
+    "specializationLabel": "Specialty / Position",
+    "specializationPlaceholder": "e.g. Cardiologist",
+    "validation": {
+      "department": "Department is required",
+      "specialization": "Specialty / Position is required"
+    }
+  },
+  "adminAppointments": {
+    "status": {
+      "all": "All",
+      "scheduled": "Scheduled",
+      "waiting": "Waiting",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "missed": "Missed",
+      "noTransition": "No status change is possible from here"
+    }
   },
   "adminLogin": {
     "backHome": "Back to homepage",

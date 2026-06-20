@@ -165,7 +165,7 @@ export default function DoctorPrescriptions() {
         headers: { Authorization: `Bearer ${getToken()}` }
       })
       setDelId(null)
-      setSuccess('Resept silindi')
+      setSuccess('Resept ləğv edildi')
       setTimeout(() => setSuccess(''), 3000)
       load()
     } catch {
@@ -237,9 +237,9 @@ export default function DoctorPrescriptions() {
                   <td style={{ padding: '0 16px' }}>
                     <button
                       onClick={() => setDelId(p._id)}
-                      aria-label="Resepti sil"
+                      aria-label="Resepti ləğv et"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 12, fontWeight: 600, padding: '4px 2px' }}
-                    >Sil</button>
+                    >Ləğv et</button>
                   </td>
                 </tr>
               )
@@ -319,7 +319,7 @@ export default function DoctorPrescriptions() {
       {/* Delete confirm */}
       {delId && (
         <div
-          role="dialog" aria-modal="true" aria-label="Silmə təsdiqi"
+          role="dialog" aria-modal="true" aria-label="Ləğv etmə təsdiqi"
           style={{ position: 'fixed', inset: 0, background: 'rgba(7,27,46,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={e => { if (e.target === e.currentTarget) setDelId(null) }}
         >
@@ -330,11 +330,11 @@ export default function DoctorPrescriptions() {
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
             </div>
-            <h4 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: C.navy }}>Resepti silmək istəyirsiniz?</h4>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: C.sub }}>Bu əməliyyat geri qaytarıla bilməz.</p>
+            <h4 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: C.navy }}>Resepti ləğv etmək istəyirsiniz?</h4>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: C.sub }}>Resept arxivləşdiriləcək və tibbi tarixçədə saxlanılacaq.</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <GhostBtn onClick={() => setDelId(null)} style={{ flex: 1 }}>Ləğv et</GhostBtn>
-              <button onClick={handleDelete} style={{ flex: 1, padding: '9px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
+              <GhostBtn onClick={() => setDelId(null)} style={{ flex: 1 }}>İmtina</GhostBtn>
+              <button onClick={handleDelete} style={{ flex: 1, padding: '9px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Ləğv et</button>
             </div>
           </div>
         </div>

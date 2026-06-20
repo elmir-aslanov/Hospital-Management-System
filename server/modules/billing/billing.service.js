@@ -9,6 +9,18 @@ import logAction from '../../utils/auditLogger.js';
 const POPULATE_PATIENT = { path: 'patientId', populate: { path: 'userId', select: 'fullName email phone' } };
 const POPULATE_ISSUER  = { path: 'issuedBy', select: 'fullName name surname' };
 
+// Allowed invoice status transitions. 'paid' and 'cancelled' are terminal —
+// addPayment/createInvoice still set status directly (not through this guard),
+// only the explicit status-change endpoint is restricted.
+const INVOICE_TRANSITIONS = {
+  draft:          ['issued', 'cancelled'],
+  issued:         ['paid', 'partially_paid', 'overdue', 'cancelled'],
+  partially_paid: ['paid', 'overdue', 'cancelled'],
+  overdue:        ['paid', 'partially_paid', 'cancelled'],
+  paid:           [],
+  cancelled:      [],
+};
+
 export const createInvoice = async (data, userId) => {
   const items = (data.items || []).map(i => ({
     description: String(i.description || '').trim(),
@@ -20,6 +32,9 @@ export const createInvoice = async (data, userId) => {
   const subtotal = items.reduce((s, i) => s + i.total, 0);
   const discount = Math.max(0, Number(data.discount) || 0);
   const tax      = Math.max(0, Number(data.tax) || 0);
+  if (discount > subtotal) {
+    throw new ApiError(400, 'Endirim məbləği faktura cəmindən çox ola bilməz', [], '', 'INVOICE_DISCOUNT_EXCEEDS_SUBTOTAL');
+  }
   const total    = Math.max(0, subtotal - discount + tax);
   const invoice  = await Invoice.create({
     patientId:     data.patientId,
@@ -78,8 +93,23 @@ export const getInvoiceById = async (id) => {
 };
 
 export const updateInvoiceStatus = async (id, status) => {
-  const inv = await Invoice.findByIdAndUpdate(id, { status }, { new: true });
+  const inv = await Invoice.findById(id);
   if (!inv) throw new ApiError(404, 'Invoice not found');
+  if (inv.status === status) return inv;
+
+  const allowed = INVOICE_TRANSITIONS[inv.status] || [];
+  if (!allowed.includes(status)) {
+    throw new ApiError(
+      400,
+      `Faktura statusu "${inv.status}"-dan "${status}"-a dəyişdirilə bilməz`,
+      [],
+      '',
+      'INVOICE_INVALID_STATUS_TRANSITION',
+    );
+  }
+
+  inv.status = status;
+  await inv.save();
   return inv;
 };
 

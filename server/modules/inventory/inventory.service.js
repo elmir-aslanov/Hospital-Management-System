@@ -62,37 +62,54 @@ export const updateMedicine = async (id, data) => {
 
 // ─── Stock operations ─────────────────────────────────────────────────────────
 
-export const stockIn = async (medicineId, { quantity, reason, note }, userId) => {
-  reason = reason || note || 'Stok girişi';
-  const medicine = await Medicine.findById(medicineId);
-  if (!medicine) throw new ApiError(404, 'Medicine not found');
+const requirePositiveQuantity = (quantity) => {
+  const n = Number(quantity);
+  if (!Number.isFinite(n) || n <= 0) throw new ApiError(400, 'Quantity must be a positive number');
+  return Math.trunc(n);
+};
 
-  const previousStock = medicine.stock;
-  const newStock      = previousStock + quantity;
-  medicine.stock      = newStock;
-  await medicine.save();
+export const stockIn = async (medicineId, { quantity, reason, note }, userId) => {
+  const qty = requirePositiveQuantity(quantity);
+  reason = reason || note || 'Stok girişi';
+
+  // Atomic increment — avoids a lost update if two stock-in requests race.
+  const medicine = await Medicine.findByIdAndUpdate(
+    medicineId,
+    { $inc: { stock: qty } },
+    { new: true },
+  );
+  if (!medicine) throw new ApiError(404, 'Medicine not found');
+  const previousStock = medicine.stock - qty;
 
   const transaction = await StockTransaction.create({
-    medicineId, type: 'stock_in', quantity, previousStock, newStock, reason, performedBy: userId,
+    medicineId, type: 'stock_in', quantity: qty, previousStock, newStock: medicine.stock, reason, performedBy: userId,
   });
   return { medicine: withLowStockFlag(medicine), transaction };
 };
 
 export const stockOut = async (medicineId, { quantity, reason, note }, userId) => {
+  const qty = requirePositiveQuantity(quantity);
   reason = reason || note || 'Stok çıxışı';
-  const medicine = await Medicine.findById(medicineId);
-  if (!medicine) throw new ApiError(404, 'Medicine not found');
-  if (medicine.stock < quantity) throw new ApiError(400, `Insufficient stock. Available: ${medicine.stock}`);
 
-  const previousStock = medicine.stock;
-  const newStock      = previousStock - quantity;
-  medicine.stock      = newStock;
-  await medicine.save();
+  // Conditional atomic decrement — only matches (and decrements) when enough
+  // stock is currently available, so two concurrent requests can't both pass
+  // a check-then-set race and drive stock negative.
+  const medicine = await Medicine.findOneAndUpdate(
+    { _id: medicineId, stock: { $gte: qty } },
+    { $inc: { stock: -qty } },
+    { new: true },
+  );
+  if (!medicine) {
+    const exists = await Medicine.findById(medicineId).select('stock name');
+    if (!exists) throw new ApiError(404, 'Medicine not found');
+    throw new ApiError(400, `Insufficient stock. Available: ${exists.stock}`);
+  }
+  const previousStock = medicine.stock + qty;
 
   const transaction = await StockTransaction.create({
-    medicineId, type: 'stock_out', quantity, previousStock, newStock, reason, performedBy: userId,
+    medicineId, type: 'stock_out', quantity: qty, previousStock, newStock: medicine.stock, reason, performedBy: userId,
   });
-  const lowStockAlert = newStock <= medicine.minStockLevel;
+  const lowStockAlert = medicine.stock <= medicine.minStockLevel;
   return { medicine: withLowStockFlag(medicine), transaction, lowStockAlert };
 };
 
@@ -100,11 +117,13 @@ export const dispenseMedicines = async (prescriptionId, items, userId) => {
   const prescription = await Prescription.findById(prescriptionId);
   if (!prescription) throw new ApiError(404, 'Prescription not found');
 
-  // Pre-check all items
+  // Pre-check all items (best-effort UX; the atomic decrement in stockOut below
+  // is what actually prevents a race from driving stock negative)
   for (const item of items) {
+    const qty = requirePositiveQuantity(item.quantity);
     const med = await Medicine.findById(item.medicineId);
     if (!med) throw new ApiError(404, `Medicine ${item.medicineId} not found`);
-    if (med.stock < item.quantity) {
+    if (med.stock < qty) {
       throw new ApiError(400, `Insufficient stock for ${med.name}. Available: ${med.stock}`);
     }
   }

@@ -1,4 +1,5 @@
 import Department from '../../models/Department.model.js';
+import Doctor      from '../../models/Doctor.model.js';
 import ApiError    from '../../utils/ApiError.js';
 
 export const getPublic = (limit = 20) =>
@@ -24,7 +25,25 @@ export const update = async (id, data) => {
   return doc;
 };
 
+// Soft-delete only — hard-deleting would orphan any Doctor.departmentId still
+// pointing at this document. Deactivated departments are filtered out of
+// getPublic()/getBySlug() above, so they immediately stop showing publicly.
 export const remove = async (id) => {
-  const doc = await Department.findByIdAndDelete(id);
+  const doc = await Department.findById(id);
   if (!doc) throw new ApiError(404, 'Department not found');
+
+  const assignedDoctors = await Doctor.countDocuments({ departmentId: id });
+  if (assignedDoctors > 0) {
+    throw new ApiError(
+      400,
+      `Bu şöbəyə ${assignedDoctors} həkim təyin olunub. Əvvəl həkimləri başqa şöbəyə keçirin və ya şöbəni deaktiv edin.`,
+      [],
+      '',
+      'DEPARTMENT_HAS_ASSIGNED_DOCTORS',
+    );
+  }
+
+  doc.isActive = false;
+  await doc.save();
+  return doc;
 };

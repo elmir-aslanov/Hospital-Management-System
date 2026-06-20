@@ -1,13 +1,63 @@
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, X, Send } from 'lucide-react'
+import { Sparkles, X, Send, Square, RotateCcw, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
+import { API_URL } from '../api/config'
 import { useBreakpoint } from '../hooks/useBreakpoint'
 
 const AI_BLUE = 'var(--aslan-ai-blue)'
 const NAVY   = '#0a1628'
 const BORDER = '#E2E8F0'
 const FONT   = "'Source Sans 3', sans-serif"
+const SAFE_ACTION_PATHS = ['/hekimler', '/randevu', '/services', '/departments']
+
+const parseEventBlock = (block) => {
+  const lines = block.split(/\r?\n/)
+  const event = lines.find((line) => line.startsWith('event:'))?.slice(6).trim()
+  const data = lines.filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n')
+  if (!event || !data) return null
+  try {
+    return { event, data: JSON.parse(data) }
+  } catch {
+    return null
+  }
+}
+
+const streamChat = async ({ payload, signal, onEvent }) => {
+  const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
+  const response = await fetch(`${API_URL}/ai/chat`, {
+    method: 'POST',
+    credentials: 'include',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok || !response.body) {
+    const error = new Error('AI request failed')
+    error.code = response.status === 429 ? 'AI_RATE_LIMITED' : 'AI_UNAVAILABLE'
+    throw error
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const blocks = buffer.split(/\r?\n\r?\n/)
+    buffer = blocks.pop() || ''
+    blocks.forEach((block) => {
+      const parsed = parseEventBlock(block)
+      if (parsed) onEvent(parsed.event, parsed.data)
+    })
+  }
+}
 
 function TypingIndicator() {
   return (
@@ -28,19 +78,28 @@ function TypingIndicator() {
 }
 
 export default function AIChatWidget() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const { isMobile } = useBreakpoint()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState(() => [
-    { role: 'assistant', content: t('aiChat.greeting') },
+    { id: crypto.randomUUID(), role: 'assistant', content: t('aiChat.greeting') },
   ])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [conversationId, setConversationId] = useState('')
+  const [lastFailedMessage, setLastFailedMessage] = useState('')
   const listRef = useRef(null)
+  const abortRef = useRef(null)
+  const shouldAutoScrollRef = useRef(true)
 
   useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
+    if (listRef.current && shouldAutoScrollRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
+    }
   }, [messages, sending])
+
+  useEffect(() => () => abortRef.current?.abort(), [])
 
   // Lets other parts of the public site (e.g. the header "AI köməkçi" button)
   // open this same widget instance instead of building a parallel chat UI.
@@ -50,32 +109,111 @@ export default function AIChatWidget() {
     return () => window.removeEventListener('aslan:open-ai-chat', openChat)
   }, [])
 
-  const send = async () => {
-    const text = input.trim()
+  const send = async (overrideText) => {
+    const text = String(overrideText ?? input).trim()
     if (!text || sending) return
 
-    const nextMessages = [...messages, { role: 'user', content: text }]
-    setMessages(nextMessages)
+    const assistantId = crypto.randomUUID()
+    setMessages((current) => [
+      ...current,
+      { id: crypto.randomUUID(), role: 'user', content: text },
+      { id: assistantId, role: 'assistant', content: '', streaming: true, actions: [] },
+    ])
     setInput('')
     setSending(true)
+    setLastFailedMessage('')
+    shouldAutoScrollRef.current = true
+    const controller = new AbortController()
+    abortRef.current = controller
 
     try {
-      const res = await api.post('/ai/chat', { messages: nextMessages })
-      const reply = res.data?.data?.response || t('aiChat.fallbackError')
-      setMessages((m) => [...m, { role: 'assistant', content: reply }])
-    } catch {
-      setMessages((m) => [...m, { role: 'assistant', content: t('aiChat.fallbackError') }])
+      await streamChat({
+        signal: controller.signal,
+        payload: {
+          message: text,
+          conversationId: conversationId || undefined,
+          locale: ['az', 'en', 'ru'].includes(i18n.language) ? i18n.language : i18n.language?.split('-')[0],
+          pageContext: { pathname: window.location.pathname },
+        },
+        onEvent: (event, data) => {
+          if (event === 'meta') setConversationId(data.conversationId)
+          if (event === 'delta') {
+            setMessages((current) => current.map((message) =>
+              message.id === assistantId
+                ? { ...message, content: `${message.content}${data.text || ''}` }
+                : message))
+          }
+          if (event === 'done') {
+            setMessages((current) => current.map((message) =>
+              message.id === assistantId
+                ? { ...message, streaming: false, actions: data.actions || [] }
+                : message))
+          }
+          if (event === 'error') {
+            const error = new Error(data.code || 'AI_UNAVAILABLE')
+            error.code = data.code
+            throw error
+          }
+        },
+      })
+    } catch (error) {
+      const wasStopped = error.name === 'AbortError'
+      setLastFailedMessage(wasStopped ? '' : text)
+      setMessages((current) => current.map((message) =>
+        message.id === assistantId
+          ? {
+              ...message,
+              streaming: false,
+              error: !wasStopped,
+              content: message.content || (wasStopped ? t('aiChat.stopped') : t(`aiChat.errors.${error.code}`, {
+                defaultValue: t('aiChat.fallbackError'),
+              })),
+            }
+          : message))
     } finally {
       setSending(false)
+      abortRef.current = null
     }
   }
 
   const onKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       send()
     }
   }
+
+  const stop = () => abortRef.current?.abort()
+
+  const startNewConversation = async () => {
+    abortRef.current?.abort()
+    if (conversationId) {
+      try {
+        await api.post('/ai/chat/reset', { conversationId })
+      } catch {
+        // A reset is best-effort; clearing the opaque id starts a fresh server conversation.
+      }
+    }
+    setConversationId('')
+    setLastFailedMessage('')
+    setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: t('aiChat.greeting') }])
+    setInput('')
+  }
+
+  const onMessagesScroll = () => {
+    const element = listRef.current
+    if (!element) return
+    shouldAutoScrollRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 72
+  }
+
+  const openAction = (href) => {
+    if (typeof href !== 'string' || !SAFE_ACTION_PATHS.some((path) => href === path || href.startsWith(`${path}/`))) return
+    setOpen(false)
+    navigate(href)
+  }
+
+  const hasUserMessages = messages.some((message) => message.role === 'user')
+  const suggestions = t('aiChat.suggestions', { returnObjects: true })
 
   return (
     <>
@@ -112,76 +250,134 @@ export default function AIChatWidget() {
               <Sparkles size={18} />
               <span style={{ fontWeight: 700, fontSize: 15 }}>{t('aiChat.title')}</span>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label={t('aiChat.close')}
-              className="ai-chat-close"
-              style={{
-                background: 'none', border: 'none', color: 'white', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 2,
-              }}
-            >
-              <X size={20} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={startNewConversation}
+                aria-label={t('aiChat.newConversation')}
+                title={t('aiChat.newConversation')}
+                className="ai-chat-close"
+                style={{
+                  background: 'none', border: 'none', color: 'white', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4,
+                }}
+              >
+                <RotateCcw size={17} />
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                aria-label={t('aiChat.close')}
+                className="ai-chat-close"
+                style={{
+                  background: 'none', border: 'none', color: 'white', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 2,
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
-          <div ref={listRef} style={{
+          <div ref={listRef} onScroll={onMessagesScroll} style={{
             flex: 1, overflowY: 'auto', padding: '16px',
             display: 'flex', flexDirection: 'column', gap: 12,
           }}>
-            {messages.map((m, i) => (
-              <div key={i} style={{
+            {messages.map((m) => (
+              <div key={m.id} style={{
                 alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
                 maxWidth: '85%',
-                background: m.role === 'user' ? AI_BLUE : 'white',
-                color: m.role === 'user' ? 'white' : NAVY,
-                border: m.role === 'user' ? 'none' : `1px solid ${BORDER}`,
-                borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                padding: '10px 14px',
-                fontSize: 13.5,
-                lineHeight: 1.5,
-                whiteSpace: 'pre-wrap',
               }}>
-                {m.content}
+                <div style={{
+                  background: m.role === 'user' ? AI_BLUE : 'white',
+                  color: m.role === 'user' ? 'white' : NAVY,
+                  border: m.role === 'user' ? 'none' : `1px solid ${m.error ? '#FCA5A5' : BORDER}`,
+                  borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                  padding: '10px 14px',
+                  fontSize: 13.5,
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'anywhere',
+                }}>
+                  {m.content || (m.streaming ? t('aiChat.preparing') : '')}
+                </div>
+                {!!m.actions?.length && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 7 }}>
+                    {m.actions.map((action) => (
+                      <button
+                        key={action.href}
+                        type="button"
+                        className="ai-chat-action"
+                        onClick={() => openAction(action.href)}
+                      >
+                        {t(`aiChat.actions.${action.labelKey}`, { defaultValue: t('aiChat.actions.open') })}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
-            {sending && <TypingIndicator />}
+            {sending && !messages.at(-1)?.content && <TypingIndicator />}
+            {!hasUserMessages && Array.isArray(suggestions) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="ai-chat-suggestion"
+                    onClick={() => send(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
+            {lastFailedMessage && !sending && (
+              <button
+                type="button"
+                className="ai-chat-retry"
+                onClick={() => send(lastFailedMessage)}
+              >
+                <RefreshCw size={14} /> {t('aiChat.retry')}
+              </button>
+            )}
           </div>
 
           {/* Footer */}
-          <div style={{
-            display: 'flex', gap: 8, padding: '12px', background: 'white',
-            borderTop: `1px solid ${BORDER}`, flexShrink: 0,
-          }}>
-            <input
-              type="text"
-              className="ai-chat-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder={t('aiChat.placeholder')}
-              style={{
-                flex: 1, border: `1px solid ${BORDER}`, borderRadius: '999px',
-                padding: '8px 16px', fontSize: 13.5, outline: 'none',
-                fontFamily: 'inherit', color: NAVY, boxSizing: 'border-box',
-              }}
-            />
-            <button
-              onClick={send}
-              disabled={sending || !input.trim()}
-              aria-label={t('aiChat.send')}
-              className="ai-chat-send"
-              style={{
-                border: 'none',
-                background: sending || !input.trim() ? 'var(--aslan-ai-blue-disabled)' : AI_BLUE,
-                color: 'white', borderRadius: '999px', width: 38, height: 38, flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <Send size={16} />
-            </button>
+          <div style={{ padding: '10px 12px 9px', background: 'white', borderTop: `1px solid ${BORDER}`, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <textarea
+                rows={1}
+                className="ai-chat-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value.slice(0, 2000))}
+                onKeyDown={onKeyDown}
+                placeholder={t('aiChat.placeholder')}
+                style={{
+                  flex: 1, border: `1px solid ${BORDER}`, borderRadius: '18px',
+                  padding: '9px 14px', fontSize: 13.5, outline: 'none',
+                  fontFamily: 'inherit', color: NAVY, boxSizing: 'border-box',
+                  resize: 'none', minHeight: 38, maxHeight: 88, overflowY: 'auto',
+                }}
+              />
+              <button
+                onClick={sending ? stop : () => send()}
+                disabled={!sending && !input.trim()}
+                aria-label={sending ? t('aiChat.stop') : t('aiChat.send')}
+                className="ai-chat-send"
+                style={{
+                  border: 'none',
+                  background: !sending && !input.trim() ? 'var(--aslan-ai-blue-disabled)' : AI_BLUE,
+                  color: 'white', borderRadius: '999px', width: 38, height: 38, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: !sending && !input.trim() ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {sending ? <Square size={14} fill="currentColor" /> : <Send size={16} />}
+              </button>
+            </div>
+            <div style={{ color: '#64748B', fontSize: 11, lineHeight: 1.35, marginTop: 6, textAlign: 'center' }}>
+              {t('aiChat.safetyNotice')}
+            </div>
           </div>
         </div>
       )}
@@ -214,6 +410,36 @@ export default function AIChatWidget() {
         }
         .ai-chat-close:hover {
           background: rgba(255,255,255,0.14) !important;
+        }
+        .ai-chat-suggestion,
+        .ai-chat-action,
+        .ai-chat-retry {
+          border: 1px solid var(--aslan-ai-blue);
+          background: white;
+          color: var(--aslan-ai-blue-dark);
+          border-radius: 999px;
+          padding: 6px 10px;
+          font: 600 12px/1.25 ${FONT};
+          cursor: pointer;
+          text-align: left;
+        }
+        .ai-chat-action:hover,
+        .ai-chat-suggestion:hover,
+        .ai-chat-retry:hover {
+          background: var(--aslan-ai-blue-soft);
+          border-color: var(--aslan-ai-blue-dark);
+        }
+        .ai-chat-action:focus-visible,
+        .ai-chat-suggestion:focus-visible,
+        .ai-chat-retry:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px var(--aslan-ai-blue-ring);
+        }
+        .ai-chat-retry {
+          align-self: flex-start;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
         }
       `}</style>
     </>

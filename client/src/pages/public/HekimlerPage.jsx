@@ -71,7 +71,8 @@ function DoctorCard({ doctor }) {
   const navigate   = useNavigate()
   const [imageFailed, setImageFailed] = useState(false)
   const fullName   = doctor.userId?.fullName || doctor.fullName || doctor.name || 'Həkim'
-  const spec       = doctor.specialization || doctor.specialty || doctor.department || ''
+  const department = getDoctorDepartment(doctor)
+  const spec       = getDoctorSpecialty(doctor)
   const exp        = doctor.experience || 0
   const rating     = doctor.averageRating || 0
   const ratingCount = doctor.totalRatings || 0
@@ -146,7 +147,12 @@ function DoctorCard({ doctor }) {
           <h3 style={{ margin: '0 0 3px', fontSize: 19, fontWeight: 800, color: NAVY, fontFamily: "'Raleway', sans-serif" }}>
             Dr. {fullName}
           </h3>
-          <p style={{ margin: '0 0 10px', fontSize: 13.5, color: '#475569' }}>{spec}</p>
+          {department && (
+            <p style={{ margin: '0 0 2px', fontSize: 13.5, color: TEAL, fontWeight: 700 }}>{department}</p>
+          )}
+          {spec && (
+            <p style={{ margin: '0 0 10px', fontSize: 13, color: '#475569' }}>{spec}</p>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
             <span style={{ display:'flex', alignItems:'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: isAvailable ? '#16a34a' : '#94a3b8' }}>
@@ -383,7 +389,7 @@ export default function HekimlerPage() {
                   {/* Rows */}
                   {paginatedDoctors.map((doc, i) => {
                     const name      = doc.userId?.fullName || doc.fullName || doc.name || '—'
-                    const dept      = doc.specialization || doc.department || doc.specialty || '—'
+                    const dept      = getDoctorDepartment(doc) || '—'
                     const isLinked  = !!doc._id
                     const isOpen    = expandedId === doc._id
                     return (

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { BASE } from '../../api/config.js'
+import api from '../../api/axios'
 import AvatarUpload from '../../components/common/AvatarUpload'
 import { showSuccess, showError, getErrorMessage } from '../../utils/alert'
 import { clampNumberInput, toBoundedNumber } from '../../utils/numberInput'
 
 export default function AdminDoctors() {
-  const token = localStorage.getItem('token') || localStorage.getItem('adminToken')
+  const { t } = useTranslation()
 
   const getName  = (doc) => {
     const u = doc.userId
@@ -29,6 +31,8 @@ export default function AdminDoctors() {
 
   const [doctors,      setDoctors]      = useState([])
   const [departments,  setDepartments]  = useState([])
+  const [departmentsLoading, setDepartmentsLoading] = useState(true)
+  const [departmentsError, setDepartmentsError] = useState(false)
   const [loading,      setLoading]      = useState(true)
   const [search,       setSearch]       = useState('')
   const [showModal,    setShowModal]    = useState(false)
@@ -47,7 +51,6 @@ export default function AdminDoctors() {
   const [experience,      setExperience]      = useState('')
   const [bio,             setBio]             = useState('')
   const [isAvailable,     setIsAvailable]     = useState(true)
-  const [department,      setDepartment]      = useState('')
   const [departmentId,    setDepartmentId]    = useState('')
   const [consultationFee, setConsultationFee] = useState('')
   const [order,           setOrder]           = useState(0)
@@ -59,7 +62,7 @@ export default function AdminDoctors() {
   const resetForm = () => {
     setCreateMode('quick'); setNewFullName(''); setNewEmail('')
     setSpecialization(''); setExperience(''); setBio(''); setIsAvailable(true)
-    setDepartment(''); setDepartmentId(''); setConsultationFee(''); setOrder(0); setIsActive(true)
+    setDepartmentId(''); setConsultationFee(''); setOrder(0); setIsActive(true)
     setDoctorPhoto(''); setDoctorPhotoFile(null); setDoctorPhotoError('')
   }
 
@@ -68,7 +71,6 @@ export default function AdminDoctors() {
     setExperience(doc.experience ?? '')
     setBio(doc.bio || '')
     setIsAvailable(doc.isAvailable !== false)
-    setDepartment(doc.department || '')
     setDepartmentId(doc.departmentId?._id || doc.departmentId || '')
     setConsultationFee(doc.consultationFee || '')
     setOrder(doc.order || 0)
@@ -80,19 +82,24 @@ export default function AdminDoctors() {
 
   // ─── Fetch doctors ────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${BASE}/api/v1/doctors?limit=100`)
-      .then(r => r.json())
-      .then(data => {
+    api.get('/doctors?limit=100')
+      .then(({ data }) => {
         const list = data.data?.doctors || data.doctors || (Array.isArray(data) ? data : [])
         setDoctors(list)
       })
       .catch(() => setDoctors([]))
       .finally(() => setLoading(false))
 
-    fetch(`${BASE}/api/v1/departments`)
-      .then(r => r.json())
-      .then(d => setDepartments(d.data || []))
-      .catch(() => {})
+    api.get('/departments/admin/all')
+      .then(({ data }) => {
+        setDepartments(data.data || [])
+        setDepartmentsError(false)
+      })
+      .catch(() => {
+        setDepartments([])
+        setDepartmentsError(true)
+      })
+      .finally(() => setDepartmentsLoading(false))
   }, [])
 
   useEffect(() => {
@@ -110,11 +117,8 @@ export default function AdminDoctors() {
   // ─── Open create modal — fetch DOCTOR-role users ──────────────────────────
   const openCreate = () => {
     resetForm(); setEditDoctor(null); setError('')
-    fetch(`${BASE}/api/v1/users?role=DOCTOR`, {
-      headers: { Authorization: 'Bearer ' + token },
-    })
-      .then(r => r.json())
-      .then(data => {
+    api.get('/users?role=DOCTOR')
+      .then(({ data }) => {
         const allUsers = data.data?.users || data.users || []
         const usedIds  = new Set(doctors.map(d => d.userId?._id?.toString() || d.userId?.toString()))
         setDoctorUsers(allUsers.filter(u => !usedIds.has(u._id?.toString())))
@@ -141,20 +145,23 @@ export default function AdminDoctors() {
 
     if (editDoctor) {
       // ── EDIT ──────────────────────────────────────────
-      if (!specialization.trim()) { setError('İxtisas tələb olunur'); return }
+      if (!specialization.trim()) { setError(t('adminDoctors.validation.specialization')); return }
+      if (!departmentId) { setError(t('adminDoctors.validation.department')); return }
       setSaving(true); setError('')
       try {
-        const updates = { specialization: specialization.trim(), experience: toBoundedNumber(experience, { min: 0, integer: true }), bio: bio.trim(), isAvailable }
-        if (department.trim())       updates.department      = department.trim()
-        if (departmentId)            updates.departmentId    = departmentId
+        const updates = {
+          specialization: specialization.trim(),
+          experience: toBoundedNumber(experience, { min: 0, integer: true }),
+          bio: bio.trim(),
+          isAvailable,
+          departmentId,
+        }
         if (consultationFee !== '')  updates.consultationFee = toBoundedNumber(consultationFee, { min: 0 })
         updates.order    = toBoundedNumber(order, { min: 0, integer: true })
         updates.isActive = isActive
 
-        const r    = await fetch(`${BASE}/api/v1/doctors/${editDoctor._id}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + token }, body: toFormData(updates) })
-        const data = await r.json()
-        if (!r.ok) throw new Error(data.message || 'Xəta')
-        const saved = data.data || data
+        const response = await api.put(`/doctors/${editDoctor._id}`, toFormData(updates))
+        const saved = response.data?.data || response.data
         setDoctors(prev => prev.map(d => d._id === editDoctor._id ? saved : d))
         showSuccess('Həkim məlumatları uğurla yeniləndi.')
         setShowModal(false); setEditDoctor(null)
@@ -164,8 +171,8 @@ export default function AdminDoctors() {
       // ── QUICK CREATE (admin-create) ──────────────────
       if (!newFullName.trim())     { setError('Ad Soyad tələb olunur'); return }
       if (!newEmail.trim())        { setError('E-poçt tələb olunur'); return }
-      if (!specialization.trim())  { setError('İxtisas tələb olunur'); return }
-      if (!departmentId && !department.trim()) { setError('Şöbə seçilməlidir'); return }
+      if (!specialization.trim())  { setError(t('adminDoctors.validation.specialization')); return }
+      if (!departmentId) { setError(t('adminDoctors.validation.department')); return }
 
       setSaving(true); setError('')
       try {
@@ -175,18 +182,12 @@ export default function AdminDoctors() {
           specialization:  specialization.trim(),
           experience:      toBoundedNumber(experience, { min: 0, integer: true }),
           bio:             bio.trim(),
-          department:      department?.trim() || '',
           departmentId:    departmentId || undefined,
           consultationFee: toBoundedNumber(consultationFee, { min: 0 }),
           order:           toBoundedNumber(order, { min: 0, integer: true }),
         }
-        const r = await fetch(`${BASE}/api/v1/doctors/admin-create`, {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + token },
-          body: toFormData(body),
-        })
-        const data = await r.json()
-        if (!r.ok) throw new Error(data.message || 'Xəta baş verdi')
+        const response = await api.post('/doctors/admin-create', toFormData(body))
+        const data = response.data
         const created = data.data?.doctor || data.data || data
         if (created?._id) setDoctors(prev => [created, ...prev])
 
@@ -208,8 +209,7 @@ export default function AdminDoctors() {
   const handleDelete = async (id) => {
     if (!window.confirm('Bu həkimi silmək istəyirsiniz?')) return
     try {
-      const r = await fetch(`${BASE}/api/v1/doctors/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } })
-      if (!r.ok) { const d = await r.json(); throw new Error(d.message || 'Silmə zamanı xəta') }
+      await api.delete(`/doctors/${id}`)
       setDoctors(prev => prev.filter(d => d._id !== id))
       showSuccess('Həkim uğurla silindi.')
     } catch (e) { showError(getErrorMessage(e, 'Həkim silinmədi.')) }
@@ -220,8 +220,16 @@ export default function AdminDoctors() {
     !search ||
     getName(d).toLowerCase().includes(search.toLowerCase()) ||
     (d.specialization || '').toLowerCase().includes(search.toLowerCase()) ||
-    (d.userId?.department || '').toLowerCase().includes(search.toLowerCase())
+    (d.departmentId?.name || d.department || d.userId?.department || '').toLowerCase().includes(search.toLowerCase())
   )
+
+  const selectedDepartment = departments.find(d => d._id === departmentId)
+    || (editDoctor?.departmentId?._id === departmentId ? editDoctor.departmentId : null)
+  const selectableDepartments = departments.filter(d => d.isActive !== false || d._id === departmentId)
+  if (selectedDepartment && !selectableDepartments.some(d => d._id === selectedDepartment._id)) {
+    selectableDepartments.push(selectedDepartment)
+  }
+  const hasActiveDepartments = departments.some(d => d.isActive !== false)
 
   const closeModal = () => { setShowModal(false); setEditDoctor(null); setError(''); setDoctorPhotoFile(null); setDoctorPhotoError('') }
   const closeDoctorSuccessModal = () => { setDoctorSuccessModal(null); setCopied(false) }
@@ -309,9 +317,11 @@ export default function AdminDoctors() {
               </div>
               <div style={{ padding: '14px 16px' }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#0f1b2d', marginBottom: 3 }}>{getName(doc)}</div>
-                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>{doc.specialization || '—'}</div>
+                <div style={{ fontSize: 12, color: '#00848e', fontWeight: 600, marginBottom: 2 }}>
+                  {doc.departmentId?.name || doc.department || doc.userId?.department || '—'}
+                </div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
-                  {doc.departmentId?.name || doc.department || doc.userId?.department || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
+                  {doc.specialization || '—'}{doc.experience ? ` · ${doc.experience} il` : ''}
                 </div>
                 {doc.licenseNumber && (
                   <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>Lic: {doc.licenseNumber}</div>
@@ -455,28 +465,57 @@ export default function AdminDoctors() {
 
             {/* Shared fields — create and edit */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <MF label="İxtisas *"    value={specialization} onChange={setSpecialization} placeholder="məs. Kardiologiya" />
+              <MF
+                label={`${t('adminDoctors.specializationLabel')} *`}
+                value={specialization}
+                onChange={setSpecialization}
+                placeholder={t('adminDoctors.specializationPlaceholder')}
+              />
               <MF label="Təcrübə (il)" value={experience}     onChange={setExperience}     type="number" min={0} integer placeholder="0" />
               <div style={{ gridColumn: 'span 2' }}>
                 <MF label="Bio" value={bio} onChange={setBio} placeholder="Həkim haqqında qısa məlumat..." />
               </div>
 
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={lbl}>Şöbə *</label>
+                <label style={lbl}>{t('adminDoctors.departmentLabel')} *</label>
                 <select
                   value={departmentId}
+                  disabled={departmentsLoading || (departmentsError && !selectedDepartment) || (!hasActiveDepartments && !selectedDepartment)}
                   onChange={e => {
                     setDepartmentId(e.target.value)
-                    const d = departments.find(d => d._id === e.target.value)
-                    if (d) setDepartment(d.name)
                   }}
-                  style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 9, padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none', boxSizing: 'border-box', height: 38 }}
+                  style={{
+                    width: '100%', border: '1px solid #e2e8f0', borderRadius: 9,
+                    padding: '9px 12px', fontSize: 13, color: '#334155', outline: 'none',
+                    boxSizing: 'border-box', height: 38, minWidth: 0, textOverflow: 'ellipsis',
+                    background: departmentsLoading || departmentsError ? '#f8fafc' : 'white',
+                  }}
                 >
-                  <option value="">— Şöbə seçin —</option>
-                  {departments.map(d => (
-                    <option key={d._id} value={d._id}>{d.icon} {d.name}</option>
+                  <option value="">
+                    {departmentsLoading
+                      ? t('adminDoctors.departmentLoading')
+                      : departmentsError
+                        ? t('adminDoctors.departmentLoadError')
+                        : !hasActiveDepartments && !selectedDepartment
+                          ? t('adminDoctors.departmentEmpty')
+                          : t('adminDoctors.departmentPlaceholder')}
+                  </option>
+                  {selectableDepartments.map(d => (
+                    <option key={d._id} value={d._id}>
+                      {d.name}{d.isActive === false ? ` (${t('adminDoctors.inactiveDepartment')})` : ''}
+                    </option>
                   ))}
                 </select>
+                {departmentsError && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#dc2626' }}>
+                    {t('adminDoctors.departmentLoadError')}
+                  </div>
+                )}
+                {!departmentsLoading && !departmentsError && !hasActiveDepartments && !selectedDepartment && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#64748b' }}>
+                    {t('adminDoctors.departmentEmpty')}
+                  </div>
+                )}
               </div>
               <MF label="Konsultasiya haqqı (AZN)" value={consultationFee} onChange={setConsultationFee} type="number" min={0} placeholder="0" />
               <MF label="Göstərilmə sırası" value={order} onChange={setOrder} type="number" min={0} integer placeholder="0" />

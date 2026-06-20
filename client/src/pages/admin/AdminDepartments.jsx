@@ -152,10 +152,16 @@ export default function AdminDepartments() {
     finally { setDeptSaving(false) }
   }
 
-  const deleteDept = (dept) => {
-    if (!window.confirm('Bu şöbəni silmək istəyirsiniz?')) return
-    fetch(`${BASE}/api/v1/departments/${dept._id}`, { method: 'DELETE', headers: hdrs() })
-      .then(() => setDepts(prev => prev.filter(d => d._id !== dept._id)))
+  const deleteDept = async (dept) => {
+    if (!window.confirm('Bu şöbəni deaktiv etmək istəyirsiniz? Şöbə silinmir, yalnız ictimai saytda gizlədilir.')) return
+    try {
+      const res  = await fetch(`${BASE}/api/v1/departments/${dept._id}`, { method: 'DELETE', headers: hdrs() })
+      const data = await res.json()
+      if (!res.ok) { window.alert(data.message || 'Xəta baş verdi'); return }
+      setDepts(prev => prev.map(d => d._id === dept._id ? { ...d, isActive: false } : d))
+    } catch {
+      window.alert('Server xətası, yenidən cəhd edin')
+    }
   }
 
   /* ── appointment ───────────────────────────────────────────────────── */
@@ -280,10 +286,12 @@ export default function AdminDepartments() {
                         style={{ padding:'5px 12px', border:'1px solid #e2e8f0', borderRadius:7, background:'white', color:'#475569', fontSize:12, fontWeight:600, cursor:'pointer' }}>
                         Redaktə
                       </button>
-                      <button onClick={() => deleteDept(dept)}
-                        style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fee2e2', background:'white', fontSize:11, cursor:'pointer', color:'#ef4444' }}>
-                        Sil
-                      </button>
+                      {dept.isActive && (
+                        <button onClick={() => deleteDept(dept)}
+                          style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fee2e2', background:'white', fontSize:11, cursor:'pointer', color:'#ef4444' }}>
+                          Deaktiv et
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

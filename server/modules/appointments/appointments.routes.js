@@ -3,6 +3,7 @@ import * as appointmentsController from './appointments.controller.js';
 import {
   validateCreateAppointment,
   validateUpdateStatus,
+  validateRescheduleAppointment,
   validateGetAppointments,
 } from './appointments.validator.js';
 import validate    from '../../middleware/validate.middleware.js';
@@ -216,6 +217,7 @@ router.get(
 router.patch(
   '/:id/reschedule',
   authorize('ADMIN', 'SUPER_ADMIN', 'RECEPTIONIST'),
+  validateRescheduleAppointment, validate,
   appointmentsController.rescheduleAppointment
 );
 

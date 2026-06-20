@@ -130,13 +130,14 @@ export default function AdminBilling() {
   const saveInvoice = async () => {
     if (!form.patientId) { setFormErr('Pasiyent seçin'); return }
     if (formItems.some(it => !it.description.trim())) { setFormErr('Xidmət adı boş ola bilməz'); return }
+    if ((Number(form.discount) || 0) > subtotal) { setFormErr('Endirim məbləği aralıq cəmdən çox ola bilməz'); return }
     setSaving(true); setFormErr('')
     try {
       const body = {
         patientId: form.patientId,
         notes:     form.notes,
         status:    form.status,
-        discount:  toBoundedNumber(form.discount, { min: 0 }),
+        discount:  toBoundedNumber(form.discount, { min: 0, max: subtotal }),
         tax:       toBoundedNumber(form.tax, { min: 0 }),
         items:     formItems.map(it => {
           const quantity = toBoundedNumber(it.quantity, { min: 1 })
@@ -587,7 +588,10 @@ ${ps.extraNote ? `<div class="row"><span>Ətraflı</span><span style="max-width:
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
                   <label style={lbl}>Endirim (AZN)</label>
-                  <input style={inp} type="number" min="0" step="0.01" value={form.discount} onChange={e => setF('discount', clampNumberInput(e.target.value, { min: 0 }))} />
+                  <input style={inp} type="number" min="0" max={subtotal} step="0.01" value={form.discount} onChange={e => setF('discount', clampNumberInput(e.target.value, { min: 0, max: subtotal }))} />
+                  {Number(form.discount) > subtotal && (
+                    <p style={{ margin: '4px 0 0', fontSize: 11, color: '#ef4444' }}>Endirim aralıq cəmdən ({fmt(subtotal)} AZN) çox ola bilməz</p>
+                  )}
                 </div>
                 <div>
                   <label style={lbl}>Vergi (AZN)</label>
